@@ -16,6 +16,7 @@ from .state import StateLiteSerializer
 from .user import UserLiteSerializer
 from plane.db.models import (
     Intake,
+    IntakeForm,
     IntakeIssue,
     IntakeResponsibilitySetting,
     IntakeRotationMember,
@@ -130,8 +131,19 @@ class IntakeIssueDetailSerializer(BaseSerializer):
             "assigned_at",
             "escalation_count",
             "assignment_source",
+            "submitter_name",
+            "submitter_email",
         ]
-        read_only_fields = ["project", "workspace", "assigned_to", "assigned_at", "escalation_count", "assignment_source"]
+        read_only_fields = [
+            "project",
+            "workspace",
+            "assigned_to",
+            "assigned_at",
+            "escalation_count",
+            "assignment_source",
+            "submitter_name",
+            "submitter_email",
+        ]
 
     def to_representation(self, instance):
         # Pass the annotated fields to the Issue instance if they exist
@@ -185,3 +197,31 @@ class IntakeRotationMemberSerializer(BaseSerializer):
         model = IntakeRotationMember
         fields = ["id", "member", "member_detail", "sort_order", "is_active"]
         read_only_fields = ["id"]
+
+
+class IntakeFormSerializer(BaseSerializer):
+    class Meta:
+        model = IntakeForm
+        fields = [
+            "id",
+            "workspace_id",
+            "project_id",
+            "name",
+            "description_html",
+            "token",
+            "is_enabled",
+            "default_state",
+            "default_priority",
+            "default_labels",
+            "show_priority_field",
+            "show_labels_field",
+            "allow_attachments",
+            "max_attachments",
+            "require_submitter_name",
+            "require_submitter_email",
+            "send_confirmation_email",
+            "success_message",
+            "redirect_url",
+            "rate_limit_per_ip_per_hour",
+        ]
+        read_only_fields = ["id", "workspace_id", "project_id", "token"]

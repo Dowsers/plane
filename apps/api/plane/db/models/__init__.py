@@ -18,7 +18,7 @@ from .draft import (
 from .estimate import Estimate, EstimatePoint
 from .exporter import ExporterHistory
 from .importer import Importer
-from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember
+from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
 from .triage_rule import TriageRule, TriageRuleCondition, TriageRuleAction
 from .integration import (
     GithubCommentSync,

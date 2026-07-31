@@ -189,16 +189,22 @@ def _apply_rule_to_issue(rule, issue, intake_issue, actor_id):
     # feed like any other change - exigence 9 de la spec. The actor is the
     # rule's author, not a dedicated system/bot user (simplification - see
     # docker/api/triage-rule-engine/README.md in plane-selfhost).
-    issue_activity.delay(
-        type="issue.activity.updated",
-        requested_data=json.dumps(fields, cls=DjangoJSONEncoder),
-        current_instance=json.dumps(current_instance, cls=DjangoJSONEncoder),
-        actor_id=str(rule.created_by_id or actor_id),
-        issue_id=str(issue.id),
-        project_id=str(issue.project_id),
-        epoch=int(timezone.now().timestamp()),
-        notification=True,
-    )
+    effective_actor_id = rule.created_by_id or actor_id
+    if effective_actor_id is not None:
+        # Both can be None for a public-form submission (docker/api/public-intake-form)
+        # whose triage rule's author account was later deleted - skip only
+        # the activity-log entry in that rare case, the field changes above
+        # are applied regardless.
+        issue_activity.delay(
+            type="issue.activity.updated",
+            requested_data=json.dumps(fields, cls=DjangoJSONEncoder),
+            current_instance=json.dumps(current_instance, cls=DjangoJSONEncoder),
+            actor_id=str(effective_actor_id),
+            issue_id=str(issue.id),
+            project_id=str(issue.project_id),
+            epoch=int(timezone.now().timestamp()),
+            notification=True,
+        )
 
 
 def dry_run_rule(rule, project_id):

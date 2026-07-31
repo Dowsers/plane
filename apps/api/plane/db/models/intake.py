@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Python imports
+import secrets
+
 # Django imports
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -9,6 +12,10 @@ from django.db import models
 
 # Module imports
 from plane.db.models.project import ProjectBaseModel
+
+
+def get_intake_form_token():
+    return secrets.token_urlsafe(24)
 
 
 class Intake(ProjectBaseModel):
@@ -39,6 +46,8 @@ class Intake(ProjectBaseModel):
 
 class SourceType(models.TextChoices):
     IN_APP = "IN_APP"
+    PUBLIC_FORM = "PUBLIC_FORM"
+    API = "API"
 
 
 class IntakeIssueStatus(models.IntegerChoices):
@@ -47,6 +56,47 @@ class IntakeIssueStatus(models.IntegerChoices):
     SNOOZED = 0
     ACCEPTED = 1
     DUPLICATE = 2
+
+
+class IntakeForm(ProjectBaseModel):
+    """
+    Public, unauthenticated intake submission form - see
+    docs/feature-specs/02-cycles-intake.md ("Formulaire web public
+    d'intake") in plane-selfhost. Attachments are explicitly out of scope
+    for this iteration - see docker/api/public-intake-form/README.md in
+    plane-selfhost.
+    """
+
+    name = models.CharField(max_length=255)
+    description_html = models.TextField(blank=True, default="<p></p>")
+    token = models.CharField(max_length=64, unique=True, db_index=True, default=get_intake_form_token)
+    is_enabled = models.BooleanField(default=True)
+    default_state = models.ForeignKey(
+        "db.State", on_delete=models.SET_NULL, null=True, blank=True, related_name="intake_forms"
+    )
+    default_priority = models.CharField(max_length=30, null=True, blank=True)
+    default_labels = models.ManyToManyField("db.Label", blank=True, related_name="intake_forms")
+    show_priority_field = models.BooleanField(default=True)
+    show_labels_field = models.BooleanField(default=True)
+    allow_attachments = models.BooleanField(default=False)
+    max_attachments = models.PositiveSmallIntegerField(default=5)
+    require_submitter_name = models.BooleanField(default=False)
+    require_submitter_email = models.BooleanField(default=False)
+    send_confirmation_email = models.BooleanField(default=False)
+    success_message = models.TextField(blank=True, default="Thank you, your submission has been received.")
+    redirect_url = models.URLField(blank=True, null=True)
+    rate_limit_per_ip_per_hour = models.PositiveIntegerField(
+        default=10, validators=[MinValueValidator(1), MaxValueValidator(1000)]
+    )
+
+    class Meta:
+        verbose_name = "Intake Form"
+        verbose_name_plural = "Intake Forms"
+        db_table = "intake_forms"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.name} <{self.project_id}>"
 
 
 class IntakeIssue(ProjectBaseModel):
@@ -102,6 +152,16 @@ class IntakeIssue(ProjectBaseModel):
         related_name="applied_intake_issues",
     )
     triage_rule_snapshot = models.JSONField(null=True, blank=True)
+    # Formulaire web public d'intake - see
+    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+    intake_form = models.ForeignKey(
+        "db.IntakeForm", on_delete=models.SET_NULL, null=True, blank=True, related_name="submissions"
+    )
+    submitter_name = models.CharField(max_length=255, null=True, blank=True)
+    submitter_email = models.EmailField(null=True, blank=True)
+    # Hash of the submitter's IP (never the raw IP) - used for abuse
+    # analysis without retaining PII beyond what's needed for rate limiting.
+    submitter_ip_hash = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
         verbose_name = "IntakeIssue"

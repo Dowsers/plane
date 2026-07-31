@@ -23,6 +23,7 @@ from ..base import BaseViewSet
 from plane.app.permissions import allow_permission, ROLE
 from plane.db.models import (
     Intake,
+    IntakeForm,
     IntakeIssue,
     IntakeResponsibilitySetting,
     IntakeRotationMember,
@@ -45,6 +46,7 @@ from plane.app.serializers import (
     IntakeIssueDetailSerializer,
     IntakeResponsibilitySettingSerializer,
     IntakeRotationMemberSerializer,
+    IntakeFormSerializer,
     IssueDescriptionVersionDetailSerializer,
 )
 from plane.utils.issue_filters import issue_filters
@@ -54,7 +56,7 @@ from plane.app.views.base import BaseAPIView
 from plane.utils.timezone_converter import user_timezone_converter
 from plane.utils.global_paginator import paginate
 from plane.utils.host import base_host
-from plane.db.models.intake import SourceType
+from plane.db.models.intake import SourceType, get_intake_form_token
 from plane.utils.intake_responsibility import assign_intake_responsibility
 from plane.bgtasks.triage_rule_task import run_triage_rules_for_intake_issue
 
@@ -804,3 +806,80 @@ class IntakeRotationMemberReorderEndpoint(BaseAPIView):
 
         IntakeRotationMember.objects.bulk_update(updated, ["sort_order"], batch_size=100)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IntakeFormViewSet(BaseViewSet):
+    """
+    Authenticated management of public intake forms - see
+    docs/feature-specs/02-cycles-intake.md ("Formulaire web public
+    d'intake") in plane-selfhost. The public-facing GET/submit endpoints
+    live in plane.space (namespace api/public/), not here.
+    """
+
+    serializer_class = IntakeFormSerializer
+    model = IntakeForm
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"), project_id=self.kwargs.get("project_id"))
+            .prefetch_related("default_labels")
+        )
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def list(self, request, slug, project_id):
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def retrieve(self, request, slug, project_id, pk):
+        form = self.get_queryset().filter(pk=pk).first()
+        if form is None:
+            return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(self.serializer_class(form).data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def create(self, request, slug, project_id):
+        project = Project.objects.filter(pk=project_id, workspace__slug=slug).first()
+        if project is None:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(project_id=project_id, workspace_id=project.workspace_id)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @allow_permission([ROLE.ADMIN])
+    def partial_update(self, request, slug, project_id, pk):
+        form = self.get_queryset().filter(pk=pk).first()
+        if form is None:
+            return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(form, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def destroy(self, request, slug, project_id, pk):
+        # Existing submissions keep their intake_form_id via SET_NULL - the
+        # intake issues themselves are never deleted alongside the form.
+        form = self.get_queryset().filter(pk=pk).first()
+        if form is not None:
+            form.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IntakeFormRegenerateTokenEndpoint(BaseAPIView):
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id, pk):
+        form = IntakeForm.objects.filter(workspace__slug=slug, project_id=project_id, pk=pk).first()
+        if form is None:
+            return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # The old token stops resolving immediately (exigence 3) - past
+        # submissions are untouched since they're linked by FK id, not token.
+        form.token = get_intake_form_token()
+        form.save(update_fields=["token"])
+        return Response(IntakeFormSerializer(form).data, status=status.HTTP_200_OK)

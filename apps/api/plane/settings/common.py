@@ -123,6 +123,10 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/minute",
         "asset_id": "5/minute",
+        # Fallback only - IntakeFormSubmitThrottle overrides this per-form
+        # via IntakeForm.rate_limit_per_ip_per_hour at request time. See
+        # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+        "intake_form_submit": "10/hour",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

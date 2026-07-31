@@ -8,6 +8,8 @@ from django.urls import path
 from plane.space.views import (
     IntakeIssuePublicViewSet,
     WorkspaceProjectDeployBoardEndpoint,
+    IntakeFormPublicEndpoint,
+    IntakeFormSubmitEndpoint,
 )
 
 
@@ -31,5 +33,15 @@ urlpatterns = [
         "workspaces/<str:slug>/project-boards/",
         WorkspaceProjectDeployBoardEndpoint.as_view(),
         name="workspace-project-boards",
+    ),
+    path(
+        "intake-forms/<str:token>/",
+        IntakeFormPublicEndpoint.as_view(),
+        name="intake-form-public",
+    ),
+    path(
+        "intake-forms/<str:token>/submit/",
+        IntakeFormSubmitEndpoint.as_view(),
+        name="intake-form-submit",
     ),
 ]

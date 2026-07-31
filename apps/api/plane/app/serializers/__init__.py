@@ -119,6 +119,7 @@ from .intake import (
     IntakeIssueDetailSerializer,
     IntakeResponsibilitySettingSerializer,
     IntakeRotationMemberSerializer,
+    IntakeFormSerializer,
 )
 from .triage_rule import (
     TriageRuleSerializer,

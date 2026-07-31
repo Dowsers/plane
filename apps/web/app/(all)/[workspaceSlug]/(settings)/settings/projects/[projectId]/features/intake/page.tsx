@@ -16,6 +16,7 @@ import { SettingsHeading } from "@/components/settings/heading";
 import { ProjectSettingsFeatureControlItem } from "@/components/settings/project/content/feature-control-item";
 import { IntakeResponsibilitySettings } from "@/components/intake/responsibility-settings";
 import { TriageRulesRoot } from "@/components/intake/triage-rules";
+import { IntakeFormsRoot } from "@/components/intake/intake-forms";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
@@ -60,6 +61,7 @@ function FeaturesIntakeSettingsPage({ params }: Route.ComponentProps) {
         </div>
         <IntakeResponsibilitySettings workspaceSlug={workspaceSlug} projectId={projectId} />
         <TriageRulesRoot workspaceSlug={workspaceSlug} projectId={projectId} />
+        <IntakeFormsRoot workspaceSlug={workspaceSlug} projectId={projectId} />
       </section>
     </SettingsContentWrapper>
   );

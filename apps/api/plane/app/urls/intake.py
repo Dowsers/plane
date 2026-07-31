@@ -16,6 +16,8 @@ from plane.app.views import (
     TriageRuleReorderEndpoint,
     TriageRuleDryRunEndpoint,
     TriageRuleReapplyEndpoint,
+    IntakeFormViewSet,
+    IntakeFormRegenerateTokenEndpoint,
 )
 
 
@@ -114,5 +116,20 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/reapply/",
         TriageRuleReapplyEndpoint.as_view(),
         name="triage-rule-reapply",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-forms/",
+        IntakeFormViewSet.as_view({"get": "list", "post": "create"}),
+        name="intake-form",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-forms/<uuid:pk>/",
+        IntakeFormViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="intake-form",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-forms/<uuid:pk>/regenerate-token/",
+        IntakeFormRegenerateTokenEndpoint.as_view(),
+        name="intake-form-regenerate-token",
     ),
 ]

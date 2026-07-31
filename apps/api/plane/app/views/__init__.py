@@ -201,6 +201,8 @@ from .intake.base import (
     IntakeResponsibilitySettingEndpoint,
     IntakeRotationMemberViewSet,
     IntakeRotationMemberReorderEndpoint,
+    IntakeFormViewSet,
+    IntakeFormRegenerateTokenEndpoint,
 )
 from .intake.triage_rule import (
     TriageRuleViewSet,

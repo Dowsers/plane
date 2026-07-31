@@ -20,6 +20,8 @@ from .issue import (
 
 from .intake import IntakeIssuePublicViewSet
 
+from .intake_form import IntakeFormPublicEndpoint, IntakeFormSubmitEndpoint
+
 from .cycle import ProjectCyclesEndpoint
 
 from .module import ProjectModulesEndpoint
