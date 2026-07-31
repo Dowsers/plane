@@ -45,6 +45,9 @@ export interface IPartialProject {
 export interface IProject extends IPartialProject {
   archive_in?: number;
   close_in?: number;
+  sub_issue_auto_close?: boolean;
+  sub_issue_auto_close_state?: string | null;
+  sub_issue_cascade_close?: boolean;
   // only for uploading the cover image
   cover_image_asset?: null;
   cover_image?: string;

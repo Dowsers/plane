@@ -111,6 +111,17 @@ class Project(BaseModel):
     close_in = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(12)])
     logo_props = models.JSONField(default=dict)
     default_state = models.ForeignKey("db.State", on_delete=models.SET_NULL, null=True, related_name="default_state")
+    # Sub-issue lifecycle automations - see docs/feature-specs/01-core-issue-tracking.md
+    # ("Automatisations de cycle de vie des sous-tâches") in plane-selfhost.
+    sub_issue_auto_close = models.BooleanField(default=False)
+    sub_issue_auto_close_state = models.ForeignKey(
+        "db.State",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sub_issue_auto_close_projects",
+    )
+    sub_issue_cascade_close = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True)
     # timezone
     TIMEZONE_CHOICES = tuple(zip(pytz.common_timezones, pytz.common_timezones))

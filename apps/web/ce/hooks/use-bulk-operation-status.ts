@@ -4,4 +4,7 @@
  * See the LICENSE file for details.
  */
 
-export const useBulkOperationStatus = () => false;
+// Bulk operations (state/priority/assignees/labels/dates/cycle/module,
+// archive, delete) are available in the self-hosted Community edition -
+// see docs/feature-specs/01-core-issue-tracking.md in plane-selfhost.
+export const useBulkOperationStatus = () => true;

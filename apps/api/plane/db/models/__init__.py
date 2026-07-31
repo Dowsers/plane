@@ -29,6 +29,7 @@ from .integration import (
     WorkspaceIntegration,
 )
 from .issue import (
+    BulkIssueOperation,
     CommentReaction,
     Issue,
     IssueActivity,

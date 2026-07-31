@@ -120,6 +120,7 @@ from .issue.base import (
     IssueViewSet,
     ProjectUserDisplayPropertyEndpoint,
     BulkDeleteIssuesEndpoint,
+    BulkIssueOperationsEndpoint,
     DeletedIssuesListViewSet,
     IssuePaginatedViewSet,
     IssueDetailEndpoint,

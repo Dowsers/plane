@@ -812,3 +812,41 @@ class IssueDescriptionVersion(ProjectBaseModel):
         except Exception as e:
             log_exception(e)
             return False
+
+
+class BulkIssueOperation(ProjectBaseModel):
+    """Audit trail + partial-success tracking for a single bulk operation
+    request (state/priority/assignee/labels/dates/cycle/module update,
+    archive, or delete) applied across multiple issues at once."""
+
+    class OperationType(models.TextChoices):
+        UPDATE = "update", "Update"
+        ARCHIVE = "archive", "Archive"
+        DELETE = "delete", "Delete"
+
+    class OperationStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        PARTIAL = "partial", "Partial"
+        FAILED = "failed", "Failed"
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="bulk_issue_operations",
+    )
+    action_type = models.CharField(max_length=20, choices=OperationType.choices, default=OperationType.UPDATE)
+    issue_ids = ArrayField(models.UUIDField(), default=list, blank=True)
+    properties = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=OperationStatus.choices, default=OperationStatus.PENDING)
+    result = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Bulk Issue Operation"
+        verbose_name_plural = "Bulk Issue Operations"
+        db_table = "bulk_issue_operations"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.project_id} {self.action_type} {self.status} ({len(self.issue_ids)} issues)"
