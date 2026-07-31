@@ -202,6 +202,12 @@ from .intake.base import (
     IntakeRotationMemberViewSet,
     IntakeRotationMemberReorderEndpoint,
 )
+from .intake.triage_rule import (
+    TriageRuleViewSet,
+    TriageRuleReorderEndpoint,
+    TriageRuleDryRunEndpoint,
+    TriageRuleReapplyEndpoint,
+)
 
 from .analytic.base import (
     AnalyticsEndpoint,

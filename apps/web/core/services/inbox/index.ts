@@ -7,3 +7,4 @@
 export * from "./inbox-issue.service";
 export * from "./intake-work_item_version.service";
 export * from "./intake-responsibility.service";
+export * from "./triage-rule.service";

@@ -56,6 +56,7 @@ from plane.utils.global_paginator import paginate
 from plane.utils.host import base_host
 from plane.db.models.intake import SourceType
 from plane.utils.intake_responsibility import assign_intake_responsibility
+from plane.bgtasks.triage_rule_task import run_triage_rules_for_intake_issue
 
 
 class IntakeViewSet(BaseViewSet):
@@ -278,6 +279,9 @@ class IntakeIssueViewSet(BaseViewSet):
             # the project has intake responsibility/auto-routing enabled -
             # see docs/feature-specs/02-cycles-intake.md in plane-selfhost.
             assign_intake_responsibility(intake_issue, project, actor_id=request.user.id)
+            # Evaluate conditional triage rules asynchronously - see
+            # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+            run_triage_rules_for_intake_issue.delay(str(intake_issue.id), str(request.user.id))
             # Create an Issue Activity
             issue_activity.delay(
                 type="issue.activity.created",

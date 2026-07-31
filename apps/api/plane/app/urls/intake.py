@@ -12,6 +12,10 @@ from plane.app.views import (
     IntakeResponsibilitySettingEndpoint,
     IntakeRotationMemberViewSet,
     IntakeRotationMemberReorderEndpoint,
+    TriageRuleViewSet,
+    TriageRuleReorderEndpoint,
+    TriageRuleDryRunEndpoint,
+    TriageRuleReapplyEndpoint,
 )
 
 
@@ -85,5 +89,30 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/intake-responsibility/rotation-members/reorder/",
         IntakeRotationMemberReorderEndpoint.as_view(),
         name="intake-responsibility-rotation-member-reorder",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/",
+        TriageRuleViewSet.as_view({"get": "list", "post": "create"}),
+        name="triage-rule",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/<uuid:pk>/",
+        TriageRuleViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="triage-rule",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/reorder/",
+        TriageRuleReorderEndpoint.as_view(),
+        name="triage-rule-reorder",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/<uuid:pk>/dry-run/",
+        TriageRuleDryRunEndpoint.as_view(),
+        name="triage-rule-dry-run",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/triage-rules/reapply/",
+        TriageRuleReapplyEndpoint.as_view(),
+        name="triage-rule-reapply",
     ),
 ]

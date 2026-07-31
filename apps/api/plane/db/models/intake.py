@@ -92,6 +92,16 @@ class IntakeIssue(ProjectBaseModel):
         null=True,
         blank=True,
     )
+    # Moteur de règles de triage conditionnelles - see
+    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+    applied_triage_rule = models.ForeignKey(
+        "db.TriageRule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="applied_intake_issues",
+    )
+    triage_rule_snapshot = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = "IntakeIssue"

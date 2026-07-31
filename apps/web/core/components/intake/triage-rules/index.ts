@@ -4,6 +4,4 @@
  * See the LICENSE file for details.
  */
 
-export * from "./state";
-export * from "./responsibility";
-export * from "./triage-rule";
+export * from "./root";
