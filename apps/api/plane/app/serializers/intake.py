@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Django imports
+from django.utils import timezone
+
 # Third party frameworks
 from rest_framework import serializers
 
@@ -11,7 +14,15 @@ from .issue import IssueIntakeSerializer, LabelLiteSerializer, IssueDetailSerial
 from .project import ProjectLiteSerializer
 from .state import StateLiteSerializer
 from .user import UserLiteSerializer
-from plane.db.models import Intake, IntakeIssue, Issue, StateGroup, State
+from plane.db.models import (
+    Intake,
+    IntakeIssue,
+    IntakeResponsibilitySetting,
+    IntakeRotationMember,
+    Issue,
+    StateGroup,
+    State,
+)
 
 
 class IntakeSerializer(BaseSerializer):
@@ -37,8 +48,12 @@ class IntakeIssueSerializer(BaseSerializer):
             "source",
             "issue",
             "created_by",
+            "assigned_to",
+            "assigned_at",
+            "escalation_count",
+            "assignment_source",
         ]
-        read_only_fields = ["project", "workspace"]
+        read_only_fields = ["project", "workspace", "assigned_at", "escalation_count", "assignment_source"]
 
     def validate(self, attrs):
         """
@@ -66,6 +81,13 @@ class IntakeIssueSerializer(BaseSerializer):
         return attrs
 
     def update(self, instance, validated_data):
+        # A manual reassignment via this endpoint always takes assignment_source
+        # back to "manual", regardless of how it was previously assigned -
+        # exigence 6 de docs/feature-specs/02-cycles-intake.md.
+        if "assigned_to" in validated_data:
+            validated_data["assignment_source"] = "manual"
+            validated_data["assigned_at"] = timezone.now()
+
         # Update the intake issue
         instance = super().update(instance, validated_data)
 
@@ -104,8 +126,12 @@ class IntakeIssueDetailSerializer(BaseSerializer):
             "duplicate_issue_detail",
             "source",
             "issue",
+            "assigned_to",
+            "assigned_at",
+            "escalation_count",
+            "assignment_source",
         ]
-        read_only_fields = ["project", "workspace"]
+        read_only_fields = ["project", "workspace", "assigned_to", "assigned_at", "escalation_count", "assignment_source"]
 
     def to_representation(self, instance):
         # Pass the annotated fields to the Issue instance if they exist
@@ -135,3 +161,27 @@ class IssueStateIntakeSerializer(BaseSerializer):
     class Meta:
         model = Issue
         fields = "__all__"
+
+
+class IntakeResponsibilitySettingSerializer(BaseSerializer):
+    class Meta:
+        model = IntakeResponsibilitySetting
+        fields = [
+            "id",
+            "workspace_id",
+            "project_id",
+            "is_enabled",
+            "assignment_mode",
+            "fixed_owner",
+            "escalation_timeout_minutes",
+        ]
+        read_only_fields = ["id", "workspace_id", "project_id"]
+
+
+class IntakeRotationMemberSerializer(BaseSerializer):
+    member_detail = UserLiteSerializer(read_only=True, source="member")
+
+    class Meta:
+        model = IntakeRotationMember
+        fields = ["id", "member", "member_detail", "sort_order", "is_active"]
+        read_only_fields = ["id"]

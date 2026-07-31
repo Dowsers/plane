@@ -198,6 +198,9 @@ from .intake.base import (
     IntakeViewSet,
     IntakeIssueViewSet,
     IntakeWorkItemDescriptionVersionEndpoint,
+    IntakeResponsibilitySettingEndpoint,
+    IntakeRotationMemberViewSet,
+    IntakeRotationMemberReorderEndpoint,
 )
 
 from .analytic.base import (

@@ -87,6 +87,12 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cycle_auto_rollover_task.cycle_auto_rollover_task",
         "schedule": crontab(minute=15),  # every hour, shortly after scheduling runs
     },
+    # Intake responsibility escalation - see
+    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+    "check-every-5-minutes-for-intake-escalations": {
+        "task": "plane.bgtasks.intake_escalation_task.check_intake_escalations",
+        "schedule": crontab(minute="*/5"),
+    },
 }
 
 

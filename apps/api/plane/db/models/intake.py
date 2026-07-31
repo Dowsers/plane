@@ -3,6 +3,8 @@
 # See the LICENSE file for details.
 
 # Django imports
+from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 # Module imports
@@ -72,6 +74,24 @@ class IntakeIssue(ProjectBaseModel):
     external_source = models.CharField(max_length=255, null=True, blank=True)
     external_id = models.CharField(max_length=255, blank=True, null=True)
     extra = models.JSONField(default=dict)
+    # Responsabilité d'intake & auto-routage - see
+    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="intake_assignments",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    escalation_count = models.PositiveIntegerField(default=0)
+    last_escalated_at = models.DateTimeField(null=True, blank=True)
+    assignment_source = models.CharField(
+        max_length=20,
+        choices=(("manual", "Manual"), ("fixed_owner", "Fixed owner"), ("round_robin", "Round robin")),
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "IntakeIssue"
@@ -82,3 +102,73 @@ class IntakeIssue(ProjectBaseModel):
     def __str__(self):
         """Return name of the Issue"""
         return f"{self.issue.name} <{self.intake.name}>"
+
+
+class IntakeResponsibilitySetting(ProjectBaseModel):
+    """
+    Per-project intake responsibility/auto-routing configuration - see
+    docs/feature-specs/02-cycles-intake.md ("Responsabilité d'intake &
+    auto-routage") in plane-selfhost. On-call shift calendars and
+    PagerDuty/OpsGenie sync are explicitly out of scope for this iteration -
+    only fixed_owner and round_robin modes are supported.
+    """
+
+    project = models.OneToOneField(
+        "db.Project",
+        on_delete=models.CASCADE,
+        related_name="intake_responsibility_setting",
+    )
+    is_enabled = models.BooleanField(default=False)
+    assignment_mode = models.CharField(
+        max_length=20,
+        choices=(("fixed_owner", "Fixed owner"), ("round_robin", "Round robin")),
+        default="round_robin",
+    )
+    fixed_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="intake_fixed_owner_settings",
+    )
+    escalation_timeout_minutes = models.PositiveIntegerField(
+        default=60, validators=[MinValueValidator(5), MaxValueValidator(1440)]
+    )
+    # Persistent round-robin pointer - exigence 8 de la spec (jamais remis à
+    # zéro entre deux items), muté sous select_for_update() pour
+    # l'atomicité (exigence 14).
+    rotation_cursor = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Intake Responsibility Setting"
+        verbose_name_plural = "Intake Responsibility Settings"
+        db_table = "intake_responsibility_settings"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Intake responsibility <{self.project.name}>"
+
+
+class IntakeRotationMember(ProjectBaseModel):
+    responsibility_setting = models.ForeignKey(
+        IntakeResponsibilitySetting,
+        on_delete=models.CASCADE,
+        related_name="rotation_members",
+    )
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="intake_rotation_memberships",
+    )
+    sort_order = models.FloatField(default=65535)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["responsibility_setting", "member", "deleted_at"]
+        verbose_name = "Intake Rotation Member"
+        verbose_name_plural = "Intake Rotation Members"
+        db_table = "intake_rotation_members"
+        ordering = ("sort_order",)
+
+    def __str__(self):
+        return f"{self.member_id} <{self.responsibility_setting_id}>"

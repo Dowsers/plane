@@ -9,6 +9,9 @@ from plane.app.views import (
     IntakeViewSet,
     IntakeIssueViewSet,
     IntakeWorkItemDescriptionVersionEndpoint,
+    IntakeResponsibilitySettingEndpoint,
+    IntakeRotationMemberViewSet,
+    IntakeRotationMemberReorderEndpoint,
 )
 
 
@@ -62,5 +65,25 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/intake-work-items/<uuid:work_item_id>/description-versions/<uuid:pk>/",
         IntakeWorkItemDescriptionVersionEndpoint.as_view(),
         name="intake-work-item-versions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-responsibility/",
+        IntakeResponsibilitySettingEndpoint.as_view(),
+        name="intake-responsibility",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-responsibility/rotation-members/",
+        IntakeRotationMemberViewSet.as_view({"get": "list", "post": "create"}),
+        name="intake-responsibility-rotation-member",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-responsibility/rotation-members/<uuid:pk>/",
+        IntakeRotationMemberViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="intake-responsibility-rotation-member",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-responsibility/rotation-members/reorder/",
+        IntakeRotationMemberReorderEndpoint.as_view(),
+        name="intake-responsibility-rotation-member-reorder",
     ),
 ]

@@ -7,7 +7,7 @@ import json
 
 # Django import
 from django.utils import timezone
-from django.db.models import Q, Count, OuterRef, Func, F, Prefetch, Subquery
+from django.db.models import Q, Count, Max, OuterRef, Func, F, Prefetch, Subquery
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
@@ -24,6 +24,8 @@ from plane.app.permissions import allow_permission, ROLE
 from plane.db.models import (
     Intake,
     IntakeIssue,
+    IntakeResponsibilitySetting,
+    IntakeRotationMember,
     Issue,
     State,
     StateGroup,
@@ -41,6 +43,8 @@ from plane.app.serializers import (
     IntakeSerializer,
     IntakeIssueSerializer,
     IntakeIssueDetailSerializer,
+    IntakeResponsibilitySettingSerializer,
+    IntakeRotationMemberSerializer,
     IssueDescriptionVersionDetailSerializer,
 )
 from plane.utils.issue_filters import issue_filters
@@ -51,6 +55,7 @@ from plane.utils.timezone_converter import user_timezone_converter
 from plane.utils.global_paginator import paginate
 from plane.utils.host import base_host
 from plane.db.models.intake import SourceType
+from plane.utils.intake_responsibility import assign_intake_responsibility
 
 
 class IntakeViewSet(BaseViewSet):
@@ -269,6 +274,10 @@ class IntakeIssueViewSet(BaseViewSet):
                 issue_id=serializer.data["id"],
                 source=SourceType.IN_APP,
             )
+            # Compute and persist the responsible member for this item, if
+            # the project has intake responsibility/auto-routing enabled -
+            # see docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+            assign_intake_responsibility(intake_issue, project, actor_id=request.user.id)
             # Create an Issue Activity
             issue_activity.delay(
                 type="issue.activity.created",
@@ -631,3 +640,163 @@ class IntakeWorkItemDescriptionVersionEndpoint(BaseAPIView):
             ),
         )
         return Response(paginated_data, status=status.HTTP_200_OK)
+
+
+class IntakeResponsibilitySettingEndpoint(BaseAPIView):
+    """
+    CRUD for a project's intake responsibility/auto-routing configuration -
+    see docs/feature-specs/02-cycles-intake.md ("Responsabilité d'intake &
+    auto-routage") in plane-selfhost. On-call shift calendars and
+    PagerDuty/OpsGenie sync are out of scope for this iteration.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def get(self, request, slug, project_id):
+        setting = IntakeResponsibilitySetting.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if setting is None:
+            return Response(
+                {
+                    "id": None,
+                    "workspace_id": None,
+                    "project_id": str(project_id),
+                    "is_enabled": False,
+                    "assignment_mode": "round_robin",
+                    "fixed_owner": None,
+                    "escalation_timeout_minutes": 60,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(IntakeResponsibilitySettingSerializer(setting).data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id):
+        project = Project.objects.filter(pk=project_id, workspace__slug=slug).first()
+        if project is None:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        setting, _ = IntakeResponsibilitySetting.objects.get_or_create(project=project)
+        serializer = IntakeResponsibilitySettingSerializer(setting, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def patch(self, request, slug, project_id):
+        setting = IntakeResponsibilitySetting.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if setting is None:
+            return Response({"error": "Setting not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = IntakeResponsibilitySettingSerializer(setting, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def delete(self, request, slug, project_id):
+        # Disables rather than deletes - past assignments stay on the intake
+        # issues (exigence 15 de la spec).
+        setting = IntakeResponsibilitySetting.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if setting is not None and setting.is_enabled:
+            setting.is_enabled = False
+            setting.save(update_fields=["is_enabled"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IntakeRotationMemberViewSet(BaseViewSet):
+    serializer_class = IntakeRotationMemberSerializer
+    model = IntakeRotationMember
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"), project_id=self.kwargs.get("project_id"))
+            .select_related("member")
+            .order_by("sort_order")
+        )
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def list(self, request, slug, project_id):
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def create(self, request, slug, project_id):
+        project = Project.objects.filter(pk=project_id, workspace__slug=slug).first()
+        if project is None:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        member_id = request.data.get("member")
+        # Guests are already barred from Intake triage actions - exigence 3
+        # de la spec applique la même règle à la rotation.
+        if not ProjectMember.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
+            member_id=member_id,
+            role__gte=ROLE.MEMBER.value,
+            is_active=True,
+        ).exists():
+            return Response(
+                {"error": "Only active project Members and Admins can be added to the rotation"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        setting, _ = IntakeResponsibilitySetting.objects.get_or_create(project=project)
+        max_sort_order = (
+            IntakeRotationMember.objects.filter(responsibility_setting=setting).aggregate(Max("sort_order"))[
+                "sort_order__max"
+            ]
+            or 0
+        )
+        rotation_member = IntakeRotationMember.objects.create(
+            project_id=project_id,
+            responsibility_setting=setting,
+            member_id=member_id,
+            sort_order=max_sort_order + 10000,
+        )
+        return Response(IntakeRotationMemberSerializer(rotation_member).data, status=status.HTTP_201_CREATED)
+
+    @allow_permission([ROLE.ADMIN])
+    def partial_update(self, request, slug, project_id, pk):
+        rotation_member = self.get_queryset().filter(pk=pk).first()
+        if rotation_member is None:
+            return Response({"error": "Rotation member not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = IntakeRotationMemberSerializer(rotation_member, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def destroy(self, request, slug, project_id, pk):
+        rotation_member = self.get_queryset().filter(pk=pk).first()
+        if rotation_member is not None:
+            rotation_member.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IntakeRotationMemberReorderEndpoint(BaseAPIView):
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id):
+        ordered_ids = request.data.get("rotation_member_ids", [])
+        if not isinstance(ordered_ids, list) or not ordered_ids:
+            return Response(
+                {"error": "rotation_member_ids must be a non-empty list"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rotation_members = {
+            str(rm.id): rm
+            for rm in IntakeRotationMember.objects.filter(
+                workspace__slug=slug, project_id=project_id, id__in=ordered_ids
+            )
+        }
+        updated = []
+        for index, rotation_member_id in enumerate(ordered_ids):
+            rotation_member = rotation_members.get(str(rotation_member_id))
+            if rotation_member is None:
+                continue
+            rotation_member.sort_order = (index + 1) * 10000
+            updated.append(rotation_member)
+
+        IntakeRotationMember.objects.bulk_update(updated, ["sort_order"], batch_size=100)
+        return Response(status=status.HTTP_204_NO_CONTENT)
