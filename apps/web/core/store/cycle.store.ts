@@ -86,6 +86,12 @@ export interface ICycleStore {
     cycleId: string,
     data: Partial<ICycle>
   ) => Promise<ICycle>;
+  startStopCycle: (
+    workspaceSlug: string,
+    projectId: string,
+    cycleId: string,
+    action: "start" | "end"
+  ) => Promise<ICycle>;
   deleteCycle: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<void>;
   // favorites
   addCycleToFavorites: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<any>;
@@ -142,6 +148,7 @@ export class CycleStore implements ICycleStore {
       fetchActiveCycleAnalytics: action,
       fetchCycleDetails: action,
       updateCycleDetails: action,
+      startStopCycle: action,
       deleteCycle: action,
       addCycleToFavorites: action,
       removeCycleFromFavorites: action,
@@ -612,6 +619,28 @@ export class CycleStore implements ICycleStore {
   };
 
   /**
+   * @description manually starts or ends a cycle
+   * @param workspaceSlug
+   * @param projectId
+   * @param cycleId
+   * @param action
+   */
+  startStopCycle = async (workspaceSlug: string, projectId: string, cycleId: string, cycleAction: "start" | "end") => {
+    try {
+      const response = await this.cycleService.startStopCycle(workspaceSlug, projectId, cycleId, cycleAction);
+      runInAction(() => {
+        set(this.cycleMap, [cycleId], { ...this.cycleMap?.[cycleId], ...response });
+      });
+      this.fetchCycleDetails(workspaceSlug, projectId, cycleId);
+      return response;
+    } catch (error) {
+      console.log("Failed to start/stop cycle from cycle store");
+      this.fetchCycleDetails(workspaceSlug, projectId, cycleId);
+      throw error;
+    }
+  };
+
+  /**
    * @description deletes a cycle
    * @param workspaceSlug
    * @param projectId
@@ -624,6 +653,7 @@ export class CycleStore implements ICycleStore {
         delete this.activeCycleIdMap[cycleId];
         if (this.rootStore.favorite.entityMap[cycleId]) this.rootStore.favorite.removeFavoriteFromStore(cycleId);
       });
+      return;
     });
 
   /**
@@ -695,6 +725,7 @@ export class CycleStore implements ICycleStore {
           set(this.cycleMap, [cycleId, "archived_at"], response.archived_at);
           if (this.rootStore.favorite.entityMap[cycleId]) this.rootStore.favorite.removeFavoriteFromStore(cycleId);
         });
+        return;
       })
       .catch((error) => {
         console.error("Failed to archive cycle in cycle store", error);
@@ -717,6 +748,7 @@ export class CycleStore implements ICycleStore {
         runInAction(() => {
           set(this.cycleMap, [cycleId, "archived_at"], null);
         });
+        return;
       })
       .catch((error) => {
         console.error("Failed to restore cycle in cycle store", error);

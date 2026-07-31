@@ -93,6 +93,7 @@ from .view.base import (
 from .cycle.base import (
     CycleViewSet,
     CycleDateCheckEndpoint,
+    CycleStartStopEndpoint,
     CycleFavoriteViewSet,
     TransferCycleIssueEndpoint,
     CycleUserPropertiesEndpoint,

@@ -91,6 +91,8 @@ export interface ICycle extends TProgressSnapshot {
   created_by?: string;
   description: string;
   end_date: string | null;
+  actual_start_date?: string | null;
+  actual_end_date?: string | null;
   id: string;
   is_favorite?: boolean;
   name: string;

@@ -62,6 +62,12 @@ class Cycle(ProjectBaseModel):
     description = models.TextField(verbose_name="Cycle Description", blank=True)
     start_date = models.DateTimeField(verbose_name="Start Date", blank=True, null=True)
     end_date = models.DateTimeField(verbose_name="End Date", blank=True, null=True)
+    # Manual start/stop, independent of the scheduled start_date/end_date -
+    # see docs/feature-specs/02-cycles-intake.md ("Démarrage/arrêt manuel
+    # d'un cycle") in plane-selfhost. When set, these take priority over the
+    # date-based CURRENT/UPCOMING/COMPLETED status computation.
+    actual_start_date = models.DateTimeField(null=True, blank=True)
+    actual_end_date = models.DateTimeField(null=True, blank=True)
     owned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

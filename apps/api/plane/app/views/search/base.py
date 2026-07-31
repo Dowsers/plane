@@ -435,6 +435,11 @@ class SearchEndpoint(BaseAPIView):
                         )
                         .annotate(
                             status=Case(
+                                When(Q(actual_end_date__isnull=False), then=Value("COMPLETED")),
+                                When(
+                                    Q(actual_start_date__isnull=False) & Q(actual_end_date__isnull=True),
+                                    then=Value("CURRENT"),
+                                ),
                                 When(
                                     Q(start_date__lte=timezone.now()) & Q(end_date__gte=timezone.now()),
                                     then=Value("CURRENT"),
@@ -638,6 +643,11 @@ class SearchEndpoint(BaseAPIView):
                         )
                         .annotate(
                             status=Case(
+                                When(Q(actual_end_date__isnull=False), then=Value("COMPLETED")),
+                                When(
+                                    Q(actual_start_date__isnull=False) & Q(actual_end_date__isnull=True),
+                                    then=Value("CURRENT"),
+                                ),
                                 When(
                                     Q(start_date__lte=timezone.now()) & Q(end_date__gte=timezone.now()),
                                     then=Value("CURRENT"),

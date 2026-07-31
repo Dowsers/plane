@@ -1902,6 +1902,18 @@ export default {
     transfer_work_items: "Transfer {count} work items",
     date_range: "Date range",
     add_date: "Add date",
+    start_cycle: "Start cycle",
+    end_cycle: "End cycle",
+    end_cycle_modal: {
+      title: "End cycle",
+      description_with_pending_items:
+        '"{name}" has {count} incomplete work items. You can transfer them to another cycle before ending, or leave them as is.',
+      description_no_pending_items: 'Are you sure you want to end "{name}"?',
+      transfer_and_pick_cycle: "Choose a cycle to transfer work items to",
+      end_without_transfer: "End without transferring",
+      end_cycle_action: "End cycle",
+      no_matching_cycles: "You don't have any other active or upcoming cycle to transfer to.",
+    },
     active_cycle: {
       label: "Active cycle",
       progress: "Progress",

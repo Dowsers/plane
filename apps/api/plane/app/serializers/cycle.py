@@ -69,6 +69,8 @@ class CycleSerializer(BaseSerializer):
             "description",
             "start_date",
             "end_date",
+            "actual_start_date",
+            "actual_end_date",
             "owned_by_id",
             "view_props",
             "sort_order",

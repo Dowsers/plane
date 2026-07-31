@@ -151,6 +151,14 @@ class CycleViewSet(BaseViewSet):
             )
             .annotate(
                 status=Case(
+                    # Manual start/stop (actual_start_date/actual_end_date)
+                    # takes priority over the scheduled dates - see
+                    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+                    When(Q(actual_end_date__isnull=False), then=Value("COMPLETED")),
+                    When(
+                        Q(actual_start_date__isnull=False) & Q(actual_end_date__isnull=True),
+                        then=Value("CURRENT"),
+                    ),
                     When(
                         Q(start_date__lte=current_time_in_utc) & Q(end_date__gte=current_time_in_utc),
                         then=Value("CURRENT"),
@@ -554,6 +562,70 @@ class CycleDateCheckEndpoint(BaseAPIView):
             )
         else:
             return Response({"status": True}, status=status.HTTP_200_OK)
+
+
+class CycleStartStopEndpoint(BaseAPIView):
+    """
+    Manual start/stop of a cycle, independent of its scheduled start_date/
+    end_date - see docs/feature-specs/02-cycles-intake.md ("Démarrage/arrêt
+    manuel d'un cycle") in plane-selfhost.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def post(self, request, slug, project_id, pk):
+        action = request.data.get("action")
+        if action not in ("start", "end"):
+            return Response({"error": "action must be 'start' or 'end'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cycle = Cycle.objects.filter(workspace__slug=slug, project_id=project_id, pk=pk).first()
+        if cycle is None:
+            return Response({"error": "Cycle not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        current_instance = json.dumps(CycleSerializer(cycle).data, cls=DjangoJSONEncoder)
+
+        if action == "start":
+            if cycle.actual_start_date is not None and cycle.actual_end_date is None:
+                return Response({"error": "Cycle is already started"}, status=status.HTTP_400_BAD_REQUEST)
+            already_active = (
+                Cycle.objects.filter(
+                    workspace__slug=slug,
+                    project_id=project_id,
+                    actual_start_date__isnull=False,
+                    actual_end_date__isnull=True,
+                )
+                .exclude(pk=pk)
+                .exists()
+            )
+            if already_active:
+                return Response(
+                    {"error": "Another cycle is already active in this project - end it before starting a new one."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            cycle.actual_start_date = timezone.now()
+            cycle.actual_end_date = None
+            cycle.save(update_fields=["actual_start_date", "actual_end_date"])
+        else:
+            if cycle.actual_start_date is None:
+                return Response({"error": "Cycle was not manually started"}, status=status.HTTP_400_BAD_REQUEST)
+            if cycle.actual_end_date is not None:
+                return Response({"error": "Cycle is already ended"}, status=status.HTTP_400_BAD_REQUEST)
+            cycle.actual_end_date = timezone.now()
+            cycle.save(update_fields=["actual_end_date"])
+
+        model_activity.delay(
+            model_name="cycle",
+            model_id=str(cycle.id),
+            requested_data={
+                "actual_start_date": str(cycle.actual_start_date) if cycle.actual_start_date else None,
+                "actual_end_date": str(cycle.actual_end_date) if cycle.actual_end_date else None,
+            },
+            current_instance=current_instance,
+            actor_id=request.user.id,
+            slug=slug,
+            origin=base_host(request=request, is_app=True),
+        )
+
+        return Response(CycleSerializer(cycle).data, status=status.HTTP_200_OK)
 
 
 class CycleFavoriteViewSet(BaseViewSet):
