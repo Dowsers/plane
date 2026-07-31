@@ -73,6 +73,7 @@ from plane.utils.grouper import (
 )
 from plane.utils.host import base_host
 from plane.utils.issue_filters import issue_filters
+from plane.utils.label_group import enforce_label_group_exclusivity
 from plane.utils.order_queryset import order_issue_queryset
 from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPaginator
 from plane.utils.sub_issue_automation import handle_sub_issue_automations
@@ -1284,6 +1285,7 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
                 batch_size=100,
                 ignore_conflicts=True,
             )
+            enforce_label_group_exclusivity(list(issues_by_id.keys()), label_ids)
             for issue_id in issues_by_id.keys():
                 succeeded_fields[issue_id].append("label_ids")
                 issue_activity.delay(

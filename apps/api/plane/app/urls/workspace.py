@@ -21,6 +21,8 @@ from plane.app.views import (
     WorkspaceUserProfileEndpoint,
     WorkspaceUserProfileIssuesEndpoint,
     WorkspaceLabelsEndpoint,
+    LabelMergeEndpoint,
+    LabelBulkRescopeEndpoint,
     WorkspaceProjectMemberEndpoint,
     WorkspaceUserPropertiesEndpoint,
     WorkspaceStatesEndpoint,
@@ -158,6 +160,16 @@ urlpatterns = [
         "workspaces/<str:slug>/labels/",
         WorkspaceLabelsEndpoint.as_view(),
         name="workspace-labels",
+    ),
+    path(
+        "workspaces/<str:slug>/labels/merge/",
+        LabelMergeEndpoint.as_view(),
+        name="workspace-labels-merge",
+    ),
+    path(
+        "workspaces/<str:slug>/labels/bulk-rescope/",
+        LabelBulkRescopeEndpoint.as_view(),
+        name="workspace-labels-bulk-rescope",
     ),
     path(
         "workspaces/<str:slug>/user-properties/",

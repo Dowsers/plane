@@ -47,6 +47,7 @@ from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
 )
+from plane.utils.label_group import enforce_label_group_exclusivity
 
 
 class IssueFlatSerializer(BaseSerializer):
@@ -321,6 +322,7 @@ class IssueCreateSerializer(BaseSerializer):
                     batch_size=10,
                     ignore_conflicts=True,
                 )
+                enforce_label_group_exclusivity([instance.id], labels)
             except IntegrityError:
                 pass
 
