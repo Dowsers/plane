@@ -26,6 +26,7 @@ from plane.db.models import (
     IssueReaction,
     IssueSubscriber,
     Label,
+    Milestone,
     Module,
     Project,
     State,
@@ -152,6 +153,51 @@ def track_parent(
                 comment="updated the parent issue to",
                 old_identifier=(old_parent.id if old_parent is not None else None),
                 new_identifier=(new_parent.id if new_parent is not None else None),
+                epoch=epoch,
+            )
+        )
+
+
+# Track changes in milestone attachment - see
+# docs/feature-specs/03-projects-roadmaps-initiatives.md ("Milestones de
+# projet") in plane-selfhost. Modeled on track_parent (a plain FK field),
+# not the cycle/module bespoke dispatch which lives outside this generic
+# ISSUE_ACTIVITY_MAPPER path entirely.
+def track_milestone(
+    requested_data,
+    current_instance,
+    issue_id,
+    project_id,
+    workspace_id,
+    actor_id,
+    issue_activities,
+    epoch,
+):
+    current_milestone_id = current_instance.get("milestone_id") or current_instance.get("milestone")
+    requested_milestone_id = requested_data.get("milestone_id") or requested_data.get("milestone")
+
+    if current_milestone_id is not None and not is_valid_uuid(current_milestone_id):
+        current_milestone_id = None
+    if requested_milestone_id is not None and not is_valid_uuid(requested_milestone_id):
+        requested_milestone_id = None
+
+    if current_milestone_id != requested_milestone_id:
+        new_milestone = Milestone.objects.filter(pk=requested_milestone_id, project_id=project_id).first()
+        old_milestone = Milestone.objects.filter(pk=current_milestone_id, project_id=project_id).first()
+
+        issue_activities.append(
+            IssueActivity(
+                issue_id=issue_id,
+                actor_id=actor_id,
+                verb="updated",
+                old_value=old_milestone.name if old_milestone else None,
+                new_value=new_milestone.name if new_milestone else None,
+                field="milestone",
+                project_id=project_id,
+                workspace_id=workspace_id,
+                comment="updated the milestone to",
+                old_identifier=old_milestone.id if old_milestone else None,
+                new_identifier=new_milestone.id if new_milestone else None,
                 epoch=epoch,
             )
         )
@@ -614,11 +660,13 @@ def update_issue_activity(
         "estimate_point": track_estimate_points,
         "archived_at": track_archive_at,
         "closed_to": track_closed_to,
+        "milestone_id": track_milestone,
         # External endpoint keys
         "parent": track_parent,
         "state": track_state,
         "assignees": track_assignees,
         "labels": track_labels,
+        "milestone": track_milestone,
     }
 
     requested_data = json.loads(requested_data) if requested_data is not None else None

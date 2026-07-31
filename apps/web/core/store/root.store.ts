@@ -41,6 +41,8 @@ import type { IInitiativeStore } from "./initiative.store";
 import { InitiativeStore } from "./initiative.store";
 import type { IInstanceStore } from "./instance.store";
 import { InstanceStore } from "./instance.store";
+import type { IMilestoneStore } from "./milestone.store";
+import { MilestoneStore } from "./milestone.store";
 import type { IIssueRootStore } from "./issue/root.store";
 import { IssueRootStore } from "./issue/root.store";
 import type { ILabelStore } from "./label.store";
@@ -80,6 +82,7 @@ export class CoreRootStore {
   cycle: ICycleStore;
   cycleFilter: ICycleFilterStore;
   initiative: IInitiativeStore;
+  milestone: IMilestoneStore;
   module: IModuleStore;
   moduleFilter: IModuleFilterStore;
   projectView: IProjectViewStore;
@@ -117,6 +120,7 @@ export class CoreRootStore {
     this.cycle = new CycleStore(this);
     this.cycleFilter = new CycleFilterStore(this);
     this.initiative = new InitiativeStore(this);
+    this.milestone = new MilestoneStore(this);
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
@@ -152,6 +156,7 @@ export class CoreRootStore {
     this.cycle = new CycleStore(this);
     this.cycleFilter = new CycleFilterStore(this);
     this.initiative = new InitiativeStore(this);
+    this.milestone = new MilestoneStore(this);
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);

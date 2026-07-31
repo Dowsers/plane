@@ -11,6 +11,7 @@ from .external import urlpatterns as external_urls
 from .initiative import urlpatterns as initiative_urls
 from .intake import urlpatterns as intake_urls
 from .issue import urlpatterns as issue_urls
+from .milestone import urlpatterns as milestone_urls
 from .module import urlpatterns as module_urls
 from .notification import urlpatterns as notification_urls
 from .page import urlpatterns as page_urls
@@ -33,6 +34,7 @@ urlpatterns = [
     *initiative_urls,
     *intake_urls,
     *issue_urls,
+    *milestone_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

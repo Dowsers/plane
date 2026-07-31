@@ -29,6 +29,7 @@ from plane.db.models import (
     Label,
     CycleIssue,
     Cycle,
+    Milestone,
     Module,
     ModuleIssue,
     IssueLink,
@@ -87,6 +88,9 @@ class IssueCreateSerializer(BaseSerializer):
     )
     parent_id = serializers.PrimaryKeyRelatedField(
         source="parent", queryset=Issue.objects.all(), required=False, allow_null=True
+    )
+    milestone_id = serializers.PrimaryKeyRelatedField(
+        source="milestone", queryset=Milestone.objects.all(), required=False, allow_null=True
     )
     label_ids = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(queryset=Label.objects.all()),
@@ -790,6 +794,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "parent_id",
             "cycle_id",
             "module_ids",
+            "milestone_id",
             "label_ids",
             "assignee_ids",
             "sub_issues_count",
@@ -845,6 +850,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "sequence_id": instance.sequence_id,
             "project_id": instance.project_id,
             "parent_id": instance.parent_id,
+            "milestone_id": instance.milestone_id,
             "created_at": instance.created_at,
             "updated_at": instance.updated_at,
             "created_by": instance.created_by_id,

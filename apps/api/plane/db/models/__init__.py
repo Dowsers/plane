@@ -20,6 +20,7 @@ from .exporter import ExporterHistory
 from .importer import Importer
 from .initiative import Initiative, InitiativeProject, InitiativeActivity
 from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
+from .milestone import Milestone
 from .intake_channel import (
     IntakeChannel,
     InboundEmailAlias,

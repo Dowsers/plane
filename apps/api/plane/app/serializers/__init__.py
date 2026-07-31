@@ -138,6 +138,7 @@ from .initiative import (
     InitiativeProjectSerializer,
     InitiativeActivitySerializer,
 )
+from .milestone import MilestoneSerializer, MilestoneWriteSerializer
 
 from .analytic import AnalyticViewSerializer
 

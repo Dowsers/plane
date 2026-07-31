@@ -5,6 +5,7 @@
  */
 
 import { observer } from "mobx-react";
+import { Flag } from "lucide-react";
 // i18n
 import { useTranslation } from "@plane/i18n";
 // ui
@@ -45,6 +46,7 @@ import { IssueWorklogProperty } from "@/plane-web/components/issues/worklog/prop
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
 import { IssueCycleSelect } from "./cycle-select";
 import { IssueLabel } from "./label";
+import { IssueMilestoneSelect } from "./milestone-select";
 import { IssueModuleSelect } from "./module-select";
 import type { TIssueOperations } from "./root";
 
@@ -238,6 +240,17 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 />
               </SidebarPropertyListItem>
             )}
+
+            <SidebarPropertyListItem icon={Flag} label={t("milestones.label")}>
+              <IssueMilestoneSelect
+                className="h-7.5 w-full grow"
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                issueId={issueId}
+                issueOperations={issueOperations}
+                disabled={!isEditable}
+              />
+            </SidebarPropertyListItem>
 
             <SidebarPropertyListItem icon={ParentPropertyIcon} label={t("common.parent")}>
               <IssueParentSelectRoot

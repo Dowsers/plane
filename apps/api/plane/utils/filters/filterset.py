@@ -133,6 +133,9 @@ class IssueFilterSet(BaseFilterSet):
     module_id = filters.UUIDFilter(method="filter_module_id")
     module_id__in = UUIDInFilter(method="filter_module_id_in", lookup_expr="in")
 
+    milestone_id = filters.UUIDFilter(field_name="milestone_id")
+    milestone_id__in = UUIDInFilter(field_name="milestone_id", lookup_expr="in")
+
     mention_id = filters.UUIDFilter(method="filter_mention_id")
     mention_id__in = UUIDInFilter(method="filter_mention_id_in", lookup_expr="in")
 

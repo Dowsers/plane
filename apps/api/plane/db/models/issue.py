@@ -167,6 +167,16 @@ class Issue(ProjectBaseModel):
         null=True,
         blank=True,
     )
+    # Exclusive milestone attachment (one issue -> at most one milestone) -
+    # see docs/feature-specs/03-projects-roadmaps-initiatives.md
+    # ("Milestones de projet") in plane-selfhost.
+    milestone = models.ForeignKey(
+        "db.Milestone",
+        on_delete=models.SET_NULL,
+        related_name="issue_milestone",
+        null=True,
+        blank=True,
+    )
 
     issue_objects = IssueManager()
 

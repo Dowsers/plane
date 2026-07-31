@@ -16,6 +16,7 @@ export const ISSUE_FORM_TAB_INDICES = [
   "target_date",
   "cycle_id",
   "module_ids",
+  "milestone_id",
   "estimate_point",
   "parent_id",
   "create_more",

@@ -21,6 +21,7 @@ import { CycleDropdown } from "@/components/dropdowns/cycle";
 import { DateDropdown } from "@/components/dropdowns/date";
 import { EstimateDropdown } from "@/components/dropdowns/estimate";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
+import { MilestoneDropdown } from "@/components/dropdowns/milestone";
 import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
@@ -239,6 +240,27 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
                 tabIndex={getIndex("module_ids")}
                 multiple
                 showCount
+              />
+            </div>
+          )}
+        />
+      )}
+      {workspaceSlug && (
+        <Controller
+          control={control}
+          name="milestone_id"
+          render={({ field: { value, onChange } }) => (
+            <div className="h-7">
+              <MilestoneDropdown
+                projectId={projectId ?? undefined}
+                onChange={(milestoneId) => {
+                  onChange(milestoneId);
+                  handleFormChange();
+                }}
+                placeholder={t("milestones.label")}
+                value={value}
+                buttonVariant="border-with-text"
+                tabIndex={getIndex("milestone_id")}
               />
             </div>
           )}
