@@ -18,6 +18,7 @@ from .draft import (
 from .estimate import Estimate, EstimatePoint
 from .exporter import ExporterHistory
 from .importer import Importer
+from .initiative import Initiative, InitiativeProject, InitiativeActivity
 from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
 from .intake_channel import (
     IntakeChannel,

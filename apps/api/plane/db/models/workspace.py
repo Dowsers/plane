@@ -137,6 +137,11 @@ class Workspace(BaseModel):
     organization_size = models.CharField(max_length=20, blank=True, null=True)
     timezone = models.CharField(max_length=255, default="UTC", choices=TIMEZONE_CHOICES)
     background_color = models.CharField(max_length=255, default=get_random_color)
+    # Settings > Features toggle for the Initiatives nav item - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md in
+    # plane-selfhost. Opt-in (default False) so existing workspaces don't
+    # suddenly gain a new top-level nav item after migration.
+    is_initiatives_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         """Return name of the Workspace"""

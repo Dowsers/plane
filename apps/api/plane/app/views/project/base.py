@@ -7,8 +7,11 @@ import json
 
 
 # Django imports
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.contrib.postgres.fields import ArrayField
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Exists, F, OuterRef, Prefetch, Q, Subquery, Count
+from django.db.models import Exists, F, OuterRef, Prefetch, Q, Subquery, Count, UUIDField, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 # Third Party imports
@@ -41,6 +44,7 @@ from plane.db.models import (
 )
 from plane.db.models.intake import IntakeIssueStatus
 from plane.utils.host import base_host
+from plane.utils.initiative_health import recalculate_initiatives_health_for_project
 
 
 class ProjectViewSet(BaseViewSet):
@@ -85,6 +89,16 @@ class ProjectViewSet(BaseViewSet):
                 ).values("anchor")
             )
             .annotate(sort_order=Subquery(sort_order))
+            .annotate(
+                initiative_ids=Coalesce(
+                    ArrayAgg(
+                        "initiative_links__initiative_id",
+                        distinct=True,
+                        filter=Q(initiative_links__deleted_at__isnull=True),
+                    ),
+                    Value([], output_field=ArrayField(UUIDField())),
+                )
+            )
             .prefetch_related(
                 Prefetch(
                     "project_projectmember",
@@ -358,6 +372,12 @@ class ProjectViewSet(BaseViewSet):
                         project=project,
                         is_default=True,
                     )
+
+            if "health" in request.data:
+                # Explicit call, not a signal - see
+                # docs/feature-specs/03-projects-roadmaps-initiatives.md in
+                # plane-selfhost.
+                recalculate_initiatives_health_for_project(pk)
 
             project = self.get_queryset().filter(pk=serializer.data["id"]).first()
 

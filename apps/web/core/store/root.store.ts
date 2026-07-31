@@ -37,6 +37,8 @@ import type { IGlobalViewStore } from "./global-view.store";
 import { GlobalViewStore } from "./global-view.store";
 import type { IProjectInboxStore } from "./inbox/project-inbox.store";
 import { ProjectInboxStore } from "./inbox/project-inbox.store";
+import type { IInitiativeStore } from "./initiative.store";
+import { InitiativeStore } from "./initiative.store";
 import type { IInstanceStore } from "./instance.store";
 import { InstanceStore } from "./instance.store";
 import type { IIssueRootStore } from "./issue/root.store";
@@ -77,6 +79,7 @@ export class CoreRootStore {
   memberRoot: IMemberRootStore;
   cycle: ICycleStore;
   cycleFilter: ICycleFilterStore;
+  initiative: IInitiativeStore;
   module: IModuleStore;
   moduleFilter: IModuleFilterStore;
   projectView: IProjectViewStore;
@@ -113,6 +116,7 @@ export class CoreRootStore {
     this.memberRoot = new MemberRootStore(this as unknown as RootStore);
     this.cycle = new CycleStore(this);
     this.cycleFilter = new CycleFilterStore(this);
+    this.initiative = new InitiativeStore(this);
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
@@ -147,6 +151,7 @@ export class CoreRootStore {
     this.memberRoot = new MemberRootStore(this as unknown as RootStore);
     this.cycle = new CycleStore(this);
     this.cycleFilter = new CycleFilterStore(this);
+    this.initiative = new InitiativeStore(this);
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);

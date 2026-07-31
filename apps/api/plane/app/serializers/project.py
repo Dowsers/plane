@@ -121,6 +121,7 @@ class ProjectListSerializer(DynamicBaseSerializer):
     cover_image_url = serializers.CharField(read_only=True)
     inbox_view = serializers.BooleanField(read_only=True, source="intake_view")
     next_work_item_sequence = serializers.SerializerMethodField()
+    initiative_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
 
     def get_members(self, obj):
         project_members = getattr(obj, "members_list", None)

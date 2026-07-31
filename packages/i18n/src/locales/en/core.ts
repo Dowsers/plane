@@ -17,6 +17,7 @@ export default {
     analytics: "Analytics",
     work_items: "Work items",
     cycles: "Cycles",
+    initiatives: "Initiatives",
     modules: "Modules",
     intake: "Intake",
     drafts: "Drafts",

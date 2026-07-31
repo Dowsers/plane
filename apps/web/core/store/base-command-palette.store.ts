@@ -24,6 +24,7 @@ export interface IBaseCommandPaletteStore {
   isCreateProjectModalOpen: boolean;
   isCreateCycleModalOpen: boolean;
   isCreateModuleModalOpen: boolean;
+  isCreateInitiativeModalOpen: boolean;
   isCreateViewModalOpen: boolean;
   createPageModal: TCreatePageModal;
   isCreateIssueModalOpen: boolean;
@@ -41,6 +42,7 @@ export interface IBaseCommandPaletteStore {
   // toggle actions
   toggleCreateProjectModal: (value?: boolean) => void;
   toggleCreateCycleModal: (value?: boolean) => void;
+  toggleCreateInitiativeModal: (value?: boolean) => void;
   toggleCreateViewModal: (value?: boolean) => void;
   toggleCreatePageModal: (value?: TCreatePageModal) => void;
   toggleCreateIssueModal: (value?: boolean, storeType?: TCreateModalStoreTypes, allowedProjectIds?: string[]) => void;
@@ -57,6 +59,7 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
   isCreateProjectModalOpen: boolean = false;
   isCreateCycleModalOpen: boolean = false;
   isCreateModuleModalOpen: boolean = false;
+  isCreateInitiativeModalOpen: boolean = false;
   isCreateViewModalOpen: boolean = false;
   isCreateIssueModalOpen: boolean = false;
   isDeleteIssueModalOpen: boolean = false;
@@ -77,6 +80,7 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       isCreateProjectModalOpen: observable.ref,
       isCreateCycleModalOpen: observable.ref,
       isCreateModuleModalOpen: observable.ref,
+      isCreateInitiativeModalOpen: observable.ref,
       isCreateViewModalOpen: observable.ref,
       isCreateIssueModalOpen: observable.ref,
       isDeleteIssueModalOpen: observable.ref,
@@ -90,6 +94,7 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       // toggle actions
       toggleCreateProjectModal: action,
       toggleCreateCycleModal: action,
+      toggleCreateInitiativeModal: action,
       toggleCreateViewModal: action,
       toggleCreatePageModal: action,
       toggleCreateIssueModal: action,
@@ -111,6 +116,7 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       this.isCreateIssueModalOpen ||
       this.isCreateCycleModalOpen ||
       this.isCreateProjectModalOpen ||
+      this.isCreateInitiativeModalOpen ||
       this.isCreateModuleModalOpen ||
       this.isCreateViewModalOpen ||
       store.powerK.isShortcutsListModalOpen ||
@@ -232,6 +238,19 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       this.isCreateModuleModalOpen = value;
     } else {
       this.isCreateModuleModalOpen = !this.isCreateModuleModalOpen;
+    }
+  };
+
+  /**
+   * Toggles the create initiative modal
+   * @param value
+   * @returns
+   */
+  toggleCreateInitiativeModal = (value?: boolean) => {
+    if (value !== undefined) {
+      this.isCreateInitiativeModalOpen = value;
+    } else {
+      this.isCreateInitiativeModalOpen = !this.isCreateInitiativeModalOpen;
     }
   };
 

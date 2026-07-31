@@ -67,6 +67,17 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/active-cycles", "./(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx"),
         ]),
 
+        // Initiatives
+        layout("./(all)/[workspaceSlug]/(projects)/initiatives/layout.tsx", [
+          route(":workspaceSlug/initiatives", "./(all)/[workspaceSlug]/(projects)/initiatives/page.tsx"),
+        ]),
+        layout("./(all)/[workspaceSlug]/(projects)/initiatives/(detail)/[initiativeId]/layout.tsx", [
+          route(
+            ":workspaceSlug/initiatives/:initiativeId",
+            "./(all)/[workspaceSlug]/(projects)/initiatives/(detail)/[initiativeId]/page.tsx"
+          ),
+        ]),
+
         // Analytics
         layout("./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/layout.tsx", [
           route(":workspaceSlug/analytics/:tabId", "./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx"),
@@ -281,6 +292,10 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(
             ":workspaceSlug/settings/webhooks/:webhookId",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/[webhookId]/page.tsx"
+          ),
+          route(
+            ":workspaceSlug/settings/features",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/features/page.tsx"
           ),
         ]),
 

@@ -36,6 +36,7 @@ from plane.db.models import (
     Module,
     Page,
     IssueView,
+    Initiative,
     ProjectMember,
     ProjectPage,
     WorkspaceMember,
@@ -267,6 +268,22 @@ class GlobalSearchEndpoint(BaseAPIView):
             )[:100]
         )
 
+    def filter_initiatives(self, query, slug, _project_id, _workspace_search):
+        fields = ["name"]
+        q = Q()
+        if query:
+            for field in fields:
+                q |= Q(**{f"{field}__icontains": query})
+
+        initiatives = Initiative.objects.filter(
+            q,
+            workspace__slug=slug,
+            workspace__workspace_member__member=self.request.user,
+            workspace__workspace_member__is_active=True,
+        )
+
+        return initiatives.order_by("-created_at").distinct().values("name", "id", "workspace__slug")
+
     def get(self, request, slug):
         query = request.query_params.get("search", False)
         entities_param = request.query_params.get("entities")
@@ -282,6 +299,7 @@ class GlobalSearchEndpoint(BaseAPIView):
             "issue_view": self.filter_views,
             "page": self.filter_pages,
             "intake": self.filter_intakes,
+            "initiative": self.filter_initiatives,
         }
 
         # Determine which entities to search

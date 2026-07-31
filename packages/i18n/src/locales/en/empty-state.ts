@@ -148,6 +148,11 @@ export default {
         "To try this out, start adding a work item and leave it mid-way or create your first draft below. 😉",
       cta_primary: "Create draft work item",
     },
+    initiatives: {
+      title: "No initiatives yet",
+      description: "Group related projects under an initiative to track progress and health toward a shared goal.",
+      cta_primary: "Create initiative",
+    },
     projects_archived: {
       title: "No projects archived",
       description: "Looks like all your projects are still active—great job!",

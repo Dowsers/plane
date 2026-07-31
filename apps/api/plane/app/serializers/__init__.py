@@ -132,6 +132,12 @@ from .intake_channel import (
     SlackWorkspaceConnectionSerializer,
     SlackChannelProjectMappingSerializer,
 )
+from .initiative import (
+    InitiativeSerializer,
+    InitiativeWriteSerializer,
+    InitiativeProjectSerializer,
+    InitiativeActivitySerializer,
+)
 
 from .analytic import AnalyticViewSerializer
 

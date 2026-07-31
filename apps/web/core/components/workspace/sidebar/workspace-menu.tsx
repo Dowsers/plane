@@ -6,12 +6,17 @@
 
 import React from "react";
 import { observer } from "mobx-react";
+import { Target } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
 import { AnalyticsIcon, CycleIcon, ProjectIcon, ViewsIcon } from "@plane/propel/icons";
 import { EUserWorkspaceRoles } from "@plane/types";
+// components
+import { CreateUpdateInitiativeModal } from "@/components/initiatives/create-update-modal";
 // hooks
+import { useCommandPalette } from "@/hooks/store/use-command-palette";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 import useLocalStorage from "@/hooks/use-local-storage";
 // local imports
 import { SidebarWorkspaceMenuHeader } from "./workspace-menu-header";
@@ -20,6 +25,9 @@ import { SidebarWorkspaceMenuItem } from "./workspace-menu-item";
 export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
   // router params
   const { workspaceSlug } = useParams();
+  // store hooks
+  const { currentWorkspace } = useWorkspace();
+  const { isCreateInitiativeModalOpen, toggleCreateInitiativeModal } = useCommandPalette();
   // local storage
   const { setValue: toggleWorkspaceMenu, storedValue } = useLocalStorage<boolean>("is_workspace_menu_open", true);
   // derived values
@@ -47,6 +55,21 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
       Icon: CycleIcon,
     },
+    // Opt-in nav item - hidden unless the workspace admin has turned on
+    // Initiatives under Settings > Features (default off, see
+    // docs/feature-specs/03-projects-roadmaps-initiatives.md in
+    // plane-selfhost).
+    ...(currentWorkspace?.is_initiatives_enabled
+      ? [
+          {
+            key: "initiatives",
+            labelTranslationKey: "sidebar.initiatives",
+            href: `/${workspaceSlug}/initiatives/`,
+            access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+            Icon: Target,
+          },
+        ]
+      : []),
     {
       key: "analytics",
       labelTranslationKey: "sidebar.analytics",
@@ -58,6 +81,13 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
 
   return (
     <Disclosure as="div" defaultOpen>
+      {currentWorkspace?.is_initiatives_enabled && (
+        <CreateUpdateInitiativeModal
+          isOpen={isCreateInitiativeModalOpen}
+          handleClose={() => toggleCreateInitiativeModal(false)}
+          initiative={null}
+        />
+      )}
       <SidebarWorkspaceMenuHeader isWorkspaceMenuOpen={isWorkspaceMenuOpen} toggleWorkspaceMenu={toggleWorkspaceMenu} />
       <Transition
         show={isWorkspaceMenuOpen}

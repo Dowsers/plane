@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { FileText, FolderPlus, Layers, SquarePlus } from "lucide-react";
+import { FileText, FolderPlus, Layers, SquarePlus, Target } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { ContrastIcon, DiceIcon, LayersIcon } from "@plane/propel/icons";
@@ -16,6 +16,7 @@ import { useCommandPalette } from "@/hooks/store/use-command-palette";
 import { useProject } from "@/hooks/store/use-project";
 import { useUser } from "@/hooks/store/user";
 import { useInstance } from "@/hooks/store/use-instance";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 
 export type TPowerKCreationCommandKeys =
   | "create_work_item"
@@ -24,6 +25,7 @@ export type TPowerKCreationCommandKeys =
   | "create_cycle"
   | "create_module"
   | "create_project"
+  | "create_initiative"
   | "create_workspace";
 
 /**
@@ -37,11 +39,13 @@ export const usePowerKCreationCommandsRecord = (): Record<TPowerKCreationCommand
     permission: { allowPermissions },
   } = useUser();
   const { workspaceProjectIds, getPartialProjectById } = useProject();
+  const { currentWorkspace } = useWorkspace();
   const {
     toggleCreateIssueModal,
     toggleCreateProjectModal,
     toggleCreateCycleModal,
     toggleCreateModuleModal,
+    toggleCreateInitiativeModal,
     toggleCreateViewModal,
     toggleCreatePageModal,
   } = useCommandPalette();
@@ -51,6 +55,9 @@ export const usePowerKCreationCommandsRecord = (): Record<TPowerKCreationCommand
     [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
     EUserPermissionsLevel.WORKSPACE
   );
+  const canCreateInitiative =
+    Boolean(currentWorkspace?.is_initiatives_enabled) &&
+    allowPermissions([EUserPermissions.ADMIN, EUserPermissions.MEMBER], EUserPermissionsLevel.WORKSPACE);
   const hasProjectMemberLevelPermissions = (ctx: TPowerKContext) =>
     allowPermissions(
       [EUserProjectRoles.ADMIN, EUserProjectRoles.MEMBER],
@@ -140,6 +147,18 @@ export const usePowerKCreationCommandsRecord = (): Record<TPowerKCreationCommand
       action: () => toggleCreateProjectModal(true),
       isEnabled: () => Boolean(canCreateProject),
       isVisible: () => Boolean(canCreateProject),
+      closeOnSelect: true,
+    },
+    create_initiative: {
+      id: "create_initiative",
+      type: "action",
+      group: "create",
+      i18n_title: "power_k.creation_actions.create_initiative",
+      icon: Target,
+      keySequence: "nt",
+      action: () => toggleCreateInitiativeModal(true),
+      isEnabled: () => Boolean(canCreateInitiative),
+      isVisible: () => Boolean(canCreateInitiative),
       closeOnSelect: true,
     },
     create_workspace: {

@@ -218,6 +218,10 @@ from .intake.channel import (
     SlackChannelProjectMappingViewSet,
 )
 
+from .initiative.base import InitiativeViewSet
+from .initiative.project import InitiativeProjectViewSet
+from .initiative.activity import InitiativeActivityEndpoint
+
 from .analytic.base import (
     AnalyticsEndpoint,
     AnalyticViewViewset,

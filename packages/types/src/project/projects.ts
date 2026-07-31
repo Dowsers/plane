@@ -6,6 +6,7 @@
 
 import type { TLogoProps } from "../common";
 import type { TUserPermissions } from "../enums";
+import type { TInitiativeHealth } from "../initiative";
 import type { TStateGroups } from "../state";
 import type { IUser, IUserLite } from "../users";
 import type { IWorkspace } from "../workspace";
@@ -33,6 +34,8 @@ export interface IPartialProject {
   guest_view_all_features?: boolean;
   project_lead?: IUserLite | string | null;
   network?: number;
+  health?: TInitiativeHealth | null;
+  initiative_ids?: string[];
   // Timestamps
   created_at?: Date;
   updated_at?: Date;

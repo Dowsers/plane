@@ -26,6 +26,7 @@ export * from "./file";
 export * from "./home";
 export * from "./importer";
 export * from "./inbox";
+export * from "./initiative";
 export * from "./instance";
 export * from "./integration";
 export * from "./issues";

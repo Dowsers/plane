@@ -98,6 +98,15 @@ class Project(BaseModel):
     is_time_tracking_enabled = models.BooleanField(default=False)
     is_issue_type_enabled = models.BooleanField(default=False)
     guest_view_all_features = models.BooleanField(default=False)
+    # Manually-set health, source of truth for the Initiative rollup - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Entité
+    # Initiatives") in plane-selfhost.
+    health = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=(("on-track", "On Track"), ("at-risk", "At Risk"), ("off-track", "Off Track")),
+    )
     cover_image = models.TextField(blank=True, null=True)
     cover_image_asset = models.ForeignKey(
         "db.FileAsset",
