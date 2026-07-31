@@ -107,6 +107,17 @@ class Project(BaseModel):
         blank=True,
         choices=(("on-track", "On Track"), ("at-risk", "At Risk"), ("off-track", "Off Track")),
     )
+    # Traceability only - a one-time blueprint copy, never a live link back
+    # to the template. See
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Templates de
+    # projet") in plane-selfhost.
+    created_from_template = models.ForeignKey(
+        "db.ProjectTemplate",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_projects",
+    )
     cover_image = models.TextField(blank=True, null=True)
     cover_image_asset = models.ForeignKey(
         "db.FileAsset",

@@ -13,6 +13,7 @@ from .intake import urlpatterns as intake_urls
 from .issue import urlpatterns as issue_urls
 from .milestone import urlpatterns as milestone_urls
 from .module import urlpatterns as module_urls
+from .project_template import urlpatterns as project_template_urls
 from .notification import urlpatterns as notification_urls
 from .page import urlpatterns as page_urls
 from .project import urlpatterns as project_urls
@@ -39,6 +40,7 @@ urlpatterns = [
     *notification_urls,
     *page_urls,
     *project_urls,
+    *project_template_urls,
     *search_urls,
     *state_urls,
     *user_urls,

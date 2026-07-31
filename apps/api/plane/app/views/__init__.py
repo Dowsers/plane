@@ -225,6 +225,12 @@ from .initiative.activity import InitiativeActivityEndpoint
 from .milestone.base import MilestoneViewSet, MilestoneReorderEndpoint
 from .milestone.issue import MilestoneIssueViewSet, MilestoneAvailableIssuesEndpoint
 
+from .project_template.base import (
+    ProjectTemplateViewSet,
+    ProjectTemplateDuplicateEndpoint,
+    ProjectTemplateCreateProjectEndpoint,
+)
+
 from .analytic.base import (
     AnalyticsEndpoint,
     AnalyticViewViewset,

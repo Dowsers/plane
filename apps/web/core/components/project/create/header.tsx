@@ -27,6 +27,8 @@ type Props = {
   handleFormOnChange?: () => void;
   isClosable?: boolean;
   handleTemplateSelect?: () => void;
+  selectedTemplateName?: string | null;
+  onClearTemplate?: () => void;
   showActionButtons?: boolean;
 };
 
@@ -37,6 +39,8 @@ function ProjectCreateHeader(props: Props) {
     handleFormOnChange,
     isClosable = true,
     handleTemplateSelect,
+    selectedTemplateName,
+    onClearTemplate,
     showActionButtons = true,
   } = props;
   const { watch, control, setValue } = useFormContext<IProject>();
@@ -56,7 +60,11 @@ function ProjectCreateHeader(props: Props) {
       />
       {showActionButtons && (
         <div className="absolute top-2.5 left-2.5">
-          <ProjectTemplateSelect onClick={handleTemplateSelect} />
+          <ProjectTemplateSelect
+            onClick={handleTemplateSelect}
+            selectedTemplateName={selectedTemplateName}
+            onClear={onClearTemplate}
+          />
         </div>
       )}
       {isClosable && (

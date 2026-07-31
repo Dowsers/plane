@@ -61,6 +61,8 @@ import type { IProjectPageStore } from "./pages/project-page.store";
 import { ProjectPageStore } from "./pages/project-page.store";
 import type { IProjectRootStore } from "./project";
 import { ProjectRootStore } from "./project";
+import type { IProjectTemplateStore } from "./project-template.store";
+import { ProjectTemplateStore } from "./project-template.store";
 import type { IProjectViewStore } from "./project-view.store";
 import { ProjectViewStore } from "./project-view.store";
 import type { IRouterStore } from "./router.store";
@@ -84,6 +86,7 @@ export class CoreRootStore {
   initiative: IInitiativeStore;
   milestone: IMilestoneStore;
   module: IModuleStore;
+  projectTemplate: IProjectTemplateStore;
   moduleFilter: IModuleFilterStore;
   projectView: IProjectViewStore;
   globalView: IGlobalViewStore;
@@ -124,6 +127,7 @@ export class CoreRootStore {
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
+    this.projectTemplate = new ProjectTemplateStore(this);
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);
     this.state = new StateStore(this as unknown as RootStore);
@@ -160,6 +164,7 @@ export class CoreRootStore {
     this.module = new ModulesStore(this);
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
+    this.projectTemplate = new ProjectTemplateStore(this);
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);
     this.state = new StateStore(this as unknown as RootStore);

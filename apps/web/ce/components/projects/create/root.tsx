@@ -10,14 +10,17 @@ import { FormProvider, useForm } from "react-hook-form";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import type { IProjectTemplateListItem } from "@plane/types";
 import { EFileAssetType } from "@plane/types";
 // components
 import ProjectCommonAttributes from "@/components/project/create/common-attributes";
 import ProjectCreateHeader from "@/components/project/create/header";
 import ProjectCreateButtons from "@/components/project/create/project-create-buttons";
+import { ProjectTemplateGalleryModal } from "@/components/project-templates/gallery-modal";
 // hooks
 import { getCoverImageType, uploadCoverImage } from "@/helpers/cover-image.helper";
 import { useProject } from "@/hooks/store/use-project";
+import { useProjectTemplate } from "@/hooks/store/use-project-template";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // plane web types
 import type { TProject } from "@/plane-web/types/projects";
@@ -39,8 +42,11 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
   // store
   const { t } = useTranslation();
   const { addProjectToFavorites, createProject, updateProject } = useProject();
+  const { createProjectFromTemplate } = useProjectTemplate();
   // states
   const [shouldAutoSyncIdentifier, setShouldAutoSyncIdentifier] = useState(true);
+  const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<IProjectTemplateListItem | null>(null);
   // form info
   const methods = useForm<TProject>({
     defaultValues: { ...getProjectFormValues(), ...data },
@@ -92,7 +98,17 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
       }
     }
 
-    return createProject(workspaceSlug.toString(), formData)
+    const createPromise = selectedTemplate
+      ? createProjectFromTemplate(workspaceSlug.toString(), selectedTemplate.id, {
+          name: formData.name ?? "",
+          identifier: formData.identifier ?? "",
+          network: formData.network,
+          description: formData.description,
+          logo_props: formData.logo_props,
+        })
+      : createProject(workspaceSlug.toString(), formData);
+
+    return createPromise
       .then(async (res) => {
         if (uploadedAssetUrl) {
           await updateCoverImageStatus(res.id, uploadedAssetUrl);
@@ -111,6 +127,7 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
           handleAddToFavorites(res.id);
         }
         handleNextStep(res.id);
+        return;
       })
       .catch((err) => {
         try {
@@ -158,14 +175,34 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
   const handleClose = () => {
     onClose();
     setShouldAutoSyncIdentifier(true);
+    setSelectedTemplate(null);
     setTimeout(() => {
       reset();
     }, 300);
   };
 
+  const handleTemplateSelected = (template: IProjectTemplateListItem) => {
+    setSelectedTemplate(template);
+    setIsTemplateGalleryOpen(false);
+    setValue("network", template.network);
+    setValue("logo_props", template.logo_props);
+    if (template.description) setValue("description", template.description);
+  };
+
   return (
     <FormProvider {...methods}>
-      <ProjectCreateHeader handleClose={handleClose} isMobile={isMobile} />
+      <ProjectTemplateGalleryModal
+        isOpen={isTemplateGalleryOpen}
+        handleClose={() => setIsTemplateGalleryOpen(false)}
+        onSelect={handleTemplateSelected}
+      />
+      <ProjectCreateHeader
+        handleClose={handleClose}
+        isMobile={isMobile}
+        handleTemplateSelect={() => setIsTemplateGalleryOpen(true)}
+        selectedTemplateName={selectedTemplate?.name}
+        onClearTemplate={() => setSelectedTemplate(null)}
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="px-3">
         <div className="mt-9 space-y-6 pb-5">

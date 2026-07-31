@@ -569,6 +569,7 @@ export default {
     },
     done: "Done",
     cancelled: "Cancelled",
+    duplicate: "Duplicate",
     sub_work_items: "Sub-work items",
     comment: "Comment",
     workspace_level: "Workspace level",
@@ -1923,6 +1924,40 @@ export default {
       title: "Initiatives",
       description: "Group related projects under an Initiative to track progress and health toward a shared goal.",
       toggle_label: "Enable Initiatives",
+    },
+  },
+  project_templates: {
+    label: "Project templates",
+    save_as_template: "Save as template",
+    use_template: "Use template",
+    start_from_scratch: "Start from scratch",
+    start_from_template: "Start from a template",
+    name: "Template name",
+    description: "Description",
+    include_current_work_items: "Include this project's current work items",
+    include_current_work_items_hint: "Off by default, to avoid accidentally duplicating a production backlog.",
+    usage_count: "Used {count} times",
+    states_count: "{count} states",
+    labels_count: "{count} labels",
+    issues_count: "{count} starter items",
+    delete_confirm: {
+      title: "Delete project template",
+      description:
+        "Are you sure you want to delete this project template? Projects already created from it are not affected.",
+    },
+    toast: {
+      save_success: "Project template saved successfully",
+      duplicate_success: "Project template duplicated successfully",
+      delete_success: "Project template deleted successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    settings: {
+      title: "Project templates",
+      description: "Reusable blueprints (states, labels, members, starter work items) for new projects.",
+    },
+    empty_state: {
+      title: "No project templates yet",
+      description: "Save an existing, well-organized project as a template to standardize how new projects start.",
     },
   },
   milestones: {

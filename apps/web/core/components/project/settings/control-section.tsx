@@ -18,6 +18,7 @@ import { useProject } from "@/hooks/store/use-project";
 // local imports
 import { ArchiveRestoreProjectModal } from "../archive-restore-modal";
 import { DeleteProjectModal } from "../delete-project-modal";
+import { SaveProjectAsTemplateModal } from "../save-as-template-modal";
 
 type Props = {
   projectId: string;
@@ -30,6 +31,7 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
   // states
   const [selectProject, setSelectedProject] = useState<string | null>(null);
   const [archiveProject, setArchiveProject] = useState<boolean>(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState<boolean>(false);
   // params
   const { workspaceSlug } = useParams();
   // store hooks
@@ -55,10 +57,29 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
         isOpen={Boolean(selectProject)}
         onClose={() => setSelectedProject(null)}
       />
+      {workspaceSlug && (
+        <SaveProjectAsTemplateModal
+          isOpen={saveAsTemplate}
+          handleClose={() => setSaveAsTemplate(false)}
+          workspaceSlug={workspaceSlug.toString()}
+          projectId={projectId}
+          projectName={currentProjectDetails.name}
+        />
+      )}
       <div className="rounded-lg border border-subtle bg-layer-2">
-        {/* Project Selector */}
         <SettingsBoxedControlItem
           className="rounded-b-none border-0 border-b"
+          title={t("project_templates.save_as_template")}
+          description="Capture this project's states, labels, and members as a reusable template for future projects."
+          control={
+            <Button variant="secondary" onClick={() => setSaveAsTemplate(true)}>
+              {t("project_templates.save_as_template")}
+            </Button>
+          }
+        />
+        {/* Project Selector */}
+        <SettingsBoxedControlItem
+          className="rounded-none border-0 border-b"
           title={t("archive")}
           description="Archiving a project will unlist your project from your side navigation although you will still be able to access it from your projects page. You can restore the project or delete it whenever you want."
           control={
