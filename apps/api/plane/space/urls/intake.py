@@ -10,6 +10,9 @@ from plane.space.views import (
     WorkspaceProjectDeployBoardEndpoint,
     IntakeFormPublicEndpoint,
     IntakeFormSubmitEndpoint,
+    EmailInboundWebhookEndpoint,
+    SlackEventsWebhookEndpoint,
+    SlackInteractiveWebhookEndpoint,
 )
 
 
@@ -43,5 +46,20 @@ urlpatterns = [
         "intake-forms/<str:token>/submit/",
         IntakeFormSubmitEndpoint.as_view(),
         name="intake-form-submit",
+    ),
+    path(
+        "intake/email/inbound/",
+        EmailInboundWebhookEndpoint.as_view(),
+        name="intake-email-inbound",
+    ),
+    path(
+        "integrations/slack/events/",
+        SlackEventsWebhookEndpoint.as_view(),
+        name="intake-slack-events",
+    ),
+    path(
+        "integrations/slack/interactive/",
+        SlackInteractiveWebhookEndpoint.as_view(),
+        name="intake-slack-interactive",
     ),
 ]

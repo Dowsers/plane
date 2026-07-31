@@ -22,6 +22,12 @@ from .intake import IntakeIssuePublicViewSet
 
 from .intake_form import IntakeFormPublicEndpoint, IntakeFormSubmitEndpoint
 
+from .intake_channel import (
+    EmailInboundWebhookEndpoint,
+    SlackEventsWebhookEndpoint,
+    SlackInteractiveWebhookEndpoint,
+)
+
 from .cycle import ProjectCyclesEndpoint
 
 from .module import ProjectModulesEndpoint

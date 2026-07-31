@@ -48,6 +48,9 @@ class SourceType(models.TextChoices):
     IN_APP = "IN_APP"
     PUBLIC_FORM = "PUBLIC_FORM"
     API = "API"
+    # Skeleton only - see docker/api/omnichannel-intake-skeleton/README.md.
+    EMAIL = "EMAIL"
+    SLACK = "SLACK"
 
 
 class IntakeIssueStatus(models.IntegerChoices):
@@ -162,6 +165,10 @@ class IntakeIssue(ProjectBaseModel):
     # Hash of the submitter's IP (never the raw IP) - used for abuse
     # analysis without retaining PII beyond what's needed for rate limiting.
     submitter_ip_hash = models.CharField(max_length=64, null=True, blank=True)
+    # Intake omnicanal (email + Slack-to-issue) - SKELETON, see
+    # docker/api/omnichannel-intake-skeleton/README.md in plane-selfhost.
+    external_thread_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    external_participant_meta = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "IntakeIssue"

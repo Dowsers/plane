@@ -31,6 +31,8 @@ from plane.app.views import (
     WorkspaceModulesEndpoint,
     WorkspaceCyclesEndpoint,
     WorkspaceActiveCyclesEndpoint,
+    SlackWorkspaceConnectionEndpoint,
+    SlackWorkspaceConnectEndpoint,
     WorkspaceFavoriteEndpoint,
     WorkspaceFavoriteGroupEndpoint,
     WorkspaceDraftIssueViewSet,
@@ -201,6 +203,16 @@ urlpatterns = [
         "workspaces/<str:slug>/active-cycles/",
         WorkspaceActiveCyclesEndpoint.as_view(),
         name="workspace-active-cycles",
+    ),
+    path(
+        "workspaces/<str:slug>/slack-connection/",
+        SlackWorkspaceConnectionEndpoint.as_view(),
+        name="slack-workspace-connection",
+    ),
+    path(
+        "workspaces/<str:slug>/slack-connection/connect/",
+        SlackWorkspaceConnectEndpoint.as_view(),
+        name="slack-workspace-connect",
     ),
     path(
         "workspaces/<str:slug>/user-favorites/",

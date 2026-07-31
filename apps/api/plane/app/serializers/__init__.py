@@ -126,6 +126,12 @@ from .triage_rule import (
     TriageRuleConditionSerializer,
     TriageRuleActionSerializer,
 )
+from .intake_channel import (
+    IntakeChannelSerializer,
+    InboundEmailAliasSerializer,
+    SlackWorkspaceConnectionSerializer,
+    SlackChannelProjectMappingSerializer,
+)
 
 from .analytic import AnalyticViewSerializer
 

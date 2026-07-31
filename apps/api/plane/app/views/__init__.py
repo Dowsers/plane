@@ -210,6 +210,13 @@ from .intake.triage_rule import (
     TriageRuleDryRunEndpoint,
     TriageRuleReapplyEndpoint,
 )
+from .intake.channel import (
+    IntakeChannelViewSet,
+    IntakeChannelEmailRegenerateEndpoint,
+    SlackWorkspaceConnectionEndpoint,
+    SlackWorkspaceConnectEndpoint,
+    SlackChannelProjectMappingViewSet,
+)
 
 from .analytic.base import (
     AnalyticsEndpoint,

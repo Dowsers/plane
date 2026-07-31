@@ -18,6 +18,9 @@ from plane.app.views import (
     TriageRuleReapplyEndpoint,
     IntakeFormViewSet,
     IntakeFormRegenerateTokenEndpoint,
+    IntakeChannelViewSet,
+    IntakeChannelEmailRegenerateEndpoint,
+    SlackChannelProjectMappingViewSet,
 )
 
 
@@ -131,5 +134,30 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/intake-forms/<uuid:pk>/regenerate-token/",
         IntakeFormRegenerateTokenEndpoint.as_view(),
         name="intake-form-regenerate-token",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-channels/",
+        IntakeChannelViewSet.as_view({"get": "list", "post": "create"}),
+        name="intake-channel",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-channels/<uuid:pk>/",
+        IntakeChannelViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="intake-channel",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/intake-channels/<uuid:pk>/regenerate-email/",
+        IntakeChannelEmailRegenerateEndpoint.as_view(),
+        name="intake-channel-regenerate-email",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/slack-channel-mappings/",
+        SlackChannelProjectMappingViewSet.as_view({"get": "list", "post": "create"}),
+        name="slack-channel-mapping",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/slack-channel-mappings/<uuid:pk>/",
+        SlackChannelProjectMappingViewSet.as_view({"delete": "destroy"}),
+        name="slack-channel-mapping",
     ),
 ]
