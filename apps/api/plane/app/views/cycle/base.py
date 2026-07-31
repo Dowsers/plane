@@ -36,6 +36,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from plane.app.permissions import allow_permission, ROLE
 from plane.app.serializers import (
+    CycleAutoScheduleConfigSerializer,
     CycleSerializer,
     CycleUserPropertiesSerializer,
     CycleWriteSerializer,
@@ -43,6 +44,7 @@ from plane.app.serializers import (
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.db.models import (
     Cycle,
+    CycleAutoScheduleConfig,
     CycleIssue,
     UserFavorite,
     CycleUserProperties,
@@ -56,6 +58,7 @@ from plane.utils.analytics_plot import burndown_plot
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.utils.host import base_host
 from plane.utils.cycle_transfer_issues import transfer_cycle_issues
+from plane.utils.cycle_auto_schedule import preview_next_windows
 from .. import BaseAPIView, BaseViewSet
 from plane.bgtasks.webhook_task import model_activity
 from plane.utils.timezone_converter import convert_to_utc, user_timezone_converter
@@ -626,6 +629,97 @@ class CycleStartStopEndpoint(BaseAPIView):
         )
 
         return Response(CycleSerializer(cycle).data, status=status.HTTP_200_OK)
+
+
+class CycleAutoScheduleConfigEndpoint(BaseAPIView):
+    """
+    CRUD for a project's recurring cycle auto-scheduling configuration - see
+    docs/feature-specs/02-cycles-intake.md ("Moteur de auto-scheduling de
+    cycles récurrents") in plane-selfhost.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def get(self, request, slug, project_id):
+        config = CycleAutoScheduleConfig.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if config is None:
+            return Response(
+                {
+                    "id": None,
+                    "workspace_id": None,
+                    "project_id": str(project_id),
+                    "is_enabled": False,
+                    "cadence_weeks": 2,
+                    "cooldown_days": 0,
+                    "lookahead_count": 1,
+                    "start_day_of_week": 0,
+                    "naming_template": "Cycle {number}",
+                    "rollover_enabled": False,
+                    "next_auto_number": 1,
+                    "last_run_at": None,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(CycleAutoScheduleConfigSerializer(config).data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id):
+        project = Project.objects.filter(pk=project_id, workspace__slug=slug).first()
+        if project is None:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        config, _ = CycleAutoScheduleConfig.objects.get_or_create(project=project)
+        serializer = CycleAutoScheduleConfigSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def patch(self, request, slug, project_id):
+        config = CycleAutoScheduleConfig.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if config is None:
+            return Response({"error": "Auto-schedule configuration not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CycleAutoScheduleConfigSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN])
+    def delete(self, request, slug, project_id):
+        # Disables rather than deletes - already-created cycles are left
+        # untouched (exigence 14 de la spec).
+        config = CycleAutoScheduleConfig.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if config is not None and config.is_enabled:
+            config.is_enabled = False
+            config.save(update_fields=["is_enabled"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CycleAutoSchedulePreviewEndpoint(BaseAPIView):
+    """
+    Read-only preview of the next N auto-scheduled cycle windows, without
+    persisting anything - see docs/feature-specs/02-cycles-intake.md
+    ("GET /cycles/auto-schedule/preview/") in plane-selfhost.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def get(self, request, slug, project_id):
+        project = Project.objects.filter(pk=project_id, workspace__slug=slug).first()
+        if project is None:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        config = CycleAutoScheduleConfig.objects.filter(workspace__slug=slug, project_id=project_id).first()
+        if config is None:
+            config = CycleAutoScheduleConfig(project=project, workspace_id=project.workspace_id)
+
+        try:
+            count = int(request.GET.get("count", config.lookahead_count))
+        except ValueError:
+            return Response({"error": "count must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        count = max(1, min(count, 10))
+
+        windows = preview_next_windows(config, project, count)
+        return Response(windows, status=status.HTTP_200_OK)
 
 
 class CycleFavoriteViewSet(BaseViewSet):

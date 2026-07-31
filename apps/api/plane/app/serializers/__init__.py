@@ -50,6 +50,7 @@ from .cycle import (
     CycleIssueSerializer,
     CycleWriteSerializer,
     CycleUserPropertiesSerializer,
+    CycleAutoScheduleConfigSerializer,
 )
 from .asset import FileAssetSerializer
 from .issue import (

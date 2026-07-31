@@ -77,6 +77,16 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.exporter_expired_task.delete_old_s3_link",
         "schedule": crontab(hour=3, minute=45),  # UTC 03:45
     },
+    # Recurring cycle auto-scheduling - see
+    # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
+    "check-every-hour-for-cycle-auto-schedule": {
+        "task": "plane.bgtasks.cycle_auto_schedule_task.cycle_auto_schedule_task",
+        "schedule": crontab(minute=0),  # every hour, on the hour
+    },
+    "check-every-hour-for-cycle-auto-rollover": {
+        "task": "plane.bgtasks.cycle_auto_rollover_task.cycle_auto_rollover_task",
+        "schedule": crontab(minute=15),  # every hour, shortly after scheduling runs
+    },
 }
 
 

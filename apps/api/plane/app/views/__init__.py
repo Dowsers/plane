@@ -94,6 +94,8 @@ from .cycle.base import (
     CycleViewSet,
     CycleDateCheckEndpoint,
     CycleStartStopEndpoint,
+    CycleAutoScheduleConfigEndpoint,
+    CycleAutoSchedulePreviewEndpoint,
     CycleFavoriteViewSet,
     TransferCycleIssueEndpoint,
     CycleUserPropertiesEndpoint,

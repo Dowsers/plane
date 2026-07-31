@@ -158,3 +158,24 @@ export type TProgressChartData = {
   ideal: number;
   actual: number;
 }[];
+
+export type TCycleAutoScheduleConfig = {
+  id: string | null;
+  workspace_id: string | null;
+  project_id: string;
+  is_enabled: boolean;
+  cadence_weeks: number;
+  cooldown_days: number;
+  lookahead_count: number;
+  start_day_of_week: number;
+  naming_template: string;
+  rollover_enabled: boolean;
+  next_auto_number: number;
+  last_run_at: string | null;
+};
+
+export type TCycleAutoScheduleWindowPreview = {
+  name: string;
+  start_date: string;
+  end_date: string;
+};

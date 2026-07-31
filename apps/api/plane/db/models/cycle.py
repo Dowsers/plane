@@ -7,6 +7,7 @@ import pytz
 
 # Django imports
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 # Module imports
@@ -68,6 +69,20 @@ class Cycle(ProjectBaseModel):
     # date-based CURRENT/UPCOMING/COMPLETED status computation.
     actual_start_date = models.DateTimeField(null=True, blank=True)
     actual_end_date = models.DateTimeField(null=True, blank=True)
+    # Recurring auto-scheduling - see docs/feature-specs/02-cycles-intake.md
+    # ("Moteur de auto-scheduling de cycles récurrents") in plane-selfhost.
+    generated_by_schedule = models.ForeignKey(
+        "db.CycleAutoScheduleConfig",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_cycles",
+    )
+    is_auto_scheduled = models.BooleanField(default=False)
+    # Idempotency marker for the rollover task - set once the incomplete
+    # issues of this cycle have been transferred to its successor, so a
+    # delayed/retried task run never double-transfers.
+    auto_rollover_completed_at = models.DateTimeField(null=True, blank=True)
     owned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -105,6 +120,45 @@ class Cycle(ProjectBaseModel):
     def __str__(self):
         """Return name of the cycle"""
         return f"{self.name} <{self.project.name}>"
+
+
+class CycleAutoScheduleConfig(ProjectBaseModel):
+    """
+    Recurring cycle auto-scheduling configuration, one per project - see
+    docs/feature-specs/02-cycles-intake.md ("Moteur de auto-scheduling de
+    cycles récurrents") in plane-selfhost.
+    """
+
+    project = models.OneToOneField(
+        "db.Project",
+        on_delete=models.CASCADE,
+        related_name="cycle_auto_schedule_config",
+    )
+    is_enabled = models.BooleanField(default=False)
+    cadence_weeks = models.PositiveSmallIntegerField(
+        default=2, validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    cooldown_days = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(14)])
+    lookahead_count = models.PositiveSmallIntegerField(
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(3)]
+    )
+    # 0 = Monday ... 6 = Sunday, matching Python's date.weekday()
+    start_day_of_week = models.SmallIntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(6)]
+    )
+    naming_template = models.CharField(max_length=255, default="Cycle {number}")
+    rollover_enabled = models.BooleanField(default=False)
+    next_auto_number = models.PositiveIntegerField(default=1)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Cycle Auto Schedule Config"
+        verbose_name_plural = "Cycle Auto Schedule Configs"
+        db_table = "cycle_auto_schedule_configs"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Auto-schedule config <{self.project.name}>"
 
 
 class CycleIssue(ProjectBaseModel):

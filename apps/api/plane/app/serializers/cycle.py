@@ -8,7 +8,7 @@ from rest_framework import serializers
 # Module imports
 from .base import BaseSerializer
 from .issue import IssueStateSerializer
-from plane.db.models import Cycle, CycleIssue, CycleUserProperties
+from plane.db.models import Cycle, CycleAutoScheduleConfig, CycleIssue, CycleUserProperties
 from plane.utils.timezone_converter import convert_to_utc
 
 
@@ -106,3 +106,28 @@ class CycleUserPropertiesSerializer(BaseSerializer):
         model = CycleUserProperties
         fields = "__all__"
         read_only_fields = ["workspace", "project", "cycle", "user"]
+
+
+class CycleAutoScheduleConfigSerializer(BaseSerializer):
+    def validate_naming_template(self, value):
+        if "{number}" not in value:
+            raise serializers.ValidationError("naming_template must contain the {number} placeholder")
+        return value
+
+    class Meta:
+        model = CycleAutoScheduleConfig
+        fields = [
+            "id",
+            "workspace_id",
+            "project_id",
+            "is_enabled",
+            "cadence_weeks",
+            "cooldown_days",
+            "lookahead_count",
+            "start_day_of_week",
+            "naming_template",
+            "rollover_enabled",
+            "next_auto_number",
+            "last_run_at",
+        ]
+        read_only_fields = ["id", "workspace_id", "project_id", "next_auto_number", "last_run_at"]

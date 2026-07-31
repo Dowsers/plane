@@ -14,6 +14,8 @@ import type {
   TCycleDistribution,
   TProgressSnapshot,
   TCycleEstimateDistribution,
+  TCycleAutoScheduleConfig,
+  TCycleAutoScheduleWindowPreview,
 } from "@plane/types";
 import { APIService } from "@/services/api.service";
 
@@ -150,6 +152,48 @@ export class CycleService extends APIService {
   ): Promise<ICycle> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/start-stop/`, {
       action,
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCycleAutoScheduleConfig(workspaceSlug: string, projectId: string): Promise<TCycleAutoScheduleConfig> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/auto-schedule/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateCycleAutoScheduleConfig(
+    workspaceSlug: string,
+    projectId: string,
+    data: Partial<TCycleAutoScheduleConfig>
+  ): Promise<TCycleAutoScheduleConfig> {
+    return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/auto-schedule/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async disableCycleAutoScheduleConfig(workspaceSlug: string, projectId: string): Promise<void> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/auto-schedule/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async previewCycleAutoSchedule(
+    workspaceSlug: string,
+    projectId: string,
+    count: number
+  ): Promise<TCycleAutoScheduleWindowPreview[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/auto-schedule/preview/`, {
+      params: { count },
     })
       .then((response) => response?.data)
       .catch((error) => {

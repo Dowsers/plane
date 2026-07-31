@@ -13,6 +13,7 @@ import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view
 import { PageHead } from "@/components/core/page-title";
 import { ProjectSettingsFeatureControlItem } from "@/components/settings/project/content/feature-control-item";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
+import { CycleAutoScheduleSettings } from "@/components/cycles/auto-schedule";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
@@ -56,6 +57,7 @@ function FeaturesCyclesSettingsPage({ params }: Route.ComponentProps) {
             workspaceSlug={workspaceSlug}
           />
         </div>
+        <CycleAutoScheduleSettings workspaceSlug={workspaceSlug} projectId={projectId} />
       </section>
     </SettingsContentWrapper>
   );

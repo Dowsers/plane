@@ -10,6 +10,8 @@ from plane.app.views import (
     CycleIssueViewSet,
     CycleDateCheckEndpoint,
     CycleStartStopEndpoint,
+    CycleAutoScheduleConfigEndpoint,
+    CycleAutoSchedulePreviewEndpoint,
     CycleFavoriteViewSet,
     CycleProgressEndpoint,
     CycleAnalyticsEndpoint,
@@ -63,6 +65,16 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/<uuid:pk>/start-stop/",
         CycleStartStopEndpoint.as_view(),
         name="project-cycle-start-stop",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/auto-schedule/",
+        CycleAutoScheduleConfigEndpoint.as_view(),
+        name="project-cycle-auto-schedule",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/auto-schedule/preview/",
+        CycleAutoSchedulePreviewEndpoint.as_view(),
+        name="project-cycle-auto-schedule-preview",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/user-favorite-cycles/",
