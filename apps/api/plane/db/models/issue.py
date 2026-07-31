@@ -286,6 +286,12 @@ IssueRelationChoices._REVERSE_MAPPING = {forward: reverse for forward, reverse i
 
 
 class IssueRelation(ProjectBaseModel):
+    class DataMigrationStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        IN_PROGRESS = "in_progress", "In Progress"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
     issue = models.ForeignKey(Issue, related_name="issue_relation", on_delete=models.CASCADE)
     related_issue = models.ForeignKey(Issue, related_name="issue_related", on_delete=models.CASCADE)
     relation_type = models.CharField(
@@ -293,6 +299,17 @@ class IssueRelation(ProjectBaseModel):
         verbose_name="Issue Relation Type",
         default=IssueRelationChoices.BLOCKED_BY,
     )
+    # Only meaningful when relation_type == "duplicate" - tracks the async
+    # migration of `issue`'s comments/attachments/subscribers onto
+    # `related_issue`. See docs/feature-specs/01-core-issue-tracking.md
+    # ("Migration des données lors du marquage Duplicate") in plane-selfhost.
+    data_migration_status = models.CharField(
+        max_length=20,
+        choices=DataMigrationStatus.choices,
+        null=True,
+        blank=True,
+    )
+    data_migrated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ["issue", "related_issue", "deleted_at"]
@@ -449,6 +466,16 @@ class IssueComment(ChangeTrackerMixin, ProjectBaseModel):
     )
     attachments = ArrayField(models.URLField(), size=10, blank=True, default=list)
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="issue_comments")
+    # Set when this comment was moved here by the Duplicate data-migration
+    # (see IssueRelation.data_migration_status) - keeps a record of where it
+    # originally lived.
+    moved_from_issue = models.ForeignKey(
+        Issue,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="comments_moved_out",
+    )
     # System can also create comment
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

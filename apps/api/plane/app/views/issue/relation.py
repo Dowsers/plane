@@ -30,6 +30,7 @@ from plane.db.models import (
     CycleIssue,
 )
 from plane.bgtasks.issue_activities_task import issue_activity
+from plane.bgtasks.duplicate_issue_data_migration_task import duplicate_issue_data_migration_task
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.utils.host import base_host
 
@@ -235,6 +236,15 @@ class IssueRelationViewSet(BaseViewSet):
             batch_size=10,
             ignore_conflicts=True,
         )
+
+        # Kick off the async data migration (comments/attachments/subscribers)
+        # for every "duplicate" relation just created. Safe to reference
+        # relation.id here even with ignore_conflicts=True: the primary key
+        # is a client-generated UUID (default=uuid.uuid4), not DB-assigned,
+        # so it's already set on the Python objects before bulk_create runs.
+        for relation in issue_relation:
+            if relation.relation_type == "duplicate":
+                duplicate_issue_data_migration_task.delay(relation_id=str(relation.id), actor_id=str(request.user.id))
 
         issue_activity.delay(
             type="issue_relation.activity.created",

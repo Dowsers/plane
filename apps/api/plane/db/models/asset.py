@@ -52,6 +52,11 @@ class FileAsset(BaseModel):
     draft_issue = models.ForeignKey("db.DraftIssue", on_delete=models.CASCADE, null=True, related_name="assets")
     project = models.ForeignKey("db.Project", on_delete=models.CASCADE, null=True, related_name="assets")
     issue = models.ForeignKey("db.Issue", on_delete=models.CASCADE, null=True, related_name="assets")
+    # Set when this attachment was moved here by the Duplicate data-migration
+    # (see IssueRelation.data_migration_status).
+    moved_from_issue = models.ForeignKey(
+        "db.Issue", on_delete=models.SET_NULL, null=True, blank=True, related_name="assets_moved_out"
+    )
     comment = models.ForeignKey("db.IssueComment", on_delete=models.CASCADE, null=True, related_name="assets")
     page = models.ForeignKey("db.Page", on_delete=models.CASCADE, null=True, related_name="assets")
     entity_type = models.CharField(max_length=255, null=True, blank=True)
