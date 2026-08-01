@@ -330,6 +330,13 @@ class IssueRelation(ProjectBaseModel):
                 name="issue_relation_unique_issue_related_issue_when_deleted_at_null",
             )
         ]
+        # Speeds up the "blocked_by" pair lookup behind the Gantt dependency
+        # line overlay - see docs/feature-specs/03-projects-roadmaps-initiatives.md
+        # ("Lignes de dependance Gantt") in plane-selfhost.
+        indexes = [
+            models.Index(fields=["issue", "relation_type"], name="issue_rel_issue_type_idx"),
+            models.Index(fields=["related_issue", "relation_type"], name="issue_rel_related_type_idx"),
+        ]
         verbose_name = "Issue Relation"
         verbose_name_plural = "Issue Relations"
         db_table = "issue_relations"

@@ -5,16 +5,20 @@
  */
 
 import { observer } from "mobx-react";
-import { Expand, Shrink } from "lucide-react";
+import { Expand, GitBranch, Shrink } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 // plane
+import { GANTT_TIMELINE_TYPE } from "@plane/types";
 import type { TGanttViews } from "@plane/types";
+import { Tooltip } from "@plane/propel/tooltip";
 import { Row } from "@plane/ui";
 // components
 import { cn } from "@plane/utils";
 import { VIEWS_LIST } from "@/components/gantt-chart/data";
+import { useTimeLineType } from "@/components/gantt-chart/contexts";
 // helpers
 // hooks
+import { useGanttDependencyLinesToggle } from "@/hooks/use-gantt-dependency-lines-toggle";
 import { useTimeLineChartStore } from "@/hooks/use-timeline-chart";
 //
 import { GANTT_BREADCRUMBS_HEIGHT } from "../constants";
@@ -35,6 +39,8 @@ export const GanttChartHeader = observer(function GanttChartHeader(props: Props)
     props;
   // chart hook
   const { currentView } = useTimeLineChartStore();
+  const timelineType = useTimeLineType();
+  const { isEnabled: showDependencyLines, toggle: toggleDependencyLines } = useGanttDependencyLinesToggle();
 
   return (
     <Row
@@ -49,7 +55,8 @@ export const GanttChartHeader = observer(function GanttChartHeader(props: Props)
 
       <div className="flex flex-wrap items-center gap-2">
         {VIEWS_LIST.map((chartView: any) => (
-          <div
+          <button
+            type="button"
             key={chartView?.key}
             className={cn(
               "cursor-pointer rounded-md bg-layer-transparent p-1 px-2 text-11 hover:bg-layer-transparent-hover",
@@ -60,9 +67,24 @@ export const GanttChartHeader = observer(function GanttChartHeader(props: Props)
             onClick={() => handleChartView(chartView?.key)}
           >
             {t(chartView?.i18n_title)}
-          </div>
+          </button>
         ))}
       </div>
+
+      {timelineType === GANTT_TIMELINE_TYPE.ISSUE && (
+        <Tooltip tooltipContent={t("gantt.dependency_lines")} position="top">
+          <button
+            type="button"
+            className={cn(
+              "flex items-center justify-center rounded-md border border-subtle bg-layer-transparent p-1 transition-all hover:bg-layer-transparent-hover",
+              { "bg-layer-transparent-selected": showDependencyLines }
+            )}
+            onClick={toggleDependencyLines}
+          >
+            <GitBranch className="h-4 w-4" />
+          </button>
+        </Tooltip>
+      )}
 
       {showToday && (
         <button

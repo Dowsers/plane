@@ -19,8 +19,9 @@ from rest_framework import status
 
 # Module imports
 from .. import BaseViewSet
+from ..base import BaseAPIView
 from plane.app.serializers import IssueRelationSerializer, RelatedIssueSerializer
-from plane.app.permissions import ProjectEntityPermission
+from plane.app.permissions import ROLE, ProjectEntityPermission, allow_permission
 from plane.db.models import (
     Project,
     IssueRelation,
@@ -292,3 +293,41 @@ class IssueRelationViewSet(BaseViewSet):
             origin=base_host(request=request, is_app=True),
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IssueGanttDependenciesEndpoint(BaseAPIView):
+    """Read-only "blocked_by" pairs among a given set of issues - powers the
+    dependency-line overlay on the Gantt views (Project Issues/Cycle/Module,
+    see docs/feature-specs/03-projects-roadmaps-initiatives.md ("Lignes de
+    dependance Gantt") in plane-selfhost). Mirrors IssueListEndpoint's
+    comma-separated `issues` query param convention rather than the POST +
+    JSON body the spec proposed.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    def get(self, request, slug, project_id):
+        issue_ids = request.GET.get("issues", False)
+
+        if not issue_ids:
+            return Response({"error": "Issues are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue_ids = [issue_id for issue_id in issue_ids.split(",") if issue_id != ""]
+
+        dependencies = IssueRelation.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
+            relation_type="blocked_by",
+            issue_id__in=issue_ids,
+            related_issue_id__in=issue_ids,
+        ).values("issue_id", "related_issue_id")
+
+        return Response(
+            [
+                {
+                    "blocked_issue_id": dependency["issue_id"],
+                    "blocking_issue_id": dependency["related_issue_id"],
+                }
+                for dependency in dependencies
+            ],
+            status=status.HTTP_200_OK,
+        )

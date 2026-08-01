@@ -43,6 +43,15 @@ export interface IBlockUpdateDependencyData {
 
 export type TGanttViews = "week" | "month" | "quarter";
 
+// Read-only "blocked_by" pair among two issues rendered on the same Gantt
+// view - powers the dependency line overlay, see
+// docs/feature-specs/03-projects-roadmaps-initiatives.md ("Lignes de
+// dependance Gantt") in plane-selfhost.
+export interface TGanttDependencyPair {
+  blocked_issue_id: string;
+  blocking_issue_id: string;
+}
+
 // chart render types
 export interface WeekMonthDataType {
   key: number;

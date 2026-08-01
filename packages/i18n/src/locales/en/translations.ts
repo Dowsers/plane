@@ -2336,6 +2336,9 @@ export default {
       },
     },
   },
+  gantt: {
+    dependency_lines: "Show dependency lines",
+  },
   issue_relation: {
     empty_state: {
       search: {
