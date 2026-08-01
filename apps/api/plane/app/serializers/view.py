@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 # Module imports
 from .base import DynamicBaseSerializer
-from plane.db.models import IssueView
+from plane.db.models import IssueView, UserFavorite
 from plane.utils.issue_filters import issue_filters
 
 
@@ -64,7 +64,6 @@ class IssueViewSerializer(DynamicBaseSerializer):
             "project",
             "query",
             "owned_by",
-            "access",
             "is_locked",
         ]
 
@@ -83,4 +82,15 @@ class IssueViewSerializer(DynamicBaseSerializer):
         else:
             validated_data["query"] = {}
         validated_data["query"] = issue_filters(query_params, "PATCH")
+
+        # Cascade-cleanup other users' favorites on a Public -> Private
+        # transition - see docs/feature-specs/04-views-filters.md
+        # ("Vues privees/personnelles") in plane-selfhost.
+        previous_access = instance.access
+        new_access = validated_data.get("access", previous_access)
+        if previous_access == 1 and new_access == 0:
+            UserFavorite.objects.filter(entity_type="view", entity_identifier=instance.id).exclude(
+                user_id=instance.owned_by_id
+            ).delete()
+
         return super().update(instance, validated_data)
