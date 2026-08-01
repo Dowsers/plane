@@ -98,6 +98,14 @@ class ProjectSerializer(BaseSerializer):
                     {"update_owner": "The update owner must be an active member of this project"}
                 )
 
+        # Roadmap start/target date ordering - see
+        # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Roadmap/
+        # Timeline cross-projet") in plane-selfhost.
+        start_date = data.get("start_date", getattr(self.instance, "start_date", None))
+        target_date = data.get("target_date", getattr(self.instance, "target_date", None))
+        if start_date is not None and target_date is not None and target_date < start_date:
+            raise serializers.ValidationError({"target_date": "Target date cannot be before start date"})
+
         return data
 
     def create(self, validated_data):

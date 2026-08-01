@@ -19,6 +19,7 @@ export default {
     cycles: "Cycles",
     initiatives: "Initiatives",
     milestones: "Milestones",
+    roadmap: "Roadmap",
     modules: "Modules",
     updates: "Updates",
     intake: "Intake",

@@ -35,6 +35,7 @@ export interface IWorkspace {
   role: number;
   timezone: string;
   is_initiatives_enabled?: boolean;
+  is_roadmap_enabled?: boolean;
 }
 
 export interface IWorkspaceLite {

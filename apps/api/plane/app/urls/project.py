@@ -18,6 +18,7 @@ from plane.app.views import (
     UserProjectRolesEndpoint,
     ProjectArchiveUnarchiveEndpoint,
     ProjectMemberPreferenceEndpoint,
+    ProjectRoadmapEndpoint,
 )
 
 
@@ -26,6 +27,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/",
         ProjectViewSet.as_view({"get": "list", "post": "create"}),
         name="project",
+    ),
+    path(
+        "workspaces/<str:slug>/roadmap/projects/",
+        ProjectRoadmapEndpoint.as_view(),
+        name="project-roadmap",
     ),
     path(
         "workspaces/<str:slug>/projects/details/",

@@ -78,6 +78,11 @@ export const coreRoutes: RouteConfigEntry[] = [
           ),
         ]),
 
+        // Roadmap
+        layout("./(all)/[workspaceSlug]/(projects)/roadmap/layout.tsx", [
+          route(":workspaceSlug/roadmap", "./(all)/[workspaceSlug]/(projects)/roadmap/page.tsx"),
+        ]),
+
         // Analytics
         layout("./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/layout.tsx", [
           route(":workspaceSlug/analytics/:tabId", "./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx"),

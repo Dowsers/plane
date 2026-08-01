@@ -1921,9 +1921,26 @@ export default {
       off_track: "Off track",
     },
     settings: {
-      title: "Initiatives",
-      description: "Group related projects under an Initiative to track progress and health toward a shared goal.",
+      title: "Features",
+      description: "Turn on optional workspace-wide features.",
       toggle_label: "Enable Initiatives",
+    },
+  },
+  roadmap: {
+    label: "Roadmap",
+    empty_state: {
+      title: "No projects to show",
+      description: "Projects with a start or target date will appear here on the timeline.",
+    },
+    color_by: {
+      label: "Color by",
+      priority: "Priority",
+      health: "Health",
+    },
+    settings: {
+      title: "Roadmap",
+      description: "See every project's timeline on a single cross-project Gantt chart.",
+      toggle_label: "Enable Roadmap",
     },
   },
   project_templates: {

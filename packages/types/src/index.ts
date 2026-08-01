@@ -45,6 +45,7 @@ export * from "./publish";
 export * from "./reaction";
 export * from "./intake";
 export * from "./rich-filters";
+export * from "./roadmap";
 export * from "./search";
 export * from "./settings";
 export * from "./state";

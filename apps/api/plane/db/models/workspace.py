@@ -142,6 +142,11 @@ class Workspace(BaseModel):
     # plane-selfhost. Opt-in (default False) so existing workspaces don't
     # suddenly gain a new top-level nav item after migration.
     is_initiatives_enabled = models.BooleanField(default=False)
+    # Settings > Features toggle for the workspace Roadmap nav item - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Roadmap/
+    # Timeline cross-projet") in plane-selfhost. Opt-in (default False), same
+    # reasoning as is_initiatives_enabled above.
+    is_roadmap_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         """Return name of the Workspace"""

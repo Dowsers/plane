@@ -47,6 +47,15 @@ function FeaturesPage() {
     }
   };
 
+  const handleToggleRoadmap = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    try {
+      await updateWorkspace(workspaceSlug.toString(), { is_roadmap_enabled: value });
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("initiatives.toast.error") });
+    }
+  };
+
   if (workspaceUserInfo && !canPerformWorkspaceMemberActions) {
     return <NotAuthorizedView section="settings" className="h-auto" />;
   }
@@ -64,6 +73,17 @@ function FeaturesPage() {
           <ToggleSwitch
             value={!!currentWorkspace?.is_initiatives_enabled}
             onChange={(value) => handleToggleInitiatives(value)}
+            disabled={!isWorkspaceAdmin}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-md border-[0.5px] border-subtle p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-14 font-medium">{t("roadmap.label")}</span>
+            <span className="text-13 text-secondary">{t("roadmap.settings.description")}</span>
+          </div>
+          <ToggleSwitch
+            value={!!currentWorkspace?.is_roadmap_enabled}
+            onChange={(value) => handleToggleRoadmap(value)}
             disabled={!isWorkspaceAdmin}
           />
         </div>

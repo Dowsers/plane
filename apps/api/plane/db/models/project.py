@@ -138,6 +138,26 @@ class Project(BaseModel):
         related_name="owned_project_updates",
     )
     next_update_due_at = models.DateTimeField(null=True, blank=True)
+    # Roadmap/Timeline cross-project fields - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Roadmap/
+    # Timeline cross-projet") in plane-selfhost. Drives the workspace
+    # Roadmap Gantt view; does not redefine `health` above, which already
+    # exists from the Initiatives feature.
+    PRIORITY_CHOICES = (
+        ("urgent", "Urgent"),
+        ("high", "High"),
+        ("medium", "Medium"),
+        ("low", "Low"),
+        ("none", "None"),
+    )
+    priority = models.CharField(
+        max_length=30,
+        choices=PRIORITY_CHOICES,
+        verbose_name="Project Priority",
+        default="none",
+    )
+    start_date = models.DateField(null=True, blank=True)
+    target_date = models.DateField(null=True, blank=True)
     cover_image = models.TextField(blank=True, null=True)
     cover_image_asset = models.ForeignKey(
         "db.FileAsset",

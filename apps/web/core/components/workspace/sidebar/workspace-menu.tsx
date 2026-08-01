@@ -6,7 +6,7 @@
 
 import React from "react";
 import { observer } from "mobx-react";
-import { Target } from "lucide-react";
+import { Map, Target } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
@@ -67,6 +67,21 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
             href: `/${workspaceSlug}/initiatives/`,
             access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
             Icon: Target,
+          },
+        ]
+      : []),
+    // Opt-in nav item - hidden unless the workspace admin has turned on
+    // Roadmap under Settings > Features (default off, see
+    // docs/feature-specs/03-projects-roadmaps-initiatives.md in
+    // plane-selfhost).
+    ...(currentWorkspace?.is_roadmap_enabled
+      ? [
+          {
+            key: "roadmap",
+            labelTranslationKey: "sidebar.roadmap",
+            href: `/${workspaceSlug}/roadmap/`,
+            access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+            Icon: Map,
           },
         ]
       : []),

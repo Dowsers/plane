@@ -447,6 +447,76 @@ class ProjectViewSet(BaseViewSet):
             )
 
 
+class ProjectRoadmapEndpoint(BaseAPIView):
+    """Lightweight, ungrouped project list for the workspace Roadmap Gantt
+    view - see docs/feature-specs/03-projects-roadmaps-initiatives.md
+    ("Roadmap/Timeline cross-projet") in plane-selfhost. Reuses the exact
+    Guest/Member/Admin visibility filter from ProjectViewSet.list_detail so
+    the Roadmap never leaks a project a user isn't allowed to see.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    def get(self, request, slug):
+        sort_order = ProjectUserProperty.objects.filter(
+            user=request.user,
+            project_id=OuterRef("pk"),
+            workspace__slug=slug,
+        ).values("sort_order")
+
+        projects = (
+            Project.objects.filter(workspace__slug=slug, archived_at__isnull=True)
+            .annotate(sort_order=Subquery(sort_order))
+            .annotate(
+                member_role=ProjectMember.objects.filter(
+                    project_id=OuterRef("pk"),
+                    member_id=request.user.id,
+                    is_active=True,
+                ).values("role")
+            )
+        )
+
+        if WorkspaceMember.objects.filter(
+            member=request.user,
+            workspace__slug=slug,
+            is_active=True,
+            role=ROLE.GUEST.value,
+        ).exists():
+            projects = projects.filter(
+                project_projectmember__member=request.user,
+                project_projectmember__is_active=True,
+            )
+
+        if WorkspaceMember.objects.filter(
+            member=request.user,
+            workspace__slug=slug,
+            is_active=True,
+            role=ROLE.MEMBER.value,
+        ).exists():
+            projects = projects.filter(
+                Q(
+                    project_projectmember__member=request.user,
+                    project_projectmember__is_active=True,
+                )
+                | Q(network=2)
+            )
+
+        projects = projects.distinct().values(
+            "id",
+            "name",
+            "identifier",
+            "logo_props",
+            "network",
+            "start_date",
+            "target_date",
+            "priority",
+            "health",
+            "project_lead",
+            "sort_order",
+            "member_role",
+        )
+        return Response(list(projects), status=status.HTTP_200_OK)
+
+
 class ProjectArchiveUnarchiveEndpoint(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
     def post(self, request, slug, project_id):
