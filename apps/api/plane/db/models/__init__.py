@@ -21,6 +21,7 @@ from .importer import Importer
 from .initiative import Initiative, InitiativeProject, InitiativeActivity
 from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
 from .milestone import Milestone
+from .project_update import ProjectUpdate, ProjectUpdateReminder
 from .project_template import (
     ProjectTemplate,
     ProjectTemplateState,

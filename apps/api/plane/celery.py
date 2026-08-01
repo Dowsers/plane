@@ -93,6 +93,13 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.intake_escalation_task.check_intake_escalations",
         "schedule": crontab(minute="*/5"),
     },
+    # Structured project status update reminders - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md in
+    # plane-selfhost.
+    "check-every-hour-for-project-update-reminders": {
+        "task": "plane.bgtasks.project_update_task.send_project_update_reminders",
+        "schedule": crontab(minute=30),  # every hour, offset from other hourly tasks
+    },
 }
 
 

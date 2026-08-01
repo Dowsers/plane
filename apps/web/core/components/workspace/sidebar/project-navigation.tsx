@@ -6,7 +6,7 @@
 
 import React, { useCallback, useMemo } from "react";
 import { observer } from "mobx-react";
-import { Flag } from "lucide-react";
+import { Flag, Rss } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { EUserPermissionsLevel, EUserPermissions } from "@plane/constants";
@@ -110,6 +110,16 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
         shouldRender: true,
         sortOrder: 3.5,
+      },
+      {
+        i18n_key: "sidebar.updates",
+        key: "updates",
+        name: "Updates",
+        href: `/${navWorkspaceSlug}/projects/${navProjectId}/updates`,
+        icon: Rss,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 3.7,
       },
       {
         i18n_key: "sidebar.views",

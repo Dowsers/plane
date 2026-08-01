@@ -30,6 +30,7 @@ import { useAppRouter } from "@/hooks/use-app-router";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // local imports
 import { CoverImage } from "@/components/common/cover-image";
+import { ProjectUpdateStatusBadge } from "@/components/project-updates/status-badge";
 import { DeleteProjectModal } from "./delete-project-modal";
 import { JoinProjectModal } from "./join-project-modal";
 import { ArchiveRestoreProjectModal } from "./archive-restore-modal";
@@ -230,6 +231,7 @@ export const ProjectCard = observer(function ProjectCard(props: Props) {
                 <span className="flex items-center gap-1.5">
                   <p className="text-11 font-medium text-on-color">{project.identifier} </p>
                   {project.network === 0 && <LockIcon className="h-2.5 w-2.5 text-on-color" />}
+                  {project.latest_update_status && <ProjectUpdateStatusBadge status={project.latest_update_status} />}
                 </span>
               </div>
             </div>
@@ -307,7 +309,8 @@ export const ProjectCard = observer(function ProjectCard(props: Props) {
             {isArchived ? (
               hasAdminRole && (
                 <div className="flex items-center justify-center gap-2">
-                  <div
+                  <button
+                    type="button"
                     className="flex items-center justify-center text-11 font-medium text-placeholder hover:text-secondary"
                     onClick={(e) => {
                       e.preventDefault();
@@ -319,8 +322,9 @@ export const ProjectCard = observer(function ProjectCard(props: Props) {
                       <ArchiveRestoreIcon className="h-3.5 w-3.5" />
                       Restore
                     </div>
-                  </div>
-                  <div
+                  </button>
+                  <button
+                    type="button"
                     className="flex items-center justify-center text-11 font-medium text-placeholder hover:text-secondary"
                     onClick={(e) => {
                       e.preventDefault();
@@ -329,7 +333,7 @@ export const ProjectCard = observer(function ProjectCard(props: Props) {
                     }}
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
-                  </div>
+                  </button>
                 </div>
               )
             ) : (

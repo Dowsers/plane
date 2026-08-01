@@ -36,6 +36,7 @@ from plane.db.models import (
     ProjectIdentifier,
     ProjectMember,
     ProjectNetwork,
+    ProjectUpdate,
     ProjectUserProperty,
     State,
     DEFAULT_STATES,
@@ -97,6 +98,13 @@ class ProjectViewSet(BaseViewSet):
                         filter=Q(initiative_links__deleted_at__isnull=True),
                     ),
                     Value([], output_field=ArrayField(UUIDField())),
+                )
+            )
+            .annotate(
+                latest_update_status=Subquery(
+                    ProjectUpdate.objects.filter(project_id=OuterRef("pk")).order_by("-created_at").values("status")[
+                        :1
+                    ]
                 )
             )
             .prefetch_related(
@@ -444,6 +452,13 @@ class ProjectArchiveUnarchiveEndpoint(BaseAPIView):
     def post(self, request, slug, project_id):
         project = Project.objects.get(pk=project_id, workspace__slug=slug)
         project.archived_at = timezone.now()
+        # Archiving stops accepting new status updates and its cadence is
+        # auto-disabled - see
+        # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Mises a
+        # jour de statut structurees") in plane-selfhost.
+        project.update_cadence = "DISABLED"
+        project.update_reminder_enabled = False
+        project.next_update_due_at = None
         project.save()
         UserFavorite.objects.filter(workspace__slug=slug, project=project_id).delete()
         return Response({"archived_at": str(project.archived_at)}, status=status.HTTP_200_OK)

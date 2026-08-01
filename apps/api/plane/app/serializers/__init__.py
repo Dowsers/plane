@@ -139,6 +139,7 @@ from .initiative import (
     InitiativeActivitySerializer,
 )
 from .milestone import MilestoneSerializer, MilestoneWriteSerializer
+from .project_update import ProjectUpdateSerializer, ProjectUpdateWriteSerializer
 from .project_template import (
     ProjectTemplateWriteSerializer,
     ProjectTemplateListSerializer,

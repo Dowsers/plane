@@ -118,6 +118,26 @@ class Project(BaseModel):
         on_delete=models.SET_NULL,
         related_name="created_projects",
     )
+    # Structured status update cadence/reminder settings - see
+    # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Mises a jour
+    # de statut structurees") in plane-selfhost.
+    UPDATE_CADENCE_CHOICES = (
+        ("DISABLED", "Disabled"),
+        ("WEEKLY", "Weekly"),
+        ("BIWEEKLY", "Biweekly"),
+        ("MONTHLY", "Monthly"),
+    )
+    update_cadence = models.CharField(max_length=20, choices=UPDATE_CADENCE_CHOICES, default="DISABLED")
+    update_reminder_day = models.PositiveSmallIntegerField(null=True, blank=True)
+    update_reminder_enabled = models.BooleanField(default=False)
+    update_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owned_project_updates",
+    )
+    next_update_due_at = models.DateTimeField(null=True, blank=True)
     cover_image = models.TextField(blank=True, null=True)
     cover_image_asset = models.ForeignKey(
         "db.FileAsset",

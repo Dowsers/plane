@@ -7,6 +7,7 @@
 import type { TLogoProps } from "../common";
 import type { TUserPermissions } from "../enums";
 import type { TInitiativeHealth } from "../initiative";
+import type { TProjectUpdateCadence, TProjectUpdateStatus } from "../project-update";
 import type { TStateGroups } from "../state";
 import type { IUser, IUserLite } from "../users";
 import type { IWorkspace } from "../workspace";
@@ -36,6 +37,12 @@ export interface IPartialProject {
   network?: number;
   health?: TInitiativeHealth | null;
   initiative_ids?: string[];
+  latest_update_status?: TProjectUpdateStatus | null;
+  update_cadence?: TProjectUpdateCadence;
+  update_reminder_day?: number | null;
+  update_reminder_enabled?: boolean;
+  update_owner?: string | null;
+  next_update_due_at?: string | null;
   // Timestamps
   created_at?: Date;
   updated_at?: Date;

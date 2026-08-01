@@ -85,6 +85,19 @@ class ProjectSerializer(BaseSerializer):
             if not is_valid:
                 raise serializers.ValidationError({"error": "html content is not valid"})
 
+        # update_owner must be an active member of this project - see
+        # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Mises a
+        # jour de statut structurees") in plane-selfhost. Applicative
+        # constraint only, not a DB one.
+        update_owner = data.get("update_owner")
+        if update_owner is not None and self.instance is not None:
+            if not ProjectMember.objects.filter(
+                project=self.instance, member=update_owner, is_active=True
+            ).exists():
+                raise serializers.ValidationError(
+                    {"update_owner": "The update owner must be an active member of this project"}
+                )
+
         return data
 
     def create(self, validated_data):
@@ -122,6 +135,7 @@ class ProjectListSerializer(DynamicBaseSerializer):
     inbox_view = serializers.BooleanField(read_only=True, source="intake_view")
     next_work_item_sequence = serializers.SerializerMethodField()
     initiative_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
+    latest_update_status = serializers.CharField(read_only=True, allow_null=True)
 
     def get_members(self, obj):
         project_members = getattr(obj, "members_list", None)

@@ -20,6 +20,7 @@ export default {
     initiatives: "Initiatives",
     milestones: "Milestones",
     modules: "Modules",
+    updates: "Updates",
     intake: "Intake",
     drafts: "Drafts",
     favorites: "Favorites",

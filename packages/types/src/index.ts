@@ -40,6 +40,7 @@ export * from "./payment";
 export * from "./pragmatic";
 export * from "./project";
 export * from "./project-template";
+export * from "./project-update";
 export * from "./publish";
 export * from "./reaction";
 export * from "./intake";
