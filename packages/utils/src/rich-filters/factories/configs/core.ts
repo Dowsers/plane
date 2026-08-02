@@ -135,3 +135,24 @@ export const getDateRangePickerConfig = (config: TDateRangeConfig) =>
     type: FILTER_FIELD_TYPE.DATE_RANGE,
     ...config,
   });
+
+// ------------ Text filters ------------
+
+/**
+ * Text filter configuration
+ */
+export type TTextConfig = TBaseFilterFieldConfig & {
+  defaultValue?: string;
+  placeholder?: string;
+};
+
+/**
+ * Helper to get the text filter config
+ * @param config - Text-specific configuration
+ * @returns The text filter config
+ */
+export const getTextFilterConfig = (config: TTextConfig) =>
+  createFilterFieldConfig<typeof FILTER_FIELD_TYPE.TEXT, string>({
+    type: FILTER_FIELD_TYPE.TEXT,
+    ...config,
+  });

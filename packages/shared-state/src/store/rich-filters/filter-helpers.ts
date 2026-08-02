@@ -21,7 +21,7 @@ import type {
   TFilterConditionPayload,
 } from "@plane/types";
 import { LOGICAL_OPERATOR } from "@plane/types";
-import { addAndCondition, createConditionNode, updateNodeInExpression } from "@plane/utils";
+import { addAndCondition, createConditionNode, getDefaultValueForOperator, updateNodeInExpression } from "@plane/utils";
 // local imports
 import type { IFilterInstance } from "./filter";
 
@@ -195,7 +195,7 @@ export class FilterInstanceHelper<
     operator,
     isNegation
   ) => {
-    const payload = { property, operator, value: undefined };
+    const payload = { property, operator, value: getDefaultValueForOperator(operator) };
 
     return this._updateCondition(expression, conditionId, payload, isNegation);
   };
@@ -218,7 +218,9 @@ export class FilterInstanceHelper<
     isNegation,
     shouldResetValue
   ) => {
-    const payload = shouldResetValue ? { operator: newOperator, value: undefined } : { operator: newOperator };
+    const payload = shouldResetValue
+      ? { operator: newOperator, value: getDefaultValueForOperator(newOperator) }
+      : { operator: newOperator };
 
     return this._updateCondition(expression, conditionId, payload, isNegation);
   };
@@ -233,9 +235,13 @@ export class FilterInstanceHelper<
    */
   private _getConditionPayloadToAdd = (
     condition: TFilterConditionPayload<P, TFilterValue>,
-    _isNegation: boolean
+    isNegation: boolean
   ): TFilterExpression<P> => {
-    const conditionNode = createConditionNode(condition);
+    const conditionNode = createConditionNode({
+      ...condition,
+      value: condition.value ?? getDefaultValueForOperator(condition.operator),
+      isNegation,
+    });
 
     return conditionNode;
   };
@@ -273,10 +279,10 @@ export class FilterInstanceHelper<
     expression: TFilterExpression<P>,
     conditionId: string,
     payload: Partial<TFilterConditionNode<P, TFilterValue>>,
-    _isNegation: boolean
+    isNegation: boolean
   ): TFilterExpression<P> | null => {
-    // Update the condition with the payload
-    updateNodeInExpression(expression, conditionId, payload);
+    // Update the condition with the payload, keeping negation state in sync
+    updateNodeInExpression(expression, conditionId, { ...payload, isNegation });
 
     return expression;
   };

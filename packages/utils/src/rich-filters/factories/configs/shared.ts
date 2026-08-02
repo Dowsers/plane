@@ -18,6 +18,7 @@ import type {
   TSupportedFilterFieldConfigs,
   TSupportedOperators,
   TOperatorSpecificConfigs,
+  TTextFilterFieldConfig,
 } from "@plane/types";
 
 /**
@@ -59,6 +60,11 @@ export interface IFilterIconConfig<T extends TFilterIconType = undefined> {
 export type TCreateDateFilterParams = TCreateFilterConfigParams & IFilterIconConfig<Date>;
 
 /**
+ * Text filter config params
+ */
+export type TCreateTextFilterParams = TCreateFilterConfigParams & IFilterIconConfig<string> & { placeholder?: string };
+
+/**
  * Helper to create an operator entry for the supported operators map.
  * This ensures consistency between the operator key and the operator passed to the config function.
  * Returns a type compatible with TOperatorSpecificConfigs so Map constructor accepts union types.
@@ -98,5 +104,7 @@ export const createFilterFieldConfig = <T extends TFilterFieldType, V extends TF
         ? TDateFilterFieldConfig<V>
         : T extends typeof FILTER_FIELD_TYPE.DATE_RANGE
           ? TDateRangeFilterFieldConfig<V>
-          : never
+          : T extends typeof FILTER_FIELD_TYPE.TEXT
+            ? TTextFilterFieldConfig<V>
+            : never
 ): TSupportedFilterFieldConfigs<V> => config as TSupportedFilterFieldConfigs<V>;

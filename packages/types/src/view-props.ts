@@ -109,6 +109,7 @@ export const WORK_ITEM_FILTER_PROPERTY_KEYS = [
   "project_id",
   "created_at",
   "updated_at",
+  "name",
 ] as const;
 export type TWorkItemFilterProperty = (typeof WORK_ITEM_FILTER_PROPERTY_KEYS)[number];
 
@@ -124,7 +125,21 @@ export type TWorkItemFilterAndGroup = {
 
 export type TWorkItemFilterGroup = TWorkItemFilterAndGroup;
 
-export type TWorkItemFilterExpressionData = TWorkItemFilterConditionData | TWorkItemFilterGroup;
+/**
+ * Key used to structurally negate a single leaf condition on the wire, e.g.
+ * `{ not: { name__icontains: "foo" } }`. Handled generically by the backend's
+ * `ComplexFilterBackend`, independent of any specific operator.
+ */
+export const NEGATION_KEY = "not" as const;
+
+export type TWorkItemFilterNotCondition = {
+  [NEGATION_KEY]: TWorkItemFilterConditionData;
+};
+
+export type TWorkItemFilterExpressionData =
+  | TWorkItemFilterConditionData
+  | TWorkItemFilterGroup
+  | TWorkItemFilterNotCondition;
 
 export type TWorkItemFilterExpression = CompleteOrEmpty<TWorkItemFilterExpressionData>;
 

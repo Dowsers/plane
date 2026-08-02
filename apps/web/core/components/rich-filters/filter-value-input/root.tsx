@@ -17,9 +17,11 @@ import type {
   TMultiSelectFilterFieldConfig,
   TDateFilterFieldConfig,
   TDateRangeFilterFieldConfig,
+  TTextFilterFieldConfig,
   TFilterConditionNodeForDisplay,
 } from "@plane/types";
-import { FILTER_FIELD_TYPE } from "@plane/types";
+import { FILTER_FIELD_TYPE, RELATIONAL_OPERATOR } from "@plane/types";
+import { getOperatorForPayload } from "@plane/utils";
 // local imports
 import { AdditionalFilterValueInput } from "@/plane-web/components/rich-filters/filter-value-input/root";
 import type { TFilterValueInputProps } from "../shared";
@@ -27,11 +29,18 @@ import { DateRangeFilterValueInput } from "./date/range";
 import { SingleDateFilterValueInput } from "./date/single";
 import { MultiSelectFilterValueInput } from "./select/multi";
 import { SingleSelectFilterValueInput } from "./select/single";
+import { TextFilterValueInput } from "./text/single";
 
 export const FilterValueInput = observer(function FilterValueInput<P extends TFilterProperty, V extends TFilterValue>(
   props: TFilterValueInputProps<P, V>
 ) {
   const { condition, filterFieldConfig, isDisabled = false, onChange } = props;
+
+  // ISNULL's value is a fixed boolean auto-applied the moment the operator is selected - no value
+  // input is needed (or meaningful) for it, regardless of the field's underlying type.
+  if (getOperatorForPayload(condition.operator).operator === RELATIONAL_OPERATOR.ISNULL) {
+    return null;
+  }
 
   // Single select input
   if (filterFieldConfig?.type === FILTER_FIELD_TYPE.SINGLE_SELECT) {
@@ -74,6 +83,18 @@ export const FilterValueInput = observer(function FilterValueInput<P extends TFi
     return (
       <DateRangeFilterValueInput<P>
         config={filterFieldConfig as TDateRangeFilterFieldConfig<string>}
+        condition={condition as TFilterConditionNodeForDisplay<P, string>}
+        isDisabled={isDisabled}
+        onChange={(value) => onChange(value as SingleOrArray<V>)}
+      />
+    );
+  }
+
+  // Text filter input
+  if (filterFieldConfig?.type === FILTER_FIELD_TYPE.TEXT) {
+    return (
+      <TextFilterValueInput<P>
+        config={filterFieldConfig as TTextFilterFieldConfig<string>}
         condition={condition as TFilterConditionNodeForDisplay<P, string>}
         isDisabled={isDisabled}
         onChange={(value) => onChange(value as SingleOrArray<V>)}

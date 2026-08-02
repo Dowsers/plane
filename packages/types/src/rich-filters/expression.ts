@@ -43,8 +43,10 @@ type TBaseFilterNode = {
  * Leaf node representing a single filter condition (e.g., "state is backlog").
  * - type: Node type (condition)
  * - property: Field being filtered
- * - operator: Comparison operator (is, is not, between, not between, etc.)
+ * - operator: Comparison operator (is, is any of, between, etc.) - always the base/positive operator
  * - value: Filter value(s) - array for operators that support multiple values
+ * - isNegation: Whether this condition should be negated (e.g., "is not", "is not any of").
+ *   Negation is tracked per-condition rather than via a wrapping NOT group.
  * @template P - Property key type
  * @template V - Value type
  */
@@ -53,6 +55,7 @@ export type TFilterConditionNode<P extends TFilterProperty, V extends TFilterVal
   property: P;
   operator: TSupportedOperators;
   value: SingleOrArray<V>;
+  isNegation?: boolean;
 };
 
 /**

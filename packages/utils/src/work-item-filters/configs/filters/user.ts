@@ -6,7 +6,7 @@
 
 // plane imports
 import type { TFilterProperty } from "@plane/types";
-import { EQUALITY_OPERATOR, COLLECTION_OPERATOR } from "@plane/types";
+import { COLLECTION_OPERATOR, EQUALITY_OPERATOR, RELATIONAL_OPERATOR } from "@plane/types";
 // local imports
 import type { TCreateFilterConfig, TCreateUserFilterParams } from "../../../rich-filters";
 import { createFilterConfig, createOperatorConfigEntry, getMemberMultiSelectConfig } from "../../../rich-filters";
@@ -35,6 +35,9 @@ export const getAssigneeFilterConfig =
       supportedOperatorConfigsMap: new Map([
         createOperatorConfigEntry(COLLECTION_OPERATOR.IN, params, (updatedParams) =>
           getMemberMultiSelectConfig(updatedParams, EQUALITY_OPERATOR.EXACT)
+        ),
+        createOperatorConfigEntry(RELATIONAL_OPERATOR.ISNULL, params, (updatedParams) =>
+          getMemberMultiSelectConfig({ ...updatedParams, allowNegative: false }, RELATIONAL_OPERATOR.ISNULL)
         ),
       ]),
     });

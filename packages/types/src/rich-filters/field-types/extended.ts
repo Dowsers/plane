@@ -5,15 +5,31 @@
  */
 
 import type { TFilterValue } from "../expression";
+import type { TBaseFilterFieldConfig } from "./shared";
 
 /**
  * Extended filter types
  */
-export const EXTENDED_FILTER_FIELD_TYPE = {} as const;
+export const EXTENDED_FILTER_FIELD_TYPE = {
+  TEXT: "text",
+} as const;
+
+// -------- TEXT FILTER CONFIGURATIONS --------
+
+/**
+ * Text filter configuration - for free-text substring filtering (e.g. "contains").
+ * - defaultValue: Initial text value
+ * - placeholder: Placeholder text shown in the value input
+ */
+export type TTextFilterFieldConfig<V extends TFilterValue> = TBaseFilterFieldConfig & {
+  type: typeof EXTENDED_FILTER_FIELD_TYPE.TEXT;
+  defaultValue?: V;
+  placeholder?: string;
+};
 
 // -------- UNION TYPES --------
 
 /**
  * All extended filter configurations
  */
-export type TExtendedFilterFieldConfigs<_V extends TFilterValue = TFilterValue> = never;
+export type TExtendedFilterFieldConfigs<V extends TFilterValue = TFilterValue> = TTextFilterFieldConfig<V>;

@@ -5,8 +5,8 @@
  */
 
 // plane imports
-import type { IModule, TFilterProperty } from "@plane/types";
-import { EQUALITY_OPERATOR, COLLECTION_OPERATOR } from "@plane/types";
+import type { IModule, TFilterProperty, TSupportedOperators } from "@plane/types";
+import { COLLECTION_OPERATOR, EQUALITY_OPERATOR, RELATIONAL_OPERATOR } from "@plane/types";
 // local imports
 import type { TCreateFilterConfigParams, IFilterIconConfig, TCreateFilterConfig } from "../../../rich-filters";
 import { createFilterConfig, getMultiSelectConfig, createOperatorConfigEntry } from "../../../rich-filters";
@@ -22,9 +22,13 @@ export type TCreateModuleFilterParams = TCreateFilterConfigParams &
 /**
  * Helper to get the module multi select config
  * @param params - The filter params
+ * @param singleValueOperator - Operator to show when a single value is selected
  * @returns The module multi select config
  */
-export const getModuleMultiSelectConfig = (params: TCreateModuleFilterParams) =>
+export const getModuleMultiSelectConfig = (
+  params: TCreateModuleFilterParams,
+  singleValueOperator: TSupportedOperators = EQUALITY_OPERATOR.EXACT
+) =>
   getMultiSelectConfig<IModule, string, undefined>(
     {
       items: params.modules,
@@ -34,7 +38,7 @@ export const getModuleMultiSelectConfig = (params: TCreateModuleFilterParams) =>
       getIconData: () => undefined,
     },
     {
-      singleValueOperator: EQUALITY_OPERATOR.EXACT,
+      singleValueOperator,
       ...params,
     },
     {
@@ -59,6 +63,9 @@ export const getModuleFilterConfig =
       supportedOperatorConfigsMap: new Map([
         createOperatorConfigEntry(COLLECTION_OPERATOR.IN, params, (updatedParams) =>
           getModuleMultiSelectConfig(updatedParams)
+        ),
+        createOperatorConfigEntry(RELATIONAL_OPERATOR.ISNULL, params, (updatedParams) =>
+          getModuleMultiSelectConfig({ ...updatedParams, allowNegative: false }, RELATIONAL_OPERATOR.ISNULL)
         ),
       ]),
     });

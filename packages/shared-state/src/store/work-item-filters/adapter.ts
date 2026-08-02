@@ -15,9 +15,10 @@ import type {
   TWorkItemFilterConditionKey,
   TWorkItemFilterExpression,
   TWorkItemFilterExpressionData,
+  TWorkItemFilterNotCondition,
   TWorkItemFilterProperty,
 } from "@plane/types";
-import { LOGICAL_OPERATOR, MULTI_VALUE_OPERATORS, WORK_ITEM_FILTER_PROPERTY_KEYS } from "@plane/types";
+import { LOGICAL_OPERATOR, MULTI_VALUE_OPERATORS, NEGATION_KEY, WORK_ITEM_FILTER_PROPERTY_KEYS } from "@plane/types";
 import { createConditionNode, createAndGroupNode, isAndGroupNode, isConditionNode } from "@plane/utils";
 // local imports
 import { FilterAdapter } from "../rich-filters/adapter";
@@ -66,6 +67,23 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
       });
     }
 
+    // Check if it's a negated single condition, e.g. `{ not: { name__icontains: "foo" } }`
+    if (this._isWorkItemFilterNotCondition(expression)) {
+      const innerCondition = expression[NEGATION_KEY];
+      const conditionResult = this._extractWorkItemFilterConditionData(innerCondition);
+      if (!conditionResult) {
+        throw new Error("Failed to extract negated condition data");
+      }
+
+      const [property, operator, value] = conditionResult;
+      return createConditionNode({
+        property,
+        operator,
+        value,
+        isNegation: true,
+      });
+    }
+
     // It's a logical group - check which type
     const expressionKeys = Object.keys(expression);
 
@@ -111,7 +129,17 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     expression: TFilterExpression<TWorkItemFilterProperty>
   ): TWorkItemFilterExpressionData {
     if (isConditionNode(expression)) {
-      return this._createWorkItemFilterConditionData(expression.property, expression.operator, expression.value);
+      const conditionData = this._createWorkItemFilterConditionData(
+        expression.property,
+        expression.operator,
+        expression.value
+      );
+      // Negation is structural on the wire - wrap the leaf's condition data in a `not` group instead of
+      // encoding it into the operator/lookup itself.
+      if (expression.isNegation) {
+        return { [NEGATION_KEY]: conditionData } as TWorkItemFilterNotCondition;
+      }
+      return conditionData;
     }
 
     // It's a group node
@@ -142,6 +170,18 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
 
     // All keys must match the work item filter condition key pattern
     return keys.every((key) => this._isValidWorkItemFilterConditionKey(key));
+  };
+
+  /**
+   * Type guard to check if data is a negated single condition, e.g. `{ not: { field__op: value } }`.
+   * @param data - The data to check
+   * @returns True if data is TWorkItemFilterNotCondition, false otherwise
+   */
+  private _isWorkItemFilterNotCondition = (data: unknown): data is TWorkItemFilterNotCondition => {
+    if (!data || typeof data !== "object" || isEmpty(data)) return false;
+
+    const keys = Object.keys(data);
+    return keys.length === 1 && keys[0] === NEGATION_KEY;
   };
 
   /**

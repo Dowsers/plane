@@ -20,9 +20,32 @@ export const EXTENDED_EQUALITY_OPERATOR = {} as const;
 export const EXTENDED_COLLECTION_OPERATOR = {} as const;
 
 /**
- * Extended comparison operators
+ * Extended comparison operators - strict/inclusive date comparisons.
+ * - GT: after (exclusive)
+ * - GTE: after or on (inclusive)
+ * - LT: before (exclusive)
+ * - LTE: before or on (inclusive)
  */
-export const EXTENDED_COMPARISON_OPERATOR = {} as const;
+export const EXTENDED_COMPARISON_OPERATOR = {
+  GT: "gt",
+  GTE: "gte",
+  LT: "lt",
+  LTE: "lte",
+} as const;
+
+/**
+ * Extended text operators - substring matching.
+ */
+export const EXTENDED_TEXT_OPERATOR = {
+  ICONTAINS: "icontains",
+} as const;
+
+/**
+ * Extended relational operators - emptiness checks for relational (FK/M2M) fields.
+ */
+export const EXTENDED_RELATIONAL_OPERATOR = {
+  ISNULL: "isnull",
+} as const;
 
 /**
  * Extended operators that support multiple values
@@ -36,6 +59,8 @@ export const EXTENDED_OPERATORS = {
   ...EXTENDED_EQUALITY_OPERATOR,
   ...EXTENDED_COLLECTION_OPERATOR,
   ...EXTENDED_COMPARISON_OPERATOR,
+  ...EXTENDED_TEXT_OPERATOR,
+  ...EXTENDED_RELATIONAL_OPERATOR,
 } as const;
 /**
  * All extended operators that can be used in filter conditions

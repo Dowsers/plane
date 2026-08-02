@@ -5,10 +5,10 @@
 import copy
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django_filters import FilterSet, filters
 
-from plane.db.models import Issue
+from plane.db.models import CycleIssue, Issue, IssueAssignee, IssueLabel, ModuleIssue
 
 
 class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
@@ -160,15 +160,26 @@ class IssueFilterSet(BaseFilterSet):
     subscriber_id = filters.UUIDFilter(method="filter_subscriber_id")
     subscriber_id__in = UUIDInFilter(method="filter_subscriber_id_in", lookup_expr="in")
 
+    # "is empty" for relational fields - deliberately NOT a naive __isnull lookup
+    # on the joined field (which is unreliable across a to-many relation), see
+    # docs/feature-specs/04-views-filters.md ("Jeu complet d'operateurs de
+    # filtre") in plane-selfhost.
+    label_id__isnull = filters.BooleanFilter(method="filter_label_id_isnull")
+    assignee_id__isnull = filters.BooleanFilter(method="filter_assignee_id_isnull")
+    module_id__isnull = filters.BooleanFilter(method="filter_module_id_isnull")
+    cycle_id__isnull = filters.BooleanFilter(method="filter_cycle_id_isnull")
+
     class Meta:
         model = Issue
         fields = {
-            "start_date": ["exact", "range"],
-            "target_date": ["exact", "range"],
-            "created_at": ["exact", "range"],
-            "updated_at": ["exact", "range"],
+            "start_date": ["exact", "range", "gt", "gte", "lt", "lte"],
+            "target_date": ["exact", "range", "gt", "gte", "lt", "lte"],
+            "created_at": ["exact", "range", "gt", "gte", "lt", "lte"],
+            "updated_at": ["exact", "range", "gt", "gte", "lt", "lte"],
+            "completed_at": ["exact", "range", "gt", "gte", "lt", "lte"],
             "is_draft": ["exact"],
             "priority": ["exact", "in"],
+            "name": ["icontains"],
         }
 
     def filter_is_archived(self, queryset, name, value):
@@ -267,3 +278,27 @@ class IssueFilterSet(BaseFilterSet):
             issue_subscribers__subscriber_id__in=value,
             issue_subscribers__deleted_at__isnull=True,
         )
+
+    @staticmethod
+    def _is_truthy(value):
+        return value in (True, "true", "True", 1, "1")
+
+    def filter_label_id_isnull(self, queryset, name, value):
+        """value=True -> issue has no active labels, value=False -> has at least one"""
+        has_labels = Exists(IssueLabel.objects.filter(issue_id=OuterRef("pk"), deleted_at__isnull=True))
+        return ~Q(has_labels) if self._is_truthy(value) else Q(has_labels)
+
+    def filter_assignee_id_isnull(self, queryset, name, value):
+        """value=True -> issue has no active assignees, value=False -> has at least one"""
+        has_assignees = Exists(IssueAssignee.objects.filter(issue_id=OuterRef("pk"), deleted_at__isnull=True))
+        return ~Q(has_assignees) if self._is_truthy(value) else Q(has_assignees)
+
+    def filter_module_id_isnull(self, queryset, name, value):
+        """value=True -> issue belongs to no active module, value=False -> belongs to at least one"""
+        has_modules = Exists(ModuleIssue.objects.filter(issue_id=OuterRef("pk"), deleted_at__isnull=True))
+        return ~Q(has_modules) if self._is_truthy(value) else Q(has_modules)
+
+    def filter_cycle_id_isnull(self, queryset, name, value):
+        """value=True -> issue belongs to no active cycle, value=False -> belongs to one"""
+        has_cycle = Exists(CycleIssue.objects.filter(issue_id=OuterRef("pk"), deleted_at__isnull=True))
+        return ~Q(has_cycle) if self._is_truthy(value) else Q(has_cycle)

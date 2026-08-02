@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { AtSign, Briefcase } from "lucide-react";
+import { AtSign, Briefcase, Type } from "lucide-react";
 // plane imports
 import { Logo } from "@plane/propel/emoji-icon-picker";
 import {
@@ -43,6 +43,7 @@ import {
   getLabelFilterConfig,
   getMentionFilterConfig,
   getModuleFilterConfig,
+  getNameFilterConfig,
   getPriorityFilterConfig,
   getProjectFilterConfig,
   getStartDateFilterConfig,
@@ -132,9 +133,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   );
   const projects = useMemo(
     () =>
-      projectIds
-        ? (projectIds.map((projectId) => getProjectById(projectId)).filter((project) => project) as IProject[])
-        : [],
+      projectIds ? (projectIds.map((id) => getProjectById(id)).filter((projectItem) => projectItem) as IProject[]) : [],
     [projectIds, getProjectById]
   );
   const areAllConfigsInitialized = useMemo(() => isLoaderReady(projectLoader), [projectLoader]);
@@ -146,6 +145,18 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
    * @returns True if the filter is enabled, false otherwise.
    */
   const isFilterEnabled = useCallback((key: TWorkItemFilterProperty) => filtersToShow.has(key), [filtersToShow]);
+
+  // name filter config
+  const nameFilterConfig = useMemo(
+    () =>
+      getNameFilterConfig<TWorkItemFilterProperty>("name")({
+        isEnabled: isFilterEnabled("name"),
+        filterIcon: Type,
+        placeholder: "Search by name",
+        ...operatorConfigs,
+      }),
+    [isFilterEnabled, operatorConfigs]
+  );
 
   // state group filter config
   const stateGroupFilterConfig = useMemo(
@@ -356,7 +367,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         isEnabled: isFilterEnabled("project_id") && projects !== undefined,
         filterIcon: Briefcase,
         projects: projects,
-        getOptionIcon: (project) => <Logo logo={project.logo_props} size={12} />,
+        getOptionIcon: (projectItem) => <Logo logo={projectItem.logo_props} size={12} />,
         ...operatorConfigs,
       }),
     [isFilterEnabled, projects, operatorConfigs]
@@ -365,6 +376,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   return {
     areAllConfigsInitialized,
     configs: [
+      nameFilterConfig,
       stateFilterConfig,
       stateGroupFilterConfig,
       assigneeFilterConfig,
@@ -382,6 +394,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       subscriberFilterConfig,
     ],
     configMap: {
+      name: nameFilterConfig,
       project_id: projectFilterConfig,
       state_group: stateGroupFilterConfig,
       state_id: stateFilterConfig,

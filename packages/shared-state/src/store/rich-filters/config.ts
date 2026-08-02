@@ -17,7 +17,7 @@ import type {
   TOperatorSpecificConfigs,
   TAllAvailableOperatorsForDisplay,
 } from "@plane/types";
-import { FILTER_FIELD_TYPE } from "@plane/types";
+import { FILTER_FIELD_TYPE, isNegatedOperator, NEGATABLE_OPERATOR_TO_NEGATED_MAP } from "@plane/types";
 import {
   getOperatorLabel,
   isDateFilterType,
@@ -40,7 +40,7 @@ export interface IFilterConfig<P extends TFilterProperty> extends TFilterConfig<
     operator: TAllAvailableOperatorsForDisplay
   ) => TOperatorSpecificConfigs[keyof TOperatorSpecificConfigs] | undefined;
   getLabelForOperator: (operator: TAllAvailableOperatorsForDisplay | undefined) => string;
-  getDisplayOperatorByValue: <T extends TSupportedOperators>(operator: T, value: TFilterValue) => T;
+  getDisplayOperatorByValue: <T extends TAllAvailableOperatorsForDisplay>(operator: T, value: TFilterValue) => T;
   getAllDisplayOperatorOptionsByValue: (value: TFilterValue) => TOperatorOptionForDisplay[];
   // actions
   mutate: (updates: Partial<TFilterConfig<P>>) => void;
@@ -136,13 +136,20 @@ export class FilterConfig<P extends TFilterProperty> implements IFilterConfig<P>
 
   /**
    * Returns the operator for a value.
+   * Preserves negation when degrading a multi-select operator to its single-value counterpart
+   * (e.g. a negated "is not any of" with one value selected degrades to "is not", not "is").
    * @param value - The value.
    * @returns The operator for the value.
    */
   getDisplayOperatorByValue: IFilterConfig<P>["getDisplayOperatorByValue"] = computedFn((operator, value) => {
     const operatorConfig = this.getOperatorConfig(operator);
     if (operatorConfig?.type === FILTER_FIELD_TYPE.MULTI_SELECT && (Array.isArray(value) ? value.length : 0) <= 1) {
-      return operatorConfig.singleValueOperator as typeof operator;
+      const singleValueOperator = operatorConfig.singleValueOperator;
+      if (isNegatedOperator(operator)) {
+        const negatedSingleValueOperator = NEGATABLE_OPERATOR_TO_NEGATED_MAP[singleValueOperator];
+        if (negatedSingleValueOperator) return negatedSingleValueOperator as typeof operator;
+      }
+      return singleValueOperator as typeof operator;
     }
     return operator;
   });
@@ -195,8 +202,25 @@ export class FilterConfig<P extends TFilterProperty> implements IFilterConfig<P>
 
   // ------------ private helpers ------------
 
+  /**
+   * Returns the negated variant of an operator as an additional dropdown option, when supported.
+   * Only surfaced when the operator's own config opts into negation (`allowNegative: true`) and has
+   * a corresponding negated display identifier (e.g. "exact" -> "not_exact").
+   * @param operator - The operator to get the negated option for
+   * @param _value - The current filter value (unused - the negated option isn't degraded by value count)
+   * @returns The negated operator option, or undefined if negation isn't supported for this operator
+   */
   private _getAdditionalOperatorOptions = (
-    _operator: TSupportedOperators,
+    operator: TSupportedOperators,
     _value: TFilterValue
-  ): TOperatorOptionForDisplay | undefined => undefined;
+  ): TOperatorOptionForDisplay | undefined => {
+    const operatorConfig = this.getOperatorConfig(operator);
+    if (!operatorConfig?.allowNegative) return undefined;
+
+    const negatedOperator = NEGATABLE_OPERATOR_TO_NEGATED_MAP[operator];
+    if (!negatedOperator) return undefined;
+
+    const negatedLabel = operatorConfig.negOperatorLabel ?? this.getLabelForOperator(negatedOperator);
+    return { value: negatedOperator, label: negatedLabel };
+  };
 }

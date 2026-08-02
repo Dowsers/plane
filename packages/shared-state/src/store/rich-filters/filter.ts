@@ -31,7 +31,7 @@ import type {
   TLogicalOperator,
   TSupportedOperators,
 } from "@plane/types";
-import { FILTER_NODE_TYPE } from "@plane/types";
+import { FILTER_NODE_TYPE, RELATIONAL_OPERATOR } from "@plane/types";
 // local imports
 import {
   deepCompareFilterExpressions,
@@ -423,8 +423,12 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
       const newOperatorConfig = this.configManager
         .getConfigByProperty(conditionBeforeUpdate.property)
         ?.getOperatorConfig(operator);
-      // Reset the value if the operator config types are different
-      const shouldResetConditionValue = currentOperatorConfig?.type !== newOperatorConfig?.type;
+      // Reset the value if the operator config types are different, or if either side of the change
+      // is ISNULL - its value is a fixed boolean, not the array/date/text the field type otherwise implies.
+      const shouldResetConditionValue =
+        currentOperatorConfig?.type !== newOperatorConfig?.type ||
+        operator === RELATIONAL_OPERATOR.ISNULL ||
+        conditionBeforeUpdate.operator === RELATIONAL_OPERATOR.ISNULL;
 
       // Use restructuring logic for operator changes
       const updatedExpression = this.helper.restructureExpressionForOperatorChange(
@@ -439,7 +443,12 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
         this.expression = updatedExpression;
       }
 
-      if (hasValidValue(conditionBeforeUpdate.value)) {
+      // Notify if the condition had a valid value before the change, or gained one as a result of it
+      // (e.g. ISNULL's value is auto-populated and never goes through `updateConditionValue`).
+      const updatedCondition = this.expression ? findNodeById(this.expression, conditionId) : null;
+      const updatedValue =
+        updatedCondition && updatedCondition.type === FILTER_NODE_TYPE.CONDITION ? updatedCondition.value : undefined;
+      if (hasValidValue(conditionBeforeUpdate.value) || hasValidValue(updatedValue)) {
         this._notifyExpressionChange();
       }
     }

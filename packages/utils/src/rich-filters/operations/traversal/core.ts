@@ -185,9 +185,12 @@ export const extractConditionsWithDisplayOperators = <P extends TFilterProperty>
   // First extract all raw conditions
   const rawConditions = extractConditions(expression);
 
-  // Transform operators using the extended helper
+  // Transform operators using the extended helper. `condition` is a live reference into the expression
+  // tree (see extractConditions/traverseExpressionTree); mutating it in place would overwrite the
+  // stored base operator with the display-only one, so a copy is required here, not just style.
+  // eslint-disable-next-line oxc/no-map-spread -- copy required, not just style (see comment above)
   return rawConditions.map((condition) => {
-    const displayOperator = getDisplayOperator(condition.operator, expression, condition.id);
+    const displayOperator = getDisplayOperator(condition.operator, condition.isNegation);
     return {
       ...condition,
       operator: displayOperator,
