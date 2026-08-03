@@ -43,6 +43,7 @@ from plane.app.serializers import (
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.issue_description_version_task import issue_description_version_task
 from plane.bgtasks.recent_visited_task import recent_visited_task
+from plane.bgtasks.view_subscription_task import notify_view_subscribers
 from plane.bgtasks.webhook_task import model_activity
 from plane.db.models import (
     BulkIssueOperation,
@@ -78,6 +79,7 @@ from plane.utils.order_queryset import order_issue_queryset
 from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPaginator
 from plane.utils.sub_issue_automation import handle_sub_issue_automations
 from plane.utils.timezone_converter import user_timezone_converter
+from plane.utils.view_subscriptions import get_subscribed_views_for_issue, issue_matches_view
 
 from .. import BaseAPIView, BaseViewSet
 
@@ -666,6 +668,15 @@ class IssueViewSet(BaseViewSet):
         if not issue:
             return Response({"error": "Issue not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Snapshot pre-update membership in every subscribed view relevant to
+        # this issue (its own project's views, plus workspace-scoped views),
+        # so the change can be diffed after save - see
+        # docs/feature-specs/04-views-filters.md ("Abonnements/notifications
+        # par vue") in plane-selfhost. Cheap no-op when nobody subscribes to
+        # any relevant view (the common case).
+        subscribed_views = list(get_subscribed_views_for_issue(slug, project_id))
+        was_member_by_view_id = {view.id: issue_matches_view(pk, view) for view in subscribed_views}
+
         current_instance = json.dumps(IssueDetailSerializer(issue).data, cls=DjangoJSONEncoder)
 
         requested_data = json.dumps(self.request.data, cls=DjangoJSONEncoder)
@@ -704,6 +715,37 @@ class IssueViewSet(BaseViewSet):
                 )
                 if "state_id" in request.data or "state" in request.data:
                     handle_sub_issue_automations(issue, request.user.id)
+
+                # Diff post-update membership and notify - entering a view
+                # always notifies (notify_on_add); leaving one only notifies
+                # if the exit was via completing/cancelling the issue, never
+                # for any other reason (e.g. reassignment), per spec
+                # requirement 6.
+                if subscribed_views:
+                    issue.refresh_from_db(fields=["state_id"])
+                    new_state_group = issue.state.group if issue.state_id else None
+                    for view in subscribed_views:
+                        was_member = was_member_by_view_id[view.id]
+                        is_member = issue_matches_view(pk, view)
+                        if not was_member and is_member:
+                            notify_view_subscribers.delay(
+                                issue_id=str(pk), view_id=str(view.id), event="add", actor_id=str(request.user.id)
+                            )
+                        elif was_member and not is_member:
+                            if new_state_group == "completed":
+                                notify_view_subscribers.delay(
+                                    issue_id=str(pk),
+                                    view_id=str(view.id),
+                                    event="complete",
+                                    actor_id=str(request.user.id),
+                                )
+                            elif new_state_group == "cancelled":
+                                notify_view_subscribers.delay(
+                                    issue_id=str(pk),
+                                    view_id=str(view.id),
+                                    event="cancel",
+                                    actor_id=str(request.user.id),
+                                )
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

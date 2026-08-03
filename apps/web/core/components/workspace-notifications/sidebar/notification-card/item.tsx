@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { observer } from "mobx-react";
-import { Clock } from "lucide-react";
+import { Bell, Clock } from "lucide-react";
 // plane imports
 import { Avatar, Row } from "@plane/ui";
 import { cn, calculateTimeAgo, renderFormattedDate, renderFormattedTime, getFileURL } from "@plane/utils";
@@ -36,36 +36,58 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
   const [customSnoozeModal, setCustomSnoozeModal] = useState(false);
 
   // derived values
+  // View-subscription notifications (see docs/feature-specs/04-views-filters.md
+  // "Abonnements/notifications par vue" in plane-selfhost) aren't shaped
+  // like issue-activity notifications - they carry no `data.issue_activity`,
+  // and `data.issue` is unset since the backend only sets `entity_identifier`
+  // to the issue id (see notify_view_subscribers in
+  // apps/api/plane/bgtasks/view_subscription_task.py) - so this kind is
+  // branched on explicitly wherever the generic issue-notification shape is
+  // assumed below.
+  const isViewSubscriptionNotification = notification?.entity_name === "VIEW_SUBSCRIPTION";
   const projectId = notification?.project || undefined;
-  const issueId = notification?.data?.issue?.id || undefined;
+  const issueId =
+    notification?.data?.issue?.id || (isViewSubscriptionNotification ? notification?.entity_identifier : undefined);
   const workspace = getWorkspaceBySlug(workspaceSlug);
 
   const notificationField = notification?.data?.issue_activity.field || undefined;
   const notificationTriggeredBy = notification.triggered_by_details || undefined;
 
   const handleNotificationIssuePeekOverview = async () => {
-    if (workspaceSlug && projectId && issueId && !isSnoozeStateModalOpen && !customSnoozeModal) {
-      setPeekIssue(undefined);
-      setCurrentSelectedNotificationId(notificationId);
+    if (!workspaceSlug || isSnoozeStateModalOpen || customSnoozeModal) return;
 
-      // make the notification as read
-      if (notification.read_at === null) {
-        try {
-          await markNotificationAsRead(workspaceSlug);
-        } catch (error) {
-          console.error(error);
-        }
+    setCurrentSelectedNotificationId(notificationId);
+
+    // make the notification as read
+    if (notification.read_at === null) {
+      try {
+        await markNotificationAsRead(workspaceSlug);
+      } catch (error) {
+        console.error(error);
       }
+    }
 
-      if (notification?.is_inbox_issue === false) {
-        if (!getIsIssuePeeked(issueId)) {
-          setPeekIssue({ workspaceSlug, projectId, issueId });
-        }
+    // View-subscription notifications have no reliable project id (a
+    // workspace-scoped view subscription has none) and no peekable target
+    // beyond "an issue somewhere in this view" - only attempt the peek
+    // overview when both pieces are actually available.
+    if (!projectId || !issueId) return;
+
+    setPeekIssue(undefined);
+    if (notification?.is_inbox_issue === false) {
+      if (!getIsIssuePeeked(issueId)) {
+        setPeekIssue({ workspaceSlug, projectId, issueId });
       }
     }
   };
 
-  if (!workspaceSlug || !notificationId || !notification?.id || !notificationField || !workspace?.id || !projectId)
+  if (
+    !workspaceSlug ||
+    !notificationId ||
+    !notification?.id ||
+    !workspace?.id ||
+    (!isViewSubscriptionNotification && (!notificationField || !projectId))
+  )
     return <></>;
 
   return (
@@ -85,7 +107,7 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
 
       <div className="relative flex w-full gap-2">
         <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-layer-1">
-          {notificationTriggeredBy && (
+          {notificationTriggeredBy ? (
             <Avatar
               name={notificationTriggeredBy.display_name || notificationTriggeredBy?.first_name}
               src={getFileURL(notificationTriggeredBy.avatar_url)}
@@ -93,18 +115,26 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
               shape="circle"
               className="bg-layer-1 text-body-sm-medium"
             />
+          ) : (
+            isViewSubscriptionNotification && <Bell className="h-5 w-5 text-secondary" />
           )}
         </div>
 
         <div className="-mt-2 w-full space-y-1">
           <div className="relative flex h-8 items-center gap-3">
             <div className="line-clamp-1 w-full truncate overflow-hidden text-body-xs-medium break-all whitespace-normal text-primary">
-              <NotificationContent
-                notification={notification}
-                workspaceId={workspace.id}
-                workspaceSlug={workspaceSlug}
-                projectId={projectId}
-              />
+              {isViewSubscriptionNotification ? (
+                <span>{notification.title}</span>
+              ) : (
+                projectId && (
+                  <NotificationContent
+                    notification={notification}
+                    workspaceId={workspace.id}
+                    workspaceSlug={workspaceSlug}
+                    projectId={projectId}
+                  />
+                )
+              )}
             </div>
             <NotificationOption
               workspaceSlug={workspaceSlug}
@@ -118,8 +148,14 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
 
           <div className="relative flex items-center gap-3 text-caption-sm-regular text-secondary">
             <div className="line-clamp-1 w-full truncate overflow-hidden break-words whitespace-normal">
-              {notification?.data?.issue?.identifier}-{notification?.data?.issue?.sequence_id}&nbsp;
-              {notification?.data?.issue?.name}
+              {isViewSubscriptionNotification ? (
+                "View subscription"
+              ) : (
+                <>
+                  {notification?.data?.issue?.identifier}-{notification?.data?.issue?.sequence_id}&nbsp;
+                  {notification?.data?.issue?.name}
+                </>
+              )}
             </div>
             <div className="flex-shrink-0">
               {notification?.snoozed_till ? (

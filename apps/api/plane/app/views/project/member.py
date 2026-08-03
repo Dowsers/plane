@@ -21,6 +21,7 @@ from plane.app.permissions import WorkspaceUserPermission
 from plane.db.models import Project, ProjectMember, ProjectUserProperty, WorkspaceMember
 from plane.bgtasks.project_add_user_email_task import project_add_user_email
 from plane.utils.host import base_host
+from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 from plane.app.permissions.base import allow_permission, ROLE
 
 
@@ -295,6 +296,7 @@ class ProjectMemberViewSet(BaseViewSet):
 
         project_member.is_active = False
         project_member.save()
+        deactivate_user_view_subscriptions(project_member.member_id, slug, project_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
@@ -323,6 +325,7 @@ class ProjectMemberViewSet(BaseViewSet):
         # Deactivate the user
         project_member.is_active = False
         project_member.save()
+        deactivate_user_view_subscriptions(project_member.member_id, slug, project_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

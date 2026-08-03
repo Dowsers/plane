@@ -97,3 +97,40 @@ class IssueView(WorkspaceBaseModel):
     def __str__(self):
         """Return name of the View"""
         return f"{self.name} <{self.project.name}>"
+
+
+class ViewSubscription(WorkspaceBaseModel):
+    """A personal subscription to a saved IssueView (project- or
+    workspace-scoped, they're the same model - see IssueView above) - see
+    docs/feature-specs/04-views-filters.md ("Abonnements/notifications par
+    vue") in plane-selfhost. `workspace`/`project` are denormalized from
+    `issue_view` at creation time for cheap scoped lookups (e.g. deactivating
+    every subscription in a project when a member is removed) without a join.
+    """
+
+    issue_view = models.ForeignKey("db.IssueView", on_delete=models.CASCADE, related_name="subscriptions")
+    subscriber = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="view_subscriptions"
+    )
+    notify_on_add = models.BooleanField(default=True)
+    notify_on_complete = models.BooleanField(default=True)
+    notify_on_cancel = models.BooleanField(default=True)
+    notify_by_email = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["issue_view", "subscriber", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["issue_view", "subscriber"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="view_subscription_unique_view_subscriber_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "View Subscription"
+        verbose_name_plural = "View Subscriptions"
+        db_table = "view_subscriptions"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.subscriber} -> {self.issue_view}"

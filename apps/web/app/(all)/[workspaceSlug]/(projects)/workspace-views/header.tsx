@@ -24,6 +24,7 @@ import { Breadcrumbs, Header, BreadcrumbNavigationSearchDropdown } from "@plane/
 import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { SwitcherLabel } from "@/components/common/switcher-label";
 import { DisplayFiltersSelection, FiltersDropdown } from "@/components/issues/issue-layouts/filters";
+import { ViewSubscriptionBell } from "@/components/views/view-subscription-bell";
 import { WorkItemFiltersToggle } from "@/components/work-item-filters/filters-toggle";
 import { DefaultWorkspaceViewQuickActions } from "@/components/workspace/views/default-view-quick-action";
 import { CreateUpdateWorkspaceViewModal } from "@/components/workspace/views/modal";
@@ -178,8 +179,13 @@ export const GlobalIssuesHeader = observer(function GlobalIssuesHeader() {
           >
             {t("workspace_views.add_view")}
           </Button>
-          <div className="hidden md:block">
-            {viewDetails && <WorkspaceViewQuickActions workspaceSlug={workspaceSlug?.toString()} view={viewDetails} />}
+          <div className="hidden items-center gap-2 md:flex">
+            {viewDetails && (
+              <>
+                <ViewSubscriptionBell workspaceSlug={workspaceSlug?.toString()} viewId={viewDetails.id} />
+                <WorkspaceViewQuickActions workspaceSlug={workspaceSlug?.toString()} view={viewDetails} />
+              </>
+            )}
             {isDefaultView && defaultViewDetails && (
               <DefaultWorkspaceViewQuickActions workspaceSlug={workspaceSlug?.toString()} view={defaultViewDetails} />
             )}

@@ -27,6 +27,7 @@ import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { SwitcherIcon, SwitcherLabel } from "@/components/common/switcher-label";
 import { DisplayFiltersSelection, FiltersDropdown, LayoutSelection } from "@/components/issues/issue-layouts/filters";
 import { ViewQuickActions } from "@/components/views/quick-actions";
+import { ViewSubscriptionBell } from "@/components/views/view-subscription-bell";
 import { WorkItemFiltersToggle } from "@/components/work-item-filters/filters-toggle";
 // hooks
 import { useCommandPalette } from "@/hooks/store/use-command-palette";
@@ -208,7 +209,8 @@ export const ProjectViewIssuesHeader = observer(function ProjectViewIssuesHeader
             Add work item
           </Button>
         )}
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-2 md:flex">
+          <ViewSubscriptionBell workspaceSlug={workspaceSlug.toString()} viewId={viewDetails.id} />
           <ViewQuickActions
             parentRef={parentRef}
             customClassName="flex-shrink-0 flex items-center justify-center size-[26px] bg-layer-1/70 rounded-sm"

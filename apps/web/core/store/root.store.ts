@@ -77,6 +77,8 @@ import type { IThemeStore } from "./theme.store";
 import { ThemeStore } from "./theme.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
+import type { IViewSubscriptionStore } from "./view-subscription.store";
+import { ViewSubscriptionStore } from "./view-subscription.store";
 import type { IWorkspaceRootStore } from "./workspace";
 
 enableStaticRendering(typeof window === "undefined");
@@ -116,6 +118,7 @@ export class CoreRootStore {
   editorAssetStore: IEditorAssetStore;
   workItemFilters: IWorkItemFilterStore;
   powerK: IPowerKStore;
+  viewSubscription: IViewSubscriptionStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -152,6 +155,7 @@ export class CoreRootStore {
     this.analytics = new AnalyticsStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.viewSubscription = new ViewSubscriptionStore(this);
   }
 
   resetOnSignOut() {
@@ -190,5 +194,6 @@ export class CoreRootStore {
     this.editorAssetStore = new EditorAssetStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.viewSubscription = new ViewSubscriptionStore(this);
   }
 }

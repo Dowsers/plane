@@ -91,6 +91,7 @@ from .view.base import (
     IssueViewViewSet,
     IssueViewFavoriteViewSet,
 )
+from .view.subscription import ViewSubscriptionViewSet, UserViewSubscriptionsEndpoint
 from .cycle.base import (
     CycleViewSet,
     CycleDateCheckEndpoint,

@@ -6,8 +6,8 @@
 from rest_framework import serializers
 
 # Module imports
-from .base import DynamicBaseSerializer
-from plane.db.models import IssueView, UserFavorite
+from .base import BaseSerializer, DynamicBaseSerializer
+from plane.db.models import IssueView, UserFavorite, ViewSubscription
 from plane.utils.filters import ComplexFilterBackend
 from plane.utils.issue_filters import issue_filters
 
@@ -113,3 +113,17 @@ class IssueViewSerializer(DynamicBaseSerializer):
             ).delete()
 
         return super().update(instance, validated_data)
+
+
+class ViewSubscriptionSerializer(BaseSerializer):
+    issue_view_name = serializers.CharField(source="issue_view.name", read_only=True)
+
+    class Meta:
+        model = ViewSubscription
+        fields = "__all__"
+        read_only_fields = [
+            "workspace",
+            "project",
+            "issue_view",
+            "subscriber",
+        ]

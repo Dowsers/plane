@@ -23,6 +23,7 @@ from plane.app.serializers import (
 from plane.app.views.base import BaseAPIView
 from plane.db.models import Project, ProjectMember, WorkspaceMember, DraftIssue
 from plane.utils.cache import invalidate_cache
+from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 
 from .. import BaseViewSet
 
@@ -147,6 +148,7 @@ class WorkSpaceMemberViewSet(BaseViewSet):
 
         workspace_member.is_active = False
         workspace_member.save()
+        deactivate_user_view_subscriptions(workspace_member.member_id, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @invalidate_cache(
@@ -202,6 +204,7 @@ class WorkSpaceMemberViewSet(BaseViewSet):
         # # Deactivate the user
         workspace_member.is_active = False
         workspace_member.save()
+        deactivate_user_view_subscriptions(workspace_member.member_id, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

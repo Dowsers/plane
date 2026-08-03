@@ -10,6 +10,8 @@ from plane.app.views import (
     WorkspaceViewViewSet,
     WorkspaceViewIssuesViewSet,
     IssueViewFavoriteViewSet,
+    ViewSubscriptionViewSet,
+    UserViewSubscriptionsEndpoint,
 )
 
 
@@ -62,5 +64,15 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/user-favorite-views/<uuid:view_id>/",
         IssueViewFavoriteViewSet.as_view({"delete": "destroy"}),
         name="user-favorite-view",
+    ),
+    path(
+        "workspaces/<str:slug>/views/<uuid:view_id>/subscription/",
+        ViewSubscriptionViewSet.as_view(),
+        name="view-subscription",
+    ),
+    path(
+        "workspaces/<str:slug>/users/me/view-subscriptions/",
+        UserViewSubscriptionsEndpoint.as_view(),
+        name="user-view-subscriptions",
     ),
 ]

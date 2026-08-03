@@ -62,7 +62,13 @@ class NotificationViewSet(BaseViewSet, BasePaginator):
 
         notifications = (
             Notification.objects.filter(workspace__slug=slug, receiver_id=request.user.id)
-            .filter(entity_name="issue")
+            # View subscription notifications also carry an issue's id as
+            # entity_identifier (see bgtasks/view_subscription_task.py), so
+            # the is_inbox_issue/is_intake_issue annotations below still
+            # resolve correctly for them - see
+            # docs/feature-specs/04-views-filters.md ("Abonnements/
+            # notifications par vue") in plane-selfhost.
+            .filter(Q(entity_name="issue") | Q(entity_name="VIEW_SUBSCRIPTION"))
             .annotate(is_inbox_issue=Exists(intake_issue))
             .annotate(is_intake_issue=Exists(intake_issue))
             .annotate(
