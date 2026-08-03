@@ -16,6 +16,7 @@ import { cn, EHeaderVariant, Header, Loader } from "@plane/ui";
 // local imports
 import type { TAddFilterButtonProps } from "./add-filters/button";
 import { AddFilterButton } from "./add-filters/button";
+import { AdvancedFiltersButton } from "./advanced/advanced-filters-button";
 import { FilterItem } from "./filter-item/root";
 
 export type TFiltersRowProps<K extends TFilterProperty, E extends TExternalFilter> = {
@@ -45,8 +46,13 @@ export const FiltersRow = observer(function FiltersRow<K extends TFilterProperty
   // derived values
   const disabledAllOperations = disabledAllOperationsProp || !filter.configManager.areConfigsReady;
   const hasAnyConditions = filter.allConditionsForDisplay.length > 0;
+  // The "Advanced filters" entry point is available whenever configs are ready, even when the rest
+  // of the row's operations (clear/save/update) are disabled - a read-only view can still be opened
+  // and inspected in the advanced tree builder, it just can't be edited there (see
+  // `AdvancedFiltersButton`'s `isDisabled` prop, threaded from `disabledAllOperationsProp` below).
   const hasAvailableOperations =
-    !disabledAllOperations && (filter.canClearFilters || filter.canSaveView || filter.canUpdateView);
+    filter.configManager.areConfigsReady ||
+    (!disabledAllOperations && (filter.canClearFilters || filter.canSaveView || filter.canUpdateView));
 
   const headerButtonConfig: Partial<TAddFilterButtonProps<K, E>["buttonConfig"]> = {
     label: null,
@@ -87,40 +93,47 @@ export const FiltersRow = observer(function FiltersRow<K extends TFilterProperty
     </>
   );
 
-  const rightContent = !disabledAllOperations && (
+  const rightContent = (
     <>
-      <ElementTransition show={filter.canClearFilters}>
-        <Button
-          variant="secondary"
-          className={COMMON_OPERATION_BUTTON_CLASSNAME}
-          onClick={filter.clearFilters}
-          data-ph-element={trackerElements?.clearFilter}
-        >
-          {filter.clearFilterOptions?.label ?? "Clear all"}
-        </Button>
-      </ElementTransition>
-      <ElementTransition show={filter.canSaveView}>
-        <Button
-          variant="secondary"
-          className={COMMON_OPERATION_BUTTON_CLASSNAME}
-          onClick={filter.saveView}
-          data-ph-element={trackerElements?.saveView}
-        >
-          {filter.saveViewOptions?.label ?? "Save view"}
-        </Button>
-      </ElementTransition>
-      <ElementTransition show={filter.canUpdateView}>
-        <Button
-          variant="secondary"
-          className={COMMON_OPERATION_BUTTON_CLASSNAME}
-          onClick={handleUpdate}
-          loading={isUpdating}
-          disabled={isUpdating}
-          data-ph-element={trackerElements?.updateView}
-        >
-          {isUpdating ? "Confirming" : (filter.updateViewOptions?.label ?? "Update view")}
-        </Button>
-      </ElementTransition>
+      {filter.configManager.areConfigsReady && (
+        <AdvancedFiltersButton filter={filter} isDisabled={disabledAllOperationsProp} />
+      )}
+      {!disabledAllOperations && (
+        <>
+          <ElementTransition show={filter.canClearFilters}>
+            <Button
+              variant="secondary"
+              className={COMMON_OPERATION_BUTTON_CLASSNAME}
+              onClick={filter.clearFilters}
+              data-ph-element={trackerElements?.clearFilter}
+            >
+              {filter.clearFilterOptions?.label ?? "Clear all"}
+            </Button>
+          </ElementTransition>
+          <ElementTransition show={filter.canSaveView}>
+            <Button
+              variant="secondary"
+              className={COMMON_OPERATION_BUTTON_CLASSNAME}
+              onClick={filter.saveView}
+              data-ph-element={trackerElements?.saveView}
+            >
+              {filter.saveViewOptions?.label ?? "Save view"}
+            </Button>
+          </ElementTransition>
+          <ElementTransition show={filter.canUpdateView}>
+            <Button
+              variant="secondary"
+              className={COMMON_OPERATION_BUTTON_CLASSNAME}
+              onClick={handleUpdate}
+              loading={isUpdating}
+              disabled={isUpdating}
+              data-ph-element={trackerElements?.updateView}
+            >
+              {isUpdating ? "Confirming" : (filter.updateViewOptions?.label ?? "Update view")}
+            </Button>
+          </ElementTransition>
+        </>
+      )}
     </>
   );
 

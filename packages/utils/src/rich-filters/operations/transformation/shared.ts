@@ -5,13 +5,14 @@
  */
 
 import type { TFilterGroupNode, TFilterProperty } from "@plane/types";
-import { processGroupNode } from "../../types/shared";
 import type { TTreeTransformFn, TTreeTransformResult } from "./core";
 import { transformGroupWithChildren } from "./core";
 
 /**
- * Transforms groups by processing children.
- * Handles AND/OR groups with children and NOT groups with single child.
+ * Transforms a group node by processing its children.
+ * All groups (AND/OR, negated or not) share the same shape, so this delegates directly to
+ * `transformGroupWithChildren` - kept as a named entry point (rather than calling it directly
+ * from `transformExpressionTree`) so group-specific pre/post-processing has a single place to live.
  * @param group - The group to transform
  * @param transformFn - The transformation function
  * @returns The transformation result
@@ -19,7 +20,4 @@ import { transformGroupWithChildren } from "./core";
 export const transformGroup = <P extends TFilterProperty>(
   group: TFilterGroupNode<P>,
   transformFn: TTreeTransformFn<P>
-): TTreeTransformResult<P> =>
-  processGroupNode(group, {
-    onAndGroup: (andGroup) => transformGroupWithChildren(andGroup, transformFn),
-  });
+): TTreeTransformResult<P> => transformGroupWithChildren(group, transformFn);

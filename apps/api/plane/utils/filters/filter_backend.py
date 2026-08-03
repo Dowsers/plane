@@ -27,6 +27,7 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
 
     filter_param = "filters"
     default_max_depth = 5
+    default_max_conditions = 50
 
     def filter_queryset(self, request, queryset, view, filter_data=None):
         """Normalize filter input and apply JSON-based filtering.
@@ -85,6 +86,20 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
         # Validate structure and depth before field allowlist checks
         max_depth = self._get_max_depth(view)
         self._validate_structure(filter_data, max_depth=max_depth, current_depth=1)
+
+        # Validate total condition count - see
+        # docs/feature-specs/04-views-filters.md ("Groupes de filtres
+        # imbriques AND/OR") in plane-selfhost. Depth alone doesn't bound a
+        # single group's width (e.g. a flat "or" with 500 children).
+        max_conditions = self._get_max_conditions(view)
+        total_conditions = self._count_leaf_conditions(filter_data)
+        if total_conditions > max_conditions:
+            raise DRFValidationError(
+                {
+                    "message": (f"Filter has too many conditions (max {max_conditions}); found {total_conditions}"),
+                    "code": "filter_tree_too_large",
+                }
+            )
 
         # Validate against the view's FilterSet (only declared filters are allowed)
         self._validate_fields(filter_data, view)
@@ -309,6 +324,31 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
             return value_int
         except Exception:
             return self.default_max_depth
+
+    def _get_max_conditions(self, view):
+        """Return the maximum total number of leaf conditions allowed across
+        the whole filter tree. Falls back to class default if the view does
+        not specify it or has an invalid value.
+        """
+        value = getattr(view, "complex_filter_max_conditions", self.default_max_conditions)
+        try:
+            value_int = int(value)
+            if value_int <= 0:
+                return self.default_max_conditions
+            return value_int
+        except Exception:
+            return self.default_max_conditions
+
+    def _count_leaf_conditions(self, node):
+        """Recursively count leaf (non-logical) filter nodes in the tree."""
+        if not isinstance(node, dict):
+            return 0
+        for key in ("or", "and"):
+            if key in node and isinstance(node[key], list):
+                return sum(self._count_leaf_conditions(child) for child in node[key])
+        if "not" in node:
+            return self._count_leaf_conditions(node["not"])
+        return 1
 
     def _validate_structure(self, node, max_depth, current_depth):
         """Validate JSON structure and enforce nesting depth.

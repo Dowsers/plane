@@ -119,16 +119,28 @@ export type TWorkItemFilterConditionData = Partial<{
   [K in TWorkItemFilterConditionKey]: string | boolean | number;
 }>;
 
+/**
+ * Wire shape for an AND group node, e.g. `{ and: [{...}, {...}] }`. Children are recursive
+ * (`TWorkItemFilterExpressionData`, not just leaf conditions) so groups can nest arbitrarily -
+ * matches `ComplexFilterBackend._evaluate_node`'s recursive `{"and": [...]}` handling.
+ */
 export type TWorkItemFilterAndGroup = {
-  [LOGICAL_OPERATOR.AND]: TWorkItemFilterConditionData[];
+  [LOGICAL_OPERATOR.AND]: TWorkItemFilterExpressionData[];
 };
 
-export type TWorkItemFilterGroup = TWorkItemFilterAndGroup;
+/**
+ * Wire shape for an OR group node, e.g. `{ or: [{...}, {...}] }`. See `TWorkItemFilterAndGroup`.
+ */
+export type TWorkItemFilterOrGroup = {
+  [LOGICAL_OPERATOR.OR]: TWorkItemFilterExpressionData[];
+};
+
+export type TWorkItemFilterGroup = TWorkItemFilterAndGroup | TWorkItemFilterOrGroup;
 
 /**
- * Key used to structurally negate a single leaf condition on the wire, e.g.
- * `{ not: { name__icontains: "foo" } }`. Handled generically by the backend's
- * `ComplexFilterBackend`, independent of any specific operator.
+ * Key used to structurally negate a leaf condition OR a whole group on the wire, e.g.
+ * `{ not: { name__icontains: "foo" } }` or `{ not: { and: [...] } }`. Handled generically by the
+ * backend's `ComplexFilterBackend`, independent of any specific operator/group operator.
  */
 export const NEGATION_KEY = "not" as const;
 
@@ -136,10 +148,19 @@ export type TWorkItemFilterNotCondition = {
   [NEGATION_KEY]: TWorkItemFilterConditionData;
 };
 
+/**
+ * Wire shape for a negated group, e.g. `{ not: { and: [...] } }` or `{ not: { or: [...] } }` -
+ * equivalent to a group-level `negate: true` internally.
+ */
+export type TWorkItemFilterNotGroup = {
+  [NEGATION_KEY]: TWorkItemFilterGroup;
+};
+
 export type TWorkItemFilterExpressionData =
   | TWorkItemFilterConditionData
   | TWorkItemFilterGroup
-  | TWorkItemFilterNotCondition;
+  | TWorkItemFilterNotCondition
+  | TWorkItemFilterNotGroup;
 
 export type TWorkItemFilterExpression = CompleteOrEmpty<TWorkItemFilterExpressionData>;
 

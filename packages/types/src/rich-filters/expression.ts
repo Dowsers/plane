@@ -6,7 +6,7 @@
 
 // local imports
 import type { SingleOrArray } from "../utils";
-import type { TSupportedOperators, LOGICAL_OPERATOR, TAllAvailableOperatorsForDisplay } from "./operators";
+import type { TSupportedOperators, TLogicalOperator, TAllAvailableOperatorsForDisplay } from "./operators";
 
 /**
  * Filter node types for building hierarchical filter trees.
@@ -69,23 +69,25 @@ export type TFilterConditionNodeForDisplay<P extends TFilterProperty, V extends 
 };
 
 /**
- * Container node that combines multiple conditions with AND logical operator.
+ * Container node that combines multiple children (conditions and/or nested groups) with a single
+ * logical operator (AND/OR), optionally negating the whole group.
  * - type: Node type (group)
- * - logicalOperator: AND operator for combining child filters
- * - children: Child conditions and/or nested groups (minimum 2 for meaningful operations)
+ * - logicalOperator: AND/OR operator for combining child filters
+ * - negate: Whether the entire group is logically negated (equivalent to wrapping it in "NOT (...)").
+ *   Negation is tracked per-group rather than via a distinct NOT node kind - a group is a single
+ *   shape regardless of operator/negation, which keeps `isGroupNode()` a single check and every
+ *   traversal utility trivially compatible with AND, OR, and negated groups alike.
+ * - children: Child conditions and/or nested groups. An empty array is tolerated (see feature spec
+ *   "Groupes de filtres imbriques AND/OR"): an empty group is ignored at evaluation time and
+ *   pruned automatically by the UI while editing.
  * @template P - Property key type
  */
-export type TFilterAndGroupNode<P extends TFilterProperty> = TBaseFilterNode & {
+export type TFilterGroupNode<P extends TFilterProperty> = TBaseFilterNode & {
   type: typeof FILTER_NODE_TYPE.GROUP;
-  logicalOperator: typeof LOGICAL_OPERATOR.AND;
+  logicalOperator: TLogicalOperator;
+  negate?: boolean;
   children: TFilterExpression<P>[];
 };
-
-/**
- * Union type for all group node types - AND, OR, and NOT groups.
- * @template P - Property key type
- */
-export type TFilterGroupNode<P extends TFilterProperty> = TFilterAndGroupNode<P>;
 
 /**
  * Union type for any filter node - either a single condition or a group container.
@@ -107,13 +109,7 @@ export type TFilterConditionPayload<P extends TFilterProperty, V extends TFilter
 >;
 
 /**
- * Payload for creating/updating AND group nodes - excludes base node properties.
+ * Payload for creating/updating group nodes - excludes base node properties.
  * @template P - Property key type
  */
-export type TFilterAndGroupPayload<P extends TFilterProperty> = Omit<TFilterAndGroupNode<P>, keyof TBaseFilterNode>;
-
-/**
- * Union payload type for creating/updating any group node - excludes base node properties.
- * @template P - Property key type
- */
-export type TFilterGroupPayload<P extends TFilterProperty> = TFilterAndGroupPayload<P>;
+export type TFilterGroupPayload<P extends TFilterProperty> = Omit<TFilterGroupNode<P>, keyof TBaseFilterNode>;

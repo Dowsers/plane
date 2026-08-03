@@ -16,7 +16,6 @@ import type {
 import { FILTER_NODE_TYPE } from "@plane/types";
 // local imports
 import { isConditionNode, isGroupNode } from "../types/core";
-import { processGroupNode } from "../types/shared";
 import { hasValidValue } from "../validators/core";
 import { transformExpressionTree } from "./transformation/core";
 
@@ -53,7 +52,7 @@ const createComparableChildren = <P extends TFilterProperty>(
     }
     // For nested groups, sort by logical operator and recursive structure
     if (child?.type === FILTER_NODE_TYPE.GROUP) {
-      const childrenCount = child.child ? 1 : Array.isArray(child.children) ? child.children.length : 0;
+      const childrenCount = Array.isArray(child.children) ? child.children.length : 0;
       return `group_${child.logicalOperator}_${childrenCount}_${JSON.stringify(child)}`;
     }
     return "unknown";
@@ -69,7 +68,6 @@ const createComparableChildren = <P extends TFilterProperty>(
  * Creates a comparable representation of a group for deep comparison.
  * This recursively creates comparable representations for all children.
  * IDs are completely excluded to avoid UUID comparison issues.
- * Uses processGroupNode for consistent group type handling.
  * @param group - The group to create a comparable representation for
  * @returns A comparable object without ID
  */
@@ -80,11 +78,10 @@ export const createGroupComparable = <P extends TFilterProperty>(
     // Explicitly exclude: id (random UUID should not be compared)
     type: group.type,
     logicalOperator: group.logicalOperator,
+    negate: group.negate ?? false,
   };
 
-  return processGroupNode(group, {
-    onAndGroup: (andGroup) => createComparableChildren(andGroup.children, baseComparable),
-  });
+  return createComparableChildren(group.children, baseComparable);
 };
 
 /**

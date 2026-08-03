@@ -77,11 +77,11 @@ export const transformGroupWithChildren = <P extends TFilterProperty>(
     return { expression: null, shouldNotify };
   }
 
-  // Create updated group with transformed children - type-safe without casting
+  // Create updated group with transformed children
   const updatedGroup: TFilterGroupNode<P> = {
     ...group,
     children: transformedChildren,
-  } as TFilterGroupNode<P>;
+  };
 
   return createGroupTransformResult(updatedGroup, shouldNotify);
 };

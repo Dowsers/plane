@@ -5,7 +5,6 @@
  */
 
 import type {
-  TFilterAndGroupNode,
   TFilterConditionNode,
   TFilterExpression,
   TFilterFieldType,
@@ -33,33 +32,30 @@ export const isGroupNode = <P extends TFilterProperty>(node: TFilterExpression<P
   node.type === FILTER_NODE_TYPE.GROUP;
 
 /**
- * Type guard to check if a group node is an AND group.
+ * Checks whether a group node uses the AND logical operator.
+ * Not a type guard - AND/OR groups share the exact same shape (`TFilterGroupNode`), only the
+ * `logicalOperator` value differs, so there is nothing to narrow.
  * @param group - The group node to check
  * @returns True if the group is an AND group
  */
-export const isAndGroupNode = <P extends TFilterProperty>(
-  group: TFilterGroupNode<P>
-): group is TFilterAndGroupNode<P> => group.logicalOperator === LOGICAL_OPERATOR.AND;
+export const isAndGroupNode = <P extends TFilterProperty>(group: TFilterGroupNode<P>): boolean =>
+  group.logicalOperator === LOGICAL_OPERATOR.AND;
 
 /**
- * Type guard to check if a group node has children property
+ * Checks whether a group node uses the OR logical operator.
  * @param group - The group node to check
- * @returns True if the group has children property
+ * @returns True if the group is an OR group
  */
-export const hasChildrenProperty = <P extends TFilterProperty>(
-  group: TFilterGroupNode<P>
-): group is TFilterAndGroupNode<P> => {
-  const groupWithChildren = group as { children?: unknown };
-  return "children" in group && Array.isArray(groupWithChildren.children);
-};
+export const isOrGroupNode = <P extends TFilterProperty>(group: TFilterGroupNode<P>): boolean =>
+  group.logicalOperator === LOGICAL_OPERATOR.OR;
 
 /**
- * Safely gets the children array from an AND group node.
- * @param group - The AND group node
- * @returns The children array
+ * Checks whether a group node is negated (equivalent to being wrapped in a logical NOT).
+ * @param group - The group node to check
+ * @returns True if the group is negated
  */
-export const getAndGroupChildren = <P extends TFilterProperty>(group: TFilterAndGroupNode<P>): TFilterExpression<P>[] =>
-  group.children;
+export const isNegatedGroupNode = <P extends TFilterProperty>(group: TFilterGroupNode<P>): boolean =>
+  group.negate === true;
 
 /**
  * Type guard to check if a filter type is a date filter type.

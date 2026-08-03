@@ -8,6 +8,7 @@ from rest_framework import serializers
 # Module imports
 from .base import DynamicBaseSerializer
 from plane.db.models import IssueView, UserFavorite
+from plane.utils.filters import ComplexFilterBackend
 from plane.utils.issue_filters import issue_filters
 
 
@@ -66,6 +67,24 @@ class IssueViewSerializer(DynamicBaseSerializer):
             "owned_by",
             "is_locked",
         ]
+
+    def validate_rich_filters(self, value):
+        """Enforce the same depth/size limits on the save path that
+        ComplexFilterBackend already enforces on the query path - see
+        docs/feature-specs/04-views-filters.md ("Groupes de filtres
+        imbriques AND/OR") in plane-selfhost. Without this, a saved view
+        could persist a tree that later fails validation for every viewer.
+        """
+        if value:
+            backend = ComplexFilterBackend()
+            backend._validate_structure(value, max_depth=backend.default_max_depth, current_depth=1)
+            total_conditions = backend._count_leaf_conditions(value)
+            if total_conditions > backend.default_max_conditions:
+                raise serializers.ValidationError(
+                    f"Filter has too many conditions (max {backend.default_max_conditions}); "
+                    f"found {total_conditions}"
+                )
+        return value
 
     def create(self, validated_data):
         query_params = validated_data.get("filters", {})

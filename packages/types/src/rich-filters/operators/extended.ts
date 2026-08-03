@@ -5,9 +5,14 @@
  */
 
 /**
- * Extended logical operators
+ * Extended logical operators.
+ * - OR: combines a group's children where any one matching is sufficient (as opposed to the core
+ *   AND operator, where all children must match). See feature spec "Groupes de filtres imbriques
+ *   AND/OR" (plane-selfhost docs/feature-specs/04-views-filters.md) for the nested group model.
  */
-export const EXTENDED_LOGICAL_OPERATOR = {} as const;
+export const EXTENDED_LOGICAL_OPERATOR = {
+  OR: "or",
+} as const;
 
 /**
  * Extended equality operators

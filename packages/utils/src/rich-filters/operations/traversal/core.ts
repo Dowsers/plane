@@ -175,28 +175,29 @@ export const extractConditions = <P extends TFilterProperty>(
   traverseExpressionTree(expression, (node) => (isConditionNode(node) ? node : null), TreeTraversalMode.CONDITIONS);
 
 /**
+ * Converts a single raw (base operator) condition node to its display form, resolving its base
+ * operator + `isNegation` state into a single display-only operator (e.g. "exact" + isNegation ->
+ * "not_exact"). `condition` may be a live reference into the expression tree (see
+ * extractConditions/traverseExpressionTree); mutating it in place would overwrite the stored base
+ * operator with the display-only one, so this always returns a copy rather than mutating in place.
+ * @param condition - The raw condition node
+ * @returns The condition node with its display operator
+ */
+export const toConditionForDisplay = <P extends TFilterProperty>(
+  condition: TFilterConditionNode<P, TFilterValue>
+): TFilterConditionNodeForDisplay<P, TFilterValue> => ({
+  ...condition,
+  operator: getDisplayOperator(condition.operator, condition.isNegation),
+});
+
+/**
  * Extracts all conditions from a filter expression, including their display operators.
  * @param expression - The filter expression to extract conditions from
  * @returns An array of filter conditions with their display operators
  */
 export const extractConditionsWithDisplayOperators = <P extends TFilterProperty>(
   expression: TFilterExpression<P>
-): TFilterConditionNodeForDisplay<P, TFilterValue>[] => {
-  // First extract all raw conditions
-  const rawConditions = extractConditions(expression);
-
-  // Transform operators using the extended helper. `condition` is a live reference into the expression
-  // tree (see extractConditions/traverseExpressionTree); mutating it in place would overwrite the
-  // stored base operator with the display-only one, so a copy is required here, not just style.
-  // eslint-disable-next-line oxc/no-map-spread -- copy required, not just style (see comment above)
-  return rawConditions.map((condition) => {
-    const displayOperator = getDisplayOperator(condition.operator, condition.isNegation);
-    return {
-      ...condition,
-      operator: displayOperator,
-    };
-  });
-};
+): TFilterConditionNodeForDisplay<P, TFilterValue>[] => extractConditions(expression).map(toConditionForDisplay);
 
 /**
  * Finds all conditions by property and operator.

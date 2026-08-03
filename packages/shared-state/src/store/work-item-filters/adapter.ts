@@ -15,11 +15,21 @@ import type {
   TWorkItemFilterConditionKey,
   TWorkItemFilterExpression,
   TWorkItemFilterExpressionData,
+  TWorkItemFilterGroup,
   TWorkItemFilterNotCondition,
+  TWorkItemFilterNotGroup,
   TWorkItemFilterProperty,
 } from "@plane/types";
 import { LOGICAL_OPERATOR, MULTI_VALUE_OPERATORS, NEGATION_KEY, WORK_ITEM_FILTER_PROPERTY_KEYS } from "@plane/types";
-import { createConditionNode, createAndGroupNode, isAndGroupNode, isConditionNode } from "@plane/utils";
+import {
+  createConditionNode,
+  createAndGroupNode,
+  createOrGroupNode,
+  isAndGroupNode,
+  isConditionNode,
+  isGroupNode,
+  isOrGroupNode,
+} from "@plane/utils";
 // local imports
 import { FilterAdapter } from "../rich-filters/adapter";
 
@@ -67,10 +77,20 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
       });
     }
 
-    // Check if it's a negated single condition, e.g. `{ not: { name__icontains: "foo" } }`
-    if (this._isWorkItemFilterNotCondition(expression)) {
-      const innerCondition = expression[NEGATION_KEY];
-      const conditionResult = this._extractWorkItemFilterConditionData(innerCondition);
+    // Check if it's a negated expression, e.g. `{ not: { name__icontains: "foo" } }` (a negated
+    // leaf condition) or `{ not: { and: [...] } }` / `{ not: { or: [...] } }` (a negated group).
+    if (this._isNegatedExpression(expression)) {
+      const inner = expression[NEGATION_KEY];
+
+      if (this._isWorkItemFilterGroupData(inner)) {
+        const innerNode = this._convertExpressionToInternal(inner);
+        if (!isGroupNode(innerNode)) {
+          throw new Error("Failed to convert negated group: inner expression did not resolve to a group");
+        }
+        return { ...innerNode, negate: true };
+      }
+
+      const conditionResult = this._extractWorkItemFilterConditionData(inner);
       if (!conditionResult) {
         throw new Error("Failed to extract negated condition data");
       }
@@ -84,19 +104,37 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
       });
     }
 
-    // It's a logical group - check which type
+    // It's a logical group - check which type. Empty children arrays are tolerated here (rather
+    // than rejected) so a legacy view migrated with no filters at all (`{ and: [] }`) round-trips
+    // to an empty-but-valid group instead of discarding the whole tree - see feature spec
+    // "Groupes de filtres imbriques AND/OR", requirement 4 (empty groups are tolerated). Note the
+    // API itself still rejects a genuinely empty `and`/`or` on save/query (see
+    // `ComplexFilterBackend._validate_structure`), so a NESTED empty group can never actually be
+    // persisted in the first place - this only matters for the legacy-migration root case.
     const expressionKeys = Object.keys(expression);
 
     if (LOGICAL_OPERATOR.AND in expression) {
       const andExpression = expression as { [LOGICAL_OPERATOR.AND]: TWorkItemFilterExpressionData[] };
       const andConditions = andExpression[LOGICAL_OPERATOR.AND];
 
-      if (!Array.isArray(andConditions) || andConditions.length === 0) {
-        throw new Error("AND group must contain at least one condition");
+      if (!Array.isArray(andConditions)) {
+        throw new Error("AND group children must be an array");
       }
 
       const convertedConditions = andConditions.map((item) => this._convertExpressionToInternal(item));
       return createAndGroupNode(convertedConditions);
+    }
+
+    if (LOGICAL_OPERATOR.OR in expression) {
+      const orExpression = expression as { [LOGICAL_OPERATOR.OR]: TWorkItemFilterExpressionData[] };
+      const orConditions = orExpression[LOGICAL_OPERATOR.OR];
+
+      if (!Array.isArray(orConditions)) {
+        throw new Error("OR group children must be an array");
+      }
+
+      const convertedConditions = orConditions.map((item) => this._convertExpressionToInternal(item));
+      return createOrGroupNode(convertedConditions);
     }
 
     throw new Error(`Invalid expression: unknown structure with keys [${expressionKeys.join(", ")}]`);
@@ -143,14 +181,23 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     }
 
     // It's a group node
+    const childrenData = expression.children.map((child) => this._convertExpressionToExternal(child));
 
+    let groupData: TWorkItemFilterGroup;
     if (isAndGroupNode(expression)) {
-      return {
-        [LOGICAL_OPERATOR.AND]: expression.children.map((child) => this._convertExpressionToExternal(child)),
-      } as TWorkItemFilterExpressionData;
+      groupData = { [LOGICAL_OPERATOR.AND]: childrenData } as TWorkItemFilterGroup;
+    } else if (isOrGroupNode(expression)) {
+      groupData = { [LOGICAL_OPERATOR.OR]: childrenData } as TWorkItemFilterGroup;
+    } else {
+      throw new Error(`Unknown group node type for expression`);
     }
 
-    throw new Error(`Unknown group node type for expression`);
+    // Negation is structural on the wire - wrap the whole group's data in a `not` group instead of
+    // tracking it as some variant of the group operator itself.
+    if (expression.negate) {
+      return { [NEGATION_KEY]: groupData } as TWorkItemFilterNotGroup;
+    }
+    return groupData;
   }
 
   /**
@@ -165,7 +212,7 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     if (keys.length === 0) return false;
 
     // Check if any key contains logical operators (would indicate it's a group)
-    const hasLogicalOperators = keys.some((key) => key === LOGICAL_OPERATOR.AND);
+    const hasLogicalOperators = keys.some((key) => key === LOGICAL_OPERATOR.AND || key === LOGICAL_OPERATOR.OR);
     if (hasLogicalOperators) return false;
 
     // All keys must match the work item filter condition key pattern
@@ -173,15 +220,29 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
   };
 
   /**
-   * Type guard to check if data is a negated single condition, e.g. `{ not: { field__op: value } }`.
+   * Type guard to check if data is a negated expression, e.g. `{ not: { field__op: value } }` (a
+   * negated leaf condition) or `{ not: { and: [...] } }` / `{ not: { or: [...] } }` (a negated
+   * group). Does not look inside the `not` - see `_isWorkItemFilterGroupData` for that distinction.
    * @param data - The data to check
-   * @returns True if data is TWorkItemFilterNotCondition, false otherwise
+   * @returns True if data is TWorkItemFilterNotCondition or TWorkItemFilterNotGroup, false otherwise
    */
-  private _isWorkItemFilterNotCondition = (data: unknown): data is TWorkItemFilterNotCondition => {
+  private _isNegatedExpression = (data: unknown): data is TWorkItemFilterNotCondition | TWorkItemFilterNotGroup => {
     if (!data || typeof data !== "object" || isEmpty(data)) return false;
 
     const keys = Object.keys(data);
     return keys.length === 1 && keys[0] === NEGATION_KEY;
+  };
+
+  /**
+   * Type guard to check if data is a logical group (AND/OR), as opposed to a leaf condition.
+   * @param data - The data to check
+   * @returns True if data is TWorkItemFilterGroup, false otherwise
+   */
+  private _isWorkItemFilterGroupData = (data: unknown): data is TWorkItemFilterGroup => {
+    if (!data || typeof data !== "object" || isEmpty(data)) return false;
+
+    const keys = Object.keys(data);
+    return keys.length === 1 && (keys[0] === LOGICAL_OPERATOR.AND || keys[0] === LOGICAL_OPERATOR.OR);
   };
 
   /**

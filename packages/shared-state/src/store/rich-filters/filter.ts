@@ -9,6 +9,7 @@ import { action, computed, makeObservable, observable, toJS } from "mobx";
 import { computedFn } from "mobx-utils";
 import { v4 as uuidv4 } from "uuid";
 // plane imports
+import { DEFAULT_FILTER_VISIBILITY_OPTIONS, FILTER_TREE_MAX_CONDITIONS, FILTER_TREE_MAX_DEPTH } from "@plane/constants";
 import type {
   TClearFilterOptions,
   TExpressionOptions,
@@ -16,7 +17,6 @@ import type {
   TSaveViewOptions,
   TUpdateViewOptions,
 } from "@plane/constants";
-import { DEFAULT_FILTER_VISIBILITY_OPTIONS } from "@plane/constants";
 import type {
   IFilterAdapter,
   SingleOrArray,
@@ -26,20 +26,27 @@ import type {
   TFilterConditionNodeForDisplay,
   TFilterConditionPayload,
   TFilterExpression,
+  TFilterGroupNode,
   TFilterProperty,
   TFilterValue,
   TLogicalOperator,
   TSupportedOperators,
 } from "@plane/types";
-import { FILTER_NODE_TYPE, RELATIONAL_OPERATOR } from "@plane/types";
+import { FILTER_NODE_TYPE, LOGICAL_OPERATOR, RELATIONAL_OPERATOR } from "@plane/types";
 // local imports
 import {
+  createConditionNode,
+  createGroupNode,
   deepCompareFilterExpressions,
   extractConditions,
   extractConditionsWithDisplayOperators,
   findConditionsByPropertyAndOperator,
   findNodeById,
+  findParentChain,
+  getDefaultValueForOperator,
   hasValidValue,
+  isConditionNode,
+  isGroupNode,
   removeNodeFromExpression,
   sanitizeAndStabilizeExpression,
   shouldNotifyChangeForExpression,
@@ -66,6 +73,18 @@ import { FilterInstanceHelper } from "./filter-helpers";
  * - updateConditionValue: Updates the value of a condition in the filter expression
  * - removeCondition: Removes a condition from the filter expression
  * - clearFilters: Clears the filter expression
+ * - ensureRootGroup: Normalizes the root of the expression into an explicit group node, so the
+ *   advanced (nested AND/OR/NOT) tree-builder always has a stable group id to target - a no-op if
+ *   the root is already a group
+ * - addConditionToGroup: Adds a condition directly to a specific group, by id (advanced builder)
+ * - addGroup: Adds a new (empty) nested group under a specific parent group, by id
+ * - toggleGroupOperator: Flips a group's logical operator between AND and OR
+ * - toggleGroupNegate: Flips a group's negation flag
+ * - removeGroup: Removes a group (and its children) from the filter expression
+ * - moveNode: Reorders a condition/group up or down among its siblings within the same parent group
+ *   (v1 does not support moving a node into a *different* parent group - delete and re-add there
+ *   instead; see the feature report for the "move" scope decision)
+ * - duplicateNode: Duplicates a condition/group as a new sibling, with fresh ids throughout
  * @template P - The filter property type extending TFilterProperty
  * @template E - The external filter type extending TExternalFilter
  */
@@ -122,6 +141,19 @@ export interface IFilterInstance<P extends TFilterProperty, E extends TExternalF
     forceUpdate?: boolean
   ) => void;
   removeCondition: (conditionId: string) => void;
+  // group actions (advanced/nested AND-OR-NOT tree builder)
+  ensureRootGroup: () => void;
+  addConditionToGroup: <V extends TFilterValue>(
+    groupId: string,
+    condition: TFilterConditionPayload<P, V>,
+    isNegation: boolean
+  ) => void;
+  addGroup: (parentGroupId: string, logicalOperator?: TLogicalOperator) => void;
+  toggleGroupOperator: (groupId: string) => void;
+  toggleGroupNegate: (groupId: string) => void;
+  removeGroup: (groupId: string) => void;
+  moveNode: (nodeId: string, direction: "up" | "down") => void;
+  duplicateNode: (nodeId: string) => void;
   // config actions
   clearFilters: () => Promise<void>;
   saveView: () => Promise<void>;
@@ -197,6 +229,14 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
       updateConditionOperator: action,
       updateConditionValue: action,
       removeCondition: action,
+      ensureRootGroup: action,
+      addConditionToGroup: action,
+      addGroup: action,
+      toggleGroupOperator: action,
+      toggleGroupNegate: action,
+      removeGroup: action,
+      moveNode: action,
+      duplicateNode: action,
       clearFilters: action,
       saveView: action,
       updateView: action,
@@ -505,6 +545,188 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
     }
   });
 
+  // ------------ group actions (advanced/nested AND-OR-NOT tree builder) ------------
+
+  /**
+   * Normalizes the root of the expression into an explicit group node, so the advanced tree
+   * builder always has a stable root group id to target with `addConditionToGroup`/`addGroup`/etc.
+   * A no-op if the root is already a group (including `null`, which becomes an empty AND group).
+   * This is purely an editing-time convenience: wrapping a lone condition in a single-child AND
+   * group is externally equivalent (see `unwrapGroupIfNeeded`, which the adapter's serialization
+   * path already applies), so calling this never changes what gets saved - simple mode and advanced
+   * mode operate on the exact same underlying expression, never two parallel representations.
+   */
+  ensureRootGroup: IFilterInstance<P, E>["ensureRootGroup"] = action(() => {
+    if (!this.expression) {
+      this.expression = createGroupNode([]);
+      return;
+    }
+    if (isConditionNode(this.expression)) {
+      this.expression = createGroupNode([this.expression]);
+    }
+  });
+
+  /**
+   * Adds a condition directly to a specific group, by id. Used by the advanced tree builder, where
+   * every "+ Condition" button is scoped to the group it's rendered inside - as opposed to
+   * `addCondition`, which operates on the (possibly implicit) root and is used by simple mode.
+   * @param groupId - The id of the group to add the condition to (call `ensureRootGroup()` first if
+   * targeting the root, so it is guaranteed to have an id to find).
+   * @param condition - The condition to add.
+   * @param isNegation - Whether the condition should be negated.
+   */
+  addConditionToGroup: IFilterInstance<P, E>["addConditionToGroup"] = action(
+    <V extends TFilterValue>(groupId: string, condition: TFilterConditionPayload<P, V>, isNegation = false) => {
+      const group = this.expression ? findNodeById(this.expression, groupId) : null;
+      if (!group || !isGroupNode(group)) {
+        console.warn(`addConditionToGroup: group "${groupId}" not found.`);
+        return;
+      }
+      if (this.allConditions.length >= FILTER_TREE_MAX_CONDITIONS) {
+        console.warn(
+          `Cannot add condition: filter already has the maximum of ${FILTER_TREE_MAX_CONDITIONS} conditions.`
+        );
+        return;
+      }
+
+      const conditionNode = createConditionNode({
+        ...condition,
+        value: condition.value ?? getDefaultValueForOperator(condition.operator),
+        isNegation,
+      });
+      group.children.push(conditionNode);
+
+      if (hasValidValue(conditionNode.value)) {
+        this._notifyExpressionChange();
+      }
+    }
+  );
+
+  /**
+   * Adds a new, empty nested group under a specific parent group, by id.
+   * The new group starts with no children - the user populates it via its own scoped "+ Condition"
+   * / "+ Group" buttons (an empty group is tolerated, not an error - see feature spec "Groupes de
+   * filtres imbriques AND/OR", requirement 4).
+   * @param parentGroupId - The id of the group to nest the new group under.
+   * @param logicalOperator - The new group's own logical operator (defaults to AND; the user can
+   * toggle it afterwards via `toggleGroupOperator`).
+   */
+  addGroup: IFilterInstance<P, E>["addGroup"] = action((parentGroupId, logicalOperator = LOGICAL_OPERATOR.AND) => {
+    const parent = this.expression ? findNodeById(this.expression, parentGroupId) : null;
+    if (!parent || !isGroupNode(parent)) {
+      console.warn(`addGroup: parent group "${parentGroupId}" not found.`);
+      return;
+    }
+
+    const parentDepth = this._getNodeDepth(parentGroupId);
+    if (parentDepth >= FILTER_TREE_MAX_DEPTH) {
+      console.warn(`Cannot add group: maximum nesting depth of ${FILTER_TREE_MAX_DEPTH} reached.`);
+      return;
+    }
+
+    parent.children.push(createGroupNode([], logicalOperator));
+    // an empty group carries no filtering meaning yet - nothing to notify
+  });
+
+  /**
+   * Flips a group's logical operator between AND and OR.
+   * @param groupId - The id of the group to toggle.
+   */
+  toggleGroupOperator: IFilterInstance<P, E>["toggleGroupOperator"] = action((groupId) => {
+    const group = this.expression ? findNodeById(this.expression, groupId) : null;
+    if (!group || !isGroupNode(group)) {
+      console.warn(`toggleGroupOperator: group "${groupId}" not found.`);
+      return;
+    }
+    group.logicalOperator = group.logicalOperator === LOGICAL_OPERATOR.AND ? LOGICAL_OPERATOR.OR : LOGICAL_OPERATOR.AND;
+    this._notifyExpressionChange();
+  });
+
+  /**
+   * Flips a group's negation flag (equivalent to wrapping/unwrapping it in "NOT (...)").
+   * @param groupId - The id of the group to toggle.
+   */
+  toggleGroupNegate: IFilterInstance<P, E>["toggleGroupNegate"] = action((groupId) => {
+    const group = this.expression ? findNodeById(this.expression, groupId) : null;
+    if (!group || !isGroupNode(group)) {
+      console.warn(`toggleGroupNegate: group "${groupId}" not found.`);
+      return;
+    }
+    group.negate = !group.negate;
+    this._notifyExpressionChange();
+  });
+
+  /**
+   * Removes a group (and all of its children) from the filter expression.
+   * Reuses the same generic removal used by `removeCondition` - both conditions and groups are
+   * found/removed purely by id, so there is nothing group-specific about the removal itself.
+   * @param groupId - The id of the group to remove.
+   */
+  removeGroup: IFilterInstance<P, E>["removeGroup"] = action((groupId) => {
+    if (!this.expression) return;
+    const { expression, shouldNotify } = removeNodeFromExpression(this.expression, groupId);
+    this.expression = expression;
+    if (shouldNotify) {
+      this._notifyExpressionChange();
+    }
+  });
+
+  /**
+   * Reorders a condition/group up or down among its siblings within the same parent group.
+   * There is no cross-group move in v1 (moving a node into a *different* parent group) - delete
+   * and re-add it there instead; see the feature report for this scope decision.
+   * @param nodeId - The id of the condition/group to move.
+   * @param direction - Whether to move it up or down among its siblings.
+   */
+  moveNode: IFilterInstance<P, E>["moveNode"] = action((nodeId, direction) => {
+    if (!this.expression) return;
+    const parent = this._getParentOf(nodeId);
+    if (!parent) {
+      console.warn(`moveNode: node "${nodeId}" is the root, or was not found - nothing to reorder against.`);
+      return;
+    }
+
+    const index = parent.children.findIndex((child) => child.id === nodeId);
+    if (index === -1) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= parent.children.length) return;
+
+    const [movedNode] = parent.children.splice(index, 1);
+    parent.children.splice(targetIndex, 0, movedNode);
+    this._notifyExpressionChange();
+  });
+
+  /**
+   * Duplicates a condition/group as a new sibling immediately after the original, with fresh ids
+   * generated throughout (so the duplicate is a fully independent node, not a shared reference).
+   * @param nodeId - The id of the condition/group to duplicate.
+   */
+  duplicateNode: IFilterInstance<P, E>["duplicateNode"] = action((nodeId) => {
+    if (!this.expression) return;
+    const parent = this._getParentOf(nodeId);
+    if (!parent) {
+      console.warn(`duplicateNode: node "${nodeId}" is the root, or was not found - nothing to duplicate into.`);
+      return;
+    }
+
+    const node = findNodeById(this.expression, nodeId);
+    if (!node) return;
+
+    const conditionCountToAdd = isConditionNode(node) ? 1 : extractConditions(node).length;
+    if (this.allConditions.length + conditionCountToAdd > FILTER_TREE_MAX_CONDITIONS) {
+      console.warn(`Cannot duplicate: would exceed the maximum of ${FILTER_TREE_MAX_CONDITIONS} conditions.`);
+      return;
+    }
+
+    const duplicate = this._cloneExpressionWithNewIds(node);
+    const index = parent.children.findIndex((child) => child.id === nodeId);
+    parent.children.splice(index + 1, 0, duplicate);
+
+    if (shouldNotifyChangeForExpression(duplicate)) {
+      this._notifyExpressionChange();
+    }
+  });
+
   /**
    * Clears the filter expression.
    */
@@ -576,5 +798,44 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
    */
   private _notifyExpressionChange(): void {
     this.onExpressionChange?.(this._getExternalExpression());
+  }
+
+  /**
+   * Returns the immediate parent group of a node, or null if the node is the root itself (the root
+   * has no parent to reorder/duplicate/nest against) or was not found.
+   * @param nodeId - The id of the node whose parent to find.
+   */
+  private _getParentOf(nodeId: string): TFilterGroupNode<P> | null {
+    if (!this.expression) return null;
+    const parentChain = findParentChain(this.expression, nodeId);
+    return parentChain && parentChain.length > 0 ? parentChain[0] : null;
+  }
+
+  /**
+   * Returns the nesting depth of a node (root = 1, matching the backend's `ComplexFilterBackend`
+   * depth accounting), assuming the node is known to exist in the tree (callers only use this after
+   * already locating the node via `findNodeById`).
+   * @param nodeId - The id of the node whose depth to compute.
+   */
+  private _getNodeDepth(nodeId: string): number {
+    if (!this.expression) return 0;
+    if (this.expression.id === nodeId) return 1;
+    const parentChain = findParentChain(this.expression, nodeId);
+    return (parentChain?.length ?? 0) + 1;
+  }
+
+  /**
+   * Deep-clones an expression subtree, generating fresh ids throughout (used by `duplicateNode`).
+   * @param node - The subtree to clone.
+   */
+  private _cloneExpressionWithNewIds(node: TFilterExpression<P>): TFilterExpression<P> {
+    if (isConditionNode(node)) {
+      return { ...node, id: uuidv4() };
+    }
+    return {
+      ...node,
+      id: uuidv4(),
+      children: node.children.map((child) => this._cloneExpressionWithNewIds(child)),
+    };
   }
 }
