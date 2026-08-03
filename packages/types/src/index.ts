@@ -35,6 +35,7 @@ export * from "./issues/issue-identifier";
 export * from "./layout";
 export * from "./milestone";
 export * from "./module";
+export * from "./nl-filter-assistant";
 export * from "./page";
 export * from "./payment";
 export * from "./pragmatic";

@@ -78,6 +78,7 @@ from .project import (
     ProjectPublicMember,
     ProjectUserProperty,
 )
+from .natural_language_filter_query import NaturalLanguageFilterQuery
 from .session import Session
 from .social_connection import SocialLoginConnection
 from .state import State, StateGroup, DEFAULT_STATES

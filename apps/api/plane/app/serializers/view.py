@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 # Module imports
 from .base import BaseSerializer, DynamicBaseSerializer
-from plane.db.models import IssueView, UserFavorite, ViewSubscription
+from plane.db.models import IssueView, NaturalLanguageFilterQuery, UserFavorite, ViewSubscription
 from plane.utils.filters import ComplexFilterBackend
 from plane.utils.issue_filters import issue_filters
 
@@ -126,4 +126,34 @@ class ViewSubscriptionSerializer(BaseSerializer):
             "project",
             "issue_view",
             "subscriber",
+        ]
+
+
+class NaturalLanguageFilterQuerySerializer(BaseSerializer):
+    """Read-only representation of a logged NL filter assistant call - see
+    docs/feature-specs/04-views-filters.md ("Assistant de filtre en langage
+    naturel") in plane-selfhost. Every field is server-computed (parsed
+    query result / audit log entry), so the whole serializer is read-only -
+    there is no create/update path through this serializer, rows are only
+    ever created directly by the parsing endpoint.
+    """
+
+    class Meta:
+        model = NaturalLanguageFilterQuery
+        fields = "__all__"
+        read_only_fields = [
+            "id",
+            "workspace",
+            "project",
+            "raw_query",
+            "detected_language",
+            "resolved_filters",
+            "restatement",
+            "unresolved_terms",
+            "status",
+            "latency_ms",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
         ]

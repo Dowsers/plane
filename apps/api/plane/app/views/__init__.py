@@ -92,6 +92,11 @@ from .view.base import (
     IssueViewFavoriteViewSet,
 )
 from .view.subscription import ViewSubscriptionViewSet, UserViewSubscriptionsEndpoint
+from .view.nl_filter_assistant import (
+    ProjectNLFilterAssistantEndpoint,
+    WorkspaceNLFilterAssistantEndpoint,
+    NLFilterAssistantRecentEndpoint,
+)
 from .cycle.base import (
     CycleViewSet,
     CycleDateCheckEndpoint,

@@ -69,6 +69,20 @@ class IssueView(WorkspaceBaseModel):
     owned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="views")
     is_locked = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True)
+    # Provenance link back to the natural-language query this view was
+    # generated from via "Save as view" on the NL filter assistant's
+    # preview, if any - see docs/feature-specs/04-views-filters.md
+    # ("Assistant de filtre en langage naturel"), requirement 9, in
+    # plane-selfhost. Nullable/optional: a manually-built view has none.
+    # `fields = "__all__"` on `IssueViewSerializer` already exposes this as
+    # a writable `source_query` id on create - no serializer change needed.
+    source_query = models.ForeignKey(
+        "db.NaturalLanguageFilterQuery",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="views",
+    )
 
     class Meta:
         verbose_name = "Issue View"

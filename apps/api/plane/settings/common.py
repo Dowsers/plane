@@ -127,6 +127,15 @@ REST_FRAMEWORK = {
         # via IntakeForm.rate_limit_per_ip_per_hour at request time. See
         # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
         "intake_form_submit": "10/hour",
+        # Fallback only - NLFilterAssistantThrottle always sets
+        # num_requests=20/duration=300 (20 per 5 minutes) directly in
+        # allow_request, bypassing parse_rate (which cannot express a
+        # 5-minute window - it only parses a single leading s/m/h/d unit).
+        # "4/min" is the closest single-unit equivalent, kept here purely
+        # for documentation/consistency with the pattern above. See
+        # docs/feature-specs/04-views-filters.md ("Assistant de filtre en
+        # langage naturel") in plane-selfhost.
+        "nl_filter_assistant": "4/min",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

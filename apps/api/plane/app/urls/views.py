@@ -12,6 +12,9 @@ from plane.app.views import (
     IssueViewFavoriteViewSet,
     ViewSubscriptionViewSet,
     UserViewSubscriptionsEndpoint,
+    ProjectNLFilterAssistantEndpoint,
+    WorkspaceNLFilterAssistantEndpoint,
+    NLFilterAssistantRecentEndpoint,
 )
 
 
@@ -74,5 +77,20 @@ urlpatterns = [
         "workspaces/<str:slug>/users/me/view-subscriptions/",
         UserViewSubscriptionsEndpoint.as_view(),
         name="user-view-subscriptions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/ai-filter-assistant/",
+        ProjectNLFilterAssistantEndpoint.as_view(),
+        name="project-ai-filter-assistant",
+    ),
+    path(
+        "workspaces/<str:slug>/ai-filter-assistant/",
+        WorkspaceNLFilterAssistantEndpoint.as_view(),
+        name="workspace-ai-filter-assistant",
+    ),
+    path(
+        "workspaces/<str:slug>/ai-filter-assistant/recent/",
+        NLFilterAssistantRecentEndpoint.as_view(),
+        name="ai-filter-assistant-recent",
     ),
 ]
