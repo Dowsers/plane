@@ -12,6 +12,8 @@ from .project.base import (
     ProjectRoadmapEndpoint,
 )
 
+from .project.progress import ProjectProgressEndpoint
+
 from .project.invite import (
     UserProjectInvitationsViewset,
     ProjectInvitationsViewset,

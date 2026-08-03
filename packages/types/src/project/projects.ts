@@ -76,6 +76,11 @@ export interface IProject extends IPartialProject {
   members?: string[];
   timezone?: string;
   next_work_item_sequence?: number;
+  // Rolling window (in closed cycles) used to compute average/optimistic/
+  // pessimistic velocity on the "Scope & velocity" project chart - see
+  // docs/feature-specs/05-insights-analytics.md ("Graphiques de
+  // progression cycle/projet") in plane-selfhost.
+  velocity_window_size?: number;
 }
 
 export type TProjectAnalyticsCountParams = {

@@ -12,6 +12,7 @@ import type {
   TProjectAnalyticsCount,
   TProjectAnalyticsCountParams,
   TProjectIssuesSearchParams,
+  TProjectProgress,
 } from "@plane/types";
 // helpers
 // plane web types
@@ -192,6 +193,20 @@ export class ProjectService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/search-issues/`, {
       params,
     })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Project-level "Scope & velocity" cross-cycle chart + projected
+   * completion date - see
+   * docs/feature-specs/05-insights-analytics.md, section
+   * "1. Graphiques de progression cycle/projet", exigences 7/8.
+   */
+  async getProjectProgress(workspaceSlug: string, projectId: string): Promise<TProjectProgress> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/progress/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

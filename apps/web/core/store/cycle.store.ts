@@ -16,6 +16,7 @@ import type {
   TCycleEstimateDistribution,
   TCycleDistribution,
   TCycleEstimateType,
+  TCycleProgressPreferences,
 } from "@plane/types";
 import type { DistributionUpdates } from "@plane/utils";
 import { orderCycles, shouldFilterCycle, getDate, updateDistribution } from "@plane/utils";
@@ -38,6 +39,7 @@ export interface ICycleStore {
   plotType: Record<string, TCyclePlotType>;
   estimatedType: Record<string, TCycleEstimateType>;
   activeCycleIdMap: Record<string, boolean>;
+  progressPreferencesFetchedMap: Record<string, boolean>;
 
   // computed
   currentProjectCycleIds: string[] | null;
@@ -63,6 +65,13 @@ export interface ICycleStore {
   updateCycleDistribution: (distributionUpdates: DistributionUpdates, cycleId: string) => void;
   setPlotType: (cycleId: string, plotType: TCyclePlotType) => void;
   setEstimateType: (cycleId: string, estimateType: TCycleEstimateType) => void;
+  fetchCycleProgressPreferences: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<void>;
+  updateCycleProgressPreferences: (
+    workspaceSlug: string,
+    projectId: string,
+    cycleId: string,
+    data: Partial<TCycleProgressPreferences>
+  ) => Promise<void>;
   // fetch
   fetchWorkspaceCycles: (workspaceSlug: string) => Promise<ICycle[]>;
   fetchAllCycles: (workspaceSlug: string, projectId: string) => Promise<undefined | ICycle[]>;
@@ -109,6 +118,7 @@ export class CycleStore implements ICycleStore {
   plotType: Record<string, TCyclePlotType> = {};
   estimatedType: Record<string, TCycleEstimateType> = {};
   activeCycleIdMap: Record<string, boolean> = {};
+  progressPreferencesFetchedMap: Record<string, boolean> = {};
   //loaders
   fetchedMap: Record<string, boolean> = {};
   // root store
@@ -128,6 +138,7 @@ export class CycleStore implements ICycleStore {
       plotType: observable,
       estimatedType: observable,
       activeCycleIdMap: observable,
+      progressPreferencesFetchedMap: observable,
       fetchedMap: observable,
       // computed
       currentProjectCycleIds: computed,
@@ -139,6 +150,8 @@ export class CycleStore implements ICycleStore {
 
       // actions
       setEstimateType: action,
+      fetchCycleProgressPreferences: action,
+      updateCycleProgressPreferences: action,
       fetchWorkspaceCycles: action,
       fetchAllCycles: action,
       fetchActiveCycle: action,
@@ -394,6 +407,52 @@ export class CycleStore implements ICycleStore {
    */
   setEstimateType = (cycleId: string, estimateType: TCycleEstimateType) => {
     set(this.estimatedType, [cycleId], estimateType);
+  };
+
+  /**
+   * @description fetches and applies the current user's persisted
+   * burndown/burn-up + issues/points chart preferences for a cycle, once
+   * per cycle - see docs/feature-specs/05-insights-analytics.md, exigence 3.
+   * @param workspaceSlug
+   * @param projectId
+   * @param cycleId
+   */
+  fetchCycleProgressPreferences = async (workspaceSlug: string, projectId: string, cycleId: string) => {
+    if (this.progressPreferencesFetchedMap[cycleId]) return;
+    try {
+      const preferences = await this.cycleService.getCycleProgressPreferences(workspaceSlug, projectId, cycleId);
+      runInAction(() => {
+        if (preferences?.chart_type) set(this.plotType, [cycleId], preferences.chart_type);
+        if (preferences?.estimate_type) set(this.estimatedType, [cycleId], preferences.estimate_type);
+        set(this.progressPreferencesFetchedMap, [cycleId], true);
+      });
+    } catch (error) {
+      console.error("Failed to fetch cycle progress preferences", error);
+    }
+  };
+
+  /**
+   * @description updates the local plot/estimate type (optimistic) and
+   * persists the chosen burndown/burn-up + issues/points chart preference
+   * for the current user on this cycle.
+   * @param workspaceSlug
+   * @param projectId
+   * @param cycleId
+   * @param data
+   */
+  updateCycleProgressPreferences = async (
+    workspaceSlug: string,
+    projectId: string,
+    cycleId: string,
+    data: Partial<TCycleProgressPreferences>
+  ) => {
+    if (data.chart_type) this.setPlotType(cycleId, data.chart_type);
+    if (data.estimate_type) this.setEstimateType(cycleId, data.estimate_type);
+    try {
+      await this.cycleService.patchCycleProgressPreferences(workspaceSlug, projectId, cycleId, data);
+    } catch (error) {
+      console.error("Failed to persist cycle progress preferences", error);
+    }
   };
 
   /**

@@ -27,7 +27,7 @@ from plane.db.models import (
     Issue,
     Project,
 )
-from plane.utils.analytics_plot import burndown_plot
+from plane.utils.analytics_plot import burndown_plot, cycle_scope_plot
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.utils.host import base_host
 
@@ -269,6 +269,17 @@ def transfer_cycle_issues(
             plot_type="points",
             cycle_id=cycle_id,
         )
+        # Freeze the real day-by-day scope line too, so the historical
+        # chart for a transferred (and therefore closed) cycle keeps
+        # showing scope history, not just the completion curve - see
+        # docs/feature-specs/05-insights-analytics.md, exigence 5.
+        estimate_scope_chart = cycle_scope_plot(
+            cycle=old_cycle,
+            slug=slug,
+            project_id=project_id,
+            cycle_id=cycle_id,
+            plot_type="points",
+        )
         # Label estimate distribution serialization
         label_estimate_distribution = [
             {
@@ -403,6 +414,15 @@ def transfer_cycle_issues(
         plot_type="issues",
         cycle_id=cycle_id,
     )
+    # Freeze the real day-by-day scope line (see the "points" branch above
+    # for why this is needed alongside the completion chart).
+    scope_chart = cycle_scope_plot(
+        cycle=old_cycle,
+        slug=slug,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        plot_type="issues",
+    )
 
     # Get the current cycle and save progress snapshot
     current_cycle = Cycle.objects.filter(workspace__slug=slug, project_id=project_id, pk=cycle_id).first()
@@ -418,6 +438,7 @@ def transfer_cycle_issues(
             "labels": label_distribution_data,
             "assignees": assignee_distribution_data,
             "completion_chart": completion_chart,
+            "scope_chart": scope_chart,
         },
         "estimate_distribution": (
             {}
@@ -426,6 +447,7 @@ def transfer_cycle_issues(
                 "labels": label_estimate_distribution,
                 "assignees": assignee_estimate_distribution,
                 "completion_chart": estimate_completion_chart,
+                "scope_chart": estimate_scope_chart,
             }
         ),
     }

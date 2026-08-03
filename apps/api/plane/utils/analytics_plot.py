@@ -6,6 +6,8 @@
 from datetime import timedelta
 from itertools import groupby
 
+import pytz
+
 # Django import
 from django.db import models
 from django.db.models import Case, CharField, Count, F, Sum, Value, When, FloatField
@@ -20,7 +22,7 @@ from django.db.models.functions import (
 from django.utils import timezone
 
 # Module imports
-from plane.db.models import Issue, Project
+from plane.db.models import CycleIssue, Issue, Project
 
 VALID_ANALYTICS_FIELDS = [
     "state_id",
@@ -263,3 +265,184 @@ def burndown_plot(queryset, slug, project_id, plot_type, cycle_id=None, module_i
                 chart_data[str(date)] = cumulative_pending_issues
 
     return chart_data
+
+
+def cycle_progress_counts(slug, project_id, cycle_id):
+    """
+    Backlog/unstarted/started/cancelled/completed/total counts for a single
+    cycle - issues *and* estimate points. This is the exact aggregation
+    `CycleProgressEndpoint` returns for a single cycle, factored out so the
+    project-level "Scope & velocity" endpoint (`ProjectProgressEndpoint`)
+    can reuse the identical counting logic per-cycle instead of
+    re-deriving its own query style - see
+    docs/feature-specs/05-insights-analytics.md, section 1.
+    """
+    aggregate_estimates = (
+        Issue.issue_objects.filter(
+            estimate_point__estimate__type="points",
+            issue_cycle__cycle_id=cycle_id,
+            issue_cycle__deleted_at__isnull=True,
+            workspace__slug=slug,
+            project_id=project_id,
+        )
+        .annotate(value_as_float=Cast("estimate_point__value", FloatField()))
+        .aggregate(
+            backlog_estimate_point=Sum(
+                Case(
+                    When(state__group="backlog", then="value_as_float"),
+                    default=Value(0),
+                    output_field=FloatField(),
+                )
+            ),
+            unstarted_estimate_point=Sum(
+                Case(
+                    When(state__group="unstarted", then="value_as_float"),
+                    default=Value(0),
+                    output_field=FloatField(),
+                )
+            ),
+            started_estimate_point=Sum(
+                Case(
+                    When(state__group="started", then="value_as_float"),
+                    default=Value(0),
+                    output_field=FloatField(),
+                )
+            ),
+            cancelled_estimate_point=Sum(
+                Case(
+                    When(state__group="cancelled", then="value_as_float"),
+                    default=Value(0),
+                    output_field=FloatField(),
+                )
+            ),
+            completed_estimate_points=Sum(
+                Case(
+                    When(state__group="completed", then="value_as_float"),
+                    default=Value(0),
+                    output_field=FloatField(),
+                )
+            ),
+            total_estimate_points=Sum("value_as_float", default=Value(0), output_field=FloatField()),
+        )
+    )
+
+    base_issue_qs = Issue.issue_objects.filter(
+        issue_cycle__cycle_id=cycle_id,
+        issue_cycle__deleted_at__isnull=True,
+        workspace__slug=slug,
+        project_id=project_id,
+    )
+
+    return {
+        "backlog_estimate_points": aggregate_estimates["backlog_estimate_point"] or 0,
+        "unstarted_estimate_points": aggregate_estimates["unstarted_estimate_point"] or 0,
+        "started_estimate_points": aggregate_estimates["started_estimate_point"] or 0,
+        "cancelled_estimate_points": aggregate_estimates["cancelled_estimate_point"] or 0,
+        "completed_estimate_points": aggregate_estimates["completed_estimate_points"] or 0,
+        "total_estimate_points": aggregate_estimates["total_estimate_points"],
+        "backlog_issues": base_issue_qs.filter(state__group="backlog").count(),
+        "unstarted_issues": base_issue_qs.filter(state__group="unstarted").count(),
+        "started_issues": base_issue_qs.filter(state__group="started").count(),
+        "cancelled_issues": base_issue_qs.filter(state__group="cancelled").count(),
+        "completed_issues": base_issue_qs.filter(state__group="completed").count(),
+        "total_issues": base_issue_qs.count(),
+    }
+
+
+def _cycle_day_range(cycle):
+    """
+    List of local calendar dates (in the cycle's own `Cycle.timezone`,
+    which is more specific than `Workspace.timezone`) spanned by the
+    cycle, inclusive of both `start_date` and `end_date` - see
+    docs/feature-specs/05-insights-analytics.md, exigence 12 (fuseau
+    horaire). `Cycle.timezone` already exists and is already used for the
+    cycle's manual start/stop feature, so this reuses it rather than
+    introducing a new timezone source.
+    """
+    if not (cycle.start_date and cycle.end_date):
+        return []
+    tz = pytz.timezone(cycle.timezone or "UTC")
+    start = cycle.start_date.astimezone(tz).date()
+    end = cycle.end_date.astimezone(tz).date()
+    return [start + timedelta(days=x) for x in range((end - start).days + 1)]
+
+
+def cycle_scope_plot(cycle, slug, project_id, cycle_id, plot_type="issues"):
+    """
+    Real day-by-day scope line for the cycle burndown/burn-up chart - see
+    docs/feature-specs/05-insights-analytics.md, section 1, exigence 2
+    ("Ligne de scope": "valeur cumulee du travail total assigne au cycle a
+    chaque jour"). Unlike `burndown_plot`'s baseline (a *constant*
+    `total_issues`, i.e. today's current total repeated on every day),
+    this reflects the actual historical net scope: an issue counts as
+    in-scope on day D if it was added to the cycle on/before D, and either
+    was never removed or was only removed after D.
+
+    No bespoke add/remove-timestamp columns are needed for this -
+    `CycleIssue` is a plain soft-deleted pivot (see plane/db/mixins.py,
+    `SoftDeleteModel`) and `CycleIssueViewSet.destroy()` does a plain
+    `.delete()` with no `soft=False` override, so `created_at`
+    (add timestamp) and `deleted_at` (remove timestamp, only populated once
+    soft-deleted) already give an exact historical record.
+    `CycleIssue.all_objects` bypasses the default `deleted_at__isnull=True`
+    filter so removed rows are visible too.
+
+    Deliberately NOT computed here: a day-by-day "started" series. A real
+    historical "started" line is possible (via `IssueActivity` rows with
+    `field="state"`, resolving `old_identifier`/`new_identifier` to their
+    `State.group`) but is meaningfully more work for a v1 (one extra
+    join/index). v1 ships "started" as a today-only snapshot, matching
+    `CycleProgressEndpoint`'s existing (non-historical) behaviour - see the
+    05-insights-analytics patch notes for this explicit scope decision.
+    """
+    date_range = _cycle_day_range(cycle)
+    if not date_range:
+        return {}
+
+    tz = pytz.timezone(cycle.timezone or "UTC")
+
+    def _local_date(dt):
+        return dt.astimezone(tz).date() if dt else None
+
+    # Every cycle<->issue link that ever existed for this cycle, regardless
+    # of its current soft-delete state.
+    cycle_issue_rows = list(
+        CycleIssue.all_objects.filter(
+            cycle_id=cycle_id,
+            project_id=project_id,
+            workspace__slug=slug,
+        ).values("issue_id", "created_at", "deleted_at")
+    )
+    issue_ids = [row["issue_id"] for row in cycle_issue_rows]
+
+    if plot_type == "points":
+        weight_by_issue_id = {
+            issue_id: float(value)
+            for issue_id, value in Issue.issue_objects.filter(
+                id__in=issue_ids, estimate_point__isnull=False
+            ).values_list("id", "estimate_point__value")
+        }
+    else:
+        # Archived/draft/(hard-)deleted issues never count towards scope
+        # (exigence 10) - `issue_objects` already excludes them, same as
+        # every other issue-counting query in this module.
+        weight_by_issue_id = dict.fromkeys(
+            Issue.issue_objects.filter(id__in=issue_ids).values_list("id", flat=True), 1
+        )
+
+    windows = [
+        (_local_date(row["created_at"]), _local_date(row["deleted_at"]), row["issue_id"]) for row in cycle_issue_rows
+    ]
+
+    scope_chart = {}
+    for day in date_range:
+        total = 0.0
+        for added_date, removed_date, issue_id in windows:
+            if added_date is None or added_date > day:
+                continue
+            if removed_date is not None and removed_date <= day:
+                continue
+            total += weight_by_issue_id.get(issue_id, 0) or 0
+        scope_chart[str(day)] = total if plot_type == "points" else int(total)
+
+    return scope_chart

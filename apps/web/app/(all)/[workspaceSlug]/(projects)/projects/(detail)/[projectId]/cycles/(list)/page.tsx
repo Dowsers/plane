@@ -24,6 +24,7 @@ import { PageHead } from "@/components/core/page-title";
 import { CycleAppliedFiltersList } from "@/components/cycles/applied-filters";
 import { CyclesView } from "@/components/cycles/cycles-view";
 import { CycleCreateUpdateModal } from "@/components/cycles/modal";
+import { ProjectVelocityCard } from "@/components/cycles/project-velocity-card";
 import { DetailedEmptyState } from "@/components/empty-state/detailed-empty-state-root";
 import { CycleModuleListLayoutLoader } from "@/components/ui/loader/cycle-module-list-loader";
 // hooks
@@ -129,6 +130,10 @@ function ProjectCyclesPage({ params }: Route.ComponentProps) {
                 />
               </Header>
             )}
+
+            <div className="px-page-x py-4">
+              <ProjectVelocityCard workspaceSlug={workspaceSlug} projectId={projectId} />
+            </div>
 
             <CyclesView workspaceSlug={workspaceSlug} projectId={projectId} />
           </>

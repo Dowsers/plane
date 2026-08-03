@@ -12,7 +12,7 @@ import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { ChevronUpIcon, ChevronDownIcon } from "@plane/propel/icons";
-import type { ICycle, TCyclePlotType, TProgressSnapshot } from "@plane/types";
+import type { ICycle, TProgressSnapshot } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
 import { getDate } from "@plane/utils";
 // hooks
@@ -66,7 +66,7 @@ export const CycleAnalyticsProgress = observer(function CycleAnalyticsProgress(p
   // plane hooks
   const { t } = useTranslation();
   // store hooks
-  const { getPlotTypeByCycleId, getEstimateTypeByCycleId, getCycleById } = useCycle();
+  const { getEstimateTypeByCycleId, getCycleById } = useCycle();
   const { getFilter, updateFilterValueFromSidebar } = useWorkItemFilters();
   // derived values
   const cycleFilter = getFilter(EIssuesStoreType.CYCLE, cycleId);
@@ -74,7 +74,6 @@ export const CycleAnalyticsProgress = observer(function CycleAnalyticsProgress(p
   const selectedLabels = cycleFilter?.findFirstConditionByPropertyAndOperator("label_id", "in");
   const selectedStateGroups = cycleFilter?.findFirstConditionByPropertyAndOperator("state_group", "in");
   const cycleDetails = validateCycleSnapshot(getCycleById(cycleId));
-  const plotType: TCyclePlotType = getPlotTypeByCycleId(cycleId);
   const estimateType = getEstimateTypeByCycleId(cycleId);
   const totalIssues = cycleDetails?.total_issues || 0;
   const totalEstimatePoints = cycleDetails?.total_estimate_points || 0;
@@ -147,7 +146,7 @@ export const CycleAnalyticsProgress = observer(function CycleAnalyticsProgress(p
                           )}
                           isEditable={Boolean(!peekCycle) && cycleFilter !== undefined}
                           noBackground={false}
-                          plotType={plotType}
+                          estimateType={estimateType}
                           roundedTab={false}
                           selectedFilters={{
                             assignees: selectedAssignees,

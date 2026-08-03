@@ -54,7 +54,7 @@ from plane.db.models import (
     Project,
     UserRecentVisit,
 )
-from plane.utils.analytics_plot import burndown_plot
+from plane.utils.analytics_plot import burndown_plot, cycle_progress_counts, cycle_scope_plot
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.utils.host import base_host
 from plane.utils.cycle_transfer_issues import transfer_cycle_issues
@@ -804,6 +804,14 @@ class CycleUserPropertiesEndpoint(BaseAPIView):
         cycle_properties.display_properties = request.data.get(
             "display_properties", cycle_properties.display_properties
         )
+        # Per-user burndown/burn-up + issues/points chart preferences - see
+        # docs/feature-specs/05-insights-analytics.md, exigence 3.
+        chart_type = request.data.get("chart_type")
+        if chart_type in dict(CycleUserProperties.CHART_TYPE_CHOICES):
+            cycle_properties.chart_type = chart_type
+        estimate_type = request.data.get("estimate_type")
+        if estimate_type in dict(CycleUserProperties.ESTIMATE_TYPE_CHOICES):
+            cycle_properties.estimate_type = estimate_type
         cycle_properties.save()
 
         serializer = CycleUserPropertiesSerializer(cycle_properties)
@@ -827,126 +835,21 @@ class CycleProgressEndpoint(BaseAPIView):
         cycle = Cycle.objects.filter(workspace__slug=slug, project_id=project_id, id=cycle_id).first()
         if not cycle:
             return Response({"error": "Cycle not found"}, status=status.HTTP_404_NOT_FOUND)
-        aggregate_estimates = (
-            Issue.issue_objects.filter(
-                estimate_point__estimate__type="points",
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-            )
-            .annotate(value_as_float=Cast("estimate_point__value", FloatField()))
-            .aggregate(
-                backlog_estimate_point=Sum(
-                    Case(
-                        When(state__group="backlog", then="value_as_float"),
-                        default=Value(0),
-                        output_field=FloatField(),
-                    )
-                ),
-                unstarted_estimate_point=Sum(
-                    Case(
-                        When(state__group="unstarted", then="value_as_float"),
-                        default=Value(0),
-                        output_field=FloatField(),
-                    )
-                ),
-                started_estimate_point=Sum(
-                    Case(
-                        When(state__group="started", then="value_as_float"),
-                        default=Value(0),
-                        output_field=FloatField(),
-                    )
-                ),
-                cancelled_estimate_point=Sum(
-                    Case(
-                        When(state__group="cancelled", then="value_as_float"),
-                        default=Value(0),
-                        output_field=FloatField(),
-                    )
-                ),
-                completed_estimate_points=Sum(
-                    Case(
-                        When(state__group="completed", then="value_as_float"),
-                        default=Value(0),
-                        output_field=FloatField(),
-                    )
-                ),
-                total_estimate_points=Sum("value_as_float", default=Value(0), output_field=FloatField()),
-            )
-        )
+
+        # Shared with `ProjectProgressEndpoint` (per-cycle counts in the
+        # project-level "Scope & velocity" chart) - see
+        # docs/feature-specs/05-insights-analytics.md, section 1.
+        counts = cycle_progress_counts(slug=slug, project_id=project_id, cycle_id=cycle_id)
+
         if cycle.progress_snapshot:
-            backlog_issues = cycle.progress_snapshot.get("backlog_issues", 0)
-            unstarted_issues = cycle.progress_snapshot.get("unstarted_issues", 0)
-            started_issues = cycle.progress_snapshot.get("started_issues", 0)
-            cancelled_issues = cycle.progress_snapshot.get("cancelled_issues", 0)
-            completed_issues = cycle.progress_snapshot.get("completed_issues", 0)
-            total_issues = cycle.progress_snapshot.get("total_issues", 0)
-        else:
-            backlog_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-                state__group="backlog",
-            ).count()
+            counts["backlog_issues"] = cycle.progress_snapshot.get("backlog_issues", 0)
+            counts["unstarted_issues"] = cycle.progress_snapshot.get("unstarted_issues", 0)
+            counts["started_issues"] = cycle.progress_snapshot.get("started_issues", 0)
+            counts["cancelled_issues"] = cycle.progress_snapshot.get("cancelled_issues", 0)
+            counts["completed_issues"] = cycle.progress_snapshot.get("completed_issues", 0)
+            counts["total_issues"] = cycle.progress_snapshot.get("total_issues", 0)
 
-            unstarted_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-                state__group="unstarted",
-            ).count()
-
-            started_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-                state__group="started",
-            ).count()
-
-            cancelled_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-                state__group="cancelled",
-            ).count()
-
-            completed_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-                state__group="completed",
-            ).count()
-
-            total_issues = Issue.issue_objects.filter(
-                issue_cycle__cycle_id=cycle_id,
-                issue_cycle__deleted_at__isnull=True,
-                workspace__slug=slug,
-                project_id=project_id,
-            ).count()
-
-        return Response(
-            {
-                "backlog_estimate_points": aggregate_estimates["backlog_estimate_point"] or 0,
-                "unstarted_estimate_points": aggregate_estimates["unstarted_estimate_point"] or 0,
-                "started_estimate_points": aggregate_estimates["started_estimate_point"] or 0,
-                "cancelled_estimate_points": aggregate_estimates["cancelled_estimate_point"] or 0,
-                "completed_estimate_points": aggregate_estimates["completed_estimate_points"] or 0,
-                "total_estimate_points": aggregate_estimates["total_estimate_points"],
-                "backlog_issues": backlog_issues,
-                "total_issues": total_issues,
-                "completed_issues": completed_issues,
-                "cancelled_issues": cancelled_issues,
-                "started_issues": started_issues,
-                "unstarted_issues": unstarted_issues,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(counts, status=status.HTTP_200_OK)
 
 
 class CycleAnalyticsEndpoint(BaseAPIView):
@@ -991,6 +894,11 @@ class CycleAnalyticsEndpoint(BaseAPIView):
                     "labels": distribution.get("labels", []),
                     "assignees": distribution.get("assignees", []),
                     "completion_chart": distribution.get("completion_chart", {}),
+                    # Frozen at transfer time by `transfer_cycle_issues` -
+                    # falls back to {} for cycles transferred before this
+                    # field existed (see docs/feature-specs/05-insights-
+                    # analytics.md patch notes).
+                    "scope_chart": distribution.get("scope_chart", {}),
                 },
                 status=status.HTTP_200_OK,
             )
@@ -1005,6 +913,7 @@ class CycleAnalyticsEndpoint(BaseAPIView):
         assignee_distribution = []
         label_distribution = []
         completion_chart = {}
+        scope_chart = {}
 
         if analytic_type == "points" and estimate_type:
             assignee_distribution = (
@@ -1101,6 +1010,13 @@ class CycleAnalyticsEndpoint(BaseAPIView):
                 project_id=project_id,
                 plot_type="points",
                 cycle_id=cycle_id,
+            )
+            scope_chart = cycle_scope_plot(
+                cycle=cycle,
+                slug=slug,
+                project_id=project_id,
+                cycle_id=cycle_id,
+                plot_type="points",
             )
 
         if analytic_type == "issues":
@@ -1204,12 +1120,20 @@ class CycleAnalyticsEndpoint(BaseAPIView):
                 cycle_id=cycle_id,
                 plot_type="issues",
             )
+            scope_chart = cycle_scope_plot(
+                cycle=cycle,
+                slug=slug,
+                project_id=project_id,
+                cycle_id=cycle_id,
+                plot_type="issues",
+            )
 
         return Response(
             {
                 "assignees": assignee_distribution,
                 "labels": label_distribution,
                 "completion_chart": completion_chart,
+                "scope_chart": scope_chart,
             },
             status=status.HTTP_200_OK,
         )

@@ -42,12 +42,19 @@ export type TCycleLabelsDistribution = {
 export type TCycleDistribution = {
   assignees: (TCycleAssigneesDistribution & TCycleDistributionBase)[];
   completion_chart: TCycleCompletionChartDistribution;
+  // Real day-by-day net scope (issues added/removed from the cycle over
+  // time), as opposed to `completion_chart`'s constant total baseline -
+  // see docs/feature-specs/05-insights-analytics.md, exigence 2 ("Ligne de
+  // scope"). Optional so older cached payloads without it degrade
+  // gracefully.
+  scope_chart?: TCycleCompletionChartDistribution;
   labels: (TCycleLabelsDistribution & TCycleDistributionBase)[];
 };
 
 export type TCycleEstimateDistribution = {
   assignees: (TCycleAssigneesDistribution & TCycleEstimateDistributionBase)[];
   completion_chart: TCycleCompletionChartDistribution;
+  scope_chart?: TCycleCompletionChartDistribution;
   labels: (TCycleLabelsDistribution & TCycleEstimateDistributionBase)[];
 };
 export type TCycleProgress = {
@@ -139,6 +146,18 @@ export type CycleDateCheckData = {
 
 export type TCycleEstimateType = "issues" | "points";
 export type TCyclePlotType = "burndown" | "burnup";
+
+/**
+ * Per-user, per-cycle chart preferences persisted on `CycleUserProperties`
+ * (`chart_type`/`estimate_type` fields) - see
+ * docs/feature-specs/05-insights-analytics.md, exigence 3. Fetched/patched
+ * through the same `.../cycles/<cycle_id>/user-properties/` endpoint
+ * already used for issue filters.
+ */
+export type TCycleProgressPreferences = {
+  chart_type: TCyclePlotType;
+  estimate_type: TCycleEstimateType;
+};
 
 export type TPublicCycle = {
   id: string;

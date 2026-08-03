@@ -189,6 +189,14 @@ class Project(BaseModel):
     # external_id for imports
     external_source = models.CharField(max_length=255, null=True, blank=True)
     external_id = models.CharField(max_length=255, blank=True, null=True)
+    # Rolling window (in closed cycles) used to compute the average/optimistic/
+    # pessimistic velocity shown on the project-level "Scope & velocity" chart
+    # - see docs/feature-specs/05-insights-analytics.md ("Graphiques de
+    # progression cycle/projet", implications sur le modele de donnees) in
+    # plane-selfhost.
+    velocity_window_size = models.IntegerField(
+        default=3, validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
 
     def __init__(self, *args, **kwargs):
         # Track if timezone is provided, if so, don't override it with the workspace timezone when saving

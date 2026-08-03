@@ -9,7 +9,7 @@ import { Tab } from "@headlessui/react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import type { TWorkItemFilterCondition } from "@plane/shared-state";
-import type { TCycleDistribution, TCycleEstimateDistribution, TCyclePlotType } from "@plane/types";
+import type { TCycleDistribution, TCycleEstimateDistribution, TCycleEstimateType } from "@plane/types";
 import { cn, toFilterArray } from "@plane/utils";
 // components
 import type { TAssigneeData } from "@/components/core/sidebar/progress-stats/assignee";
@@ -31,7 +31,13 @@ type TCycleProgressStats = {
   handleFiltersUpdate: (condition: TWorkItemFilterCondition) => void;
   isEditable?: boolean;
   noBackground?: boolean;
-  plotType: TCyclePlotType;
+  // Which shape `distribution` already is (issues vs points) - NOT the
+  // burndown/burn-up chart-direction toggle, which is an unrelated
+  // per-cycle preference and doesn't affect which fields this component
+  // reads off of `distribution` - see
+  // docs/feature-specs/05-insights-analytics.md patch notes for why this
+  // used to be (incorrectly) driven by the chart-direction plot type.
+  estimateType: TCycleEstimateType;
   roundedTab?: boolean;
   selectedFilters: TSelectedFilterProgressStats;
   size?: "xs" | "sm";
@@ -46,7 +52,7 @@ export const CycleProgressStats = observer(function CycleProgressStats(props: TC
     handleFiltersUpdate,
     isEditable = false,
     noBackground = false,
-    plotType,
+    estimateType,
     roundedTab = false,
     selectedFilters,
     size = "sm",
@@ -68,7 +74,7 @@ export const CycleProgressStats = observer(function CycleProgressStats(props: TC
   const selectedStateGroups = toFilterArray(selectedFilters?.stateGroups?.value || []) as string[];
 
   const distributionAssigneeData: TAssigneeData =
-    plotType === "burndown"
+    estimateType === "issues"
       ? (currentDistribution?.assignees || []).map((assignee) => ({
           id: assignee?.assignee_id || undefined,
           title: assignee?.display_name || undefined,
@@ -85,7 +91,7 @@ export const CycleProgressStats = observer(function CycleProgressStats(props: TC
         }));
 
   const distributionLabelData: TLabelData =
-    plotType === "burndown"
+    estimateType === "issues"
       ? (currentDistribution?.labels || []).map((label) => ({
           id: label?.label_id || undefined,
           title: label?.label_name || undefined,

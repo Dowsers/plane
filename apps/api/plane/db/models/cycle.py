@@ -188,6 +188,15 @@ class CycleIssue(ProjectBaseModel):
 
 
 class CycleUserProperties(ProjectBaseModel):
+    # Per-user cycle progress chart preferences - see
+    # docs/feature-specs/05-insights-analytics.md ("Graphiques de
+    # progression cycle/projet", exigence 3) in plane-selfhost. Persisted
+    # per (cycle, user) rather than globally, matching the spec's
+    # requirement that the burndown/burn-up toggle and the issues/points
+    # unit are a per-user, not per-workspace, preference.
+    CHART_TYPE_CHOICES = (("burndown", "Burn-down"), ("burnup", "Burn-up"))
+    ESTIMATE_TYPE_CHOICES = (("issues", "Issues"), ("points", "Points"))
+
     cycle = models.ForeignKey("db.Cycle", on_delete=models.CASCADE, related_name="cycle_user_properties")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -198,6 +207,8 @@ class CycleUserProperties(ProjectBaseModel):
     display_filters = models.JSONField(default=get_default_display_filters)
     display_properties = models.JSONField(default=get_default_display_properties)
     rich_filters = models.JSONField(default=dict)
+    chart_type = models.CharField(max_length=10, choices=CHART_TYPE_CHOICES, default="burndown")
+    estimate_type = models.CharField(max_length=10, choices=ESTIMATE_TYPE_CHOICES, default="issues")
 
     class Meta:
         unique_together = ["cycle", "user", "deleted_at"]

@@ -16,6 +16,7 @@ import type {
   TCycleEstimateDistribution,
   TCycleAutoScheduleConfig,
   TCycleAutoScheduleWindowPreview,
+  TCycleProgressPreferences,
 } from "@plane/types";
 import { APIService } from "@/services/api.service";
 
@@ -248,6 +249,42 @@ export class CycleService extends APIService {
 
   async removeCycleFromFavorites(workspaceSlug: string, projectId: string, cycleId: string): Promise<any> {
     return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/user-favorite-cycles/${cycleId}/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Fetches the current user's persisted burndown/burn-up + issues/points
+   * chart preferences for a cycle - see
+   * docs/feature-specs/05-insights-analytics.md, exigence 3. Reuses the
+   * same `user-properties` endpoint already used for cycle issue filters
+   * (`CycleUserProperties.chart_type`/`estimate_type`).
+   */
+  async getCycleProgressPreferences(
+    workspaceSlug: string,
+    projectId: string,
+    cycleId: string
+  ): Promise<TCycleProgressPreferences> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/user-properties/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Persists the current user's burndown/burn-up + issues/points chart
+   * preferences for a cycle.
+   */
+  async patchCycleProgressPreferences(
+    workspaceSlug: string,
+    projectId: string,
+    cycleId: string,
+    data: Partial<TCycleProgressPreferences>
+  ): Promise<TCycleProgressPreferences> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/user-properties/`, data)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

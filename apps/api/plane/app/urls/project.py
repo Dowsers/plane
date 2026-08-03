@@ -19,6 +19,7 @@ from plane.app.views import (
     ProjectArchiveUnarchiveEndpoint,
     ProjectMemberPreferenceEndpoint,
     ProjectRoadmapEndpoint,
+    ProjectProgressEndpoint,
 )
 
 
@@ -134,5 +135,10 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/preferences/member/<uuid:member_id>/",
         ProjectMemberPreferenceEndpoint.as_view(),
         name="project-member-preference",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/progress/",
+        ProjectProgressEndpoint.as_view(),
+        name="project-progress",
     ),
 ]
