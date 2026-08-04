@@ -45,6 +45,13 @@ export type TIssueComment = {
   external_id: string | undefined;
   external_source: string | undefined;
   access: EIssueCommentAccessSpecifier;
+  /** True when created by the workflow rule engine's POST_COMMENT/
+   * MENTION_USER actions rather than a human - see
+   * `IssueComment.created_by_automation` in
+   * apps/api/plane/db/models/issue.py. `actor`/`created_by` are still the
+   * rule's author (no dedicated bot user in this codebase); this flag is
+   * what lets the UI render "Automation" instead. */
+  created_by_automation?: boolean;
 };
 
 export type TCommentsOperations = {

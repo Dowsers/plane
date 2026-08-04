@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { usePathname } from "next/navigation";
+import { Settings2 } from "lucide-react";
 // plane imports
 import type { EditorRefApi } from "@plane/editor";
 import { useHashScroll } from "@plane/hooks";
@@ -63,9 +64,17 @@ export const CommentCardDisplay = observer(function CommentCardDisplay(props: TC
   const { getUserDetails } = useMember();
   // derived values
   const userDetails = getUserDetails(comment?.actor);
-  const displayName = comment?.actor_detail?.is_bot
-    ? comment?.actor_detail?.first_name + `Bot`
-    : (userDetails?.display_name ?? comment?.actor_detail?.display_name);
+  // Comments created by the workflow rule engine's POST_COMMENT/MENTION_USER
+  // actions still attribute `actor`/`actor_detail` to the rule's author (no
+  // dedicated bot user in this codebase) - render a distinct "Automation"
+  // badge instead so it's not misread as a manual comment. See
+  // `IssueComment.created_by_automation` in apps/api/plane/db/models/issue.py.
+  const isAutomationComment = !!comment?.created_by_automation;
+  const displayName = isAutomationComment
+    ? "Automation"
+    : comment?.actor_detail?.is_bot
+      ? comment?.actor_detail?.first_name + `Bot`
+      : (userDetails?.display_name ?? comment?.actor_detail?.display_name);
   const avatarUrl = userDetails?.avatar_url ?? comment?.actor_detail?.avatar_url;
 
   const userReactions = activityOperations.userReactions(comment.id);
@@ -117,7 +126,13 @@ export const CommentCardDisplay = observer(function CommentCardDisplay(props: TC
         </div>
       )}
       <div className="relative mb-3 flex w-full items-center gap-2">
-        <Avatar size="sm" name={displayName} src={getFileURL(avatarUrl)} className="shrink-0" />
+        {isAutomationComment ? (
+          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-layer-2 text-secondary">
+            <Settings2 className="size-3" aria-hidden="true" />
+          </span>
+        ) : (
+          <Avatar size="sm" name={displayName} src={getFileURL(avatarUrl)} className="shrink-0" />
+        )}
         <div className="flex flex-1 flex-wrap items-center gap-1">
           <div className="text-caption-sm-medium">{displayName}</div>
           <div className="text-caption-sm-regular text-tertiary">
