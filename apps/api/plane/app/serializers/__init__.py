@@ -136,6 +136,7 @@ from .workflow_rule import (
     WorkflowActionSerializer,
     WorkflowRuleExecutionLogSerializer,
 )
+from .recurring_issue_template import RecurringIssueTemplateSerializer
 from .intake_channel import (
     IntakeChannelSerializer,
     InboundEmailAliasSerializer,

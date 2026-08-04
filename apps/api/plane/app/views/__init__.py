@@ -233,6 +233,14 @@ from .workflow_rule.base import (
     WorkflowRuleExecutionLogEndpoint,
     WorkflowRuleDuplicateEndpoint,
 )
+from .recurring_issue_template.base import (
+    RecurringIssueTemplateViewSet,
+    RecurringIssueTemplatePauseEndpoint,
+    RecurringIssueTemplateResumeEndpoint,
+    RecurringIssueTemplateGenerateNowEndpoint,
+    RecurringIssueTemplateGeneratedIssuesEndpoint,
+    IssueConvertToRecurringEndpoint,
+)
 
 from .initiative.base import InitiativeViewSet
 from .initiative.project import InitiativeProjectViewSet

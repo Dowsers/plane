@@ -177,6 +177,25 @@ class Issue(ProjectBaseModel):
         null=True,
         blank=True,
     )
+    # Recurring issue templates - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Work items
+    # récurrents", section 3) in plane-selfhost, and
+    # plane/db/models/recurring_issue_template.py /
+    # plane/bgtasks/recurring_issue_task.py.
+    recurring_template = models.ForeignKey(
+        "db.RecurringIssueTemplate",
+        on_delete=models.SET_NULL,
+        related_name="generated_issues",
+        null=True,
+        blank=True,
+    )
+    # Snapshot of the template's raw (un-resolved, i.e. `{{date}}` token
+    # left as-is) `name` at generation time, so "Généré depuis : X" still
+    # displays correctly after the template itself is deleted (exigence 9)
+    # - the raw name identifies *which template*, whereas the per-occurrence
+    # resolved name changes on every occurrence and would be useless for
+    # that purpose.
+    recurring_template_name_snapshot = models.CharField(max_length=255, null=True, blank=True)
 
     issue_objects = IssueManager()
 

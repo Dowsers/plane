@@ -25,6 +25,7 @@ from .user import urlpatterns as user_urls
 from .views import urlpatterns as view_urls
 from .webhook import urlpatterns as webhook_urls
 from .workflow_rule import urlpatterns as workflow_rule_urls
+from .recurring_issue_template import urlpatterns as recurring_issue_template_urls
 from .workspace import urlpatterns as workspace_urls
 from .timezone import urlpatterns as timezone_urls
 from .exporter import urlpatterns as exporter_urls
@@ -54,6 +55,7 @@ urlpatterns = [
     *api_urls,
     *webhook_urls,
     *workflow_rule_urls,
+    *recurring_issue_template_urls,
     *timezone_urls,
     *exporter_urls,
 ]

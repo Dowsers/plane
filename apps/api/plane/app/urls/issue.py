@@ -33,6 +33,7 @@ from plane.app.views import (
     WorkItemDescriptionVersionEndpoint,
     IssueMetaEndpoint,
     IssueDetailIdentifierEndpoint,
+    IssueConvertToRecurringEndpoint,
 )
 
 urlpatterns = [
@@ -289,6 +290,16 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/meta/",
         IssueMetaEndpoint.as_view(),
         name="issue-meta",
+    ),
+    # Recurring issue templates - issue-scoped action (template-scoped
+    # endpoints live under .../recurring-issue-templates/, see
+    # plane/app/urls/recurring_issue_template.py) - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Work items
+    # récurrents", section 3) in plane-selfhost.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/convert-to-recurring/",
+        IssueConvertToRecurringEndpoint.as_view(),
+        name="issue-convert-to-recurring",
     ),
     path(
         "workspaces/<str:slug>/work-items/<str:project_identifier>-<str:issue_identifier>/",

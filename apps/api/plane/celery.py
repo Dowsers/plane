@@ -87,6 +87,13 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cycle_auto_rollover_task.cycle_auto_rollover_task",
         "schedule": crontab(minute=15),  # every hour, shortly after scheduling runs
     },
+    # Recurring issue templates - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Work items
+    # récurrents", section 3) in plane-selfhost.
+    "check-every-hour-for-recurring-issue-generation": {
+        "task": "plane.bgtasks.recurring_issue_task.generate_recurring_issues",
+        "schedule": crontab(minute=0),  # every hour, on the hour
+    },
     # Intake responsibility escalation - see
     # docs/feature-specs/02-cycles-intake.md in plane-selfhost.
     "check-every-5-minutes-for-intake-escalations": {

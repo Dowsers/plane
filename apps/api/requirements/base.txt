@@ -60,6 +60,8 @@ boto3==1.34.96
 zxcvbn==4.4.28
 # timezone
 pytz==2024.1
+# date recurrence arithmetic (recurring issue templates)
+python-dateutil==2.9.0
 # jwt
 PyJWT==2.12.0
 # OpenTelemetry

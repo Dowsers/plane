@@ -39,6 +39,11 @@ from .intake_channel import (
 )
 from .triage_rule import TriageRule, TriageRuleCondition, TriageRuleAction
 from .workflow_rule import WorkflowRule, WorkflowAction, WorkflowRuleExecutionLog
+from .recurring_issue_template import (
+    RecurringIssueTemplate,
+    RecurringIssueTemplateLabel,
+    RecurringIssueTemplateAssignee,
+)
 from .integration import (
     GithubCommentSync,
     GithubIssueSync,
