@@ -395,6 +395,7 @@ def webhook_activity(
     event_id: str | uuid.UUID,
     old_identifier: Optional[str],
     new_identifier: Optional[str],
+    event_data_override: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Process and send webhook notifications for various activities in the system.
@@ -403,8 +404,8 @@ def webhook_activity(
     to all active webhooks for the workspace.
 
     Args:
-        event (str): Type of event (project, issue, module, cycle, issue_comment)
-        verb (str): Action performed (created, updated, deleted)
+        event (str): Type of event (project, issue, module, cycle, issue_comment, workflow_rule)
+        verb (str): Action performed (created, updated, deleted, triggered)
         field (Optional[str]): Name of the field that was changed
         old_value (Any): Previous value of the field
         new_value (Any): New value of the field
@@ -414,6 +415,13 @@ def webhook_activity(
         event_id (str | uuid.UUID): ID of the event object
         old_identifier (Optional[str]): Previous identifier if any
         new_identifier (Optional[str]): New identifier if any
+        event_data_override (Optional[Dict[str, Any]]): When provided, used verbatim as
+            the payload's `data` instead of looking the event up through
+            MODEL_MAPPER/SERIALIZER_MAPPER. Needed for events like "workflow_rule"
+            (docs/feature-specs/06-automation-workflow-sla.md, "Moteur de regles
+            d'automatisation" in plane-selfhost) whose payload
+            (`{rule_id, issue_id, actions_applied, status}`) isn't a serialized
+            model instance.
 
     Returns:
         None
@@ -440,19 +448,30 @@ def webhook_activity(
         if event == "issue_comment":
             webhooks = webhooks.filter(issue_comment=True)
 
+        if event == "workflow_rule":
+            webhooks = webhooks.filter(workflow_rule=True)
+
         for webhook in webhooks:
             webhook_send_task.delay(
                 webhook_id=webhook.id,
                 slug=slug,
                 event=event,
-                event_data=({"id": event_id} if verb == "deleted" else get_model_data(event=event, event_id=event_id)),
+                event_data=(
+                    event_data_override
+                    if event_data_override is not None
+                    else (
+                        {"id": event_id}
+                        if verb == "deleted"
+                        else get_model_data(event=event, event_id=event_id)
+                    )
+                ),
                 action=verb,
                 current_site=current_site,
                 activity={
                     "field": field,
                     "new_value": new_value,
                     "old_value": old_value,
-                    "actor": get_model_data(event="user", event_id=actor_id),
+                    "actor": (get_model_data(event="user", event_id=actor_id) if actor_id else None),
                     "old_identifier": old_identifier,
                     "new_identifier": new_identifier,
                 },

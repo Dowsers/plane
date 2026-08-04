@@ -227,6 +227,13 @@ from .intake.channel import (
     SlackChannelProjectMappingViewSet,
 )
 
+from .workflow_rule.base import (
+    WorkflowRuleViewSet,
+    WorkflowRuleToggleEndpoint,
+    WorkflowRuleExecutionLogEndpoint,
+    WorkflowRuleDuplicateEndpoint,
+)
+
 from .initiative.base import InitiativeViewSet
 from .initiative.project import InitiativeProjectViewSet
 from .initiative.activity import InitiativeActivityEndpoint

@@ -41,6 +41,12 @@ class Webhook(BaseModel):
     module = models.BooleanField(default=False)
     cycle = models.BooleanField(default=False)
     issue_comment = models.BooleanField(default=False)
+    # "workflow_rule.triggered" event - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Moteur de regles
+    # d'automatisation") in plane-selfhost. Unlike the other booleans above
+    # this event's payload isn't a serialized model instance (see
+    # webhook_task.py's `event_data_override`), it's a small bespoke dict.
+    workflow_rule = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
 

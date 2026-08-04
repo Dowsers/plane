@@ -38,6 +38,7 @@ from .intake_channel import (
     IntakeMessageLog,
 )
 from .triage_rule import TriageRule, TriageRuleCondition, TriageRuleAction
+from .workflow_rule import WorkflowRule, WorkflowAction, WorkflowRuleExecutionLog
 from .integration import (
     GithubCommentSync,
     GithubIssueSync,

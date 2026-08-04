@@ -131,6 +131,11 @@ from .triage_rule import (
     TriageRuleConditionSerializer,
     TriageRuleActionSerializer,
 )
+from .workflow_rule import (
+    WorkflowRuleSerializer,
+    WorkflowActionSerializer,
+    WorkflowRuleExecutionLogSerializer,
+)
 from .intake_channel import (
     IntakeChannelSerializer,
     InboundEmailAliasSerializer,
