@@ -10,6 +10,7 @@ export * from "./auth";
 export * from "./calendar";
 export * from "./color";
 export * from "./common";
+export * from "./custom-dashboard";
 export * from "./cycle";
 export * from "./datetime";
 export * from "./distribution-update";

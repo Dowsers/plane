@@ -88,6 +88,17 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/analytics/:tabId", "./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx"),
         ]),
 
+        // Dashboards
+        layout("./(all)/[workspaceSlug]/(projects)/dashboards/layout.tsx", [
+          route(":workspaceSlug/dashboards", "./(all)/[workspaceSlug]/(projects)/dashboards/page.tsx"),
+        ]),
+        layout("./(all)/[workspaceSlug]/(projects)/dashboards/[dashboardId]/layout.tsx", [
+          route(
+            ":workspaceSlug/dashboards/:dashboardId",
+            "./(all)/[workspaceSlug]/(projects)/dashboards/[dashboardId]/page.tsx"
+          ),
+        ]),
+
         // Browse
         layout("./(all)/[workspaceSlug]/(projects)/browse/[workItem]/layout.tsx", [
           route(":workspaceSlug/browse/:workItem", "./(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"),

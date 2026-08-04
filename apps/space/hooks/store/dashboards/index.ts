@@ -4,5 +4,5 @@
  * See the LICENSE file for details.
  */
 
-export * from "./dashboard.service";
-export * from "./sites-dashboard.service";
+export * from "./use-dashboard-publish-list";
+export * from "./use-dashboard-publish";

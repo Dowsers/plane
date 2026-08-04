@@ -58,6 +58,7 @@
     "react-dom": "catalog:",
     "react-dropzone": "^14.2.3",
     "react-fast-compare": "^3.2.2",
+    "react-grid-layout": "catalog:",
     "react-hook-form": "7.51.5",
     "react-is": "^18.2.0",
     "react-markdown": "^8.0.7",

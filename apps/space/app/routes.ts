@@ -11,6 +11,7 @@ export default [
   index("./page.tsx"),
   route(":workspaceSlug/:projectId", "./[workspaceSlug]/[projectId]/page.tsx"),
   layout("./issues/[anchor]/layout.tsx", [route("issues/:anchor", "./issues/[anchor]/page.tsx")]),
+  layout("./dashboards/[anchor]/layout.tsx", [route("dashboards/:anchor", "./dashboards/[anchor]/page.tsx")]),
   route("intake-forms/:token", "./intake-forms/[token]/page.tsx"),
   // Catch-all route for 404 handling
   route("*", "./not-found.tsx"),

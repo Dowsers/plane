@@ -16,6 +16,8 @@ import type { IUserStore } from "@/store/user.store";
 import { UserStore } from "@/store/user.store";
 import type { ICycleStore } from "./cycle.store";
 import { CycleStore } from "./cycle.store";
+import type { IDashboardPublishListStore } from "./dashboards/dashboard-publish-list.store";
+import { DashboardPublishListStore } from "./dashboards/dashboard-publish-list.store";
 import type { IIssueFilterStore } from "./issue-filters.store";
 import { IssueFilterStore } from "./issue-filters.store";
 import type { IIssueLabelStore } from "./label.store";
@@ -43,6 +45,7 @@ export class RootStore {
   cycle: ICycleStore;
   issueFilter: IIssueFilterStore;
   publishList: IPublishListStore;
+  dashboardPublishList: IDashboardPublishListStore;
 
   constructor() {
     this.instance = new InstanceStore(this);
@@ -56,6 +59,7 @@ export class RootStore {
     this.cycle = new CycleStore(this);
     this.issueFilter = new IssueFilterStore(this);
     this.publishList = new PublishListStore(this);
+    this.dashboardPublishList = new DashboardPublishListStore(this);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,5 +82,6 @@ export class RootStore {
     this.cycle = new CycleStore(this);
     this.issueFilter = new IssueFilterStore(this);
     this.publishList = new PublishListStore(this);
+    this.dashboardPublishList = new DashboardPublishListStore(this);
   }
 }

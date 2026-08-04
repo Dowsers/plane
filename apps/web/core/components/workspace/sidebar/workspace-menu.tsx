@@ -10,7 +10,7 @@ import { Map, Target } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
-import { AnalyticsIcon, CycleIcon, ProjectIcon, ViewsIcon } from "@plane/propel/icons";
+import { AnalyticsIcon, CycleIcon, GridLayoutIcon, ProjectIcon, ViewsIcon } from "@plane/propel/icons";
 import { EUserWorkspaceRoles } from "@plane/types";
 // components
 import { CreateUpdateInitiativeModal } from "@/components/initiatives/create-update-modal";
@@ -91,6 +91,19 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
       href: `/${workspaceSlug}/analytics/`,
       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
       Icon: AnalyticsIcon,
+    },
+    // Guest is included here (unlike Analytics above) since the backend's
+    // dashboard list/retrieve/widget-data endpoints are all
+    // [ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST] - only create/update/delete/
+    // publish are Member+/owner-or-admin-gated at the endpoint level, so
+    // the nav entry itself shouldn't be hidden from Guests (they just
+    // won't see edit controls once inside).
+    {
+      key: "dashboards",
+      labelTranslationKey: "sidebar.dashboards",
+      href: `/${workspaceSlug}/dashboards/`,
+      access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+      Icon: GridLayoutIcon,
     },
   ];
 
