@@ -271,6 +271,14 @@ from .analytic.project_analytics import (
     ProjectAdvanceAnalyticsChartEndpoint,
 )
 
+from .dashboard.base import (
+    DashboardViewSet,
+    DashboardWidgetViewSet,
+    DashboardWidgetReorderEndpoint,
+)
+from .dashboard.publish import DashboardPublishEndpoint
+from .dashboard.data import DashboardWidgetDataEndpoint
+
 from .notification.base import (
     NotificationViewSet,
     UnreadNotificationEndpoint,

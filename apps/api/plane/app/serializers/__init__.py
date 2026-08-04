@@ -166,3 +166,9 @@ from .draft import (
     DraftIssueSerializer,
     DraftIssueDetailSerializer,
 )
+
+from .dashboard import (
+    DashboardSerializer,
+    DashboardWidgetSerializer,
+    DashboardWidgetTableIssueSerializer,
+)

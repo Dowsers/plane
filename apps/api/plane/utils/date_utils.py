@@ -7,6 +7,7 @@ from django.utils import timezone
 from typing import Dict, Optional, List, Union, Tuple, Any
 
 from plane.db.models import User
+from plane.db.models.project import ProjectNetwork
 
 
 def get_analytics_date_range(
@@ -187,5 +188,68 @@ def get_analytics_filters(
         "base_filters": base_filters,
         "project_filters": project_filters,
         "analytics_date_range": analytics_date_range,
+        "chart_period_range": chart_period_range,
+    }
+
+
+def get_public_analytics_filters(
+    workspace_id: str,
+    project_ids: Optional[Union[str, List[str]]] = None,
+    date_filter: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Public/anonymous counterpart to `get_analytics_filters`, for the
+    published-dashboard public link - see
+    docs/feature-specs/05-insights-analytics.md, section 3
+    ("Constructeur de dashboards personnalises + liens partageables"),
+    exigences 9-11.
+
+    `get_analytics_filters` always AND-s
+    `project__project_projectmember__member: user` into its filters -
+    there is no way to make it "trust the stored project_ids" for an
+    anonymous viewer, and feeding it an `AnonymousUser` produces a broken/
+    degenerate filter rather than the intended behaviour. Every existing
+    public (`AllowAny`) endpoint in `plane/space/views/` never re-derives
+    scope from `request.user` at all - it resolves everything from the
+    `DeployBoard` row it already looked up. This helper follows the exact
+    same trust model: the dashboard owner/admin already vetted
+    `project_ids` at widget-create time, so this only additionally
+    excludes projects that have since been deleted, archived, or switched
+    to "Secret" (`network=0`) visibility - so a project that becomes
+    private after publication silently drops out of the public render
+    without invalidating the anchor (exigence 11), the same way
+    `project_id__in` + the deleted/archived checks already do for the
+    authenticated path.
+
+    Only used by the public `/api/public/dashboards/...` endpoints - the
+    authenticated dashboard endpoints keep using `get_analytics_filters`
+    unmodified.
+    """
+    if project_ids and isinstance(project_ids, str):
+        project_ids = [str(project_id) for project_id in project_ids.split(",")]
+    project_ids = [str(project_id) for project_id in (project_ids or [])]
+
+    base_filters = {
+        "workspace_id": workspace_id,
+        "project_id__in": project_ids,
+        "project__deleted_at__isnull": True,
+        "project__archived_at__isnull": True,
+        "project__network": ProjectNetwork.PUBLIC.value,
+    }
+
+    project_filters = {
+        "workspace_id": workspace_id,
+        "id__in": project_ids,
+        "deleted_at__isnull": True,
+        "archived_at__isnull": True,
+        "network": ProjectNetwork.PUBLIC.value,
+    }
+
+    chart_period_range = get_chart_period_range(date_filter) if date_filter else None
+
+    return {
+        "base_filters": base_filters,
+        "project_filters": project_filters,
+        "analytics_date_range": None,
         "chart_period_range": chart_period_range,
     }
