@@ -53,8 +53,16 @@ class IntakeIssueSerializer(BaseSerializer):
             "assigned_at",
             "escalation_count",
             "assignment_source",
+            "triaged_at",
         ]
-        read_only_fields = ["project", "workspace", "assigned_at", "escalation_count", "assignment_source"]
+        read_only_fields = [
+            "project",
+            "workspace",
+            "assigned_at",
+            "escalation_count",
+            "assignment_source",
+            "triaged_at",
+        ]
 
     def validate(self, attrs):
         """
@@ -133,6 +141,7 @@ class IntakeIssueDetailSerializer(BaseSerializer):
             "assignment_source",
             "submitter_name",
             "submitter_email",
+            "triaged_at",
         ]
         read_only_fields = [
             "project",
@@ -143,6 +152,7 @@ class IntakeIssueDetailSerializer(BaseSerializer):
             "assignment_source",
             "submitter_name",
             "submitter_email",
+            "triaged_at",
         ]
 
     def to_representation(self, instance):

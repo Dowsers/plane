@@ -39,8 +39,17 @@ export enum ChartYAxisMetric {
 
 export type TAnalyticsTabsBase = "overview" | "work-items";
 export type TAnalyticsGraphsBase = "projects" | "work-items" | "custom-work-items";
+// The velocity/durations tabs don't go through the `tab=`/`type=` query-param
+// family (`TAnalyticsTabsBase`/`TAnalyticsGraphsBase`) that the rest of
+// Advance Analytics uses - they're plain, standalone endpoints - see
+// docs/feature-specs/05-insights-analytics.md, section 2. Kept as a
+// dedicated union (rather than widening `TAnalyticsTabsBase` itself) so the
+// `tab=`/`type=` family's own typed consumers
+// (`ANALYTICS_INSIGHTS_FIELDS`/`InsightTable`/`BaseAnalyticsStore.currentTab`)
+// don't have to account for keys that endpoint family never receives.
+export type TAnalyticsTabKey = TAnalyticsTabsBase | "velocity" | "durations";
 export interface AnalyticsTab {
-  key: TAnalyticsTabsBase;
+  key: TAnalyticsTabKey;
   label: string;
   content: React.FC;
   isDisabled: boolean;
@@ -49,7 +58,34 @@ export type TAnalyticsFilterParams = {
   project_ids?: string;
   cycle_id?: string;
   module_id?: string;
+  date_filter?: string;
 };
+
+// velocity / duration-percentiles types - see
+// docs/feature-specs/05-insights-analytics.md, section 2.
+
+export interface TVelocityRollupItem {
+  cycle_id: string;
+  cycle_name: string;
+  project_id: string;
+  project_name: string;
+  completed_issues: number;
+  completed_estimate_points: number;
+  end_date: string;
+}
+
+export interface TDurationPercentileMetric {
+  p50: number | null;
+  p75: number | null;
+  p90: number | null;
+  sample_size: number;
+}
+
+export interface TDurationPercentiles {
+  lead_time: TDurationPercentileMetric;
+  cycle_time: TDurationPercentileMetric;
+  triage_time: TDurationPercentileMetric;
+}
 
 // service types
 

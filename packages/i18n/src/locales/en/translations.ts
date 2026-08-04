@@ -1221,6 +1221,32 @@ export default {
     active_projects: "Active Projects",
     customized_insights: "Customized Insights",
     created_vs_resolved: "Created vs Resolved",
+    velocity: "Velocity",
+    durations: "Durations",
+    velocity_rollup: {
+      title: "Cycle velocity",
+      columns: {
+        cycle: "Cycle",
+        project: "Project",
+        completed_work_items: "Completed work items",
+        completed_estimate_points: "Completed points",
+        end_date: "Ended",
+      },
+    },
+    duration_percentiles: {
+      title: "Duration percentiles",
+      lead_time: "Lead time",
+      lead_time_description: "Time from creation to completion, in days",
+      cycle_time: "Cycle time",
+      cycle_time_description: "Time from start to completion, in days",
+      triage_time: "Triage time",
+      triage_time_description: "Time from intake to triage decision, in days",
+      no_data: "Not enough data yet",
+      p50: "P50",
+      p75: "P75",
+      p90: "P90",
+      sample_size: "Sample size",
+    },
     empty_state: {
       project_insights: {
         title: "No data yet",

@@ -261,6 +261,10 @@ from .analytic.advance import (
     AdvanceAnalyticsChartEndpoint,
 )
 
+from .analytic.velocity import AdvanceAnalyticsVelocityEndpoint
+
+from .analytic.duration import AdvanceAnalyticsDurationEndpoint
+
 from .analytic.project_analytics import (
     ProjectAdvanceAnalyticsEndpoint,
     ProjectAdvanceAnalyticsStatsEndpoint,

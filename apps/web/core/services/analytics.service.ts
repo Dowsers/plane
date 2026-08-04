@@ -11,6 +11,8 @@ import type {
   TAnalyticsTabsBase,
   TAnalyticsGraphsBase,
   TAnalyticsFilterParams,
+  TVelocityRollupItem,
+  TDurationPercentiles,
 } from "@plane/types";
 // services
 import { APIService } from "./api.service";
@@ -81,6 +83,38 @@ export class AnalyticsService extends APIService {
         type: tab,
         ...params,
       },
+    })
+      .then((res) => res?.data)
+      .catch((err) => {
+        throw err?.response?.data;
+      });
+  }
+
+  // Velocity rollup and duration-percentiles endpoints don't belong to the
+  // `tab=`/`type=` query-param family the methods above serve (there's no
+  // peek-view variant, and each is its own standalone URL) - see
+  // docs/feature-specs/05-insights-analytics.md, section 2. Same
+  // `.get(...).then((res) => res?.data).catch(...)` shape as the rest of
+  // this service, just without the `processUrl`/`tab` indirection.
+  async getAdvanceAnalyticsVelocity(
+    workspaceSlug: string,
+    params?: TAnalyticsFilterParams
+  ): Promise<TVelocityRollupItem[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/advance-analytics-velocity/`, {
+      params,
+    })
+      .then((res) => res?.data)
+      .catch((err) => {
+        throw err?.response?.data;
+      });
+  }
+
+  async getAdvanceAnalyticsDuration(
+    workspaceSlug: string,
+    params?: TAnalyticsFilterParams
+  ): Promise<TDurationPercentiles> {
+    return this.get(`/api/workspaces/${workspaceSlug}/advance-analytics-duration/`, {
+      params,
     })
       .then((res) => res?.data)
       .catch((err) => {

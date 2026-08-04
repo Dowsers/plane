@@ -116,6 +116,13 @@ class IntakeIssue(ProjectBaseModel):
         default=-2,
     )
     snoozed_till = models.DateTimeField(null=True)
+    # First time this intake issue's status moved away from Pending (-2) to
+    # anything else - the "triage time" metric's end timestamp (start
+    # timestamp is `created_at`, already free). Never overwritten once set -
+    # see IntakeIssueViewSet.partial_update. Used by the cross-workspace
+    # duration-percentiles analytics endpoint - see
+    # docs/feature-specs/05-insights-analytics.md, section 2.
+    triaged_at = models.DateTimeField(null=True, blank=True)
     duplicate_to = models.ForeignKey(
         "db.Issue",
         related_name="intake_duplicate",

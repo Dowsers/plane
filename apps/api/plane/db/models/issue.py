@@ -468,6 +468,13 @@ class IssueActivity(ProjectBaseModel):
         verbose_name_plural = "Issue Activities"
         db_table = "issue_activities"
         ordering = ("-created_at",)
+        indexes = [
+            # Backs the `started_at` subquery (filter by issue_id + field="state",
+            # ordered by created_at) used to derive cycle time for the
+            # cross-workspace duration-percentiles analytics endpoint - see
+            # docs/feature-specs/05-insights-analytics.md, section 2.
+            models.Index(fields=["issue_id", "field", "created_at"], name="issue_activity_started_idx")
+        ]
 
     def __str__(self):
         """Return issue of the comment"""

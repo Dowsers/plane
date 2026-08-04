@@ -466,6 +466,22 @@ class IntakeIssueViewSet(BaseViewSet):
                     )
 
         if intake_serializer:
+            # First-triage timestamp: the *first* time this intake issue's
+            # status moves away from Pending (-2) to anything else. Set
+            # directly on the already-validated serializer's instance
+            # (`intake_issue`, same object as `intake_serializer.instance`)
+            # before saving, so it's persisted in this same write. Never
+            # overwritten once set - this is a first-triage timestamp, not a
+            # last-status-change one. No signal - explicit call site, per
+            # this codebase's convention. See
+            # docs/feature-specs/05-insights-analytics.md, section 2.
+            if (
+                "status" in request.data
+                and intake_issue.status == -2
+                and intake_serializer.validated_data.get("status", intake_issue.status) != -2
+                and intake_issue.triaged_at is None
+            ):
+                intake_issue.triaged_at = timezone.now()
             intake_serializer.save()
             # create a activity for status change
             issue_activity.delay(
