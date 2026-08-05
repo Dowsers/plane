@@ -58,11 +58,13 @@ from plane.db.models import (
     IssueReaction,
     IssueRelation,
     IssueSubscriber,
+    IssueTransitionApprovalRequest,
     ProjectUserProperty,
     Module,
     ModuleIssue,
     Project,
     ProjectMember,
+    State,
     UserRecentVisit,
 )
 from plane.utils.filters import ComplexFilterBackend, IssueFilterSet
@@ -80,8 +82,37 @@ from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPagina
 from plane.utils.sub_issue_automation import handle_sub_issue_automations
 from plane.utils.timezone_converter import user_timezone_converter
 from plane.utils.view_subscriptions import get_subscribed_views_for_issue, issue_matches_view
+from plane.utils.workflow_transition_engine import (
+    create_approval_request,
+    evaluate_transition,
+    execute_allowed_transition,
+)
 
 from .. import BaseAPIView, BaseViewSet
+
+
+def _get_or_create_pending_approval(issue, transition, requested_by):
+    """Governed-workflow gate (phase 2 of docs/feature-specs/06-automation-
+    workflow-sla.md, section 4 in plane-selfhost) - shared by
+    `IssueViewSet.partial_update` and `BulkIssueOperationsEndpoint.post`.
+
+    Auto-creates the `IssueTransitionApprovalRequest` right here instead of
+    requiring the client to make a second round-trip to
+    `IssueTransitionRequestApprovalEndpoint`
+    (app/views/workflow_transition/base.py) - the caller already expressed
+    intent to make this exact transition via their PATCH, so there is no new
+    information a second client call would add. Dedupes against an already-
+    PENDING request for the same (issue, transition) pair first, mirroring
+    that endpoint's own dedup check, so repeated attempts at the same
+    denied-for-now transition (e.g. re-dragging a Kanban card) don't spawn
+    duplicate requests.
+    """
+    existing = IssueTransitionApprovalRequest.objects.filter(
+        issue_id=issue.id, transition_id=transition.id, status="PENDING"
+    ).first()
+    if existing is not None:
+        return existing
+    return create_approval_request(issue, transition, requested_by)
 
 
 class IssueListEndpoint(BaseAPIView):
@@ -682,6 +713,70 @@ class IssueViewSet(BaseViewSet):
         requested_data = json.dumps(self.request.data, cls=DjangoJSONEncoder)
         serializer = IssueCreateSerializer(issue, data=request.data, partial=True, context={"project_id": project_id})
         if serializer.is_valid():
+            # --- Governed workflow gate (phase 2 of docs/feature-specs/
+            # 06-automation-workflow-sla.md, section 4 in plane-selfhost).
+            # Also covers Kanban drag-and-drop for free - confirmed to be
+            # the exact same endpoint, no separate "move" API exists.
+            #
+            # Only evaluated for an actual state-change attempt: `state`
+            # (source of the `state_id` input field) must be present in
+            # validated_data (already resolved to a real `State` instance
+            # and project-membership-validated by
+            # IssueCreateSerializer.validate() above - reused as-is, not
+            # duplicated here) AND differ from the issue's current state. A
+            # same-state PATCH, or one that never touches state at all,
+            # skips this whole block and behaves exactly as before.
+            # `evaluate_transition` is called unconditionally otherwise - it
+            # already returns "allowed" on its own for any project/issue-type
+            # with zero configured WorkflowTransition rows (the open-graph,
+            # backward-compatible case), so no redundant "is this project
+            # governed" pre-check is added here.
+            target_state = serializer.validated_data.get("state")
+            transition_result = None
+            pending_approval_response = None
+            if target_state is not None and target_state.id != issue.state_id:
+                transition_result = evaluate_transition(issue, target_state, request.user)
+                if transition_result["outcome"] == "denied":
+                    # Never call serializer.save() - the DB is untouched.
+                    return Response(
+                        {
+                            "error_code": "TRANSITION_NOT_ALLOWED",
+                            "reason": transition_result["reason"]["message"],
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if transition_result["outcome"] == "pending_approval":
+                    # The state field itself is rejected for now, but any
+                    # OTHER fields bundled into this same PATCH are still
+                    # applied below - rejecting the whole request would be
+                    # more disruptive than necessary when e.g. a priority
+                    # change was piggy-backed onto the same call. Auto-create
+                    # (or reuse) the approval request immediately rather than
+                    # requiring a second client round-trip to
+                    # IssueTransitionRequestApprovalEndpoint.
+                    serializer.validated_data.pop("state", None)
+                    approval_request = _get_or_create_pending_approval(
+                        issue, transition_result["transition"], request.user
+                    )
+                    pending_approval_response = {
+                        "pending_approval": True,
+                        "transition_id": str(transition_result["transition"].id),
+                        "approval_request_id": str(approval_request.id),
+                    }
+                    # Strip the rejected state key out of the payloads fed to
+                    # the activity/model-activity tasks below, so they don't
+                    # report a state change that never actually happened -
+                    # bgtasks/issue_activities_task.py::track_state diffs
+                    # against this raw requested payload, not the post-save
+                    # instance, so leaving the key in would log a phantom
+                    # state-change activity entry.
+                    requested_data = json.dumps(
+                        {k: v for k, v in self.request.data.items() if k not in ("state_id", "state")},
+                        cls=DjangoJSONEncoder,
+                    )
+                    request.data.pop("state_id", None)
+                    request.data.pop("state", None)
+
             serializer.save()
             # Check if the update is a migration description update
             is_migration_description_update = skip_activity and is_description_update
@@ -698,6 +793,18 @@ class IssueViewSet(BaseViewSet):
                     notification=True,
                     origin=base_host(request=request, is_app=True),
                 )
+                # Run any configured post-transition actions (system
+                # comment, notify, label add/remove, webhook - see
+                # utils/workflow_transition_engine.py) AFTER the raw
+                # state-change activity entry above, so the activity feed's
+                # causal order matches what a human reading it would expect:
+                # the state change itself, then whatever it triggered. Only
+                # reached for a real, "allowed" state-change attempt -
+                # "denied" already returned early above, and
+                # "pending_approval" already popped "state" out of
+                # validated_data so this issue's state was never written.
+                if transition_result is not None and transition_result["outcome"] == "allowed":
+                    execute_allowed_transition(issue, target_state, request.user, transition_result["transition"])
                 model_activity.delay(
                     model_name="issue",
                     model_id=str(serializer.data.get("id", None)),
@@ -746,6 +853,8 @@ class IssueViewSet(BaseViewSet):
                                     event="cancel",
                                     actor_id=str(request.user.id),
                                 )
+            if pending_approval_response is not None:
+                return Response(pending_approval_response, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1273,6 +1382,12 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
 
         failed = {issue_id: [] for issue_id in issue_ids}
         succeeded_fields = {issue_id: [] for issue_id in issue_ids}
+        # Governed workflow gate (phase 2 of docs/feature-specs/06-
+        # automation-workflow-sla.md, section 4 in plane-selfhost) - same
+        # per-issue-list-of-reasons shape as `failed`/`succeeded_fields`
+        # above, reported as a third bucket alongside them rather than a
+        # separate reporting mechanism.
+        pending_approval = {issue_id: [] for issue_id in issue_ids}
         for missing_id in set(issue_ids) - set(issues_by_id.keys()):
             failed[missing_id].append("Issue not found")
 
@@ -1282,17 +1397,83 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
         # --- Scalar fields: state, priority, dates, estimate ---
         scalar_updates = {f: properties[f] for f in BULK_OPERATIONS_SCALAR_FIELDS if f in properties}
         if scalar_updates:
+            # The whole batch shares a single target state_id (`properties`
+            # is one JSON body applied uniformly to every issue_id in
+            # `issue_ids`), so the target State is resolved once here, then
+            # `evaluate_transition` is called per issue below (each issue's
+            # own from_state can differ). This endpoint bypasses
+            # IssueCreateSerializer entirely (raw setattr + bulk_update, per
+            # its own docstring), so - unlike the unitary/public-API call
+            # sites - there is no pre-existing "state belongs to this
+            # project" validation to reuse; resolving it here is new.
+            gate_state = "state_id" in scalar_updates
+            target_state = None
+            if gate_state:
+                target_state = State.objects.filter(pk=scalar_updates["state_id"], project_id=project_id).first()
+                if target_state is None:
+                    for issue_id in issues_by_id.keys():
+                        failed[issue_id].append("state_id: invalid state for this project")
+                    scalar_updates = {k: v for k, v in scalar_updates.items() if k != "state_id"}
+                    gate_state = False
+
             issues_to_update = []
+            # issue_id -> WorkflowTransition to run post-transition actions
+            # for once the shared bulk_update below commits - only populated
+            # for issues whose state is both actually changing and was
+            # evaluated "allowed".
+            post_transition_by_issue_id = {}
+            # issue_ids whose state field was actually applied this request
+            # (allowed, or already at the target state - a same-state
+            # no-op) - used below to decide which issues still get
+            # `handle_sub_issue_automations`/post-transition actions,
+            # mirroring this endpoint's pre-existing (ungated) behavior for
+            # every issue that isn't newly denied/pending.
+            state_applied_issue_ids = set()
             for issue_id, issue in issues_by_id.items():
+                fields_for_issue = dict(scalar_updates)
+                if gate_state:
+                    if str(issue.state_id) == str(target_state.id):
+                        # Already at the target state - only invoke
+                        # evaluate_transition when the target actually
+                        # differs from the issue's current state, same rule
+                        # as every other call site. Falls through to the
+                        # unconditional per-issue write below, exactly
+                        # matching this endpoint's pre-existing behavior for
+                        # a same-state bulk update.
+                        state_applied_issue_ids.add(issue_id)
+                    else:
+                        result = evaluate_transition(issue, target_state, request.user)
+                        if result["outcome"] == "denied":
+                            failed[issue_id].append(f"state_id: {result['reason']['message']}")
+                            fields_for_issue.pop("state_id", None)
+                        elif result["outcome"] == "pending_approval":
+                            approval_request = _get_or_create_pending_approval(
+                                issue, result["transition"], request.user
+                            )
+                            pending_approval[issue_id].append(
+                                f"state_id: pending approval (request {approval_request.id})"
+                            )
+                            fields_for_issue.pop("state_id", None)
+                        else:
+                            state_applied_issue_ids.add(issue_id)
+                            post_transition_by_issue_id[issue_id] = result["transition"]
+
+                if not fields_for_issue:
+                    # Every field requested for this issue was rejected
+                    # (state_id was the only scalar field and it was denied/
+                    # pending) - excluded entirely, matching exigence 11's
+                    # "chaque item est évalué individuellement".
+                    continue
+
                 current_instance = {}
                 requested_data = {}
-                for field, value in scalar_updates.items():
+                for field, value in fields_for_issue.items():
                     current_value = getattr(issue, field)
                     current_instance[field] = str(current_value) if current_value is not None else None
                     setattr(issue, field, value)
                     requested_data[field] = str(value) if value is not None else None
                 issues_to_update.append(issue)
-                succeeded_fields[issue_id].extend(scalar_updates.keys())
+                succeeded_fields[issue_id].extend(fields_for_issue.keys())
                 issue_activity.delay(
                     type="issue.activity.updated",
                     requested_data=json.dumps(requested_data),
@@ -1302,10 +1483,21 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
                     project_id=str(project_id),
                     epoch=epoch,
                 )
-            Issue.objects.bulk_update(issues_to_update, list(scalar_updates.keys()))
+            if issues_to_update:
+                Issue.objects.bulk_update(issues_to_update, list(scalar_updates.keys()))
             if "state_id" in scalar_updates:
                 for issue in issues_to_update:
+                    if str(issue.id) not in state_applied_issue_ids:
+                        continue
                     handle_sub_issue_automations(issue, request.user.id)
+                    # Run any configured post-transition actions after the
+                    # shared bulk_update has committed - only for issues
+                    # whose transition was freshly evaluated "allowed"
+                    # (already-at-target no-ops have no transition to run
+                    # actions for).
+                    transition = post_transition_by_issue_id.get(str(issue.id))
+                    if transition is not None:
+                        execute_allowed_transition(issue, target_state, request.user, transition)
 
         # --- Labels: additive (an issue keeps its existing labels, new ones are
         # added) - matches the frontend's bulkUpdateProperties optimistic update,
@@ -1465,15 +1657,21 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
         result = {
             "success": [{"id": issue_id, "fields": fields} for issue_id, fields in succeeded_fields.items() if fields],
             "failed": [{"id": issue_id, "reasons": reasons} for issue_id, reasons in failed.items() if reasons],
+            "pending_approval": [
+                {"id": issue_id, "reasons": reasons} for issue_id, reasons in pending_approval.items() if reasons
+            ],
         }
         any_failed = any(reasons for reasons in failed.values())
+        any_pending = any(reasons for reasons in pending_approval.values())
         any_succeeded = any(fields for fields in succeeded_fields.values())
-        if any_failed and any_succeeded:
-            operation.status = BulkIssueOperation.OperationStatus.PARTIAL
-        elif any_failed:
-            operation.status = BulkIssueOperation.OperationStatus.FAILED
-        else:
+        if any_succeeded and not any_failed and not any_pending:
             operation.status = BulkIssueOperation.OperationStatus.COMPLETED
+        elif any_failed and not any_succeeded and not any_pending:
+            operation.status = BulkIssueOperation.OperationStatus.FAILED
+        elif any_pending and not any_succeeded and not any_failed:
+            operation.status = BulkIssueOperation.OperationStatus.PENDING
+        else:
+            operation.status = BulkIssueOperation.OperationStatus.PARTIAL
         operation.result = result
         operation.save(update_fields=["status", "result"])
 

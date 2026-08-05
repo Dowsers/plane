@@ -72,6 +72,7 @@ from plane.db.models import (
     IssueComment,
     IssueLink,
     IssueRelation,
+    IssueTransitionApprovalRequest,
     Label,
     Project,
     ProjectMember,
@@ -86,6 +87,11 @@ from plane.utils.host import base_host
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.bgtasks.webhook_task import model_activity
 from plane.app.permissions import ROLE
+from plane.utils.workflow_transition_engine import (
+    create_approval_request,
+    evaluate_transition,
+    execute_allowed_transition,
+)
 from plane.utils.openapi import (
     work_item_docs,
     work_item_relation_docs,
@@ -154,6 +160,26 @@ from plane.utils.openapi import (
     WORKSPACE_NOT_FOUND_RESPONSE,
 )
 from plane.bgtasks.work_item_link_task import crawl_work_item_link_title
+
+
+def _get_or_create_pending_approval(issue, transition, requested_by):
+    """Governed-workflow gate (phase 2 of docs/feature-specs/06-automation-
+    workflow-sla.md, section 4 in plane-selfhost) for `IssueDetailAPIEndpoint
+    .patch` - same helper (duplicated locally rather than imported cross-
+    package, since `app/views/issue/base.py` and this module are
+    independent, unrelated view packages) as the one used at the app-
+    namespace unitary/bulk call sites: auto-creates the
+    `IssueTransitionApprovalRequest` immediately instead of requiring the
+    (possibly non-interactive, service-token) caller to make a second call
+    to the app-namespace request-approval endpoint, deduping against an
+    already-PENDING request for the same (issue, transition) pair first.
+    """
+    existing = IssueTransitionApprovalRequest.objects.filter(
+        issue_id=issue.id, transition_id=transition.id, status="PENDING"
+    ).first()
+    if existing is not None:
+        return existing
+    return create_approval_request(issue, transition, requested_by)
 
 
 def user_has_issue_permission(user_id, project_id, issue=None, allowed_roles=None, allow_creator=True):
@@ -771,6 +797,66 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                     status=status.HTTP_409_CONFLICT,
                 )
 
+            # --- Governed workflow gate (phase 2 of docs/feature-specs/
+            # 06-automation-workflow-sla.md, section 4 in plane-selfhost).
+            # Same pattern as the app-namespace unitary update
+            # (IssueViewSet.partial_update in app/views/issue/base.py) -
+            # only THIS `IssueSerializer` is a third, independent serializer
+            # class (api/serializers/issue.py, unrelated to the app-
+            # namespace class of the same name) whose auto-generated state
+            # field keeps the model's own name, "state" (confirmed directly
+            # - this namespace has no "state_id"-aliased field, unlike
+            # IssueCreateSerializer), matching this file's own pre-existing
+            # "state" usage in ISSUE_UPDATE_EXAMPLE/IssueSerializer.validate().
+            #
+            # Only evaluated for an actual state-change attempt (present in
+            # validated_data, already resolved to a real `State` instance
+            # and project-membership-validated by IssueSerializer.validate()
+            # above, and differing from the issue's current state).
+            # `evaluate_transition` is called unconditionally otherwise - it
+            # already returns "allowed" for a zero-rule (open-graph) project
+            # on its own, so no redundant pre-check is added here.
+            target_state = serializer.validated_data.get("state")
+            transition_result = None
+            pending_approval_response = None
+            if target_state is not None and target_state.id != issue.state_id:
+                transition_result = evaluate_transition(issue, target_state, request.user)
+                if transition_result["outcome"] == "denied":
+                    # Never call serializer.save() - the DB is untouched.
+                    return Response(
+                        {
+                            "error_code": "TRANSITION_NOT_ALLOWED",
+                            "reason": transition_result["reason"]["message"],
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if transition_result["outcome"] == "pending_approval":
+                    # Same choice as the unitary/bulk call sites: reject
+                    # only the state field, still apply any other fields
+                    # bundled into this same PATCH, and auto-create (or
+                    # reuse) the approval request immediately rather than
+                    # requiring the (possibly non-interactive, service-
+                    # token) caller to make a second call.
+                    serializer.validated_data.pop("state", None)
+                    approval_request = _get_or_create_pending_approval(
+                        issue, transition_result["transition"], request.user
+                    )
+                    pending_approval_response = {
+                        "pending_approval": True,
+                        "transition_id": str(transition_result["transition"].id),
+                        "approval_request_id": str(approval_request.id),
+                    }
+                    # Strip the rejected state key from the payloads fed to
+                    # the activity/model-activity tasks below, so they don't
+                    # report a state change that never actually happened -
+                    # bgtasks/issue_activities_task.py::track_state diffs
+                    # against this raw requested payload, not the post-save
+                    # instance.
+                    requested_data = json.dumps(
+                        {k: v for k, v in self.request.data.items() if k != "state"}, cls=DjangoJSONEncoder
+                    )
+                    request.data.pop("state", None)
+
             serializer.save()
             issue_activity.delay(
                 type="issue.activity.updated",
@@ -781,6 +867,15 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                 current_instance=current_instance,
                 epoch=int(timezone.now().timestamp()),
             )
+            # Run any configured post-transition actions AFTER the raw
+            # state-change activity entry above - see
+            # IssueViewSet.partial_update's identical comment for the
+            # causal-order rationale. Only reached for a real, "allowed"
+            # state-change attempt - "denied" already returned early above,
+            # and "pending_approval" already popped "state" out of
+            # validated_data so this issue's state was never written.
+            if transition_result is not None and transition_result["outcome"] == "allowed":
+                execute_allowed_transition(issue, target_state, request.user, transition_result["transition"])
             # Send the model activity for webhook dispatch
             model_activity.delay(
                 model_name="issue",
@@ -791,6 +886,8 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                 slug=slug,
                 origin=base_host(request=request, is_app=True),
             )
+            if pending_approval_response is not None:
+                return Response(pending_approval_response, status=status.HTTP_200_OK)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
