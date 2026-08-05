@@ -2146,6 +2146,64 @@ export default {
       description: "Save an existing, well-organized project as a template to standardize how new projects start.",
     },
   },
+  sla_policies: {
+    label: "SLA policies",
+    settings: {
+      title: "SLA policies",
+      description:
+        "Workspace-wide response/resolution time budgets, matched by project, priority, label, assignee, or state group.",
+    },
+    scope: {
+      all_projects: "All projects",
+      specific_projects: "Specific projects",
+      no_projects_warning:
+        'This policy applies to no project yet - choose "All projects" or select at least one project, otherwise it will never match any work item.',
+    },
+    fields: {
+      name: "Name",
+      description: "Description",
+      response_time: "Response time",
+      resolution_time: "Resolution time",
+      warning_threshold: "Warning threshold",
+      critical_threshold: "Critical threshold",
+      priority: "Priority",
+      labels: "Labels",
+      assignees: "Assignees",
+      state_group: "State group",
+    },
+    sort_order_hint:
+      "Lower number = higher precedence. When more than one policy matches a work item, the one with the lowest number wins.",
+    empty_state: {
+      title: "No SLA policies yet",
+      description: "Create a policy to start tracking response and resolution time budgets on matching work items.",
+    },
+    toast: {
+      save_success: "SLA policy saved successfully",
+      duplicate_success: "SLA policy duplicated successfully",
+      delete_success: "SLA policy deleted successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    delete_confirm: {
+      title: "Delete SLA policy",
+      description:
+        "Are you sure you want to delete this SLA policy? Work items already tracked against it keep their historical compliance record.",
+    },
+    status: {
+      on_track: "On track",
+      at_risk: "At risk",
+      breached: "Breached",
+      achieved: "Achieved",
+      cancelled: "Cancelled",
+      paused: "Paused",
+    },
+    report: {
+      title: "Compliance report",
+      export_csv: "Export CSV",
+      truncated_notice:
+        "Showing the first {shown} of {total} results - narrow your filters or export CSV for the full set.",
+      empty_state: "No SLA data for the selected filters.",
+    },
+  },
   project_updates: {
     label: "Updates",
     post_update: "Post update",

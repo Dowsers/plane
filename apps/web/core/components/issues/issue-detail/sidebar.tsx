@@ -44,6 +44,7 @@ import { DateAlert } from "@/plane-web/components/issues/issue-details/sidebar/d
 import { TransferHopInfo } from "@/plane-web/components/issues/issue-details/sidebar/transfer-hop-info";
 import { IssueWorklogProperty } from "@/plane-web/components/issues/worklog/property";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
+import { IssueSLAProperty } from "@/components/sla-policies/issue-sla-property";
 import { IssueCycleSelect } from "./cycle-select";
 import { IssueLabel } from "./label";
 import { IssueMilestoneSelect } from "./milestone-select";
@@ -267,6 +268,8 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 </span>
               </SidebarPropertyListItem>
             )}
+
+            <IssueSLAProperty workspaceSlug={workspaceSlug} projectId={projectId} issueId={issueId} />
 
             <SidebarPropertyListItem icon={ParentPropertyIcon} label={t("common.parent")}>
               <IssueParentSelectRoot

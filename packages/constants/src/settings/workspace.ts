@@ -70,6 +70,18 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/project-templates/`,
   },
+  "sla-policies": {
+    key: "sla-policies",
+    i18n_label: "sla_policies.settings.title",
+    href: `/settings/sla-policies`,
+    // Mirrors the backend's own Admin-only-for-every-verb gating
+    // (`SLAPolicyViewSet`/`SLAPolicyDuplicateEndpoint`/`SLAReportEndpoint`,
+    // apps/api/plane/app/views/sla/{base,report}.py) - Member/Guest never
+    // see this configuration screen at all, only the read-only per-issue
+    // SLA status widget in the issue detail sidebar.
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/sla-policies/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -83,6 +95,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["billing-and-plans"],
     WORKSPACE_SETTINGS["export"],
     WORKSPACE_SETTINGS["project-templates"],
+    WORKSPACE_SETTINGS["sla-policies"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [WORKSPACE_SETTINGS["webhooks"]],

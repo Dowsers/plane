@@ -344,6 +344,10 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/settings/project-templates",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/project-templates/page.tsx"
           ),
+          route(
+            ":workspaceSlug/settings/sla-policies",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/sla-policies/page.tsx"
+          ),
         ]),
 
         // --------------------------------------------------------------------

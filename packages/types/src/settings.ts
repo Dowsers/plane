@@ -17,7 +17,8 @@ export type TWorkspaceSettingsTabs =
   | "export"
   | "webhooks"
   | "features"
-  | "project-templates";
+  | "project-templates"
+  | "sla-policies";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;
