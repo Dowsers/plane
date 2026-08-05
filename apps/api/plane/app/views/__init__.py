@@ -319,3 +319,15 @@ from .timezone.base import TimezoneEndpoint
 from .sla.base import SLAPolicyViewSet, SLAPolicyDuplicateEndpoint
 from .sla.issue import IssueSLAEndpoint
 from .sla.report import SLAReportEndpoint
+
+from .workflow_transition.base import (
+    WorkflowTransitionViewSet,
+    WorkflowTransitionApproverEndpoint,
+    WorkflowTransitionConditionEndpoint,
+    WorkflowTransitionActionEndpoint,
+    WorkflowTransitionAuditLogEndpoint,
+    IssueAllowedTransitionsEndpoint,
+    IssueTransitionRequestApprovalEndpoint,
+    IssueTransitionApprovalApproveEndpoint,
+    IssueTransitionApprovalRejectEndpoint,
+)

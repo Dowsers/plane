@@ -30,6 +30,7 @@ from .workspace import urlpatterns as workspace_urls
 from .timezone import urlpatterns as timezone_urls
 from .exporter import urlpatterns as exporter_urls
 from .sla import urlpatterns as sla_urls
+from .workflow_transition import urlpatterns as workflow_transition_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -60,4 +61,5 @@ urlpatterns = [
     *timezone_urls,
     *exporter_urls,
     *sla_urls,
+    *workflow_transition_urls,
 ]

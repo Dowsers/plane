@@ -47,6 +47,24 @@ class Webhook(BaseModel):
     # this event's payload isn't a serialized model instance (see
     # webhook_task.py's `event_data_override`), it's a small bespoke dict.
     workflow_rule = models.BooleanField(default=False)
+    # Covers all four governed-workflow events from
+    # docs/feature-specs/06-automation-workflow-sla.md ("Workflows gouvernes
+    # multi-etats avec approbations", section 4) in plane-selfhost -
+    # `workflow.transition.completed`, `workflow.transition.blocked`,
+    # `workflow.approval.requested`, `workflow.approval.decided`. ONE
+    # boolean for all four (not four separate columns): this mirrors how
+    # `issue_comment` above already covers multiple comment-related
+    # sub-events (created/updated/deleted) under a single column rather
+    # than one column per verb - the granularity that matters to a webhook
+    # subscriber is "governed-workflow activity happened", with the actual
+    # sub-event distinguished by the payload's own `event`/`action` fields
+    # (same `{event, action, data}` shape every other webhook event already
+    # uses), not by which column let it through the filter. Four separate
+    # booleans would only pay off if real subscribers wanted e.g. approval
+    # decisions but not transition completions - nothing in the spec's own
+    # "Nouveaux evenements webhook" list suggests that granularity is
+    # actually needed in v1.
+    workflow_transition = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
 

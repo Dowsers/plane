@@ -180,3 +180,13 @@ from .dashboard import (
 )
 
 from .sla import SLAPolicySerializer, IssueSLASerializer
+
+from .workflow_transition import (
+    WorkflowTransitionSerializer,
+    WorkflowTransitionApproverSerializer,
+    WorkflowTransitionConditionSerializer,
+    WorkflowTransitionActionSerializer,
+    IssueTransitionApprovalRequestSerializer,
+    IssueTransitionApprovalSerializer,
+    WorkflowTransitionAuditLogSerializer,
+)

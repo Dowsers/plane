@@ -404,7 +404,8 @@ def webhook_activity(
     to all active webhooks for the workspace.
 
     Args:
-        event (str): Type of event (project, issue, module, cycle, issue_comment, workflow_rule)
+        event (str): Type of event (project, issue, module, cycle, issue_comment, workflow_rule,
+            workflow_transition)
         verb (str): Action performed (created, updated, deleted, triggered)
         field (Optional[str]): Name of the field that was changed
         old_value (Any): Previous value of the field
@@ -421,7 +422,9 @@ def webhook_activity(
             (docs/feature-specs/06-automation-workflow-sla.md, "Moteur de regles
             d'automatisation" in plane-selfhost) whose payload
             (`{rule_id, issue_id, actions_applied, status}`) isn't a serialized
-            model instance.
+            model instance. Same for "workflow_transition" (same doc,
+            "Workflows gouvernes multi-etats avec approbations", section 4) -
+            see plane/utils/workflow_transition_engine.py.
 
     Returns:
         None
@@ -450,6 +453,9 @@ def webhook_activity(
 
         if event == "workflow_rule":
             webhooks = webhooks.filter(workflow_rule=True)
+
+        if event == "workflow_transition":
+            webhooks = webhooks.filter(workflow_transition=True)
 
         for webhook in webhooks:
             webhook_send_task.delay(

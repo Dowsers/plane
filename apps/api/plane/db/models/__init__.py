@@ -119,3 +119,13 @@ from .sticky import Sticky
 from .description import Description, DescriptionVersion
 
 from .sla import SLAPolicy, IssueSLA
+
+from .workflow_transition import (
+    WorkflowTransition,
+    WorkflowTransitionApprover,
+    WorkflowTransitionCondition,
+    WorkflowTransitionAction,
+    IssueTransitionApprovalRequest,
+    IssueTransitionApproval,
+    WorkflowTransitionAuditLog,
+)
