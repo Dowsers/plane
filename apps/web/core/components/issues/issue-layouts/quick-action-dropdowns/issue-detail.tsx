@@ -8,18 +8,24 @@ import { useState } from "react";
 import { omit } from "lodash-es";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, Repeat } from "lucide-react";
 // plane imports
 import { ARCHIVABLE_STATE_GROUPS, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
-import type { TIssue } from "@plane/types";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import type { TIssue, TRecurringIssueTemplate } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
+import type { TContextMenuItem } from "@plane/ui";
 import { ContextMenu, CustomMenu } from "@plane/ui";
 import { cn } from "@plane/utils";
+// components
+import { RecurringIssueTemplateFormModal } from "@/components/recurring-issue-templates/template-form-modal";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
 import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
 import { useUserPermissions } from "@/hooks/store/user";
+// services
+import { RecurringIssueTemplateService } from "@/services/recurring-issue-template.service";
 // plane-web components
 import { DuplicateWorkItemModal } from "@/plane-web/components/issues/issue-layouts/quick-action-dropdowns/duplicate-modal";
 // helper
@@ -30,6 +36,8 @@ import type { IQuickActionProps } from "../list/list-view-types";
 import type { MenuItemFactoryProps } from "./helper";
 import { useWorkItemDetailMenuItems } from "./helper";
 import { IconButton } from "@plane/propel/icon-button";
+
+const recurringIssueTemplateService = new RecurringIssueTemplateService();
 
 type TWorkItemDetailQuickActionProps = IQuickActionProps & {
   toggleEditIssueModal?: (value: boolean) => void;
@@ -66,6 +74,9 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
   const [deleteIssueModal, setDeleteIssueModal] = useState(false);
   const [archiveIssueModal, setArchiveIssueModal] = useState(false);
   const [duplicateWorkItemModal, setDuplicateWorkItemModal] = useState(false);
+  const [isConvertingToRecurring, setIsConvertingToRecurring] = useState(false);
+  const [recurringTemplateModal, setRecurringTemplateModal] = useState(false);
+  const [recurringDraftTemplate, setRecurringDraftTemplate] = useState<TRecurringIssueTemplate | null>(null);
   // store hooks
   const { allowPermissions } = useUserPermissions();
   const { issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
@@ -125,6 +136,32 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
     if (handleRestore) await handleRestore();
   };
 
+  // Pre-fills a new, inactive draft template from this issue's current
+  // fields (see IssueConvertToRecurringEndpoint,
+  // apps/api/plane/app/views/recurring_issue_template/base.py), then opens
+  // the same create/edit modal used by the "Recurring work items" settings
+  // tab, pre-filled with that draft, so the user can configure a frequency
+  // + start date and explicitly activate it.
+  const handleConvertToRecurring = async () => {
+    if (!workspaceSlug || !issue.project_id) return;
+    setIsConvertingToRecurring(true);
+    try {
+      const draft = await recurringIssueTemplateService.convertToRecurring(
+        workspaceSlug.toString(),
+        issue.project_id,
+        issue.id
+      );
+      setRecurringDraftTemplate(draft);
+      setRecurringTemplateModal(true);
+    } catch (error: unknown) {
+      const message =
+        (error as { error?: string })?.error ?? "Unable to convert this work item into a recurring template.";
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+    } finally {
+      setIsConvertingToRecurring(false);
+    }
+  };
+
   // Menu items and modals using helper
   const menuItemProps: MenuItemFactoryProps = {
     issue,
@@ -151,33 +188,35 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
   //   const MENU_ITEMS = useWorkItemDetailMenuItems(menuItemProps);
   const baseMenuItems = useWorkItemDetailMenuItems(menuItemProps);
 
-  const MENU_ITEMS = baseMenuItems
-    .map((item) => {
+  const MENU_ITEMS: TContextMenuItem[] = [
+    ...baseMenuItems.map((item) => {
       // Customize edit action for work item
       if (item.key === "edit") {
-        return {
-          ...item,
-          shouldRender: isEditingAllowed && !isPeekMode,
-        };
-      }
-      // Customize delete action for work item
-      if (item.key === "delete") {
-        return {
-          ...item,
-        };
+        return Object.assign(item, { shouldRender: isEditingAllowed && !isPeekMode });
       }
       // Hide copy link in peek mode
       if (item.key === "copy-link") {
-        return {
-          ...item,
-          shouldRender: !isPeekMode,
-        };
+        return Object.assign(item, { shouldRender: !isPeekMode });
       }
       return item;
-    })
-    .filter(function MENU_ITEMS(item) {
-      return item.shouldRender !== false;
-    });
+    }),
+    // Recurring issue templates - see
+    // docs/feature-specs/06-automation-workflow-sla.md ("Work items
+    // récurrents", section 3) in plane-selfhost. Pre-fills a draft
+    // template from this issue via `convert-to-recurring`, then opens the
+    // same form used by the "Recurring work items" settings tab so the
+    // user can configure + activate it.
+    {
+      key: "convert-to-recurring",
+      title: "Convert to recurring",
+      icon: Repeat,
+      action: handleConvertToRecurring,
+      shouldRender: isEditingAllowed && !issue.archived_at,
+      disabled: isConvertingToRecurring,
+    },
+  ].filter(function MENU_ITEMS(item) {
+    return item.shouldRender !== false;
+  });
 
   const CONTEXT_MENU_ITEMS = MENU_ITEMS.map(function CONTEXT_MENU_ITEMS(item) {
     return {
@@ -234,6 +273,27 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
           }}
           workspaceSlug={workspaceSlug.toString()}
           projectId={issue.project_id}
+        />
+      )}
+      {issue.project_id && workspaceSlug && (
+        <RecurringIssueTemplateFormModal
+          isOpen={recurringTemplateModal}
+          handleClose={() => {
+            setRecurringTemplateModal(false);
+            setRecurringDraftTemplate(null);
+          }}
+          workspaceSlug={workspaceSlug.toString()}
+          projectId={issue.project_id}
+          template={recurringDraftTemplate}
+          onSaved={(saved) => {
+            setToast({
+              type: TOAST_TYPE.SUCCESS,
+              title: "Success!",
+              message: saved.is_active
+                ? `"${saved.name}" is now generating work items on a schedule.`
+                : `"${saved.name}" was saved as a draft recurring template.`,
+            });
+          }}
         />
       )}
 

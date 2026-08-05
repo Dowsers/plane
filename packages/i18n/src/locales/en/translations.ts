@@ -2005,6 +2005,9 @@ export default {
         auto_close_status: "Auto-close status",
       },
     },
+    recurring_issue_templates: {
+      label: "Recurring work items",
+    },
     empty_state: {
       labels: {
         title: "No labels yet",
