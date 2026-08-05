@@ -5,7 +5,7 @@
  */
 
 import { observer } from "mobx-react";
-import { Flag } from "lucide-react";
+import { Flag, Repeat } from "lucide-react";
 // i18n
 import { useTranslation } from "@plane/i18n";
 // ui
@@ -251,6 +251,22 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 disabled={!isEditable}
               />
             </SidebarPropertyListItem>
+
+            {issue?.recurring_template_name_snapshot && (
+              <SidebarPropertyListItem icon={Repeat} label="Recurring">
+                <span
+                  className="truncate text-body-xs-regular text-tertiary"
+                  title={
+                    issue.recurring_template_id
+                      ? `Generated from: ${issue.recurring_template_name_snapshot}`
+                      : `Generated from: ${issue.recurring_template_name_snapshot} (template deleted)`
+                  }
+                >
+                  {issue.recurring_template_name_snapshot}
+                  {!issue.recurring_template_id && " (template deleted)"}
+                </span>
+              </SidebarPropertyListItem>
+            )}
 
             <SidebarPropertyListItem icon={ParentPropertyIcon} label={t("common.parent")}>
               <IssueParentSelectRoot

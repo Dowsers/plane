@@ -806,6 +806,15 @@ class IssueSerializer(DynamicBaseSerializer):
             "link_count",
             "is_draft",
             "archived_at",
+            # Category 6 feature 3 ("Work items recurrents") - exposes the
+            # two fields already added to the Issue model so the frontend
+            # can render a "Generated from: X" badge, even after the
+            # template itself is deleted (recurring_template_id goes null,
+            # recurring_template_name_snapshot survives) - see
+            # docs/feature-specs/06-automation-workflow-sla.md in
+            # plane-selfhost.
+            "recurring_template_id",
+            "recurring_template_name_snapshot",
         ]
         read_only_fields = fields
 
