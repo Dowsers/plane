@@ -315,3 +315,7 @@ from .notification.base import MarkAllReadNotificationViewSet
 from .user.base import AccountEndpoint, ProfileEndpoint, UserSessionEndpoint
 
 from .timezone.base import TimezoneEndpoint
+
+from .sla.base import SLAPolicyViewSet, SLAPolicyDuplicateEndpoint
+from .sla.issue import IssueSLAEndpoint
+from .sla.report import SLAReportEndpoint

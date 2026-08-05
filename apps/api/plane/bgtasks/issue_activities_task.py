@@ -1765,6 +1765,29 @@ def issue_activity(
             except Exception as e:
                 log_exception(e)
 
+        # SLA policy sync - see
+        # docs/feature-specs/06-automation-workflow-sla.md ("Politiques de
+        # SLA", section 2) in plane-selfhost and plane/utils/sla_engine.py.
+        # Independently exception-wrapped from the workflow rule dispatch
+        # immediately above: a failure in either dispatch must never
+        # prevent the other from running, and neither may ever propagate
+        # up and break this function's own activity-log/notification
+        # pipeline that every other feature depends on. Deliberately NOT
+        # gated on `is_automation` (unlike the workflow rule dispatch just
+        # above) - a workflow-rule-driven state/priority/assignee change
+        # can flip an issue in or out of a policy's matching criteria just
+        # as legitimately as a human-driven one, and `sync_issue_sla` never
+        # calls back into `issue_activity`, so there is no re-entrancy/loop
+        # risk here to guard against the way there is for the rule engine.
+        if issue_id is not None:
+            try:
+                from plane.bgtasks.sla_task import _issue_change_relevant_to_sla, sync_issue_sla
+
+                if _issue_change_relevant_to_sla(type, requested_data):
+                    sync_issue_sla.delay(issue_id=str(issue_id))
+            except Exception as e:
+                log_exception(e)
+
         return
     except Exception as e:
         log_exception(e)

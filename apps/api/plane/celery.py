@@ -107,6 +107,13 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.project_update_task.send_project_update_reminders",
         "schedule": crontab(minute=30),  # every hour, offset from other hourly tasks
     },
+    # SLA policy risk-status recalculation - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Politiques de
+    # SLA", section 2) in plane-selfhost.
+    "check-every-5-minutes-for-sla-recalculation": {
+        "task": "plane.bgtasks.sla_task.recalculate_sla_statuses_task",
+        "schedule": crontab(minute="*/5"),
+    },
 }
 
 

@@ -197,6 +197,17 @@ class Issue(ProjectBaseModel):
     # that purpose.
     recurring_template_name_snapshot = models.CharField(max_length=255, null=True, blank=True)
 
+    # Denormalized copy of the most urgent non-terminal `IssueSLA.status`
+    # across this issue's active SLA entries (breached > at_risk > on_track,
+    # None if no active entries) - see
+    # docs/feature-specs/06-automation-workflow-sla.md ("Politiques de
+    # SLA", section 2) in plane-selfhost and plane/utils/sla_engine.py.
+    # Updated by the periodic recalculation task
+    # (plane/bgtasks/sla_task.py::recalculate_sla_statuses_task), never
+    # written synchronously in the request/response cycle, so list/Kanban
+    # views can render a risk badge with zero extra joins.
+    sla_risk_level = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+
     issue_objects = IssueManager()
 
     class Meta:

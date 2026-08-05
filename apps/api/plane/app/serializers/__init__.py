@@ -178,3 +178,5 @@ from .dashboard import (
     DashboardWidgetSerializer,
     DashboardWidgetTableIssueSerializer,
 )
+
+from .sla import SLAPolicySerializer, IssueSLASerializer

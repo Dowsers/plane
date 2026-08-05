@@ -29,6 +29,7 @@ from .recurring_issue_template import urlpatterns as recurring_issue_template_ur
 from .workspace import urlpatterns as workspace_urls
 from .timezone import urlpatterns as timezone_urls
 from .exporter import urlpatterns as exporter_urls
+from .sla import urlpatterns as sla_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -58,4 +59,5 @@ urlpatterns = [
     *recurring_issue_template_urls,
     *timezone_urls,
     *exporter_urls,
+    *sla_urls,
 ]
