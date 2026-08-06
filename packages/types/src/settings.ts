@@ -39,7 +39,8 @@ export type TProjectSettingsTabs =
   | "labels"
   | "estimates"
   | "automations"
-  | "recurring_issue_templates";
+  | "recurring_issue_templates"
+  | "governed_workflows";
 export type TProjectSettingsItem = {
   key: TProjectSettingsTabs;
   i18n_label: string;

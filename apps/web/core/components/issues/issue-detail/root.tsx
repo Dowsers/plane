@@ -16,6 +16,8 @@ import { EIssuesStoreType } from "@plane/types";
 import emptyIssue from "@/app/assets/empty-state/issue.svg?url";
 // components
 import { EmptyState } from "@/components/common/empty-state";
+// helpers
+import { getIssueUpdateErrorMessage } from "@/helpers/workflow-transition.helper";
 // hooks
 import { useAppTheme } from "@/hooks/store/use-app-theme";
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
@@ -99,7 +101,12 @@ export const IssueDetailRoot = observer(function IssueDetailRoot(props: TIssueDe
           setToast({
             title: t("common.error.label"),
             type: TOAST_TYPE.ERROR,
-            message: t("entity.update.failed", { entity: t("issue.label") }),
+            // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+            // section 4 in plane-selfhost) - surfaces the backend's real
+            // denial reason for a `TRANSITION_NOT_ALLOWED` error instead of
+            // this generic message, which otherwise gave no clue why a
+            // state (or any other) change was rejected.
+            message: getIssueUpdateErrorMessage(error, t("entity.update.failed", { entity: t("issue.label") })),
           });
         }
       },

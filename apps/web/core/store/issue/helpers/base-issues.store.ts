@@ -575,7 +575,31 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
       } as TIssue);
 
       // call API to update the issue
-      await this.issueService.patchIssue(workspaceSlug, projectId, issueId, data);
+      const response = await this.issueService.patchIssue(workspaceSlug, projectId, issueId, data);
+
+      // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+      // section 4 in plane-selfhost) - a state-changing PATCH that hits a
+      // transition requiring approval returns 200 with
+      // `{ pending_approval: true, transition_id, approval_request_id }`
+      // instead of the usual empty response - the requested `state_id` was
+      // NEVER written server-side (see apps/api/plane/app/views/issue/base.py::
+      // partial_update), only whatever OTHER fields were bundled into this
+      // same PATCH. The optimistic update above already applied
+      // `data.state_id` locally, so it must be reverted here specifically -
+      // every other optimistically-applied field stays, since it really was
+      // saved. This is not an error (the request itself succeeded, the
+      // state change was simply deferred pending approval), so it does not
+      // throw - callers that want to tell the user proactively should check
+      // `IssueAllowedTransitionsEndpoint` before calling update (see the
+      // `StateDropdown`/kanban drag call sites), not rely on this return
+      // value, since most `updateIssue` callers are typed `Promise<void>`.
+      if (response?.pending_approval && "state_id" in data) {
+        this.rootIssueStore.issues.updateIssue(issueId, { state_id: issueBeforeUpdate?.state_id });
+        this.updateIssueList(
+          { ...issueBeforeUpdate, ...data, state_id: issueBeforeUpdate?.state_id } as TIssue,
+          { ...issueBeforeUpdate, ...data } as TIssue
+        );
+      }
 
       // call fetch Parent Stats
       this.fetchParentStats(workspaceSlug, projectId);
@@ -721,7 +745,31 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   bulkUpdateProperties = async (workspaceSlug: string, projectId: string, data: TBulkOperationsPayload) => {
     const issueIds = data.issue_ids;
     // make request to update issue properties
-    await this.issueService.bulkOperations(workspaceSlug, projectId, data);
+    const response = await this.issueService.bulkOperations(workspaceSlug, projectId, data);
+
+    // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+    // section 4 in plane-selfhost) - `BulkIssueOperationsEndpoint` evaluates
+    // a `state_id` change per issue independently (each issue's own
+    // from-state can differ), so a single bulk request can see some issues
+    // succeed, some denied, and some deferred to approval all at once - see
+    // apps/api/plane/app/views/issue/base.py::BulkIssueOperationsEndpoint.post.
+    // The response's `success[].fields` list is the source of truth for
+    // which fields actually got written for which issue; `state_id` is only
+    // ever missing from it when that issue's state change was denied or
+    // sent to approval (every OTHER requested field for that issue still
+    // applies independently, matching the backend's own per-field
+    // handling). Used below to skip re-applying a state change the server
+    // never actually made - the loop previously applied every requested
+    // property to every issue unconditionally, which silently mis-rendered
+    // the local store for exactly this new "some of the batch got denied/
+    // deferred" outcome (a project with zero configured workflow rules is
+    // unaffected: `evaluate_transition` always returns "allowed" for it, so
+    // `state_id` always ends up in `success[].fields` there, same as
+    // before this feature existed).
+    const succeededFieldsByIssueId = new Map<string, string[]>(
+      (response?.success ?? []).map((entry: { id: string; fields: string[] }) => [entry.id, entry.fields ?? []])
+    );
+
     // update issues in the store
     runInAction(() => {
       issueIds.forEach((issueId) => {
@@ -729,6 +777,9 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
         if (!issueBeforeUpdate) throw new Error("Work item not found");
         Object.keys(data.properties).forEach((key) => {
           const property = key as keyof TBulkOperationsPayload["properties"];
+          if (property === "state_id" && !(succeededFieldsByIssueId.get(issueId) ?? []).includes("state_id")) {
+            return;
+          }
           const propertyValue = data.properties[property];
           // update root issue map properties
           if (Array.isArray(propertyValue)) {

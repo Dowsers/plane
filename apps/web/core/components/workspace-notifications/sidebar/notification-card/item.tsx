@@ -18,6 +18,7 @@ import { useWorkspace } from "@/hooks/store/use-workspace";
 // local imports
 import { NotificationContent } from "./content";
 import { NotificationOption } from "./options";
+import { WorkflowTransitionApprovalActions } from "./workflow-transition-approval-actions";
 
 type TNotificationItem = {
   workspaceSlug: string;
@@ -45,9 +46,32 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
   // branched on explicitly wherever the generic issue-notification shape is
   // assumed below.
   const isViewSubscriptionNotification = notification?.entity_name === "VIEW_SUBSCRIPTION";
+  // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+  // section 4 in plane-selfhost) - like view-subscription notifications,
+  // these carry no `data.issue_activity` either (see `_notify_users`/
+  // `_notify_requester`/`_notify_eligible_approvers` in
+  // apps/api/plane/utils/workflow_transition_engine.py, which only ever set
+  // `title`/`message`, never `data`), so they need the exact same explicit
+  // opt-out of the generic issue-activity rendering path below.
+  // `ISSUE_TRANSITION` (a state change that DID happen, assignee/watcher
+  // notified) sets `entity_identifier` to the issue id, same convention as
+  // view-subscription - `ISSUE_TRANSITION_APPROVAL` sets it to the
+  // `IssueTransitionApprovalRequest` id instead (there is no issue id
+  // anywhere on that notification), so it can never be peeked as an issue.
+  const isWorkflowTransitionNotification = notification?.entity_name === "ISSUE_TRANSITION";
+  const isWorkflowTransitionApprovalNotification = notification?.entity_name === "ISSUE_TRANSITION_APPROVAL";
+  const isGovernedWorkflowNotification = isWorkflowTransitionNotification || isWorkflowTransitionApprovalNotification;
+  // Only the "someone requested your approval" flavor is actionable here -
+  // the "your request was approved/rejected" flavor (sent to the requester)
+  // is purely informational. See `create_approval_request`/
+  // `approve_transition_request` in workflow_transition_engine.py for the
+  // exact `sender` values this distinguishes between.
+  const isActionableApprovalRequest =
+    isWorkflowTransitionApprovalNotification && notification?.sender === "in_app:workflow_transition_approval:requested";
   const projectId = notification?.project || undefined;
   const issueId =
-    notification?.data?.issue?.id || (isViewSubscriptionNotification ? notification?.entity_identifier : undefined);
+    notification?.data?.issue?.id ||
+    (isViewSubscriptionNotification || isWorkflowTransitionNotification ? notification?.entity_identifier : undefined);
   const workspace = getWorkspaceBySlug(workspaceSlug);
 
   const notificationField = notification?.data?.issue_activity.field || undefined;
@@ -86,7 +110,7 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
     !notificationId ||
     !notification?.id ||
     !workspace?.id ||
-    (!isViewSubscriptionNotification && (!notificationField || !projectId))
+    (!isViewSubscriptionNotification && !isGovernedWorkflowNotification && (!notificationField || !projectId))
   )
     return <></>;
 
@@ -116,14 +140,16 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
               className="bg-layer-1 text-body-sm-medium"
             />
           ) : (
-            isViewSubscriptionNotification && <Bell className="h-5 w-5 text-secondary" />
+            (isViewSubscriptionNotification || isGovernedWorkflowNotification) && (
+              <Bell className="h-5 w-5 text-secondary" />
+            )
           )}
         </div>
 
         <div className="-mt-2 w-full space-y-1">
           <div className="relative flex h-8 items-center gap-3">
             <div className="line-clamp-1 w-full truncate overflow-hidden text-body-xs-medium break-all whitespace-normal text-primary">
-              {isViewSubscriptionNotification ? (
+              {isViewSubscriptionNotification || isGovernedWorkflowNotification ? (
                 <span>{notification.title}</span>
               ) : (
                 projectId && (
@@ -150,6 +176,10 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
             <div className="line-clamp-1 w-full truncate overflow-hidden break-words whitespace-normal">
               {isViewSubscriptionNotification ? (
                 "View subscription"
+              ) : isWorkflowTransitionNotification ? (
+                "Workflow transition"
+              ) : isWorkflowTransitionApprovalNotification ? (
+                isActionableApprovalRequest ? "Approval requested" : "Approval decision"
               ) : (
                 <>
                   {notification?.data?.issue?.identifier}-{notification?.data?.issue?.sequence_id}&nbsp;
@@ -173,6 +203,17 @@ export const NotificationItem = observer(function NotificationItem(props: TNotif
               )}
             </div>
           </div>
+
+          {isActionableApprovalRequest && projectId && (
+            <WorkflowTransitionApprovalActions
+              workspaceSlug={workspaceSlug}
+              projectId={projectId}
+              approvalRequestId={notification.entity_identifier ?? ""}
+              onDecided={() => {
+                if (notification.read_at === null) markNotificationAsRead(workspaceSlug).catch(() => undefined);
+              }}
+            />
+          )}
         </div>
       </div>
     </Row>

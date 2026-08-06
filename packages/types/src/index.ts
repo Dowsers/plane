@@ -63,6 +63,7 @@ export * from "./views";
 export * from "./waitlist";
 export * from "./webhook";
 export * from "./workflow-rule";
+export * from "./workflow-transition";
 export * from "./workspace";
 export * from "./workspace-draft-issues/base";
 export * from "./workspace-notifications";

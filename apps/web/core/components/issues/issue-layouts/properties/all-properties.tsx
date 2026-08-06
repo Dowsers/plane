@@ -14,6 +14,7 @@ import { Paperclip } from "lucide-react";
 // i18n
 import { useTranslation } from "@plane/i18n";
 import { LinkIcon, StartDatePropertyIcon, ViewsIcon, DueDatePropertyIcon } from "@plane/propel/icons";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
 import type { TIssue, IIssueDisplayProperties, TIssuePriorities } from "@plane/types";
 // ui
@@ -33,6 +34,8 @@ import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
+// helpers
+import { getIssueUpdateErrorMessage } from "@/helpers/workflow-transition.helper";
 // hooks
 import { useProjectEstimates } from "@/hooks/store/estimates";
 import { useIssues } from "@/hooks/store/use-issues";
@@ -108,7 +111,21 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
   );
 
   const handleState = async (stateId: string) => {
-    if (updateIssue) await updateIssue(issue.project_id, issue.id, { state_id: stateId });
+    if (!updateIssue) return;
+    try {
+      await updateIssue(issue.project_id, issue.id, { state_id: stateId });
+    } catch (error) {
+      // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+      // section 4 in plane-selfhost) - a denied transition throws
+      // `{error_code: "TRANSITION_NOT_ALLOWED", reason}`; surface the real
+      // reason instead of letting this fail silently (this call site had no
+      // error handling at all before this feature).
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: getIssueUpdateErrorMessage(error, "Unable to update the state of the work item."),
+      });
+    }
   };
 
   const handlePriority = async (value: TIssuePriorities) => {
@@ -202,6 +219,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
             value={issue.state_id}
             onChange={handleState}
             projectId={issue.project_id}
+            issueId={issue.id}
             disabled={isReadOnly}
             buttonVariant="border-with-text"
             renderByDefault={isMobile}

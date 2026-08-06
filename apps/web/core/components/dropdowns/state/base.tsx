@@ -5,14 +5,14 @@
  */
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react";
 import { usePopper } from "react-popper";
 import { Combobox } from "@headlessui/react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { SearchIcon, StateGroupIcon, ChevronDownIcon } from "@plane/propel/icons";
-import type { IState } from "@plane/types";
+import type { IState, TIssueAllowedTransitionEntry } from "@plane/types";
 import { ComboDropDown, Spinner } from "@plane/ui";
 import { cn } from "@plane/utils";
 // components
@@ -42,12 +42,24 @@ export type TWorkItemStateDropdownBaseProps = TDropdownProps & {
   showDefaultState?: boolean;
   stateIds: string[];
   value: string | undefined | null;
+  /**
+   * Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+   * section 4 in plane-selfhost) - per-option allow/deny/pending-approval
+   * data for THIS specific issue, fetched by the `StateDropdown` wrapper
+   * (dropdown.tsx) from `IssueAllowedTransitionsEndpoint` only when it was
+   * given an `issueId` (see that file's own comment - creation flows and
+   * non-issue state pickers, e.g. a rule/action's target-state field, never
+   * set this). `undefined` (not fetched, or no issueId at all) renders every
+   * option exactly as before this feature existed.
+   */
+  allowedTransitions?: TIssueAllowedTransitionEntry[];
 };
 
 export const WorkItemStateDropdownBase = observer(function WorkItemStateDropdownBase(
   props: TWorkItemStateDropdownBaseProps
 ) {
   const {
+    allowedTransitions,
     button,
     buttonClassName,
     buttonContainerClassName,
@@ -82,6 +94,13 @@ export const WorkItemStateDropdownBase = observer(function WorkItemStateDropdown
   const [isOpen, setIsOpen] = useState(false);
   // store hooks
   const { t } = useTranslation();
+  // Governed workflows - see this file's own `allowedTransitions` doc
+  // comment above.
+  const allowedTransitionsByStateId = useMemo(() => {
+    const map = new Map<string, TIssueAllowedTransitionEntry>();
+    (allowedTransitions ?? []).forEach((entry) => map.set(entry.state_id, entry));
+    return map;
+  }, [allowedTransitions]);
   const statesList = stateIds.map((stateId) => getStateById(stateId)).filter((state) => !!state);
   const defaultState = statesList?.find((state) => state?.default);
   const stateValue = value ? value : showDefaultState ? defaultState?.id : undefined;
@@ -239,15 +258,29 @@ export const WorkItemStateDropdownBase = observer(function WorkItemStateDropdown
             <div className="mt-2 max-h-48 space-y-1 overflow-y-scroll">
               {filteredOptions ? (
                 filteredOptions.length > 0 ? (
-                  filteredOptions.map((option) => (
-                    <StateOption
-                      {...props}
-                      key={option.value}
-                      option={option}
-                      selectedValue={value}
-                      className="flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none"
-                    />
-                  ))
+                  filteredOptions.map((option) => {
+                    // Governed workflows - see this file's own
+                    // `allowedTransitions` doc comment. `allowed: false`
+                    // with `reason_code === "APPROVAL_REQUIRED"` is a
+                    // pending-approval option (still clickable, flagged
+                    // differently) - every other `allowed: false` is a hard
+                    // deny (disabled outright).
+                    const transitionEntry = option.value ? allowedTransitionsByStateId.get(option.value) : undefined;
+                    const isPendingApproval = transitionEntry?.reason_code === "APPROVAL_REQUIRED";
+                    const isDenied = transitionEntry ? !transitionEntry.allowed && !isPendingApproval : false;
+                    return (
+                      <StateOption
+                        {...props}
+                        key={option.value}
+                        option={option}
+                        selectedValue={value}
+                        disabled={isDenied}
+                        deniedReason={transitionEntry?.reason}
+                        pendingApproval={isPendingApproval}
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none"
+                      />
+                    );
+                  })
                 ) : (
                   <p className="px-1.5 py-1 text-placeholder italic">{t("no_matching_results")}</p>
                 )

@@ -2008,6 +2008,9 @@ export default {
     recurring_issue_templates: {
       label: "Recurring work items",
     },
+    governed_workflows: {
+      label: "Workflows",
+    },
     empty_state: {
       labels: {
         title: "No labels yet",

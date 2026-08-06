@@ -416,6 +416,11 @@ export const coreRoutes: RouteConfigEntry[] = [
               ":workspaceSlug/settings/projects/:projectId/recurring-issue-templates",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/recurring-issue-templates/page.tsx"
             ),
+            // Project Governed Workflows
+            route(
+              ":workspaceSlug/settings/projects/:projectId/governed-workflows",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/governed-workflows/page.tsx"
+            ),
           ]),
         ]),
       ]),

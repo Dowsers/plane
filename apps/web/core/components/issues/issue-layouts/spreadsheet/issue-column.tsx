@@ -6,11 +6,14 @@
 
 import { useRef } from "react";
 import { observer } from "mobx-react";
+// plane imports
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 // types
 import type { IIssueDisplayProperties, TIssue } from "@plane/types";
 // components
 import { SPREADSHEET_COLUMNS } from "@/plane-web/components/issues/issue-layouts/utils";
 import { shouldRenderColumn } from "@/helpers/issue-filter.helper";
+import { getIssueUpdateErrorMessage } from "@/helpers/workflow-transition.helper";
 import { WithDisplayPropertiesHOC } from "../properties/with-display-properties-HOC";
 
 type Props = {
@@ -34,7 +37,22 @@ export const IssueColumn = observer(function IssueColumn(props: Props) {
   if (!Column) return null;
 
   const handleUpdateIssue = async (issue: TIssue, data: Partial<TIssue>) => {
-    if (updateIssue) await updateIssue(issue.project_id, issue.id, data);
+    if (!updateIssue) return;
+    try {
+      await updateIssue(issue.project_id, issue.id, data);
+    } catch (error) {
+      // Governed workflows (docs/feature-specs/06-automation-workflow-sla.md,
+      // section 4 in plane-selfhost) - a denied state transition throws
+      // `{error_code: "TRANSITION_NOT_ALLOWED", reason}`; this call site had
+      // no error handling at all before this feature, which meant any
+      // failure here (not just this new one) was an unhandled promise
+      // rejection with nothing shown to the user.
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: getIssueUpdateErrorMessage(error, "Unable to update the work item."),
+      });
+    }
   };
 
   return (

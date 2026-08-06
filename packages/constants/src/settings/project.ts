@@ -110,6 +110,16 @@ export const PROJECT_SETTINGS: Record<TProjectSettingsTabs, TProjectSettingsItem
     access: [EUserProjectRoles.ADMIN, EUserProjectRoles.MEMBER, EUserProjectRoles.GUEST],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/recurring-issue-templates/`,
   },
+  governed_workflows: {
+    key: "governed_workflows",
+    i18n_label: "project_settings.governed_workflows.label",
+    href: `/governed-workflows`,
+    // `WorkflowTransitionViewSet` (apps/api/plane/app/views/workflow_transition/base.py)
+    // is Admin-only for every verb, including read - Member/Guest never see
+    // this tab at all, matching the sibling `automations` tab's own gating.
+    access: [EUserProjectRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/governed-workflows/`,
+  },
 };
 
 export const PROJECT_SETTINGS_FLAT_MAP: TProjectSettingsItem[] = Object.values(PROJECT_SETTINGS);
@@ -131,5 +141,6 @@ export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjec
   [PROJECT_SETTINGS_CATEGORY.EXECUTION]: [
     PROJECT_SETTINGS["automations"],
     PROJECT_SETTINGS["recurring_issue_templates"],
+    PROJECT_SETTINGS["governed_workflows"],
   ],
 };
