@@ -147,6 +147,19 @@ class Workspace(BaseModel):
     # Timeline cross-projet") in plane-selfhost. Opt-in (default False), same
     # reasoning as is_initiatives_enabled above.
     is_roadmap_enabled = models.BooleanField(default=False)
+    # Per-workspace on/off switch for the flexible query endpoint - see
+    # docs/feature-specs/08-api-webhooks-cli.md ("Couche de requetes
+    # flexible facon GraphQL") in plane-selfhost. Opt-in (default False),
+    # same reasoning as is_initiatives_enabled/is_roadmap_enabled above -
+    # this is the per-workspace half of the gate; the other half is the
+    # instance-wide `FLEXIBLE_QUERY_ENABLED` env var (settings.py), which
+    # takes priority (the endpoint 404s outright if that is unset,
+    # regardless of this field). Deliberately kept as a flat boolean
+    # directly on Workspace, matching this exact convention, rather than
+    # folded into WorkspaceQuerySettings below - only the *numeric* quota
+    # knobs (max_depth/max_cost/timeout_ms), which have no flat-boolean
+    # precedent in this codebase, live in that separate model.
+    is_flexible_query_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         """Return name of the Workspace"""

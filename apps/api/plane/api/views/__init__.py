@@ -66,3 +66,5 @@ from .invite import WorkspaceInvitationsViewset
 from .sticky import StickyViewSet
 
 from .rate_limit import RateLimitStatusEndpoint, APITokenRateLimitOverrideEndpoint
+
+from .flexible_query import FlexibleQueryEndpoint, FlexibleQuerySchemaEndpoint

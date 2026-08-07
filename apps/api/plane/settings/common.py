@@ -519,6 +519,14 @@ if ENABLE_DRF_SPECTACULAR:
     INSTALLED_APPS.append("drf_spectacular")
     from .openapi import SPECTACULAR_SETTINGS  # noqa: F401
 
+# Instance-wide kill switch for the flexible query layer - see
+# docs/feature-specs/08-api-webhooks-cli.md ("Couche de requetes flexible
+# facon GraphQL", exigence 12) in plane-selfhost. This is the *global* half
+# of the gate: POST/GET /api/v1/workspaces/{slug}/query/(schema/) 404s
+# outright when this is unset, regardless of any per-workspace
+# `Workspace.is_flexible_query_enabled` toggle.
+FLEXIBLE_QUERY_ENABLED = os.environ.get("FLEXIBLE_QUERY_ENABLED", "0") == "1"
+
 # MongoDB Settings
 MONGO_DB_URL = os.environ.get("MONGO_DB_URL", False)
 MONGO_DB_DATABASE = os.environ.get("MONGO_DB_DATABASE", False)

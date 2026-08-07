@@ -131,3 +131,5 @@ from .workflow_transition import (
 )
 
 from .rate_limit import RateLimitTier
+
+from .flexible_query import WorkspaceQuerySettings, FlexibleQueryLog
