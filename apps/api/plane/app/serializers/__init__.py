@@ -190,3 +190,5 @@ from .workflow_transition import (
     IssueTransitionApprovalSerializer,
     WorkflowTransitionAuditLogSerializer,
 )
+
+from .flexible_query import WorkspaceQuerySettingsSerializer

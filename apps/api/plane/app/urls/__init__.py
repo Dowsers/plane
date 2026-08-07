@@ -31,6 +31,7 @@ from .timezone import urlpatterns as timezone_urls
 from .exporter import urlpatterns as exporter_urls
 from .sla import urlpatterns as sla_urls
 from .workflow_transition import urlpatterns as workflow_transition_urls
+from .flexible_query import urlpatterns as flexible_query_settings_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -62,4 +63,5 @@ urlpatterns = [
     *exporter_urls,
     *sla_urls,
     *workflow_transition_urls,
+    *flexible_query_settings_urls,
 ]

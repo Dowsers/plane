@@ -331,3 +331,5 @@ from .workflow_transition.base import (
     IssueTransitionApprovalApproveEndpoint,
     IssueTransitionApprovalRejectEndpoint,
 )
+
+from .flexible_query import WorkspaceQuerySettingsEndpoint
