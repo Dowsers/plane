@@ -18,13 +18,12 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, Throttled
 from rest_framework.generics import GenericAPIView
 
 # Module imports
-from plane.db.models.api import APIToken
 from plane.api.middleware.api_authentication import APIKeyAuthentication
-from plane.api.rate_limit import ApiKeyRateThrottle, ServiceTokenRateThrottle
+from plane.api.rate_limit import ApiKeyRateThrottle, TieredSlidingWindowRateThrottle
 from plane.utils.exception_logger import log_exception
 from plane.utils.paginator import BasePaginator
 from plane.utils.core.mixins import ReadReplicaControlMixin
@@ -60,25 +59,48 @@ class BaseAPIView(TimezoneMixin, GenericAPIView, ReadReplicaControlMixin, BasePa
         return queryset
 
     def get_throttles(self):
-        throttle_classes = []
+        # Any X-Api-Key-authenticated request (personal token or service
+        # token alike) goes through the single tiered sliding-window
+        # throttle - it resolves the effective limit per-token internally
+        # (tier + override), so the old service-vs-personal branching that
+        # used to live here (two near-duplicate SimpleRateThrottle
+        # subclasses) collapsed into one class. See
+        # `plane.api.rate_limit.TieredSlidingWindowRateThrottle`.
         api_key = self.request.headers.get("X-Api-Key")
 
         if api_key:
-            service_token = APIToken.objects.filter(token=api_key, is_service=True).first()
+            return [TieredSlidingWindowRateThrottle()]
 
-            if service_token:
-                throttle_classes.append(ServiceTokenRateThrottle())
-                return throttle_classes
-
-        throttle_classes.append(ApiKeyRateThrottle())
-
-        return throttle_classes
+        # Defensive fallback only - IsAuthenticated + APIKeyAuthentication
+        # mean a request without an X-Api-Key header never reaches
+        # throttling in practice (it is rejected at the permission check
+        # first). Kept unchanged from the pre-existing behavior.
+        return [ApiKeyRateThrottle()]
 
     def handle_exception(self, exc):
         """
         Handle any exception that occurs, by returning an appropriate response,
         or re-raising the error.
         """
+        # Rate-limit 429s get their own response shape (exigence 6):
+        # {"error_code": "rate_limit_exceeded", "retry_after": <seconds>}
+        # plus the standard Retry-After header - handled here, before
+        # falling through to the shared/global DRF exception handler
+        # (`plane.authentication.adapter.exception.auth_exception_handler`),
+        # which already maps every other Throttled exception in this
+        # codebase (login, asset upload, NL filter assistant, ...) to a
+        # differently-shaped, integer-error-code body. Scoping the new
+        # shape to this one base class keeps that existing convention for
+        # every other throttle untouched.
+        if isinstance(exc, Throttled):
+            retry_after = int(exc.wait) if exc.wait is not None else 60
+            response = Response(
+                {"error_code": "rate_limit_exceeded", "retry_after": retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+            response["Retry-After"] = str(retry_after)
+            return response
+
         try:
             response = super().handle_exception(exc)
             return response
@@ -130,6 +152,10 @@ class BaseAPIView(TimezoneMixin, GenericAPIView, ReadReplicaControlMixin, BasePa
         response = super().finalize_response(request, response, *args, **kwargs)
 
         # Add custom headers if they exist in the request META
+        ratelimit_limit = request.META.get("X-RateLimit-Limit")
+        if ratelimit_limit is not None:
+            response["X-RateLimit-Limit"] = ratelimit_limit
+
         ratelimit_remaining = request.META.get("X-RateLimit-Remaining")
         if ratelimit_remaining is not None:
             response["X-RateLimit-Remaining"] = ratelimit_remaining

@@ -36,7 +36,40 @@ class APIToken(BaseModel):
     workspace = models.ForeignKey("db.Workspace", related_name="api_tokens", on_delete=models.CASCADE, null=True)
     expired_at = models.DateTimeField(blank=True, null=True)
     is_service = models.BooleanField(default=False)
+    # "N/period" DRF SimpleRateThrottle-compatible string (e.g. "60/min").
+    # Historically written by the serializer/PATCH endpoint but never read
+    # by any throttle class - see `rate_limit_overridden_at` below for how
+    # this is now made meaningful without breaking existing rows that all
+    # already carry the "60/min" default.
     allowed_rate_limit = models.CharField(max_length=255, default="60/min")
+    # Resolved tier for this token. Nullable by design (exigence 9,
+    # backward-compatible migration): a NULL value here does not mean "no
+    # limit", it means "resolve the default tier for this token's type at
+    # read time" - see `plane.api.rate_limit.TieredSlidingWindowRateThrottle`.
+    # No backfill data-migration writes this on existing rows; resolution
+    # happens live via `is_service`, matching how that field itself is
+    # already branched on today in `BaseAPIView.get_throttles`.
+    rate_limit_tier = models.ForeignKey(
+        "db.RateLimitTier",
+        related_name="api_tokens",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    # Traceability for a Workspace Admin's per-token override (spec
+    # exigence 8). `allowed_rate_limit` is ONLY treated as an active
+    # override when `rate_limit_overridden_at` is set - its field default
+    # ("60/min") is present on every pre-existing row and must NOT itself
+    # be mistaken for an admin-set override.
+    rate_limit_overridden_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="rate_limit_overrides_made",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    rate_limit_overridden_at = models.DateTimeField(blank=True, null=True)
+    rate_limit_override_reason = models.TextField(blank=True, default="")
 
     class Meta:
         verbose_name = "API Token"

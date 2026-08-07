@@ -18,6 +18,7 @@ from plane.license.api.views import (
     InstanceAdminUserSessionEndpoint,
     InstanceWorkSpaceAvailabilityCheckEndpoint,
     InstanceWorkSpaceEndpoint,
+    RateLimitTierEndpoint,
 )
 
 urlpatterns = [
@@ -71,4 +72,14 @@ urlpatterns = [
         name="instance-workspace-availability",
     ),
     path("workspaces/", InstanceWorkSpaceEndpoint.as_view(), name="instance-workspace"),
+    path(
+        "rate-limit-tiers/",
+        RateLimitTierEndpoint.as_view(),
+        name="rate-limit-tiers",
+    ),
+    path(
+        "rate-limit-tiers/<uuid:pk>/",
+        RateLimitTierEndpoint.as_view(),
+        name="rate-limit-tiers-details",
+    ),
 ]
