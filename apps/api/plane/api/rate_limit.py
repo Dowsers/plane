@@ -10,6 +10,9 @@ import os
 import secrets
 import time
 
+# Django imports
+from django.utils import timezone
+
 # Third party imports
 from rest_framework.throttling import SimpleRateThrottle
 
@@ -456,6 +459,52 @@ class FlexibleQueryCostThrottle(SimpleRateThrottle):
 # cache backend (django-redis, see settings/common.py) directly rather
 # than the sliding-window Lua path above, matching this class's pre-existing
 # fixed-window behavior unchanged.
+class RateLimitOverrideError(Exception):
+    """Raised by `apply_rate_limit_override` for any caller-fixable input
+    problem - callers translate this into their own view's error response
+    shape (the token-authenticated and session-authenticated override
+    endpoints use slightly different error body conventions, see
+    `plane/api/views/rate_limit.py` and `plane/app/views/rate_limit.py`)."""
+
+
+def apply_rate_limit_override(token, *, allowed_rate_limit, reason, overridden_by):
+    """Shared by `APITokenRateLimitOverrideEndpoint` (token-authenticated,
+    `plane.api`) and `WorkspaceAPITokenRateLimitOverrideEndpoint` (session-
+    authenticated, `plane.app` - the one the workspace-settings UI actually
+    calls, since `plane.api`'s `APIKeyAuthentication` has no session
+    fallback and would 401 a plain browser request with no X-Api-Key
+    header). Kept as one function so the two entry points can never
+    silently diverge in validation or in which fields get written -
+    exactly the same reasoning as `bulk_issue_operations` in
+    `plane/app/views/issue/base.py` for the CLI/web-UI bulk-update split.
+    """
+    if not allowed_rate_limit:
+        raise RateLimitOverrideError("allowed_rate_limit is required")
+    if not reason:
+        raise RateLimitOverrideError("reason is required for traceability")
+
+    try:
+        TieredSlidingWindowRateThrottle().parse_rate(allowed_rate_limit)
+    except (ValueError, KeyError, IndexError, TypeError) as e:
+        raise RateLimitOverrideError("allowed_rate_limit must look like '<int>/min' or '<int>/hour'") from e
+
+    token.allowed_rate_limit = allowed_rate_limit
+    token.rate_limit_overridden_by = overridden_by
+    token.rate_limit_overridden_at = timezone.now()
+    token.rate_limit_override_reason = reason
+    token.save(
+        update_fields=[
+            "allowed_rate_limit",
+            "rate_limit_overridden_by",
+            "rate_limit_overridden_at",
+            "rate_limit_override_reason",
+            "updated_at",
+            "updated_by",
+        ]
+    )
+    return token
+
+
 class ApiKeyRateThrottle(SimpleRateThrottle):
     scope = "api_key"
     rate = os.environ.get("API_KEY_RATE_LIMIT", "60/minute")

@@ -8,9 +8,6 @@
 # Python imports
 import time
 
-# Django imports
-from django.utils import timezone
-
 # Third party imports
 from rest_framework import status
 from rest_framework.response import Response
@@ -22,6 +19,8 @@ from plane.api.rate_limit import (
     TieredSlidingWindowRateThrottle,
     MINUTE_WINDOW_SECONDS,
     HOUR_WINDOW_SECONDS,
+    apply_rate_limit_override,
+    RateLimitOverrideError,
 )
 from plane.settings.redis import redis_instance
 from plane.app.permissions import WorkspaceOwnerPermission
@@ -131,30 +130,6 @@ class APITokenRateLimitOverrideEndpoint(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        allowed_rate_limit = request.data.get("allowed_rate_limit")
-        reason = request.data.get("reason")
-
-        if not allowed_rate_limit:
-            return Response(
-                {"error": "allowed_rate_limit is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if not reason:
-            return Response(
-                {"error": "reason is required for traceability"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        throttle = TieredSlidingWindowRateThrottle()
-        try:
-            throttle.parse_rate(allowed_rate_limit)
-        except (ValueError, KeyError, IndexError, TypeError):
-            return Response(
-                {"error": "allowed_rate_limit must look like '<int>/min' or '<int>/hour'"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         token = APIToken.objects.filter(
             pk=pk,
             user__member_workspace__workspace__slug=slug,
@@ -166,20 +141,15 @@ class APITokenRateLimitOverrideEndpoint(BaseAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        token.allowed_rate_limit = allowed_rate_limit
-        token.rate_limit_overridden_by = request.user
-        token.rate_limit_overridden_at = timezone.now()
-        token.rate_limit_override_reason = reason
-        token.save(
-            update_fields=[
-                "allowed_rate_limit",
-                "rate_limit_overridden_by",
-                "rate_limit_overridden_at",
-                "rate_limit_override_reason",
-                "updated_at",
-                "updated_by",
-            ]
-        )
+        try:
+            apply_rate_limit_override(
+                token,
+                allowed_rate_limit=request.data.get("allowed_rate_limit"),
+                reason=request.data.get("reason"),
+                overridden_by=request.user,
+            )
+        except RateLimitOverrideError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {

@@ -333,3 +333,5 @@ from .workflow_transition.base import (
 )
 
 from .flexible_query import WorkspaceQuerySettingsEndpoint
+
+from .rate_limit import WorkspaceAPITokenRateLimitOverrideEndpoint
