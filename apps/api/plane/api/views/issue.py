@@ -29,12 +29,13 @@ from django.utils import timezone
 from django.conf import settings
 
 # Third party imports
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.response import Response
 
 # drf-spectacular imports
 from drf_spectacular.utils import (
     extend_schema,
+    inline_serializer,
     OpenApiResponse,
     OpenApiExample,
     OpenApiRequest,
@@ -160,6 +161,14 @@ from plane.utils.openapi import (
     WORKSPACE_NOT_FOUND_RESPONSE,
 )
 from plane.bgtasks.work_item_link_task import crawl_work_item_link_title
+from plane.utils.issue_filters import issue_filters
+
+# Reused as-is (not duplicated) from plane.app.views.issue.base so the
+# API-token-authenticated IssueBulkOperationsAPIEndpoint below and the
+# session-authenticated BulkIssueOperationsEndpoint (web UI) can never
+# silently diverge in bulk-update behavior. See
+# docs/feature-specs/08-api-webhooks-cli.md section 5 in plane-selfhost.
+from plane.app.views.issue.base import bulk_issue_operations
 
 
 def _get_or_create_pending_approval(issue, transition, requested_by):
@@ -356,8 +365,17 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
 
         order_by_param = request.GET.get("order_by", "-created_at")
 
+        # Filtering by state/priority/assignees/labels/cycle/module/etc, translated
+        # from query params via the same issue_filters() helper the session-
+        # authenticated app viewset uses (plane.app.views.issue.base.IssueViewSet.list) -
+        # keeps `plane issue list --state ... --priority ... --assignee ...` (plane-selfhost's
+        # CLI, docs/feature-specs/08-api-webhooks-cli.md section 5, exigence 4) server-side
+        # rather than duplicating filter logic client-side.
+        filters = issue_filters(request.GET, "GET")
+
         issue_queryset = (
             self.get_queryset()
+            .filter(**filters)
             .annotate(
                 cycle_id=Subquery(
                     CycleIssue.objects.filter(issue=OuterRef("id"), deleted_at__isnull=True).values("cycle_id")[:1]
@@ -380,7 +398,9 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
             )
         )
 
-        total_issue_queryset = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug)
+        total_issue_queryset = Issue.issue_objects.filter(
+            project_id=project_id, workspace__slug=slug
+        ).filter(**filters)
 
         # Priority Ordering
         if order_by_param == "priority" or order_by_param == "-priority":
@@ -2637,3 +2657,81 @@ class IssueRelationListCreateAPIEndpoint(BaseAPIView):
             serializer_class(refetched_relations, many=True).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class IssueBulkOperationsAPIEndpoint(BaseAPIView):
+    """
+    API-token-authenticated equivalent of
+    plane.app.views.issue.base.BulkIssueOperationsEndpoint, added for
+    plane-selfhost's official data-management CLI (`plane issue
+    bulk-update` - docs/feature-specs/08-api-webhooks-cli.md, section 5,
+    exigence 10).
+
+    BulkIssueOperationsEndpoint itself is unreachable by API-key auth: it
+    inherits plane.app.views.base.BaseAPIView, whose authentication is
+    session-only. Rather than duplicate its ~350 lines of per-field, per-
+    issue success/failure/pending-approval logic, this view calls the exact
+    same plane.app.views.issue.base.bulk_issue_operations() function, so the
+    two authentication surfaces can never silently diverge in behavior -
+    same IssueActivity records, same webhook events, same governed-workflow
+    transition gating from category 6.
+    """
+
+    permission_classes = [ProjectEntityPermission]
+
+    @extend_schema(
+        operation_id="bulk_update_work_items",
+        summary="Bulk update work items",
+        description=(
+            "Batch-update state/priority/assignees/labels/dates/cycle/module across up to 100 work items in a "
+            "single request. Each work item is evaluated individually - a failure or pending-approval outcome "
+            "(e.g. a governed workflow transition awaiting approval) on one work item does not fail the whole "
+            "batch. Request body: `{issue_ids: [...], properties: {state_id, priority, assignee_ids, label_ids, "
+            "cycle_id, module_ids, start_date, target_date, estimate_point}}`."
+        ),
+        tags=["Work Items"],
+        request=OpenApiRequest(
+            request=inline_serializer(
+                name="BulkIssueOperationsRequest",
+                fields={
+                    "issue_ids": serializers.ListField(child=serializers.UUIDField()),
+                    "properties": serializers.DictField(),
+                },
+            ),
+            examples=[
+                OpenApiExample(
+                    name="Bulk update example",
+                    value={
+                        "issue_ids": ["550e8400-e29b-41d4-a716-446655440000"],
+                        "properties": {"priority": "high", "assignee_ids": ["550e8400-e29b-41d4-a716-446655440099"]},
+                    },
+                )
+            ],
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Per-issue success/failure/pending-approval breakdown",
+                examples=[
+                    OpenApiExample(
+                        name="Bulk update response",
+                        value={
+                            "bulk_operation_id": "550e8400-e29b-41d4-a716-446655440010",
+                            "success": [{"id": "550e8400-e29b-41d4-a716-446655440000", "fields": ["priority"]}],
+                            "failed": [],
+                            "pending_approval": [],
+                        },
+                    )
+                ],
+            ),
+            400: INVALID_REQUEST_RESPONSE,
+            404: PROJECT_NOT_FOUND_RESPONSE,
+        },
+    )
+    def post(self, request, slug, project_id):
+        """Bulk update work items
+
+        Batch-update state/priority/assignees/labels/dates/cycle/module across
+        multiple work items filtered by the caller (e.g. via `plane issue list`)
+        in a single request, mirroring the web UI's multi-select bulk operations.
+        """
+        return bulk_issue_operations(request, slug, project_id)

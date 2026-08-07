@@ -1328,12 +1328,20 @@ class IssueBulkUpdateDateEndpoint(BaseAPIView):
         return Response({"message": "Issues updated successfully"}, status=status.HTTP_200_OK)
 
 
-# Scalar issue fields settable via BulkIssueOperationsEndpoint's "properties"
+# Scalar issue fields settable via bulk_issue_operations' "properties"
 # payload with a plain setattr + bulk_update (no M2M/relation bookkeeping).
 BULK_OPERATIONS_SCALAR_FIELDS = ("state_id", "priority", "start_date", "target_date", "estimate_point")
 
+# Shared by BulkIssueOperationsEndpoint (session-authenticated, web UI) below
+# and plane.api.views.issue.IssueBulkOperationsAPIEndpoint (API-token
+# authenticated, plane-selfhost's CLI `plane issue bulk-update` - see
+# docs/feature-specs/08-api-webhooks-cli.md section 5). Kept as a plain
+# constant (not a class attribute) so both call sites reference the exact
+# same cap without importing across view modules.
+BULK_OPERATIONS_MAX_BATCH_SIZE = 100
 
-class BulkIssueOperationsEndpoint(BaseAPIView):
+
+def bulk_issue_operations(request, slug, project_id):
     """
     Batch-update state/priority/assignees/labels/dates/cycle/module across
     multiple issues in a single request. Archiving/deleting a batch already
@@ -1344,341 +1352,358 @@ class BulkIssueOperationsEndpoint(BaseAPIView):
     not fail the whole batch - see BulkIssueOperation.result for the per-issue
     success/failure breakdown. Implements the "Bulk/multi-select operations"
     spec in plane-selfhost's docs/feature-specs/01-core-issue-tracking.md.
+
+    Extracted to a module-level function (rather than kept inline on
+    BulkIssueOperationsEndpoint.post) so plane.api.views.issue's
+    token-authenticated equivalent can call the exact same logic instead of
+    duplicating it - the two call sites must never silently diverge in
+    behavior. Only `request.data`/`request.user` are read from `request`, so
+    it works identically under session auth and API-key auth.
     """
+    issue_ids = request.data.get("issue_ids", [])
+    properties = request.data.get("properties", {})
 
-    MAX_BATCH_SIZE = 100
-
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
-    def post(self, request, slug, project_id):
-        issue_ids = request.data.get("issue_ids", [])
-        properties = request.data.get("properties", {})
-
-        if not issue_ids:
-            return Response({"error": "issue_ids is required"}, status=status.HTTP_400_BAD_REQUEST)
-        if not isinstance(properties, dict) or not properties:
-            return Response({"error": "properties is required"}, status=status.HTTP_400_BAD_REQUEST)
-        if len(issue_ids) > self.MAX_BATCH_SIZE:
-            return Response(
-                {"error": f"A maximum of {self.MAX_BATCH_SIZE} issues can be updated in a single request"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        project = Project.objects.only("workspace_id").get(pk=project_id)
-        operation = BulkIssueOperation.objects.create(
-            project_id=project_id,
-            workspace_id=project.workspace_id,
-            actor_id=request.user.id,
-            action_type=BulkIssueOperation.OperationType.UPDATE,
-            issue_ids=issue_ids,
-            properties=properties,
+    if not issue_ids:
+        return Response({"error": "issue_ids is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(properties, dict) or not properties:
+        return Response({"error": "properties is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if len(issue_ids) > BULK_OPERATIONS_MAX_BATCH_SIZE:
+        return Response(
+            {"error": f"A maximum of {BULK_OPERATIONS_MAX_BATCH_SIZE} issues can be updated in a single request"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
-        issues = list(
-            Issue.issue_objects.filter(workspace__slug=slug, project_id=project_id, pk__in=issue_ids).select_related(
-                "state"
-            )
+    project = Project.objects.only("workspace_id").get(pk=project_id)
+    operation = BulkIssueOperation.objects.create(
+        project_id=project_id,
+        workspace_id=project.workspace_id,
+        actor_id=request.user.id,
+        action_type=BulkIssueOperation.OperationType.UPDATE,
+        issue_ids=issue_ids,
+        properties=properties,
+    )
+
+    issues = list(
+        Issue.issue_objects.filter(workspace__slug=slug, project_id=project_id, pk__in=issue_ids).select_related(
+            "state"
         )
-        issues_by_id = {str(issue.id): issue for issue in issues}
+    )
+    issues_by_id = {str(issue.id): issue for issue in issues}
 
-        failed = {issue_id: [] for issue_id in issue_ids}
-        succeeded_fields = {issue_id: [] for issue_id in issue_ids}
-        # Governed workflow gate (phase 2 of docs/feature-specs/06-
-        # automation-workflow-sla.md, section 4 in plane-selfhost) - same
-        # per-issue-list-of-reasons shape as `failed`/`succeeded_fields`
-        # above, reported as a third bucket alongside them rather than a
-        # separate reporting mechanism.
-        pending_approval = {issue_id: [] for issue_id in issue_ids}
-        for missing_id in set(issue_ids) - set(issues_by_id.keys()):
-            failed[missing_id].append("Issue not found")
+    failed = {issue_id: [] for issue_id in issue_ids}
+    succeeded_fields = {issue_id: [] for issue_id in issue_ids}
+    # Governed workflow gate (phase 2 of docs/feature-specs/06-
+    # automation-workflow-sla.md, section 4 in plane-selfhost) - same
+    # per-issue-list-of-reasons shape as `failed`/`succeeded_fields`
+    # above, reported as a third bucket alongside them rather than a
+    # separate reporting mechanism.
+    pending_approval = {issue_id: [] for issue_id in issue_ids}
+    for missing_id in set(issue_ids) - set(issues_by_id.keys()):
+        failed[missing_id].append("Issue not found")
 
-        actor_id = str(request.user.id)
-        epoch = int(timezone.now().timestamp())
+    actor_id = str(request.user.id)
+    epoch = int(timezone.now().timestamp())
 
-        # --- Scalar fields: state, priority, dates, estimate ---
-        scalar_updates = {f: properties[f] for f in BULK_OPERATIONS_SCALAR_FIELDS if f in properties}
-        if scalar_updates:
-            # The whole batch shares a single target state_id (`properties`
-            # is one JSON body applied uniformly to every issue_id in
-            # `issue_ids`), so the target State is resolved once here, then
-            # `evaluate_transition` is called per issue below (each issue's
-            # own from_state can differ). This endpoint bypasses
-            # IssueCreateSerializer entirely (raw setattr + bulk_update, per
-            # its own docstring), so - unlike the unitary/public-API call
-            # sites - there is no pre-existing "state belongs to this
-            # project" validation to reuse; resolving it here is new.
-            gate_state = "state_id" in scalar_updates
-            target_state = None
+    # --- Scalar fields: state, priority, dates, estimate ---
+    scalar_updates = {f: properties[f] for f in BULK_OPERATIONS_SCALAR_FIELDS if f in properties}
+    if scalar_updates:
+        # The whole batch shares a single target state_id (`properties`
+        # is one JSON body applied uniformly to every issue_id in
+        # `issue_ids`), so the target State is resolved once here, then
+        # `evaluate_transition` is called per issue below (each issue's
+        # own from_state can differ). This endpoint bypasses
+        # IssueCreateSerializer entirely (raw setattr + bulk_update, per
+        # its own docstring), so - unlike the unitary/public-API call
+        # sites - there is no pre-existing "state belongs to this
+        # project" validation to reuse; resolving it here is new.
+        gate_state = "state_id" in scalar_updates
+        target_state = None
+        if gate_state:
+            target_state = State.objects.filter(pk=scalar_updates["state_id"], project_id=project_id).first()
+            if target_state is None:
+                for issue_id in issues_by_id.keys():
+                    failed[issue_id].append("state_id: invalid state for this project")
+                scalar_updates = {k: v for k, v in scalar_updates.items() if k != "state_id"}
+                gate_state = False
+
+        issues_to_update = []
+        # issue_id -> WorkflowTransition to run post-transition actions
+        # for once the shared bulk_update below commits - only populated
+        # for issues whose state is both actually changing and was
+        # evaluated "allowed".
+        post_transition_by_issue_id = {}
+        # issue_ids whose state field was actually applied this request
+        # (allowed, or already at the target state - a same-state
+        # no-op) - used below to decide which issues still get
+        # `handle_sub_issue_automations`/post-transition actions,
+        # mirroring this endpoint's pre-existing (ungated) behavior for
+        # every issue that isn't newly denied/pending.
+        state_applied_issue_ids = set()
+        for issue_id, issue in issues_by_id.items():
+            fields_for_issue = dict(scalar_updates)
             if gate_state:
-                target_state = State.objects.filter(pk=scalar_updates["state_id"], project_id=project_id).first()
-                if target_state is None:
-                    for issue_id in issues_by_id.keys():
-                        failed[issue_id].append("state_id: invalid state for this project")
-                    scalar_updates = {k: v for k, v in scalar_updates.items() if k != "state_id"}
-                    gate_state = False
-
-            issues_to_update = []
-            # issue_id -> WorkflowTransition to run post-transition actions
-            # for once the shared bulk_update below commits - only populated
-            # for issues whose state is both actually changing and was
-            # evaluated "allowed".
-            post_transition_by_issue_id = {}
-            # issue_ids whose state field was actually applied this request
-            # (allowed, or already at the target state - a same-state
-            # no-op) - used below to decide which issues still get
-            # `handle_sub_issue_automations`/post-transition actions,
-            # mirroring this endpoint's pre-existing (ungated) behavior for
-            # every issue that isn't newly denied/pending.
-            state_applied_issue_ids = set()
-            for issue_id, issue in issues_by_id.items():
-                fields_for_issue = dict(scalar_updates)
-                if gate_state:
-                    if str(issue.state_id) == str(target_state.id):
-                        # Already at the target state - only invoke
-                        # evaluate_transition when the target actually
-                        # differs from the issue's current state, same rule
-                        # as every other call site. Falls through to the
-                        # unconditional per-issue write below, exactly
-                        # matching this endpoint's pre-existing behavior for
-                        # a same-state bulk update.
-                        state_applied_issue_ids.add(issue_id)
-                    else:
-                        result = evaluate_transition(issue, target_state, request.user)
-                        if result["outcome"] == "denied":
-                            failed[issue_id].append(f"state_id: {result['reason']['message']}")
-                            fields_for_issue.pop("state_id", None)
-                        elif result["outcome"] == "pending_approval":
-                            approval_request = _get_or_create_pending_approval(
-                                issue, result["transition"], request.user
-                            )
-                            pending_approval[issue_id].append(
-                                f"state_id: pending approval (request {approval_request.id})"
-                            )
-                            fields_for_issue.pop("state_id", None)
-                        else:
-                            state_applied_issue_ids.add(issue_id)
-                            post_transition_by_issue_id[issue_id] = result["transition"]
-
-                if not fields_for_issue:
-                    # Every field requested for this issue was rejected
-                    # (state_id was the only scalar field and it was denied/
-                    # pending) - excluded entirely, matching exigence 11's
-                    # "chaque item est évalué individuellement".
-                    continue
-
-                current_instance = {}
-                requested_data = {}
-                for field, value in fields_for_issue.items():
-                    current_value = getattr(issue, field)
-                    current_instance[field] = str(current_value) if current_value is not None else None
-                    setattr(issue, field, value)
-                    requested_data[field] = str(value) if value is not None else None
-                issues_to_update.append(issue)
-                succeeded_fields[issue_id].extend(fields_for_issue.keys())
-                issue_activity.delay(
-                    type="issue.activity.updated",
-                    requested_data=json.dumps(requested_data),
-                    current_instance=json.dumps(current_instance),
-                    issue_id=issue_id,
-                    actor_id=actor_id,
-                    project_id=str(project_id),
-                    epoch=epoch,
-                )
-            if issues_to_update:
-                Issue.objects.bulk_update(issues_to_update, list(scalar_updates.keys()))
-            if "state_id" in scalar_updates:
-                for issue in issues_to_update:
-                    if str(issue.id) not in state_applied_issue_ids:
-                        continue
-                    handle_sub_issue_automations(issue, request.user.id)
-                    # Run any configured post-transition actions after the
-                    # shared bulk_update has committed - only for issues
-                    # whose transition was freshly evaluated "allowed"
-                    # (already-at-target no-ops have no transition to run
-                    # actions for).
-                    transition = post_transition_by_issue_id.get(str(issue.id))
-                    if transition is not None:
-                        execute_allowed_transition(issue, target_state, request.user, transition)
-
-        # --- Labels: additive (an issue keeps its existing labels, new ones are
-        # added) - matches the frontend's bulkUpdateProperties optimistic update,
-        # which appends to the existing array rather than replacing it. ---
-        if "label_ids" in properties:
-            label_ids = list({str(lid) for lid in (properties.get("label_ids") or [])})
-            existing_pairs = set(
-                IssueLabel.objects.filter(issue_id__in=issues_by_id.keys(), label_id__in=label_ids).values_list(
-                    "issue_id", "label_id"
-                )
-            )
-            IssueLabel.objects.bulk_create(
-                [
-                    IssueLabel(issue_id=issue_id, label_id=label_id, project_id=project_id, workspace_id=project.workspace_id)
-                    for issue_id in issues_by_id.keys()
-                    for label_id in label_ids
-                    if (issue_id, label_id) not in existing_pairs
-                ],
-                batch_size=100,
-                ignore_conflicts=True,
-            )
-            enforce_label_group_exclusivity(list(issues_by_id.keys()), label_ids)
-            for issue_id in issues_by_id.keys():
-                succeeded_fields[issue_id].append("label_ids")
-                issue_activity.delay(
-                    type="issue.activity.updated",
-                    requested_data=json.dumps({"label_ids": label_ids}),
-                    current_instance=json.dumps({}),
-                    issue_id=issue_id,
-                    actor_id=actor_id,
-                    project_id=str(project_id),
-                    epoch=epoch,
-                )
-
-        # --- Assignees: additive, same rationale as labels above. ---
-        if "assignee_ids" in properties:
-            assignee_ids = list({str(aid) for aid in (properties.get("assignee_ids") or [])})
-            existing_pairs = set(
-                IssueAssignee.objects.filter(issue_id__in=issues_by_id.keys(), assignee_id__in=assignee_ids).values_list(
-                    "issue_id", "assignee_id"
-                )
-            )
-            IssueAssignee.objects.bulk_create(
-                [
-                    IssueAssignee(
-                        issue_id=issue_id, assignee_id=assignee_id, project_id=project_id, workspace_id=project.workspace_id
-                    )
-                    for issue_id in issues_by_id.keys()
-                    for assignee_id in assignee_ids
-                    if (issue_id, assignee_id) not in existing_pairs
-                ],
-                batch_size=100,
-                ignore_conflicts=True,
-            )
-            for issue_id in issues_by_id.keys():
-                succeeded_fields[issue_id].append("assignee_ids")
-                issue_activity.delay(
-                    type="issue.activity.updated",
-                    requested_data=json.dumps({"assignee_ids": assignee_ids}),
-                    current_instance=json.dumps({}),
-                    issue_id=issue_id,
-                    actor_id=actor_id,
-                    project_id=str(project_id),
-                    epoch=epoch,
-                )
-
-        # --- Cycle: remove from current active cycle, add to new one; reject
-        # per-issue (not whole batch) if the target cycle is already completed ---
-        if "cycle_id" in properties:
-            cycle_id = properties.get("cycle_id")
-            target_cycle = Cycle.objects.filter(workspace__slug=slug, project_id=project_id, pk=cycle_id).first()
-            if not target_cycle:
-                for issue_id in issues_by_id.keys():
-                    failed[issue_id].append("Target cycle not found")
-            elif target_cycle.end_date is not None and target_cycle.end_date < timezone.now():
-                for issue_id in issues_by_id.keys():
-                    failed[issue_id].append("Target cycle is already completed")
-            else:
-                existing_cycle_issues = list(CycleIssue.objects.filter(issue_id__in=issues_by_id.keys()))
-                by_issue = {str(ci.issue_id): ci for ci in existing_cycle_issues}
-                to_update, to_create = [], []
-                for issue_id in issues_by_id.keys():
-                    current = by_issue.get(issue_id)
-                    if current is None:
-                        to_create.append(
-                            CycleIssue(
-                                project_id=project_id,
-                                workspace_id=project.workspace_id,
-                                created_by_id=request.user.id,
-                                updated_by_id=request.user.id,
-                                cycle_id=cycle_id,
-                                issue_id=issue_id,
-                            )
+                if str(issue.state_id) == str(target_state.id):
+                    # Already at the target state - only invoke
+                    # evaluate_transition when the target actually
+                    # differs from the issue's current state, same rule
+                    # as every other call site. Falls through to the
+                    # unconditional per-issue write below, exactly
+                    # matching this endpoint's pre-existing behavior for
+                    # a same-state bulk update.
+                    state_applied_issue_ids.add(issue_id)
+                else:
+                    result = evaluate_transition(issue, target_state, request.user)
+                    if result["outcome"] == "denied":
+                        failed[issue_id].append(f"state_id: {result['reason']['message']}")
+                        fields_for_issue.pop("state_id", None)
+                    elif result["outcome"] == "pending_approval":
+                        approval_request = _get_or_create_pending_approval(
+                            issue, result["transition"], request.user
                         )
-                    elif str(current.cycle_id) != str(cycle_id):
-                        current.cycle_id = cycle_id
-                        to_update.append(current)
-                    succeeded_fields[issue_id].append("cycle_id")
-                if to_create:
-                    CycleIssue.objects.bulk_create(to_create, batch_size=100)
-                if to_update:
-                    CycleIssue.objects.bulk_update(to_update, ["cycle_id"], batch_size=100)
-                issue_activity.delay(
-                    type="cycle.activity.created",
-                    requested_data=json.dumps({"cycles_list": list(issues_by_id.keys())}),
-                    actor_id=actor_id,
-                    issue_id=None,
-                    project_id=str(project_id),
-                    current_instance=json.dumps({"cycle_id": str(cycle_id)}),
-                    epoch=epoch,
-                    notification=True,
-                    origin=base_host(request=request, is_app=True),
-                )
+                        pending_approval[issue_id].append(
+                            f"state_id: pending approval (request {approval_request.id})"
+                        )
+                        fields_for_issue.pop("state_id", None)
+                    else:
+                        state_applied_issue_ids.add(issue_id)
+                        post_transition_by_issue_id[issue_id] = result["transition"]
 
-        # --- Modules: additive, an issue may belong to several modules ---
-        if "module_ids" in properties:
-            module_ids = list({str(mid) for mid in (properties.get("module_ids") or [])})
-            valid_module_ids = set(
-                str(m)
-                for m in Module.objects.filter(workspace__slug=slug, project_id=project_id, pk__in=module_ids).values_list(
-                    "id", flat=True
-                )
+            if not fields_for_issue:
+                # Every field requested for this issue was rejected
+                # (state_id was the only scalar field and it was denied/
+                # pending) - excluded entirely, matching exigence 11's
+                # "chaque item est évalué individuellement".
+                continue
+
+            current_instance = {}
+            requested_data = {}
+            for field, value in fields_for_issue.items():
+                current_value = getattr(issue, field)
+                current_instance[field] = str(current_value) if current_value is not None else None
+                setattr(issue, field, value)
+                requested_data[field] = str(value) if value is not None else None
+            issues_to_update.append(issue)
+            succeeded_fields[issue_id].extend(fields_for_issue.keys())
+            issue_activity.delay(
+                type="issue.activity.updated",
+                requested_data=json.dumps(requested_data),
+                current_instance=json.dumps(current_instance),
+                issue_id=issue_id,
+                actor_id=actor_id,
+                project_id=str(project_id),
+                epoch=epoch,
             )
-            invalid_module_ids = set(module_ids) - valid_module_ids
-            if invalid_module_ids:
-                for issue_id in issues_by_id.keys():
-                    failed[issue_id].append(f"Unknown module(s): {', '.join(invalid_module_ids)}")
-            if valid_module_ids:
-                ModuleIssue.objects.bulk_create(
-                    [
-                        ModuleIssue(
-                            issue_id=issue_id,
-                            module_id=module_id,
+        if issues_to_update:
+            Issue.objects.bulk_update(issues_to_update, list(scalar_updates.keys()))
+        if "state_id" in scalar_updates:
+            for issue in issues_to_update:
+                if str(issue.id) not in state_applied_issue_ids:
+                    continue
+                handle_sub_issue_automations(issue, request.user.id)
+                # Run any configured post-transition actions after the
+                # shared bulk_update has committed - only for issues
+                # whose transition was freshly evaluated "allowed"
+                # (already-at-target no-ops have no transition to run
+                # actions for).
+                transition = post_transition_by_issue_id.get(str(issue.id))
+                if transition is not None:
+                    execute_allowed_transition(issue, target_state, request.user, transition)
+
+    # --- Labels: additive (an issue keeps its existing labels, new ones are
+    # added) - matches the frontend's bulkUpdateProperties optimistic update,
+    # which appends to the existing array rather than replacing it. ---
+    if "label_ids" in properties:
+        label_ids = list({str(lid) for lid in (properties.get("label_ids") or [])})
+        existing_pairs = set(
+            IssueLabel.objects.filter(issue_id__in=issues_by_id.keys(), label_id__in=label_ids).values_list(
+                "issue_id", "label_id"
+            )
+        )
+        IssueLabel.objects.bulk_create(
+            [
+                IssueLabel(
+                    issue_id=issue_id, label_id=label_id, project_id=project_id, workspace_id=project.workspace_id
+                )
+                for issue_id in issues_by_id.keys()
+                for label_id in label_ids
+                if (issue_id, label_id) not in existing_pairs
+            ],
+            batch_size=100,
+            ignore_conflicts=True,
+        )
+        enforce_label_group_exclusivity(list(issues_by_id.keys()), label_ids)
+        for issue_id in issues_by_id.keys():
+            succeeded_fields[issue_id].append("label_ids")
+            issue_activity.delay(
+                type="issue.activity.updated",
+                requested_data=json.dumps({"label_ids": label_ids}),
+                current_instance=json.dumps({}),
+                issue_id=issue_id,
+                actor_id=actor_id,
+                project_id=str(project_id),
+                epoch=epoch,
+            )
+
+    # --- Assignees: additive, same rationale as labels above. ---
+    if "assignee_ids" in properties:
+        assignee_ids = list({str(aid) for aid in (properties.get("assignee_ids") or [])})
+        existing_pairs = set(
+            IssueAssignee.objects.filter(issue_id__in=issues_by_id.keys(), assignee_id__in=assignee_ids).values_list(
+                "issue_id", "assignee_id"
+            )
+        )
+        IssueAssignee.objects.bulk_create(
+            [
+                IssueAssignee(
+                    issue_id=issue_id, assignee_id=assignee_id, project_id=project_id, workspace_id=project.workspace_id
+                )
+                for issue_id in issues_by_id.keys()
+                for assignee_id in assignee_ids
+                if (issue_id, assignee_id) not in existing_pairs
+            ],
+            batch_size=100,
+            ignore_conflicts=True,
+        )
+        for issue_id in issues_by_id.keys():
+            succeeded_fields[issue_id].append("assignee_ids")
+            issue_activity.delay(
+                type="issue.activity.updated",
+                requested_data=json.dumps({"assignee_ids": assignee_ids}),
+                current_instance=json.dumps({}),
+                issue_id=issue_id,
+                actor_id=actor_id,
+                project_id=str(project_id),
+                epoch=epoch,
+            )
+
+    # --- Cycle: remove from current active cycle, add to new one; reject
+    # per-issue (not whole batch) if the target cycle is already completed ---
+    if "cycle_id" in properties:
+        cycle_id = properties.get("cycle_id")
+        target_cycle = Cycle.objects.filter(workspace__slug=slug, project_id=project_id, pk=cycle_id).first()
+        if not target_cycle:
+            for issue_id in issues_by_id.keys():
+                failed[issue_id].append("Target cycle not found")
+        elif target_cycle.end_date is not None and target_cycle.end_date < timezone.now():
+            for issue_id in issues_by_id.keys():
+                failed[issue_id].append("Target cycle is already completed")
+        else:
+            existing_cycle_issues = list(CycleIssue.objects.filter(issue_id__in=issues_by_id.keys()))
+            by_issue = {str(ci.issue_id): ci for ci in existing_cycle_issues}
+            to_update, to_create = [], []
+            for issue_id in issues_by_id.keys():
+                current = by_issue.get(issue_id)
+                if current is None:
+                    to_create.append(
+                        CycleIssue(
                             project_id=project_id,
                             workspace_id=project.workspace_id,
                             created_by_id=request.user.id,
                             updated_by_id=request.user.id,
+                            cycle_id=cycle_id,
+                            issue_id=issue_id,
                         )
-                        for issue_id in issues_by_id.keys()
-                        for module_id in valid_module_ids
-                    ],
-                    batch_size=100,
-                    ignore_conflicts=True,
-                )
-                for issue_id in issues_by_id.keys():
-                    succeeded_fields[issue_id].append("module_ids")
-                    issue_activity.delay(
-                        type="issue.activity.updated",
-                        requested_data=json.dumps({"module_ids": list(valid_module_ids)}),
-                        current_instance=json.dumps({}),
-                        issue_id=issue_id,
-                        actor_id=actor_id,
-                        project_id=str(project_id),
-                        epoch=epoch,
                     )
+                elif str(current.cycle_id) != str(cycle_id):
+                    current.cycle_id = cycle_id
+                    to_update.append(current)
+                succeeded_fields[issue_id].append("cycle_id")
+            if to_create:
+                CycleIssue.objects.bulk_create(to_create, batch_size=100)
+            if to_update:
+                CycleIssue.objects.bulk_update(to_update, ["cycle_id"], batch_size=100)
+            issue_activity.delay(
+                type="cycle.activity.created",
+                requested_data=json.dumps({"cycles_list": list(issues_by_id.keys())}),
+                actor_id=actor_id,
+                issue_id=None,
+                project_id=str(project_id),
+                current_instance=json.dumps({"cycle_id": str(cycle_id)}),
+                epoch=epoch,
+                notification=True,
+                origin=base_host(request=request, is_app=True),
+            )
 
-        result = {
-            "success": [{"id": issue_id, "fields": fields} for issue_id, fields in succeeded_fields.items() if fields],
-            "failed": [{"id": issue_id, "reasons": reasons} for issue_id, reasons in failed.items() if reasons],
-            "pending_approval": [
-                {"id": issue_id, "reasons": reasons} for issue_id, reasons in pending_approval.items() if reasons
-            ],
-        }
-        any_failed = any(reasons for reasons in failed.values())
-        any_pending = any(reasons for reasons in pending_approval.values())
-        any_succeeded = any(fields for fields in succeeded_fields.values())
-        if any_succeeded and not any_failed and not any_pending:
-            operation.status = BulkIssueOperation.OperationStatus.COMPLETED
-        elif any_failed and not any_succeeded and not any_pending:
-            operation.status = BulkIssueOperation.OperationStatus.FAILED
-        elif any_pending and not any_succeeded and not any_failed:
-            operation.status = BulkIssueOperation.OperationStatus.PENDING
-        else:
-            operation.status = BulkIssueOperation.OperationStatus.PARTIAL
-        operation.result = result
-        operation.save(update_fields=["status", "result"])
-
-        return Response(
-            {"bulk_operation_id": str(operation.id), **result},
-            status=status.HTTP_200_OK,
+    # --- Modules: additive, an issue may belong to several modules ---
+    if "module_ids" in properties:
+        module_ids = list({str(mid) for mid in (properties.get("module_ids") or [])})
+        valid_module_ids = set(
+            str(m)
+            for m in Module.objects.filter(workspace__slug=slug, project_id=project_id, pk__in=module_ids).values_list(
+                "id", flat=True
+            )
         )
+        invalid_module_ids = set(module_ids) - valid_module_ids
+        if invalid_module_ids:
+            for issue_id in issues_by_id.keys():
+                failed[issue_id].append(f"Unknown module(s): {', '.join(invalid_module_ids)}")
+        if valid_module_ids:
+            ModuleIssue.objects.bulk_create(
+                [
+                    ModuleIssue(
+                        issue_id=issue_id,
+                        module_id=module_id,
+                        project_id=project_id,
+                        workspace_id=project.workspace_id,
+                        created_by_id=request.user.id,
+                        updated_by_id=request.user.id,
+                    )
+                    for issue_id in issues_by_id.keys()
+                    for module_id in valid_module_ids
+                ],
+                batch_size=100,
+                ignore_conflicts=True,
+            )
+            for issue_id in issues_by_id.keys():
+                succeeded_fields[issue_id].append("module_ids")
+                issue_activity.delay(
+                    type="issue.activity.updated",
+                    requested_data=json.dumps({"module_ids": list(valid_module_ids)}),
+                    current_instance=json.dumps({}),
+                    issue_id=issue_id,
+                    actor_id=actor_id,
+                    project_id=str(project_id),
+                    epoch=epoch,
+                )
+
+    result = {
+        "success": [{"id": issue_id, "fields": fields} for issue_id, fields in succeeded_fields.items() if fields],
+        "failed": [{"id": issue_id, "reasons": reasons} for issue_id, reasons in failed.items() if reasons],
+        "pending_approval": [
+            {"id": issue_id, "reasons": reasons} for issue_id, reasons in pending_approval.items() if reasons
+        ],
+    }
+    any_failed = any(reasons for reasons in failed.values())
+    any_pending = any(reasons for reasons in pending_approval.values())
+    any_succeeded = any(fields for fields in succeeded_fields.values())
+    if any_succeeded and not any_failed and not any_pending:
+        operation.status = BulkIssueOperation.OperationStatus.COMPLETED
+    elif any_failed and not any_succeeded and not any_pending:
+        operation.status = BulkIssueOperation.OperationStatus.FAILED
+    elif any_pending and not any_succeeded and not any_failed:
+        operation.status = BulkIssueOperation.OperationStatus.PENDING
+    else:
+        operation.status = BulkIssueOperation.OperationStatus.PARTIAL
+    operation.result = result
+    operation.save(update_fields=["status", "result"])
+
+    return Response(
+        {"bulk_operation_id": str(operation.id), **result},
+        status=status.HTTP_200_OK,
+    )
+
+
+class BulkIssueOperationsEndpoint(BaseAPIView):
+    """
+    Session-authenticated (web UI) entry point for `bulk_issue_operations` -
+    see that function's docstring for the actual batch-update behavior.
+    """
+
+    MAX_BATCH_SIZE = BULK_OPERATIONS_MAX_BATCH_SIZE
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def post(self, request, slug, project_id):
+        return bulk_issue_operations(request, slug, project_id)
 
 
 class IssueMetaEndpoint(BaseAPIView):
