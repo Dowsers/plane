@@ -1,0 +1,44 @@
+{
+  "name": "cli",
+  "version": "1.3.1",
+  "private": true,
+  "description": "Official data-management CLI for self-hosted Plane instances (issues, projects, cycles)",
+  "license": "AGPL-3.0",
+  "bin": {
+    "plane": "./dist/index.mjs"
+  },
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:lint": "oxlint --max-warnings=0 .",
+    "check:types": "tsc --noEmit",
+    "check:format": "oxfmt --check .",
+    "fix:lint": "oxlint --fix .",
+    "fix:format": "oxfmt .",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "dependencies": {
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.1",
+    "js-yaml": "4.1.1"
+  },
+  "devDependencies": {
+    "@plane/typescript-config": "workspace:*",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "tsx": "^4.23.10",
+    "typescript": "catalog:",
+    "vitest": "^4.0.8"
+  }
+}
