@@ -39,6 +39,8 @@ SPECTACULAR_SETTINGS = {
     # ========================================================================
     "PREPROCESSING_HOOKS": [
         "plane.utils.openapi.hooks.preprocess_filter_api_v1_paths",
+        # See the function's own docstring for why this is a no-op today.
+        "plane.utils.openapi.hooks.preprocess_filter_by_edition",
     ],
     # ========================================================================
     # Server Configuration

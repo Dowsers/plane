@@ -15,21 +15,67 @@ from django.utils import timezone
 
 # Third party imports
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import APIException, Throttled
+from rest_framework.exceptions import APIException, PermissionDenied, Throttled
 from rest_framework.generics import GenericAPIView
 
 # Module imports
 from plane.api.middleware.api_authentication import APIKeyAuthentication
 from plane.api.rate_limit import ApiKeyRateThrottle, TieredSlidingWindowRateThrottle
+from plane.db.models import APIToken
 from plane.utils.exception_logger import log_exception
 from plane.utils.paginator import BasePaginator
 from plane.utils.core.mixins import ReadReplicaControlMixin
 
 
 logger = logging.getLogger("plane.api")
+
+
+class APITokenScopePermission(BasePermission):
+    """
+    Real enforcement of `APIToken.scope` (spec exigence 2,
+    docs/feature-specs/08-api-webhooks-cli.md "6. Explorateur d'API
+    interactif" in plane-selfhost) - a read_only-scoped token must not be
+    able to perform any mutating request.
+
+    NOT wired in via `permission_classes` (the seemingly obvious place):
+    a majority of concrete views in this app (issue/cycle/module/project/
+    state/estimate/...) already set their own `permission_classes`, which
+    *replaces* the class attribute inherited from `BaseAPIView` rather than
+    extending it - appending this here would silently do nothing for any
+    of those. Instead, `BaseAPIView.initial()`/`BaseViewSet.initial()`
+    below call `enforce(request)` directly and unconditionally, after
+    `super().initial()` has already run each view's own permission checks.
+    No view in this app overrides `initial()` itself, so this genuinely
+    cannot be skipped by a future view the way a `permission_classes`
+    default could be.
+
+    Relies on `APIKeyAuthentication.authenticate` returning the `APIToken`
+    instance itself as the DRF "auth" object (see that module) - avoids a
+    second `APIToken.objects.get(token=...)` lookup per request on top of
+    the one authentication already does.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+
+        token = request.auth
+        if not isinstance(token, APIToken):
+            # Not API-key-authenticated (or authentication failed, in
+            # which case IsAuthenticated - checked by the same
+            # super().initial() call - already rejected the request) -
+            # scope only exists on APIToken, nothing to enforce here.
+            return True
+
+        return token.scope != APIToken.Scope.READ_ONLY
+
+    @classmethod
+    def enforce(cls, request, view):
+        if not cls().has_permission(request, view):
+            raise PermissionDenied("This API token is read-only and cannot perform mutating requests.")
 
 
 class TimezoneMixin:
@@ -52,6 +98,12 @@ class BaseAPIView(TimezoneMixin, GenericAPIView, ReadReplicaControlMixin, BasePa
     permission_classes = [IsAuthenticated]
 
     use_read_replica = False
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # See APITokenScopePermission's own docstring for why this is
+        # called explicitly here rather than added to permission_classes.
+        APITokenScopePermission.enforce(request, self)
 
     def filter_queryset(self, queryset):
         for backend in list(self.filter_backends):
@@ -198,6 +250,15 @@ class BaseViewSet(TimezoneMixin, ReadReplicaControlMixin, ModelViewSet, BasePagi
         IsAuthenticated,
     ]
     use_read_replica = False
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # See APITokenScopePermission's own docstring (top of this module)
+        # for why this is called explicitly here rather than added to
+        # permission_classes - invite.py/sticky.py, the only two
+        # BaseViewSet consumers today, both also override
+        # permission_classes themselves.
+        APITokenScopePermission.enforce(request, self)
 
     def get_queryset(self):
         try:

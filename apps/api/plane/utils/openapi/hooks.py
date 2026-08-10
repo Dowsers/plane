@@ -23,6 +23,24 @@ def preprocess_filter_api_v1_paths(endpoints):
     return filtered
 
 
+def preprocess_filter_by_edition(endpoints):
+    """
+    Edition-based endpoint filtering hook for the API Explorer's schema
+    endpoint (spec exigence 2, docs/feature-specs/08-api-webhooks-cli.md
+    "6. Explorateur d'API interactif" in plane-selfhost: "filtre pour ne
+    montrer que les endpoints reellement actifs sur l'edition/instance
+    courante"). This fork's `InstanceEdition` enum
+    (plane/license/models/instance.py) has exactly one member,
+    PLANE_COMMUNITY - there is no Pro/Enterprise-only endpoint in this
+    source tree to hide today, so this is a deliberate pass-through, not
+    an oversight or a stub left unfinished. It is still registered as a
+    real PREPROCESSING_HOOKS entry (not just documented/unused) so a
+    future edition split has one obvious place to add real filtering
+    instead of having to rediscover this requirement from scratch.
+    """
+    return endpoints
+
+
 def generate_operation_summary(method, path, tag):
     """
     Generate a human-readable summary for an operation.

@@ -67,6 +67,15 @@ class Webhook(BaseModel):
     workflow_transition = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
+    # Populated only by a test-send (never by a real event delivery via
+    # `webhook_send_task`) - "explorer" vs "settings_ui" per
+    # docs/feature-specs/08-api-webhooks-cli.md ("6. Explorateur d'API
+    # interactif", implications sur le modele de donnees) in
+    # plane-selfhost. Nullable/last-write-wins by design: this is a
+    # "when/how was this webhook last poked for testing" breadcrumb for an
+    # admin, not an audit trail (there is no existing per-webhook test-send
+    # log table to append to, and adding one is out of scope here).
+    last_test_triggered_via = models.CharField(max_length=32, null=True, blank=True)
 
     def __str__(self):
         return f"{self.workspace.slug} {self.url}"

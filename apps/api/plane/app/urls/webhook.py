@@ -8,6 +8,7 @@ from plane.app.views import (
     WebhookEndpoint,
     WebhookLogsEndpoint,
     WebhookSecretRegenerateEndpoint,
+    WebhookTestSendEndpoint,
 )
 
 
@@ -27,5 +28,10 @@ urlpatterns = [
         "workspaces/<str:slug>/webhook-logs/<uuid:webhook_id>/",
         WebhookLogsEndpoint.as_view(),
         name="webhooks",
+    ),
+    path(
+        "workspaces/<str:slug>/webhooks/<uuid:pk>/test/",
+        WebhookTestSendEndpoint.as_view(),
+        name="webhook-test-send",
     ),
 ]

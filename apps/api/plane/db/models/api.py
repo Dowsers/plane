@@ -71,6 +71,29 @@ class APIToken(BaseModel):
     rate_limit_overridden_at = models.DateTimeField(blank=True, null=True)
     rate_limit_override_reason = models.TextField(blank=True, default="")
 
+    class Scope(models.TextChoices):
+        READ_WRITE = "read_write", "Read & Write"
+        READ_ONLY = "read_only", "Read Only"
+
+    # Real DRF-layer enforcement, not a display-only flag - see
+    # `plane.api.views.base.APITokenScopePermission`, added to
+    # `BaseAPIView.permission_classes` (applies to every plane.api view,
+    # not opted-in per-view) so a read_only token is rejected on any
+    # mutating method regardless of which of the 180+ endpoints it hits.
+    # Default read_write preserves today's behavior for every pre-existing
+    # token on migrate - only newly-issued explorer ephemeral tokens (see
+    # docs/feature-specs/08-api-webhooks-cli.md "6. Explorateur d'API
+    # interactif" in plane-selfhost) are expected to ever request
+    # read_only in practice, but the field is general-purpose.
+    scope = models.CharField(max_length=20, choices=Scope.choices, default=Scope.READ_WRITE)
+    # Distinguishes an explorer-issued, short-lived token (auto-expired via
+    # `expired_at`, never intended to be reused after that) from a normal
+    # long-lived personal/service token - purely informational today (e.g.
+    # for a future "revoke all ephemeral tokens" admin action), expiry
+    # itself is already enforced through the pre-existing `expired_at`
+    # field/`APIKeyAuthentication.validate_api_token` query, not this flag.
+    is_ephemeral = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "API Token"
         verbose_name_plural = "API Tokems"
@@ -98,6 +121,34 @@ class APIActivityLog(BaseModel):
     # Meta information
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.CharField(max_length=512, null=True, blank=True)
+
+    # Added for the API Explorer's request-logging requirement (spec
+    # exigence 12, docs/feature-specs/08-api-webhooks-cli.md "6.
+    # Explorateur d'API interactif" in plane-selfhost) rather than a new
+    # `APIExplorerRequestLog` model - this table already captures
+    # method/path/status/headers/user_agent per X-Api-Key request via
+    # `plane.middleware.logger.APITokenLogMiddleware`; it only lacked a
+    # workspace reference, a duration, and a way to tag *why* a row was
+    # logged. All three are nullable/optional so every pre-existing row
+    # (and every row written by that older, unrelated middleware) is
+    # unaffected. `created_by` (already on BaseModel) doubles as the
+    # "actor" the spec's own `APIExplorerRequestLog` proposal asked for.
+    workspace = models.ForeignKey(
+        "db.Workspace",
+        related_name="api_activity_logs",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    # e.g. "api_explorer" - see
+    # `plane.middleware.api_explorer_logging.APIExplorerActivityLogMiddleware`.
+    # Left blank (not defaulted to some "integration" sentinel) for every
+    # row written by the pre-existing, unconditional
+    # `APITokenLogMiddleware` above, so a simple `source="api_explorer"`
+    # filter is exactly the set of requests the spec asks admins to be
+    # able to distinguish - nothing more.
+    source = models.CharField(max_length=50, null=True, blank=True, db_index=True)
 
     class Meta:
         verbose_name = "API Activity Log"

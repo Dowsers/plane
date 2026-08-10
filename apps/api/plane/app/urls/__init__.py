@@ -33,6 +33,7 @@ from .sla import urlpatterns as sla_urls
 from .workflow_transition import urlpatterns as workflow_transition_urls
 from .flexible_query import urlpatterns as flexible_query_settings_urls
 from .rate_limit import urlpatterns as rate_limit_override_urls
+from .api_explorer import urlpatterns as api_explorer_settings_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -66,4 +67,5 @@ urlpatterns = [
     *workflow_transition_urls,
     *flexible_query_settings_urls,
     *rate_limit_override_urls,
+    *api_explorer_settings_urls,
 ]

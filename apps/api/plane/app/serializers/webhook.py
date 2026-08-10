@@ -68,7 +68,10 @@ class WebhookSerializer(DynamicBaseSerializer):
     class Meta:
         model = Webhook
         fields = "__all__"
-        read_only_fields = ["workspace", "secret_key", "deleted_at"]
+        # `last_test_triggered_via` is only ever written by
+        # WebhookTestSendEndpoint (plane/app/views/webhook/base.py), never
+        # by a general-purpose PATCH through this serializer.
+        read_only_fields = ["workspace", "secret_key", "deleted_at", "last_test_triggered_via"]
 
 
 class WebhookLogSerializer(DynamicBaseSerializer):

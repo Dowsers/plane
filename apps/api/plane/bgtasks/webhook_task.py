@@ -84,6 +84,26 @@ MODEL_MAPPER = {
 logger = logging.getLogger("plane.worker")
 
 
+def sign_webhook_payload(secret_key: Optional[str], payload: Dict[str, Any]) -> Optional[str]:
+    """
+    HMAC-SHA256 signing, extracted out of `webhook_send_task` below so it
+    has exactly one implementation shared by every delivery path - real
+    async event delivery here, and the synchronous API-Explorer test-send
+    (`plane.app.views.webhook.base.WebhookTestSendEndpoint`, see
+    docs/feature-specs/08-api-webhooks-cli.md "6. Explorateur d'API
+    interactif" in plane-selfhost). A signature drift between those two
+    paths would make a webhook that verifies fine in the explorer fail for
+    real (or vice versa) - the kind of bug that's invisible until a
+    receiver's HMAC check starts rejecting real traffic.
+    """
+    if not secret_key:
+        return None
+    hmac_signature = hmac.new(
+        secret_key.encode("utf-8"), json.dumps(payload).encode("utf-8"), hashlib.sha256
+    )
+    return hmac_signature.hexdigest()
+
+
 def get_issue_prefetches():
     return [
         Prefetch("label_issue", queryset=IssueLabel.objects.select_related("label")),
@@ -312,13 +332,8 @@ def webhook_send_task(
         }
 
         # Use HMAC for generating signature
-        if webhook.secret_key:
-            hmac_signature = hmac.new(
-                webhook.secret_key.encode("utf-8"),
-                json.dumps(payload).encode("utf-8"),
-                hashlib.sha256,
-            )
-            signature = hmac_signature.hexdigest()
+        signature = sign_webhook_payload(webhook.secret_key, payload)
+        if signature:
             headers["X-Plane-Signature"] = signature
     except Exception as e:
         log_exception(e)

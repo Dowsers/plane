@@ -114,6 +114,12 @@ MIDDLEWARE = [
     "plane.middleware.request_body_size.RequestBodySizeLimitMiddleware",
     "plane.middleware.logger.APITokenLogMiddleware",
     "plane.middleware.logger.RequestLoggerMiddleware",
+    # See docs/feature-specs/08-api-webhooks-cli.md ("6. Explorateur d'API
+    # interactif", exigence 12) in plane-selfhost - conditional on the
+    # X-Plane-Source header, complementary to (not a replacement for)
+    # APITokenLogMiddleware above. Placed last/innermost like the other
+    # request-logging middleware so it observes the final response.
+    "plane.middleware.api_explorer_logging.APIExplorerActivityLogMiddleware",
 ]
 
 # Rest Framework settings
@@ -526,6 +532,21 @@ if ENABLE_DRF_SPECTACULAR:
 # outright when this is unset, regardless of any per-workspace
 # `Workspace.is_flexible_query_enabled` toggle.
 FLEXIBLE_QUERY_ENABLED = os.environ.get("FLEXIBLE_QUERY_ENABLED", "0") == "1"
+
+# Instance-wide kill switch for the interactive API explorer - see
+# docs/feature-specs/08-api-webhooks-cli.md ("6. Explorateur d'API
+# interactif") in plane-selfhost, same two-layer gate pattern as
+# FLEXIBLE_QUERY_ENABLED above: this env var is the global half, ANDed
+# with the per-workspace `WorkspaceAPIExplorerSettings.is_enabled` toggle.
+# Defaults OFF (unlike that per-workspace flag's own default of True):
+# the explorer's schema endpoint only produces an accurate result when
+# drf-spectacular's AutoSchema is actually wired as DEFAULT_SCHEMA_CLASS
+# (see ENABLE_DRF_SPECTACULAR above), and its ephemeral-token endpoint
+# mints real, workspace-usable API credentials - both are new attack
+# surface that a self-hosted/air-gapped instance should opt into
+# explicitly, matching ENABLE_DRF_SPECTACULAR's and
+# FLEXIBLE_QUERY_ENABLED's own default-off precedent.
+API_EXPLORER_ENABLED = os.environ.get("API_EXPLORER_ENABLED", "0") == "1"
 
 # MongoDB Settings
 MONGO_DB_URL = os.environ.get("MONGO_DB_URL", False)

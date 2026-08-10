@@ -39,7 +39,14 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
         # save api token last used
         api_token.last_used = timezone.now()
         api_token.save(update_fields=["last_used"])
-        return (api_token.user, api_token.token)
+        # Returning the APIToken instance itself (not just the raw token
+        # string) as the DRF "auth" object lets `request.auth.scope` be
+        # read directly wherever a permission/view needs it (see
+        # `plane.api.views.base.APITokenScopePermission`) without a second
+        # lookup by token string. Confirmed safe: nothing in this codebase
+        # reads `request.auth` today (it would previously have gotten the
+        # token string), so there is no prior expectation to preserve.
+        return (api_token.user, api_token)
 
     def authenticate(self, request):
         token = self.get_api_token(request=request)

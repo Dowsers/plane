@@ -307,6 +307,7 @@ from .webhook.base import (
     WebhookEndpoint,
     WebhookLogsEndpoint,
     WebhookSecretRegenerateEndpoint,
+    WebhookTestSendEndpoint,
 )
 
 from .error_404 import custom_404_view
@@ -333,5 +334,6 @@ from .workflow_transition.base import (
 )
 
 from .flexible_query import WorkspaceQuerySettingsEndpoint
+from .api_explorer import WorkspaceAPIExplorerSettingsEndpoint
 
 from .rate_limit import WorkspaceAPITokenRateLimitOverrideEndpoint

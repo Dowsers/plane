@@ -192,3 +192,4 @@ from .workflow_transition import (
 )
 
 from .flexible_query import WorkspaceQuerySettingsSerializer
+from .api_explorer import WorkspaceAPIExplorerSettingsSerializer
