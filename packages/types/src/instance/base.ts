@@ -102,3 +102,22 @@ export type IFormattedInstanceConfiguration = {
 };
 
 export type TLoginMediums = TCoreLoginMediums | TExtendedLoginMediums;
+
+/**
+ * Instance-wide rate-limit tier (`RateLimitTier`, apps/api/plane/db/models/
+ * rate_limit.py) - Instance Admin (God Mode) only, see
+ * `RateLimitTierEndpoint` (apps/api/plane/license/api/views/rate_limit.py).
+ * Only 3 rows exist in this fork (`session_web`/`personal_token`/
+ * `service_account`) - `key`/`is_default` are read-only, only
+ * `requests_per_minute`/`requests_per_hour` are ever edited from God Mode.
+ */
+export interface IRateLimitTier {
+  id: string;
+  key: string;
+  requests_per_minute: number;
+  requests_per_hour: number;
+  complexity_points_per_hour: number | null;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}

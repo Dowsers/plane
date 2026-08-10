@@ -36,6 +36,11 @@ export interface IWorkspace {
   timezone: string;
   is_initiatives_enabled?: boolean;
   is_roadmap_enabled?: boolean;
+  // Category 8, feature 1 - see `Workspace.is_flexible_query_enabled`'s own
+  // field comment (apps/api/plane/db/models/workspace.py) for why this is a
+  // second, independent gate alongside the instance-wide
+  // `FLEXIBLE_QUERY_ENABLED` env var.
+  is_flexible_query_enabled?: boolean;
 }
 
 export interface IWorkspaceLite {

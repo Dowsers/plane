@@ -348,6 +348,7 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/settings/sla-policies",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/sla-policies/page.tsx"
           ),
+          route(":workspaceSlug/settings/api", "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/api/page.tsx"),
         ]),
 
         // --------------------------------------------------------------------

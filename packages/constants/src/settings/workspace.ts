@@ -82,6 +82,18 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/sla-policies/`,
   },
+  api: {
+    key: "api",
+    i18n_label: "flexible_query.settings.title",
+    href: `/settings/api`,
+    // Readable by every member (the toggle/quota are useful context even
+    // for non-admins integrating against this workspace's API), editing
+    // is gated Admin-only inside the page itself - mirrors the backend's
+    // own split (`WorkspaceQuerySettingsEndpoint.get` has no role gate,
+    // `.patch` is `ROLE.ADMIN`).
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/api/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -98,5 +110,5 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["sla-policies"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"]],
-  [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [WORKSPACE_SETTINGS["webhooks"]],
+  [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [WORKSPACE_SETTINGS["webhooks"], WORKSPACE_SETTINGS["api"]],
 };

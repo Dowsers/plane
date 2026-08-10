@@ -2207,6 +2207,17 @@ export default {
       empty_state: "No SLA data for the selected filters.",
     },
   },
+  flexible_query: {
+    label: "Flexible query API",
+    settings: {
+      title: "Flexible query API",
+      description:
+        "A GraphQL-style, token-authenticated endpoint for fetching a graph of related work items in one request instead of chaining several REST calls.",
+    },
+    toast: {
+      error: "Something went wrong. Please try again.",
+    },
+  },
   project_updates: {
     label: "Updates",
     post_update: "Post update",
