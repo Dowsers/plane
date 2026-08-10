@@ -19,7 +19,8 @@ export type TWorkspaceSettingsTabs =
   | "features"
   | "project-templates"
   | "sla-policies"
-  | "api";
+  | "api"
+  | "api-explorer";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;

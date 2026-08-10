@@ -2218,6 +2218,14 @@ export default {
       error: "Something went wrong. Please try again.",
     },
   },
+  api_explorer: {
+    label: "API Explorer",
+    settings: {
+      title: "API Explorer",
+      description:
+        "Browse this instance's real OpenAPI schema and execute real calls against this workspace's own data, directly from the browser - no external docs site required.",
+    },
+  },
   project_updates: {
     label: "Updates",
     post_update: "Post update",

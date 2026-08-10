@@ -9,6 +9,7 @@ import {
   ArrowUpToLine,
   Braces,
   Building,
+  Compass,
   CreditCard,
   LayoutTemplate,
   Sparkles,
@@ -30,4 +31,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   "project-templates": LayoutTemplate,
   "sla-policies": Timer,
   api: Braces,
+  "api-explorer": Compass,
 };

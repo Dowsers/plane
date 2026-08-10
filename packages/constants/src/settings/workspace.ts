@@ -94,6 +94,19 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/api/`,
   },
+  "api-explorer": {
+    key: "api-explorer",
+    i18n_label: "api_explorer.settings.title",
+    href: `/settings/api-explorer`,
+    // Spec exigence 14 (docs/feature-specs/08-api-webhooks-cli.md, "6.
+    // Explorateur d'API interactif", in plane-selfhost): hidden entirely
+    // for Guest (excluded from this array, same convention every other
+    // tab here already uses), visible read-only for Member, execution
+    // additionally gated Admin-only (or Member if the workspace's own
+    // `allow_members_execute` toggle is on) inside the page itself.
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/api-explorer/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -110,5 +123,9 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["sla-policies"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"]],
-  [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [WORKSPACE_SETTINGS["webhooks"], WORKSPACE_SETTINGS["api"]],
+  [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [
+    WORKSPACE_SETTINGS["webhooks"],
+    WORKSPACE_SETTINGS["api"],
+    WORKSPACE_SETTINGS["api-explorer"],
+  ],
 };

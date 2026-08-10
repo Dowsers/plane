@@ -31,6 +31,11 @@ export interface IApiToken {
   rate_limit_overridden_by: string | null;
   rate_limit_overridden_at: string | null;
   rate_limit_override_reason: string;
+  // API Explorer fields (category 8, feature 6) - see
+  // docs/feature-specs/08-api-webhooks-cli.md ("6. Explorateur d'API
+  // interactif") in plane-selfhost.
+  scope?: "read_write" | "read_only";
+  is_ephemeral?: boolean;
 }
 
 /** Body of `PATCH /api/workspaces/{slug}/api-tokens/{pk}/rate-limit-override/`

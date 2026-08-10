@@ -15,7 +15,7 @@ import type { IWebhook } from "@plane/types";
 import { LogoSpinner } from "@/components/common/logo-spinner";
 import { PageHead } from "@/components/core/page-title";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
-import { DeleteWebhookModal, WebhookDeleteSection, WebhookForm } from "@/components/web-hooks";
+import { DeleteWebhookModal, WebhookDeleteSection, WebhookForm, WebhookTestSendPanel } from "@/components/web-hooks";
 // hooks
 import { useWebhook } from "@/hooks/store/use-webhook";
 import { useWorkspace } from "@/hooks/store/use-workspace";
@@ -102,6 +102,7 @@ function WebhookDetailsPage({ params }: Route.ComponentProps) {
         <div>
           <WebhookForm onSubmit={handleUpdateWebhook} data={currentWebhook} />
         </div>
+        {currentWebhook && <WebhookTestSendPanel workspaceSlug={workspaceSlug} webhook={currentWebhook} />}
         {currentWebhook && <WebhookDeleteSection openDeleteModal={() => setDeleteWebhookModal(true)} />}
       </div>
     </SettingsContentWrapper>
