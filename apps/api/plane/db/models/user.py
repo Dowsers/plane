@@ -51,6 +51,15 @@ def get_default_product_tour():
 
 class BotTypeEnum(models.TextChoices):
     WORKSPACE_SEED = "WORKSPACE_SEED", "Workspace Seed"
+    # Category 7 integration connectors (docs/feature-specs/07-integrations-git.md
+    # in plane-selfhost) - see plane.utils.integration_bot for the shared
+    # get-or-create helper all of these are created through.
+    GITHUB_BOT = "GITHUB_BOT", "GitHub Bot"
+    GITLAB_BOT = "GITLAB_BOT", "GitLab Bot"
+    SLACK_BOT = "SLACK_BOT", "Slack Bot"
+    FIGMA_BOT = "FIGMA_BOT", "Figma Bot"
+    SENTRY_BOT = "SENTRY_BOT", "Sentry Bot"
+    SUPPORT_BOT = "SUPPORT_BOT", "Support Bot"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
