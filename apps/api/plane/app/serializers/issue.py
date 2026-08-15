@@ -942,14 +942,28 @@ class IssueDetailSerializer(IssueSerializer):
     description_html = serializers.CharField()
     is_subscribed = serializers.BooleanField(read_only=True)
     is_intake = serializers.BooleanField(read_only=True)
+    # docs/feature-specs/07-integrations-git.md ("5. Integration Sentry
+    # native", Considerations API/UX - "Sérialiseur Issue enrichi d'un
+    # bloc optionnel sentry_issue... quand un lien existe") in
+    # plane-selfhost.
+    sentry_issue = serializers.SerializerMethodField()
 
     class Meta(IssueSerializer.Meta):
         fields = IssueSerializer.Meta.fields + [
             "description_html",
             "is_subscribed",
             "is_intake",
+            "sentry_issue",
         ]
         read_only_fields = fields
+
+    def get_sentry_issue(self, obj):
+        detail = getattr(obj, "sentry_detail", None)
+        if detail is None:
+            return None
+        from .sentry_integration import IssueSentryDetailSerializer
+
+        return IssueSentryDetailSerializer(detail).data
 
 
 class IssuePublicSerializer(BaseSerializer):

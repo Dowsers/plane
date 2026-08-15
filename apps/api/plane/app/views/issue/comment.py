@@ -21,6 +21,7 @@ from plane.app.serializers import IssueCommentSerializer, CommentReactionSeriali
 from plane.app.permissions import allow_permission, ROLE
 from plane.db.models import IssueComment, ProjectMember, CommentReaction, Project, Issue
 from plane.bgtasks.issue_activities_task import issue_activity
+from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.utils.host import base_host
 from plane.bgtasks.webhook_task import model_activity
 
@@ -103,6 +104,13 @@ class IssueCommentViewSet(BaseViewSet):
                 slug=slug,
                 origin=base_host(request=request, is_app=True),
             )
+            # Category 7 ("3. App Slack open-source", exigence 8) -
+            # forwards this comment into its linked Slack thread, if any.
+            # The task itself no-ops (and is cheap to no-op) when the
+            # issue has no SlackIssueThread, and refuses to forward a
+            # comment that itself came FROM Slack (anti-loop) - see
+            # sync_issue_comment_to_slack's own docstring.
+            sync_issue_comment_to_slack.delay(comment_id=str(serializer.data["id"]))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

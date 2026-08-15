@@ -9,6 +9,8 @@ from plane.db.models import (
     InboundEmailAlias,
     SlackWorkspaceConnection,
     SlackChannelProjectMapping,
+    SlackUserConnection,
+    SlackIssueThread,
 )
 
 
@@ -36,7 +38,16 @@ class IntakeChannelSerializer(BaseSerializer):
 class SlackWorkspaceConnectionSerializer(BaseSerializer):
     class Meta:
         model = SlackWorkspaceConnection
-        fields = ["id", "workspace_id", "slack_team_id", "slack_team_name", "is_active", "connected_at"]
+        fields = [
+            "id",
+            "workspace_id",
+            "slack_team_id",
+            "slack_team_name",
+            "bot_user_id",
+            "installation_method",
+            "is_active",
+            "connected_at",
+        ]
         # Never expose bot_access_token/signing_secret over the API.
         read_only_fields = fields
 
@@ -44,5 +55,42 @@ class SlackWorkspaceConnectionSerializer(BaseSerializer):
 class SlackChannelProjectMappingSerializer(BaseSerializer):
     class Meta:
         model = SlackChannelProjectMapping
-        fields = ["id", "project_id", "slack_connection", "slack_channel_id", "is_default_for_dm"]
+        fields = [
+            "id",
+            "project_id",
+            "slack_connection",
+            "slack_channel_id",
+            "slack_channel_name",
+            "is_default_for_dm",
+            "notify_on",
+            "is_active",
+        ]
         read_only_fields = ["id", "project_id"]
+
+
+class SlackUserConnectionSerializer(BaseSerializer):
+    class Meta:
+        model = SlackUserConnection
+        fields = [
+            "id",
+            "workspace_id",
+            "slack_user_id",
+            "slack_user_display_name",
+            "user",
+            "linked_at",
+        ]
+        read_only_fields = fields
+
+
+class SlackIssueThreadSerializer(BaseSerializer):
+    class Meta:
+        model = SlackIssueThread
+        fields = [
+            "id",
+            "issue",
+            "slack_channel_id",
+            "slack_message_ts",
+            "source",
+            "created_at",
+        ]
+        read_only_fields = fields

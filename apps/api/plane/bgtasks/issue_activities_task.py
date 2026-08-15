@@ -39,6 +39,24 @@ from plane.utils.issue_relation_mapper import get_inverse_relation
 from plane.utils.uuid import is_valid_uuid
 
 
+def _issue_change_includes_state_change(activity_type, requested_data):
+    """Whether this `issue_activity` call actually changed `state`/
+    `state_id` - used by the category-7 Sentry/support-ticket outbound
+    sync dispatch (docs/feature-specs/07-integrations-git.md, features 5
+    and 6, in plane-selfhost) to avoid dispatching a Celery task on every
+    single activity, same "only bother when something relevant changed"
+    shape as `sla_task._issue_change_relevant_to_sla`."""
+    if activity_type != "issue.activity.updated" or not requested_data:
+        return False
+    try:
+        requested = json.loads(requested_data)
+    except (TypeError, ValueError):
+        return False
+    if not isinstance(requested, dict):
+        return False
+    return "state_id" in requested or "state" in requested
+
+
 def extract_ids(data: dict | None, primary_key: str, fallback_key: str) -> set[str]:
     if not data:
         return set()
@@ -1642,7 +1660,23 @@ def issue_activity(
     origin=None,
     intake=None,
     is_automation=False,
+    integration_sync_origin=None,
 ):
+    """
+    `integration_sync_origin`: set by an inbound category-7 integration
+    webhook handler (currently `"sentry"` from `plane.utils.sentry_inbound`)
+    when *it* is the one applying this state change, so the matching
+    outbound-sync dispatch below can skip re-triggering a call back out to
+    the same provider - see docs/feature-specs/07-integrations-git.md
+    ("5. Integration Sentry native", exigence 7 - "une garde anti-écho
+    empêche les boucles infinies... marquage explicite de la source du
+    changement") in plane-selfhost. Deliberately a separate parameter from
+    `is_automation`: `is_automation=True` also covers workflow-rule- and
+    SLA-engine-driven changes, which legitimately SHOULD still trigger an
+    outbound Sentry/support-ticket sync (e.g. a workflow rule moving an
+    issue to "Done" must still resolve a linked Sentry issue) - reusing
+    `is_automation` for this guard would incorrectly suppress those.
+    """
     try:
         issue_activities = []
 
@@ -1787,6 +1821,37 @@ def issue_activity(
                     sync_issue_sla.delay(issue_id=str(issue_id))
             except Exception as e:
                 log_exception(e)
+
+        # Category 7 outbound integration sync - see
+        # docs/feature-specs/07-integrations-git.md ("5. Integration
+        # Sentry native", "6. Pont support client type Zendesk/Front") in
+        # plane-selfhost. Both dispatches are gated on
+        # `_issue_change_includes_state_change` (same "only bother
+        # dispatching a Celery task when something relevant actually
+        # changed" filter the SLA dispatch above already uses) and each
+        # independently exception-wrapped for the same reason the
+        # workflow-rule/SLA dispatches are: one integration's failure must
+        # never prevent the other's dispatch or break this function's own
+        # activity-log/notification pipeline. `integration_sync_origin`
+        # is this feature's anti-echo guard - see `issue_activity`'s own
+        # docstring above for why it's a dedicated parameter rather than
+        # reusing `is_automation`.
+        if issue_id is not None and _issue_change_includes_state_change(type, requested_data):
+            if integration_sync_origin != "sentry":
+                try:
+                    from plane.bgtasks.sentry_sync_task import sync_issue_state_to_sentry
+
+                    sync_issue_state_to_sentry.delay(issue_id=str(issue_id))
+                except Exception as e:
+                    log_exception(e)
+
+            if integration_sync_origin != "support":
+                try:
+                    from plane.bgtasks.support_sync_task import sync_issue_state_to_support_tickets
+
+                    sync_issue_state_to_support_tickets.delay(issue_id=str(issue_id))
+                except Exception as e:
+                    log_exception(e)
 
         return
     except Exception as e:

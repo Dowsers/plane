@@ -17,6 +17,7 @@ from .sticky import urlpatterns as sticky_patterns
 from .rate_limit import urlpatterns as rate_limit_patterns
 from .flexible_query import urlpatterns as flexible_query_patterns
 from .api_explorer import urlpatterns as api_explorer_patterns
+from .figma import urlpatterns as figma_patterns
 
 urlpatterns = [
     *asset_patterns,
@@ -34,4 +35,5 @@ urlpatterns = [
     *rate_limit_patterns,
     *flexible_query_patterns,
     *api_explorer_patterns,
+    *figma_patterns,
 ]

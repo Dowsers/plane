@@ -13,6 +13,7 @@ from plane.space.views import (
     EmailInboundWebhookEndpoint,
     SlackEventsWebhookEndpoint,
     SlackInteractiveWebhookEndpoint,
+    SlackSlashCommandEndpoint,
 )
 
 
@@ -61,5 +62,10 @@ urlpatterns = [
         "integrations/slack/interactive/",
         SlackInteractiveWebhookEndpoint.as_view(),
         name="intake-slack-interactive",
+    ),
+    path(
+        "integrations/slack/commands/",
+        SlackSlashCommandEndpoint.as_view(),
+        name="intake-slack-commands",
     ),
 ]

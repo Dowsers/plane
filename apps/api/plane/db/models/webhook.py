@@ -65,6 +65,31 @@ class Webhook(BaseModel):
     # "Nouveaux evenements webhook" list suggests that granularity is
     # actually needed in v1.
     workflow_transition = models.BooleanField(default=False)
+    # "figma_link.created"/"figma_link.deleted" events - see
+    # docs/feature-specs/07-integrations-git.md ("4. Plugin Figma", exigence
+    # 15) in plane-selfhost. One boolean for both create/delete (same
+    # rationale as workflow_transition above): the sub-event is carried in
+    # the payload's own `action` field, not a separate column.
+    figma_link = models.BooleanField(default=False)
+    # GitHub native PR<->issue linking - see
+    # docs/feature-specs/07-integrations-git.md ("1. GitHub natif",
+    # "Implications sur le modele de donnees" -> "Webhook/WebhookEvent") in
+    # plane-selfhost. Two separate booleans (not one merged column like
+    # `workflow_transition`/`figma_link` above) because the spec explicitly
+    # names `pull_request.linked` and `pull_request.state_changed` as two
+    # distinct webhook event *types* a third-party integration subscribes
+    # to independently, not sub-events of one activity stream.
+    pull_request_linked = models.BooleanField(default=False)
+    pull_request_state_changed = models.BooleanField(default=False)
+    # GitLab native MR<->issue linking - see
+    # docs/feature-specs/07-integrations-git.md ("2. GitLab natif",
+    # "Implications sur le modele de donnees" -> `Webhook`) in
+    # plane-selfhost. Three booleans, matching that spec's own list
+    # (`merge_request_linked`, `merge_request_state_changed`,
+    # `merge_request_merged`) verbatim.
+    merge_request_linked = models.BooleanField(default=False)
+    merge_request_state_changed = models.BooleanField(default=False)
+    merge_request_merged = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
     # Populated only by a test-send (never by a real event delivery via

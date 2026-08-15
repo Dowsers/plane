@@ -26,6 +26,7 @@ from .intake_channel import (
     EmailInboundWebhookEndpoint,
     SlackEventsWebhookEndpoint,
     SlackInteractiveWebhookEndpoint,
+    SlackSlashCommandEndpoint,
 )
 
 from .cycle import ProjectCyclesEndpoint
@@ -41,3 +42,11 @@ from .asset import EntityAssetEndpoint, AssetRestoreEndpoint, EntityBulkAssetEnd
 from .meta import ProjectMetaDataEndpoint
 
 from .dashboard import DashboardPublicEndpoint, DashboardWidgetPublicDataEndpoint
+
+from .sentry_webhook import SentryWebhookEndpoint
+
+from .support_webhook import SupportWebhookEndpoint
+
+from .github_webhook import GithubWebhookEndpoint
+
+from .gitlab_webhook import GitlabWebhookEndpoint

@@ -472,6 +472,24 @@ def webhook_activity(
         if event == "workflow_transition":
             webhooks = webhooks.filter(workflow_transition=True)
 
+        if event == "figma_link":
+            webhooks = webhooks.filter(figma_link=True)
+
+        if event == "pull_request_linked":
+            webhooks = webhooks.filter(pull_request_linked=True)
+
+        if event == "pull_request_state_changed":
+            webhooks = webhooks.filter(pull_request_state_changed=True)
+
+        if event == "merge_request_linked":
+            webhooks = webhooks.filter(merge_request_linked=True)
+
+        if event == "merge_request_state_changed":
+            webhooks = webhooks.filter(merge_request_state_changed=True)
+
+        if event == "merge_request_merged":
+            webhooks = webhooks.filter(merge_request_merged=True)
+
         for webhook in webhooks:
             webhook_send_task.delay(
                 webhook_id=webhook.id,

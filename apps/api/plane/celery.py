@@ -114,6 +114,12 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.sla_task.recalculate_sla_statuses_task",
         "schedule": crontab(minute="*/5"),
     },
+    # Category 7 integration event log retention (Sentry, exigence 8) -
+    # see docs/feature-specs/07-integrations-git.md in plane-selfhost.
+    "check-every-day-to-delete-integration-event-logs": {
+        "task": "plane.bgtasks.cleanup_task.delete_integration_event_logs",
+        "schedule": crontab(hour=4, minute=0),  # UTC 04:00, after the other daily cleanup tasks
+    },
 }
 
 

@@ -33,6 +33,11 @@ from plane.app.views import (
     WorkspaceActiveCyclesEndpoint,
     SlackWorkspaceConnectionEndpoint,
     SlackWorkspaceConnectEndpoint,
+    SlackUserLinkVerifyEndpoint,
+    SlackUserConnectionEndpoint,
+    FigmaWorkspaceConnectionEndpoint,
+    FigmaOAuthAuthorizeEndpoint,
+    FigmaOAuthCallbackEndpoint,
     WorkspaceFavoriteEndpoint,
     WorkspaceFavoriteGroupEndpoint,
     WorkspaceDraftIssueViewSet,
@@ -213,6 +218,31 @@ urlpatterns = [
         "workspaces/<str:slug>/slack-connection/connect/",
         SlackWorkspaceConnectEndpoint.as_view(),
         name="slack-workspace-connect",
+    ),
+    path(
+        "workspaces/<str:slug>/slack-user-link/",
+        SlackUserConnectionEndpoint.as_view(),
+        name="slack-user-connection",
+    ),
+    path(
+        "workspaces/<str:slug>/slack-user-link/verify/",
+        SlackUserLinkVerifyEndpoint.as_view(),
+        name="slack-user-link-verify",
+    ),
+    path(
+        "workspaces/<str:slug>/figma-connection/",
+        FigmaWorkspaceConnectionEndpoint.as_view(),
+        name="figma-workspace-connection",
+    ),
+    path(
+        "workspaces/<str:slug>/figma-connection/authorize/",
+        FigmaOAuthAuthorizeEndpoint.as_view(),
+        name="figma-oauth-authorize",
+    ),
+    path(
+        "workspaces/<str:slug>/figma-connection/callback/",
+        FigmaOAuthCallbackEndpoint.as_view(),
+        name="figma-oauth-callback",
     ),
     path(
         "workspaces/<str:slug>/user-favorites/",

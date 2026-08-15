@@ -87,6 +87,7 @@ from .base import BaseAPIView
 from plane.utils.host import base_host
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.bgtasks.webhook_task import model_activity
+from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.app.permissions import ROLE
 from plane.utils.workflow_transition_engine import (
     create_approval_request,
@@ -1590,6 +1591,12 @@ class IssueCommentListCreateAPIEndpoint(BaseAPIView):
                 slug=slug,
                 origin=base_host(request=request, is_app=True),
             )
+            # Category 7 ("3. App Slack open-source", exigence 8) - see
+            # the identical call site in
+            # app/views/issue/comment.py::IssueCommentViewSet.create for
+            # the anti-loop/no-op reasoning; this is the public/token-
+            # authenticated equivalent creation path.
+            sync_issue_comment_to_slack.delay(comment_id=str(issue_comment.id))
 
             serializer = IssueCommentSerializer(issue_comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

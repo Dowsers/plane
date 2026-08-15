@@ -225,6 +225,13 @@ from .intake.channel import (
     SlackWorkspaceConnectionEndpoint,
     SlackWorkspaceConnectEndpoint,
     SlackChannelProjectMappingViewSet,
+    SlackUserLinkVerifyEndpoint,
+    SlackUserConnectionEndpoint,
+)
+from .figma import (
+    FigmaWorkspaceConnectionEndpoint,
+    FigmaOAuthAuthorizeEndpoint,
+    FigmaOAuthCallbackEndpoint,
 )
 
 from .workflow_rule.base import (
@@ -337,3 +344,20 @@ from .flexible_query import WorkspaceQuerySettingsEndpoint
 from .api_explorer import WorkspaceAPIExplorerSettingsEndpoint
 
 from .rate_limit import WorkspaceAPITokenRateLimitOverrideEndpoint
+
+from .github_integration import (
+    GithubConnectionEndpoint,
+    GithubOAuthCallbackEndpoint,
+    GithubRepositoryListEndpoint,
+    GithubRepositoryProjectSyncViewSet,
+    ProjectGithubStateMappingEndpoint,
+    IssuePullRequestLinkViewSet,
+)
+
+from .gitlab_integration import (
+    GitlabConnectionEndpoint,
+    GitlabRepositoryListEndpoint,
+    GitlabRepositoryProjectConnectionViewSet,
+    ProjectGitlabSyncSettingsEndpoint,
+    GitlabMergeRequestIssueSyncViewSet,
+)

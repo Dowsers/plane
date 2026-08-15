@@ -157,7 +157,7 @@ urlpatterns = [
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/slack-channel-mappings/<uuid:pk>/",
-        SlackChannelProjectMappingViewSet.as_view({"delete": "destroy"}),
+        SlackChannelProjectMappingViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
         name="slack-channel-mapping",
     ),
 ]

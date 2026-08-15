@@ -45,6 +45,9 @@ from plane.bgtasks.issue_description_version_task import issue_description_versi
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.bgtasks.view_subscription_task import notify_view_subscribers
 from plane.bgtasks.webhook_task import model_activity
+from plane.bgtasks.slack_sync_task import dispatch_slack_channel_notifications
+from plane.bgtasks.figma_sync_task import push_figma_status_comment
+from plane.db.models import FigmaFileLink
 from plane.db.models import (
     BulkIssueOperation,
     Cycle,
@@ -454,6 +457,16 @@ class IssueViewSet(BaseViewSet):
                 notification=True,
                 origin=base_host(request=request, is_app=True),
             )
+            # Category 7 ("3. App Slack open-source", exigence 11) - see
+            # dispatch_slack_channel_notifications's own docstring for the
+            # scoping guarantee (only ever queries mappings for THIS
+            # project_id).
+            dispatch_slack_channel_notifications.delay(
+                project_id=str(project_id),
+                event_type="issue_created",
+                summary_text=f"New issue created: {serializer.data.get('name', '')}",
+                payload_summary={"issue_id": str(serializer.data.get("id", None))},
+            )
             queryset = self.get_queryset()
             queryset = self.apply_annotations(queryset)
             issue = (
@@ -734,7 +747,16 @@ class IssueViewSet(BaseViewSet):
             target_state = serializer.validated_data.get("state")
             transition_result = None
             pending_approval_response = None
-            if target_state is not None and target_state.id != issue.state_id:
+            # Captured before serializer.save() mutates issue.state_id in
+            # place - Category 7's own state-change notification hook
+            # below (dispatch_slack_channel_notifications/
+            # push_figma_status_comment) needs "did the state actually
+            # change" and not just "was target_state present", since a
+            # PATCH that re-sends the issue's current state_id unchanged
+            # would otherwise look identical to a real transition by the
+            # time that hook runs.
+            state_actually_changing = target_state is not None and target_state.id != issue.state_id
+            if state_actually_changing:
                 transition_result = evaluate_transition(issue, target_state, request.user)
                 if transition_result["outcome"] == "denied":
                     # Never call serializer.save() - the DB is untouched.
@@ -822,6 +844,31 @@ class IssueViewSet(BaseViewSet):
                 )
                 if "state_id" in request.data or "state" in request.data:
                     handle_sub_issue_automations(issue, request.user.id)
+                    # Category 7 - only wired into this single, primary
+                    # state-mutation path (unitary update + Kanban drag,
+                    # which share this same endpoint - see Category 6's
+                    # own finding that Issue.state mutation is otherwise
+                    # scattered across 7 code paths with no shared choke
+                    # point). Bulk update and the public/token API's own
+                    # update path are NOT wired - deliberately, same
+                    # regression-risk judgment call already made for
+                    # governed workflows in this codebase. Documented gap,
+                    # not a silent omission.
+                    if state_actually_changing and target_state is not None:
+                        dispatch_slack_channel_notifications.delay(
+                            project_id=str(project_id),
+                            event_type="issue_status_changed",
+                            summary_text=f"{issue.name} moved to {target_state.name}",
+                            payload_summary={"issue_id": str(pk), "state": target_state.name},
+                        )
+                        for file_link_id in FigmaFileLink.objects.filter(
+                            issue_id=pk, sync_status_enabled=True
+                        ).values_list("id", flat=True):
+                            push_figma_status_comment.delay(
+                                file_link_id=str(file_link_id),
+                                state_name=target_state.name,
+                                state_group=target_state.group,
+                            )
 
                 # Diff post-update membership and notify - entering a view
                 # always notifies (notify_on_add); leaving one only notifies

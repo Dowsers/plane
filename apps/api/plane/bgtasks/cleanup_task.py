@@ -25,6 +25,7 @@ from plane.db.models import (
     PageVersion,
     APIActivityLog,
     IssueDescriptionVersion,
+    IntegrationEventLog,
     WebhookLog,
 )
 from plane.settings.mongo import MongoConnection
@@ -476,4 +477,51 @@ def delete_webhook_logs():
         model=WebhookLog,
         task_name="Webhook Log",
         collection_name="webhook_logs",
+    )
+
+
+def get_integration_event_logs_queryset():
+    """Exigence 8 (docs/feature-specs/07-integrations-git.md, "5.
+    Integration Sentry native", in plane-selfhost) - "journal... conservé
+    30 jours". Uses a fixed 30-day window (not `HARD_DELETE_AFTER_DAYS`,
+    which the other cleanup tasks above share and which an operator might
+    reasonably set much higher for e.g. API logs) - the spec's own number
+    is exact and specific to this one log, not this instance's generic
+    retention policy."""
+    cutoff_time = timezone.now() - timedelta(days=30)
+    logger.info(f"Integration event logs cutoff time: {cutoff_time}")
+
+    return (
+        IntegrationEventLog.all_objects.filter(created_at__lte=cutoff_time)
+        .values(
+            "id",
+            "created_at",
+            "workspace_id",
+            "provider",
+            "connector_id",
+            "direction",
+            "event_type",
+            "external_event_id",
+            "payload",
+            "response_status",
+            "error_message",
+        )
+        .order_by("created_at")
+        .iterator(chunk_size=BATCH_SIZE)
+    )
+
+
+def transform_integration_event_log(record: Dict) -> Dict:
+    return record
+
+
+@shared_task
+def delete_integration_event_logs():
+    """Delete integration event logs past the 30-day retention window."""
+    process_cleanup_task(
+        queryset_func=get_integration_event_logs_queryset,
+        transform_func=transform_integration_event_log,
+        model=IntegrationEventLog,
+        task_name="Integration Event Log",
+        collection_name="integration_event_logs",
     )

@@ -142,7 +142,10 @@ from .intake_channel import (
     InboundEmailAliasSerializer,
     SlackWorkspaceConnectionSerializer,
     SlackChannelProjectMappingSerializer,
+    SlackUserConnectionSerializer,
+    SlackIssueThreadSerializer,
 )
+from .figma import FigmaWorkspaceConnectionSerializer
 from .initiative import (
     InitiativeSerializer,
     InitiativeWriteSerializer,
@@ -193,3 +196,32 @@ from .workflow_transition import (
 
 from .flexible_query import WorkspaceQuerySettingsSerializer
 from .api_explorer import WorkspaceAPIExplorerSettingsSerializer
+
+from .sentry_integration import (
+    WorkspaceSentryConnectionSerializer,
+    SentryProjectSyncSerializer,
+    IssueSentryDetailSerializer,
+    IntegrationEventLogSerializer,
+)
+
+from .support import (
+    WorkspaceSupportConnectorSerializer,
+    IssueSupportTicketSerializer,
+)
+
+from .github_integration import (
+    GithubWorkspaceConnectionSerializer,
+    GithubRepositorySerializer,
+    GithubRepositoryProjectSyncSerializer,
+    ProjectGithubStateMappingSerializer,
+    GithubPullRequestSerializer,
+    IssuePullRequestLinkSerializer,
+)
+
+from .gitlab_integration import (
+    GitlabWorkspaceConnectionSerializer,
+    GitlabRepositorySerializer,
+    GitlabRepositoryProjectConnectionSerializer,
+    ProjectGitlabSyncSettingsSerializer,
+    GitlabMergeRequestIssueSyncSerializer,
+)

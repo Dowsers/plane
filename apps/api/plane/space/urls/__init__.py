@@ -7,6 +7,16 @@ from .issue import urlpatterns as issue_urls
 from .project import urlpatterns as project_urls
 from .asset import urlpatterns as asset_urls
 from .dashboard import urlpatterns as dashboard_urls
+from .integrations import urlpatterns as integrations_urls
+from .git_integrations import urlpatterns as git_integrations_urls
 
 
-urlpatterns = [*intake_urls, *issue_urls, *project_urls, *asset_urls, *dashboard_urls]
+urlpatterns = [
+    *intake_urls,
+    *issue_urls,
+    *project_urls,
+    *asset_urls,
+    *dashboard_urls,
+    *integrations_urls,
+    *git_integrations_urls,
+]

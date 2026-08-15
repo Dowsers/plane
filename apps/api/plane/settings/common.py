@@ -364,6 +364,47 @@ ANALYTICS_BASE_API = os.environ.get("ANALYTICS_BASE_API", False)
 POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY", False)
 POSTHOG_HOST = os.environ.get("POSTHOG_HOST", False)
 
+# Slack app OAuth (docs/feature-specs/07-integrations-git.md, "3. App Slack
+# open-source" in plane-selfhost) - unset by default, which keeps the real
+# oauth.v2.access exchange code path (SlackOAuthCallbackEndpoint) disabled
+# (returns 501) since no registered Slack app exists for this instance. The
+# primary, testable-today v1 connection path (a manually created Slack
+# app's Bot User OAuth Token, pasted by an admin) does not need these.
+SLACK_CLIENT_ID = os.environ.get("SLACK_CLIENT_ID", False)
+SLACK_CLIENT_SECRET = os.environ.get("SLACK_CLIENT_SECRET", False)
+SLACK_REDIRECT_URI = os.environ.get("SLACK_REDIRECT_URI", False)
+
+# Figma app OAuth (docs/feature-specs/07-integrations-git.md, "4. Plugin
+# Figma" in plane-selfhost) - unset by default, same reasoning as Slack
+# above: no registered Figma app/public callback URL exists in this
+# sandbox, so the real oauth/token exchange code path stays disabled
+# (returns 501) until an operator configures these.
+FIGMA_CLIENT_ID = os.environ.get("FIGMA_CLIENT_ID", False)
+FIGMA_CLIENT_SECRET = os.environ.get("FIGMA_CLIENT_SECRET", False)
+FIGMA_REDIRECT_URI = os.environ.get("FIGMA_REDIRECT_URI", False)
+
+# GitHub/GitLab native PR/MR linking (docs/feature-specs/07-integrations-git.md,
+# "1. GitHub natif" / "2. GitLab natif" in plane-selfhost). Registering a
+# webhook with GitHub/GitLab requires a callback URL their servers can
+# reach over the public internet - `API_BASE_URL` in this fork is the
+# *internal* docker-network address the frontend uses to reach the
+# backend (e.g. "http://api:8000"), never publicly routable, so it cannot
+# be reused here. Unset by default: the repository-sync creation
+# endpoints refuse to register a webhook (clear 400, not a silently
+# broken registration) until a self-hosted operator explicitly sets this
+# to their instance's real public URL.
+INTEGRATIONS_WEBHOOK_BASE_URL = os.environ.get("INTEGRATIONS_WEBHOOK_BASE_URL", None)
+
+# Exigence 17 of the GitLab spec ("les appels sortants vers l'API GitLab
+# respectent un backoff/retry [...] avec un plafond de tentatives
+# configurable") - applied to both providers' synchronous outbound API
+# calls (plane/utils/github_client.py, plane/utils/gitlab_client.py) on a
+# 429/5xx response. Small default: these calls happen inline in a
+# request/response cycle (listing repos, registering/deleting a webhook),
+# not a Celery task, so unbounded backoff would just hang the HTTP
+# request - see those modules' docstrings.
+GIT_INTEGRATION_API_MAX_RETRIES = int(os.environ.get("GIT_INTEGRATION_API_MAX_RETRIES", 3))
+
 # Skip environment variable configuration
 SKIP_ENV_VAR = os.environ.get("SKIP_ENV_VAR", "1") == "1"
 

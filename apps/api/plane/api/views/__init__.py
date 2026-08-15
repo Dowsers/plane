@@ -70,3 +70,9 @@ from .rate_limit import RateLimitStatusEndpoint, APITokenRateLimitOverrideEndpoi
 from .flexible_query import FlexibleQueryEndpoint, FlexibleQuerySchemaEndpoint
 
 from .api_explorer import APIExplorerSchemaEndpoint, APIExplorerEphemeralTokenEndpoint
+
+from .figma import (
+    FigmaFileLinkListCreateAPIEndpoint,
+    FigmaFileLinkDetailAPIEndpoint,
+    FigmaStatusBatchAPIEndpoint,
+)

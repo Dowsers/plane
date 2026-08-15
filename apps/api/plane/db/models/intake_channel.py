@@ -4,12 +4,17 @@
 
 # Python imports
 import secrets
+import string
+from datetime import timedelta
 
 # Django imports
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 
 # Module imports
+from plane.db.fields import EncryptedTextField
 from plane.db.models.project import ProjectBaseModel
 from plane.db.models.workspace import WorkspaceBaseModel
 
@@ -74,17 +79,43 @@ class InboundEmailAlias(ProjectBaseModel):
 
 class SlackWorkspaceConnection(WorkspaceBaseModel):
     """
-    One Slack app installation per Plane workspace. bot_access_token is
-    stored in plain text, matching the existing precedent in this codebase
-    (SlackProjectSync.access_token, plane/db/models/integration/slack.py) -
-    there is no at-rest encryption mechanism for integration credentials
-    anywhere in this fork today, despite what the feature spec assumed.
+    One Slack app installation per Plane workspace - see
+    docs/feature-specs/07-integrations-git.md ("3. App Slack open-source")
+    in plane-selfhost, docker/api/slack-app/README.md for what's real vs
+    documented-gap in this iteration.
+
+    `installation_method` records how this connection was established:
+    - MANUAL_BOT_TOKEN: an admin manually created a Slack app at
+      api.slack.com/apps (single-workspace install, no OAuth redirect
+      needed) and pasted its Bot User OAuth Token + Signing Secret here.
+      This is the primary, genuinely-testable-today v1 path - see the
+      README for why this is a better fit for self-hosted Slack than a
+      multi-tenant OAuth flow would be.
+    - OAUTH: the standard `oauth.v2.access` authorization-code exchange.
+      Real code exists (SlackOAuthCallbackEndpoint) but requires a
+      registered Slack app client_id/secret AND a publicly-reachable
+      callback URL, neither available in this sandbox - untestable
+      end-to-end here, disabled unless SLACK_CLIENT_ID/SLACK_CLIENT_SECRET
+      are configured.
+
+    bot_access_token/signing_secret were plaintext CharFields in the
+    original Category 2 skeleton - migrated to EncryptedTextField here
+    (Category 7 prerequisite, see plane.db.fields.EncryptedTextField).
     """
+
+    INSTALLATION_METHOD_CHOICES = (
+        ("MANUAL_BOT_TOKEN", "Manual bot token"),
+        ("OAUTH", "OAuth"),
+    )
 
     slack_team_id = models.CharField(max_length=64)
     slack_team_name = models.CharField(max_length=255, blank=True)
-    bot_access_token = models.CharField(max_length=300, blank=True)
-    signing_secret = models.CharField(max_length=300, blank=True)
+    bot_access_token = EncryptedTextField(blank=True)
+    signing_secret = EncryptedTextField(blank=True)
+    bot_user_id = models.CharField(max_length=64, blank=True)
+    installation_method = models.CharField(
+        max_length=20, choices=INSTALLATION_METHOD_CHOICES, default="MANUAL_BOT_TOKEN"
+    )
     connected_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="slack_connections_made"
     )
@@ -108,12 +139,47 @@ class SlackWorkspaceConnection(WorkspaceBaseModel):
         return f"{self.slack_team_name or self.slack_team_id} <{self.workspace_id}>"
 
 
+# Exigence 11 (docs/feature-specs/07-integrations-git.md, "3. App Slack
+# open-source") - the notification types a channel<->project mapping can
+# subscribe to.
+SLACK_NOTIFY_EVENT_CHOICES = (
+    "issue_created",
+    "issue_status_changed",
+    "issue_assigned",
+    "comment_added",
+    "issue_closed",
+)
+
+
 class SlackChannelProjectMapping(ProjectBaseModel):
+    """
+    Exigence 11 requires N:N (a channel mappable to several projects) -
+    the original Category 2 skeleton's unique constraint was
+    (slack_connection, slack_channel_id), which only ever allowed ONE
+    project per channel. Relaxed here to
+    (slack_connection, slack_channel_id, project) so a channel can
+    aggregate events from multiple projects, while still preventing a
+    duplicate mapping of the same (channel, project) pair. Each mapping
+    row's creation is independently permission-checked (creator must be
+    ROLE.ADMIN of that exact project, see
+    SlackChannelProjectMappingViewSet.create()) - this is what actually
+    enforces exigence 12 (a channel never receives events for a project
+    the configuring admin has no access to): there is structurally no way
+    to create a mapping row for a project you are not an admin of, so a
+    channel that aggregates several projects only ever does so because an
+    admin of each of those specific projects explicitly opted in.
+    """
+
     slack_connection = models.ForeignKey(
         SlackWorkspaceConnection, on_delete=models.CASCADE, related_name="channel_mappings"
     )
     slack_channel_id = models.CharField(max_length=64)
+    slack_channel_name = models.CharField(max_length=255, blank=True)
     is_default_for_dm = models.BooleanField(default=False)
+    notify_on = ArrayField(
+        models.CharField(max_length=32), default=list, blank=True, size=len(SLACK_NOTIFY_EVENT_CHOICES)
+    )
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Slack Channel Project Mapping"
@@ -122,14 +188,162 @@ class SlackChannelProjectMapping(ProjectBaseModel):
         ordering = ("-created_at",)
         constraints = [
             models.UniqueConstraint(
-                fields=["slack_connection", "slack_channel_id"],
+                fields=["slack_connection", "slack_channel_id", "project"],
                 condition=models.Q(deleted_at__isnull=True),
-                name="unique_slack_channel_per_connection",
+                name="unique_slack_channel_per_connection_and_project",
             )
         ]
 
     def __str__(self):
         return f"{self.slack_channel_id} -> {self.project_id}"
+
+
+class SlackUserConnection(WorkspaceBaseModel):
+    """
+    Links a Slack user identity to a Plane user (exigence 3 and 5,
+    "3. App Slack open-source"). Rows are created in a PENDING state (via
+    the `/plane link` slash command, see space/views/intake_channel.py)
+    with `user=None` and a short-lived `verification_code`; a
+    session-authenticated Plane user then "claims" the code
+    (SlackUserLinkVerifyEndpoint, app/views/intake/channel.py) to set
+    `user` and complete the link. This is the documented, testable-without-
+    a-live-Slack-app fallback for exigence 3's "flux OAuth ou code de
+    verification a usage unique" - a full Slack-side OAuth identity flow
+    (Sign in with Slack) would need its own registered app/redirect URL,
+    same limitation as the workspace-level OAuth path.
+    """
+
+    SOURCE_CHOICES = (("PENDING", "Pending"), ("VERIFIED", "Verified"))
+
+    slack_connection = models.ForeignKey(
+        SlackWorkspaceConnection, on_delete=models.CASCADE, related_name="user_connections"
+    )
+    slack_user_id = models.CharField(max_length=64)
+    slack_user_display_name = models.CharField(max_length=255, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="slack_user_connections",
+    )
+    verification_code = models.CharField(max_length=16, null=True, blank=True, db_index=True)
+    code_expires_at = models.DateTimeField(null=True, blank=True)
+    linked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Slack User Connection"
+        verbose_name_plural = "Slack User Connections"
+        db_table = "slack_user_connections"
+        ordering = ("-created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["slack_connection", "slack_user_id"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_slack_user_per_connection",
+            )
+        ]
+
+    def is_code_valid(self):
+        return (
+            self.user_id is None
+            and self.verification_code
+            and self.code_expires_at is not None
+            and self.code_expires_at > timezone.now()
+        )
+
+    def __str__(self):
+        return f"{self.slack_user_id} -> {self.user_id}"
+
+
+def generate_slack_link_code():
+    return "".join(secrets.choice(string.digits) for _ in range(6))
+
+
+SLACK_LINK_CODE_TTL = timedelta(minutes=15)
+
+
+class SlackIssueThread(ProjectBaseModel):
+    """
+    Bidirectional comment-sync anchor (exigence 7, 8, 9, 10 - "3. App
+    Slack open-source"). One row per (issue, Slack thread root). Comments
+    synced Plane->Slack are posted as thread replies keyed off
+    `slack_message_ts`; replies received Slack->Plane are matched back to
+    `issue` via (slack_channel_id, thread_ts) lookup on this table.
+
+    Anti-loop (exigence 10) is NOT implemented via a flag on this table -
+    it re-uses IssueComment's own pre-existing `external_source`/
+    `external_id` fields (already present on this fork's IssueComment,
+    unlike what the spec assumed needed adding): a comment synced FROM
+    Slack is tagged `external_source="slack"`, `external_id=<ts>`, and the
+    Plane->Slack sync task (bgtasks/slack_sync_task.py) refuses to
+    re-forward any comment whose `external_source == "slack"`. Separately,
+    the Slack->Plane direction ignores any inbound Slack event carrying a
+    `bot_id` (i.e. posted by any Slack bot, including our own) - see
+    SlackEventsWebhookEndpoint. Together these make the loop structurally
+    one-directional per hop, not just deduplicated after the fact.
+    """
+
+    SOURCE_CHOICES = (("created_from_slack", "Created from Slack"), ("linked_manually", "Linked manually"))
+
+    issue = models.ForeignKey("db.Issue", on_delete=models.CASCADE, related_name="slack_threads")
+    slack_connection = models.ForeignKey(
+        SlackWorkspaceConnection, on_delete=models.CASCADE, related_name="issue_threads"
+    )
+    slack_channel_id = models.CharField(max_length=64)
+    slack_message_ts = models.CharField(max_length=32)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="linked_manually")
+
+    class Meta:
+        verbose_name = "Slack Issue Thread"
+        verbose_name_plural = "Slack Issue Threads"
+        db_table = "slack_issue_threads"
+        ordering = ("-created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["slack_channel_id", "slack_message_ts"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_slack_thread_per_message",
+            )
+        ]
+        indexes = [models.Index(fields=["issue"])]
+
+    def __str__(self):
+        return f"{self.issue_id} <-> {self.slack_channel_id}:{self.slack_message_ts}"
+
+
+class SlackNotificationLog(WorkspaceBaseModel):
+    """
+    Optional (per spec, "facultative mais recommandee") observability
+    table for outbound channel notifications and comment-sync attempts -
+    lets an admin see why a channel didn't receive an expected
+    notification (mapping inactive, Slack API error, token revoked)
+    without grepping worker logs. No retention/purge job is implemented
+    in this iteration (open question 3 in the spec) - documented gap.
+    """
+
+    STATUS_CHOICES = (("sent", "Sent"), ("failed", "Failed"))
+
+    mapping = models.ForeignKey(
+        SlackChannelProjectMapping,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notification_logs",
+    )
+    event_type = models.CharField(max_length=32)
+    payload_summary = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="sent")
+    error_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Slack Notification Log"
+        verbose_name_plural = "Slack Notification Logs"
+        db_table = "slack_notification_logs"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.event_type}:{self.status} <{self.mapping_id}>"
 
 
 class IntakeMessageLog(ProjectBaseModel):

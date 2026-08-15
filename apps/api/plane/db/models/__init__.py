@@ -36,8 +36,12 @@ from .intake_channel import (
     InboundEmailAlias,
     SlackWorkspaceConnection,
     SlackChannelProjectMapping,
+    SlackUserConnection,
+    SlackIssueThread,
+    SlackNotificationLog,
     IntakeMessageLog,
 )
+from .figma import FigmaWorkspaceConnection, FigmaFileLink, FigmaSyncLog
 from .triage_rule import TriageRule, TriageRuleCondition, TriageRuleAction
 from .workflow_rule import WorkflowRule, WorkflowAction, WorkflowRuleExecutionLog
 from .recurring_issue_template import (
@@ -45,15 +49,29 @@ from .recurring_issue_template import (
     RecurringIssueTemplateLabel,
     RecurringIssueTemplateAssignee,
 )
-from .integration import (
-    GithubCommentSync,
-    GithubIssueSync,
-    GithubRepository,
-    GithubRepositorySync,
-    Integration,
-    SlackProjectSync,
-    WorkspaceIntegration,
-)
+# NOTE: the legacy `plane.db.models.integration` package (`Integration`,
+# `WorkspaceIntegration`, `GithubRepository`/`GithubRepositorySync`/
+# `GithubIssueSync`/`GithubCommentSync`, `SlackProjectSync`) that used to be
+# imported here has been removed as part of
+# docs/feature-specs/07-integrations-git.md ("1. GitHub natif", "2. GitLab
+# natif") in plane-selfhost. Confirmed exhaustively (see
+# plane_fork_cat7_research_findings.md) to be completely dead: zero
+# views/serializers/URLs anywhere in the current backend referenced any of
+# these models, and their base classes predate this fork's current
+# conventions (`Integration` extends `AuditModel` directly instead of
+# `TimeAuditModel`/`WorkspaceBaseModel`; `WorkspaceIntegration` is a plain
+# `BaseModel`, not workspace-scoped via `WorkspaceBaseModel`; none of the
+# soft-delete-aware partial-unique-constraint conventions used everywhere
+# else in this file). Removing them was not optional, not just cleanup: the
+# legacy `GithubRepository` class name directly collided with this
+# feature's own new, spec-named `github_integration.GithubRepository`
+# model, and Django refuses to boot with two models of the same name in
+# the same app - keeping both under different names was rejected as
+# needlessly confusing (a real `GithubRepository` and a dead one, both
+# always present in every migration/shell session). See
+# plane/db/migrations/0151_remove_legacy_integration_models.py
+# for the corresponding `DeleteModel` operations - this removes the
+# (always-empty in practice, zero write path ever existed) legacy tables.
 from .issue import (
     BulkIssueOperation,
     CommentReaction,
@@ -134,3 +152,48 @@ from .workflow_transition import (
 from .rate_limit import RateLimitTier
 
 from .flexible_query import WorkspaceQuerySettings, FlexibleQueryLog
+
+from .github_integration import (
+    GithubWorkspaceConnection,
+    GithubRepository,
+    GithubRepositoryProjectSync,
+    ProjectGithubStateMapping,
+    GithubPullRequest,
+    IssuePullRequestLink,
+    GithubInstallationType,
+    GithubAccountType,
+    GithubPullRequestStatus,
+    GithubStateMappingTrigger,
+    GithubPullRequestLinkType,
+)
+
+from .gitlab_integration import (
+    GitlabWorkspaceConnection,
+    GitlabRepository,
+    GitlabRepositoryProjectConnection,
+    ProjectGitlabSyncSettings,
+    GitlabMergeRequestIssueSync,
+    GitlabTokenType,
+    GitlabMergeRequestState,
+)
+
+from .integration_event_log import (
+    IntegrationEventLog,
+    IntegrationProvider,
+    IntegrationEventDirection,
+)
+
+from .sentry_integration import (
+    WorkspaceSentryConnection,
+    SentryProjectSync,
+    IssueSentryDetail,
+    SentrySyncStatus,
+)
+
+from .support import (
+    WorkspaceSupportConnector,
+    IssueSupportTicket,
+    SupportConnectorProvider,
+    SupportNoteVisibility,
+    SupportTicketSyncState,
+)

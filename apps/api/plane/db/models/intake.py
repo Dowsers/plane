@@ -176,6 +176,23 @@ class IntakeIssue(ProjectBaseModel):
     # docker/api/omnichannel-intake-skeleton/README.md in plane-selfhost.
     external_thread_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     external_participant_meta = models.JSONField(default=list, blank=True)
+    # Support-ticket bridge (Zendesk/Front/generic webhook) - see
+    # docs/feature-specs/07-integrations-git.md ("6. Pont support client
+    # type Zendesk/Front") in plane-selfhost. Named `support_ticket` per
+    # the spec's own data-model bullet, added on `IntakeIssue` (the spec
+    # itself uses the stale pre-rename name `InboxIssue` - this fork
+    # renamed Inbox->Intake, `IntakeIssue` is the real current model). A
+    # dedicated OneToOne rather than overloading `source`/`extra`
+    # (per the spec's own explicit reasoning) so the Intake view's
+    # "origine : support" filter (exigence-adjacent UX ask) can filter on
+    # `support_ticket__isnull=False` directly.
+    support_ticket = models.OneToOneField(
+        "db.IssueSupportTicket",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="intake_issue",
+    )
 
     class Meta:
         verbose_name = "IntakeIssue"

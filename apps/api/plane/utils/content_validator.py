@@ -75,6 +75,14 @@ CUSTOM_TAGS = {
     "label",
     "input",
     "image-component",
+    # Figma embed node (docs/feature-specs/07-integrations-git.md, "4.
+    # Plugin Figma" in plane-selfhost) - the actual Tiptap
+    # extension/React NodeViewRenderer (packages/editor, would follow the
+    # work-item-embed/ precedent) is NOT built in this iteration (backend-
+    # only scope), but the sanitizer allow-list is extended here so a
+    # future editor extension has a real, tested tag/attribute shape to
+    # serialize into rather than guessing one later.
+    "figma-embed-component",
 }
 ALLOWED_TAGS = nh3.ALLOWED_TAGS | CUSTOM_TAGS
 
@@ -134,6 +142,12 @@ ATTRIBUTES = {
         "title",
     },
     "mention-component": {"id", "entity_identifier", "entity_name"},
+    # Figma embed node attrs (url, fileKey, nodeId per the spec's own
+    # naming) - both the camelCase and all-lowercase spellings are listed
+    # defensively, matching this same file's existing pattern for
+    # image-component's aspectRatio/aspectratio (nh3 attribute matching
+    # is exact-string, not case-insensitive).
+    "figma-embed-component": {"url", "filekey", "fileKey", "nodeid", "nodeId"},
     "th": {
         "colspan",
         "rowspan",
