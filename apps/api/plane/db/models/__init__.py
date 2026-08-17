@@ -198,3 +198,5 @@ from .support import (
     SupportNoteVisibility,
     SupportTicketSyncState,
 )
+
+from .ai_config import WorkspaceAIConfig, WorkspaceAIProvider

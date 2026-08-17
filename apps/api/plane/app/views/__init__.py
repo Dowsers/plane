@@ -363,3 +363,5 @@ from .gitlab_integration import (
     ProjectGitlabSyncSettingsEndpoint,
     GitlabMergeRequestIssueSyncViewSet,
 )
+
+from .workspace_ai_config import WorkspaceAIConfigEndpoint, WorkspaceAIConfigTestEndpoint

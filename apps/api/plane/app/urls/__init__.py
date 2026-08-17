@@ -38,6 +38,7 @@ from .integrations import urlpatterns as integrations_urls
 from .github_integration import urlpatterns as github_integration_urls
 from .gitlab_integration import urlpatterns as gitlab_integration_urls
 from .agent import urlpatterns as agent_urls
+from .workspace_ai_config import urlpatterns as workspace_ai_config_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -76,4 +77,5 @@ urlpatterns = [
     *github_integration_urls,
     *gitlab_integration_urls,
     *agent_urls,
+    *workspace_ai_config_urls,
 ]

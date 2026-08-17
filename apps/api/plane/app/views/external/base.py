@@ -7,7 +7,6 @@ import os
 from typing import List, Dict, Tuple
 
 # Third party import
-from openai import OpenAI
 import requests
 
 from rest_framework import status
@@ -19,6 +18,7 @@ from plane.app.serializers import ProjectLiteSerializer, WorkspaceLiteSerializer
 from plane.db.models import Project, Workspace
 from plane.license.utils.instance_value import get_configuration_value
 from plane.utils.exception_logger import log_exception
+from plane.utils.workspace_ai import call_llm
 
 from ..base import BaseAPIView
 
@@ -121,28 +121,18 @@ def get_llm_config() -> Tuple[str | None, str | None, str | None]:
 
 
 def get_llm_response(task, prompt, api_key: str, model: str, provider: str) -> Tuple[str | None, str | None]:
-    """Helper to get LLM completion response"""
-    final_text = task + "\n" + prompt
-    try:
-        # For Gemini, prepend provider name to model
-        if provider.lower() == "gemini":
-            model = f"gemini/{model}"
+    """Helper to get LLM completion response.
 
-        client = OpenAI(api_key=api_key)
-        chat_completion = client.chat.completions.create(
-            model=model, messages=[{"role": "user", "content": final_text}]
-        )
-        text = chat_completion.choices[0].message.content
-        return text, None
-    except Exception as e:
-        log_exception(e)
-        error_type = e.__class__.__name__
-        if error_type == "AuthenticationError":
-            return None, f"Invalid API key for {provider}"
-        elif error_type == "RateLimitError":
-            return None, f"Rate limit exceeded for {provider}"
-        else:
-            return None, f"Error occurred while generating response from {provider}"
+    Thin wrapper around `plane.utils.workspace_ai.call_llm` (the category 9
+    infrastructure prerequisite's shared LLM-call helper) - kept here, with
+    this exact signature, so the existing `GPTIntegrationEndpoint`/
+    `WorkspaceGPTIntegrationEndpoint` call sites below don't need to change.
+    Zero behavior change from before this refactor: same single
+    `task + "\\n" + prompt` user message, same provider dispatch, same
+    error classification/messages.
+    """
+    final_text = task + "\n" + prompt
+    return call_llm(final_text, api_key=api_key, model=model, provider=provider)
 
 
 class GPTIntegrationEndpoint(BaseAPIView):

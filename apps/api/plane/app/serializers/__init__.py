@@ -227,3 +227,5 @@ from .gitlab_integration import (
     ProjectGitlabSyncSettingsSerializer,
     GitlabMergeRequestIssueSyncSerializer,
 )
+
+from .ai_config import WorkspaceAIConfigSerializer
