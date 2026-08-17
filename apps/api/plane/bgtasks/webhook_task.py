@@ -490,20 +490,32 @@ def webhook_activity(
         if event == "merge_request_merged":
             webhooks = webhooks.filter(merge_request_merged=True)
 
+        event_data = (
+            event_data_override
+            if event_data_override is not None
+            else ({"id": event_id} if verb == "deleted" else get_model_data(event=event, event_id=event_id))
+        )
+
+        # Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7.
+        # Type d'acteur agent de premiere classe" in plane-selfhost,
+        # exigence 12) - `actor_type` (human|agent) on the issue/
+        # issue_comment payload, derived from `actor.is_bot` broadly (not
+        # specifically WORKSPACE_AGENT - any bot actor, including the
+        # category-7 integration bots, is equally "not a human" from an
+        # external receiver's point of view), so a runner can filter
+        # "tickets assigned to me" without a separate API round-trip. No
+        # new `Webhook` boolean field needed (spec's own data-model
+        # section) - just this payload enrichment.
+        if event in ("issue", "issue_comment") and isinstance(event_data, dict) and actor_id:
+            actor_is_bot = User.objects.filter(pk=actor_id).values_list("is_bot", flat=True).first()
+            event_data["actor_type"] = "agent" if actor_is_bot else "human"
+
         for webhook in webhooks:
             webhook_send_task.delay(
                 webhook_id=webhook.id,
                 slug=slug,
                 event=event,
-                event_data=(
-                    event_data_override
-                    if event_data_override is not None
-                    else (
-                        {"id": event_id}
-                        if verb == "deleted"
-                        else get_model_data(event=event, event_id=event_id)
-                    )
-                ),
+                event_data=event_data,
                 action=verb,
                 current_site=current_site,
                 activity={

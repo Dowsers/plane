@@ -67,6 +67,12 @@ AUTHENTICATION_ERROR_CODES = {
     "ADMIN_USER_ALREADY_EXIST": 5180,
     "ADMIN_USER_DOES_NOT_EXIST": 5185,
     "ADMIN_USER_DEACTIVATED": 5190,
+    # Bot / agent actors (docs/feature-specs/09-ai-features.md "7. Type
+    # d'acteur agent de premiere classe" in plane-selfhost, exigence 7) -
+    # applies to every `is_bot=True` user, not just WORKSPACE_AGENT: a
+    # GitHub/GitLab/Slack/... integration bot shouldn't be able to log in
+    # via password/OAuth either.
+    "BOT_AUTHENTICATION_NOT_ALLOWED": 5195,
     # Rate limit
     "RATE_LIMIT_EXCEEDED": 5900,
     # Unknown

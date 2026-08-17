@@ -22,6 +22,12 @@ class APITokenSerializer(BaseSerializer):
             "is_active",
             "last_used",
             "user_type",
+            # Only ever set through the dedicated agent-token-issuance
+            # endpoint (plane.app.views.agent.AgentTokenListCreateEndpoint,
+            # docs/feature-specs/09-ai-features.md "7. Type d'acteur agent
+            # de premiere classe" in plane-selfhost), never through this
+            # general-purpose personal-token PATCH.
+            "agent",
             # Tier/override are only ever changed through the dedicated
             # Instance Admin (rate-limit-tiers) / Workspace Admin
             # (api-tokens/{id}/rate-limit-override) endpoints, not through

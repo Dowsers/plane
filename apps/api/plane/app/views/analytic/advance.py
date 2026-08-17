@@ -26,6 +26,7 @@ from plane.utils.build_chart import build_analytics_chart
 from plane.utils.date_utils import (
     get_analytics_filters,
 )
+from plane.utils.agent_actor import member_visibility_q
 
 
 class AdvanceAnalyticsBaseView(BaseAPIView):
@@ -65,14 +66,14 @@ class AdvanceAnalyticsEndpoint(AdvanceAnalyticsBaseView):
 
     def get_overview_data(self) -> Dict[str, Dict[str, int]]:
         members_query = WorkspaceMember.objects.filter(
-            workspace__slug=self._workspace_slug, is_active=True, member__is_bot=False
+            member_visibility_q("member__"), workspace__slug=self._workspace_slug, is_active=True
         )
 
         if self.request.GET.get("project_ids", None):
             project_ids = self.request.GET.get("project_ids", None)
             project_ids = [str(project_id) for project_id in project_ids.split(",")]
             members_query = ProjectMember.objects.filter(
-                project_id__in=project_ids, is_active=True, member__is_bot=False
+                member_visibility_q("member__"), project_id__in=project_ids, is_active=True
             )
 
         return {

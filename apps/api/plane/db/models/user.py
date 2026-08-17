@@ -60,6 +60,14 @@ class BotTypeEnum(models.TextChoices):
     FIGMA_BOT = "FIGMA_BOT", "Figma Bot"
     SENTRY_BOT = "SENTRY_BOT", "Sentry Bot"
     SUPPORT_BOT = "SUPPORT_BOT", "Support Bot"
+    # Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7. Type
+    # d'acteur agent de premiere classe" in plane-selfhost) - unlike every
+    # bot type above, a WORKSPACE_AGENT is deliberately member-visible
+    # (assignable, mentionable, shows up in member lists) - see
+    # plane.utils.agent_actor. It is also the only bot type that is ever
+    # blocked from role=20/Admin - the bots above keep their existing
+    # role=20 membership unchanged (plane.utils.integration_bot).
+    WORKSPACE_AGENT = "WORKSPACE_AGENT", "Workspace Agent"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -307,7 +315,14 @@ class Account(TimeAuditModel):
 @receiver(post_save, sender=User)
 def create_user_notification(sender, instance, created, **kwargs):
     # create preferences
-    if created and not instance.is_bot:
+    #
+    # A WORKSPACE_AGENT still needs a preference row even though it's a
+    # bot: unlike every other bot type it's member-visible and mentionable
+    # (category 9 feature 7 - see plane.utils.agent_actor), so
+    # notification_task's `UserNotificationPreference.objects.get(user_id=
+    # mention_id)` would otherwise raise DoesNotExist and blow up the
+    # whole notification task the first time a human @-mentions an agent.
+    if created and (not instance.is_bot or instance.bot_type == BotTypeEnum.WORKSPACE_AGENT):
         # Module imports
         from plane.db.models import UserNotificationPreference
 

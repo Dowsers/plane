@@ -12,6 +12,7 @@ import re
 
 # Module imports
 from plane.db.models import Project, ProjectIdentifier, WorkspaceMember, State, Estimate
+from plane.utils.agent_actor import agent_role_error, is_workspace_agent
 
 from plane.utils.content_validator import (
     validate_html_content,
@@ -121,6 +122,12 @@ class ProjectCreateSerializer(BaseSerializer):
                 member_id=data.get("project_lead"),
             ).exists():
                 raise serializers.ValidationError("Project lead should be a user in the workspace")
+
+            # Exigence 11 (docs/feature-specs/09-ai-features.md "7. Type
+            # d'acteur agent de premiere classe" in plane-selfhost) - an
+            # agent can never be set as project lead.
+            if is_workspace_agent(data.get("project_lead")):
+                raise serializers.ValidationError(agent_role_error("project_lead"))
 
         if data.get("default_assignee", None) is not None:
             # Check if the default assignee is a member of the workspace
@@ -250,6 +257,12 @@ class ProjectSerializer(BaseSerializer):
             ).exists()
         ):
             raise serializers.ValidationError("Project lead should be a user in the workspace")
+
+        # Exigence 11 (docs/feature-specs/09-ai-features.md "7. Type
+        # d'acteur agent de premiere classe" in plane-selfhost) - an agent
+        # can never be set as project lead.
+        if data.get("project_lead", None) is not None and is_workspace_agent(data.get("project_lead")):
+            raise serializers.ValidationError(agent_role_error("project_lead"))
 
         # Check default assignee should be a member of the workspace
         if (

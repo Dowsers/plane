@@ -50,6 +50,7 @@ from plane.bgtasks.event_tracking_task import track_event
 from plane.utils.url import contains_url
 from plane.utils.analytics_events import WORKSPACE_CREATED, WORKSPACE_DELETED
 from plane.utils.csv_utils import sanitize_csv_row
+from plane.utils.agent_actor import member_visibility_q
 
 
 class WorkSpaceViewSet(BaseViewSet):
@@ -64,7 +65,7 @@ class WorkSpaceViewSet(BaseViewSet):
 
     def get_queryset(self):
         member_count = (
-            WorkspaceMember.objects.filter(workspace=OuterRef("id"), member__is_bot=False, is_active=True)
+            WorkspaceMember.objects.filter(member_visibility_q("member__"), workspace=OuterRef("id"), is_active=True)
             .order_by()
             .annotate(count=Func(F("id"), function="Count"))
             .values("count")
@@ -209,7 +210,7 @@ class UserWorkSpacesEndpoint(BaseAPIView):
     def get(self, request):
         fields = [field for field in request.GET.get("fields", "").split(",") if field]
         member_count = (
-            WorkspaceMember.objects.filter(workspace=OuterRef("id"), member__is_bot=False, is_active=True)
+            WorkspaceMember.objects.filter(member_visibility_q("member__"), workspace=OuterRef("id"), is_active=True)
             .order_by()
             .annotate(count=Func(F("id"), function="Count"))
             .values("count")

@@ -138,7 +138,23 @@ class UserMeSettingsSerializer(BaseSerializer):
             }
 
 
-class UserLiteSerializer(BaseSerializer):
+class AgentTypeMixin:
+    """Exigence 13 (docs/feature-specs/09-ai-features.md "7. Type d'acteur
+    agent de premiere classe" in plane-selfhost) - `agent_type` lives on
+    the related `AgentProfile` (`user.agent_profile`), not on `User`
+    itself, so it needs a `SerializerMethodField` rather than a plain
+    model field like `bot_type`. `None` for every non-agent user
+    (including the six category-7 integration bots, which have no
+    `AgentProfile` row at all)."""
+
+    def get_agent_type(self, obj):
+        agent_profile = getattr(obj, "agent_profile", None)
+        return agent_profile.agent_type if agent_profile is not None else None
+
+
+class UserLiteSerializer(AgentTypeMixin, BaseSerializer):
+    agent_type = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -148,12 +164,16 @@ class UserLiteSerializer(BaseSerializer):
             "avatar",
             "avatar_url",
             "is_bot",
+            "bot_type",
+            "agent_type",
             "display_name",
         ]
-        read_only_fields = ["id", "is_bot"]
+        read_only_fields = ["id", "is_bot", "bot_type", "agent_type"]
 
 
-class UserAdminLiteSerializer(BaseSerializer):
+class UserAdminLiteSerializer(AgentTypeMixin, BaseSerializer):
+    agent_type = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -163,11 +183,13 @@ class UserAdminLiteSerializer(BaseSerializer):
             "avatar",
             "avatar_url",
             "is_bot",
+            "bot_type",
+            "agent_type",
             "display_name",
             "email",
             "last_login_medium",
         ]
-        read_only_fields = ["id", "is_bot"]
+        read_only_fields = ["id", "is_bot", "bot_type", "agent_type"]
 
 
 class ChangePasswordSerializer(serializers.Serializer):

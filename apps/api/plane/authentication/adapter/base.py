@@ -295,6 +295,22 @@ class Adapter:
 
         # Check if the user is present
         user = User.objects.filter(email=email).first()
+
+        # Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7.
+        # Type d'acteur agent de premiere classe" in plane-selfhost,
+        # exigence 7) - a bot account (agent or any of the category-7
+        # integration bots) has no real password and must never complete
+        # a web login, credential or OAuth alike - both adapters
+        # (CredentialAdapter, OAuthAdapter) funnel through this one method,
+        # so a single guard here covers every login surface.
+        if user is not None and user.is_bot:
+            self.logger.warning(f"Bot user attempted to authenticate: {email}")
+            raise AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["BOT_AUTHENTICATION_NOT_ALLOWED"],
+                error_message="BOT_AUTHENTICATION_NOT_ALLOWED",
+                payload={"email": email},
+            )
+
         # Check if sign up case or login
         is_signup = bool(user)
         # If user is not present, create a new user

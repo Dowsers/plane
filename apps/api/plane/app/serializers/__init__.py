@@ -99,6 +99,8 @@ from .module import (
 
 from .api import APITokenSerializer, APITokenReadSerializer
 
+from .agent import AgentProfileSerializer, AgentAPITokenSerializer, AgentAPITokenReadSerializer
+
 from .importer import ImporterSerializer
 
 from .page import (

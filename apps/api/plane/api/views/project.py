@@ -68,6 +68,7 @@ from plane.utils.openapi import (
     ARCHIVED_RESPONSE,
     UNARCHIVED_RESPONSE,
 )
+from plane.utils.agent_actor import member_visibility_q
 
 
 class ProjectListCreateAPIEndpoint(BaseAPIView):
@@ -102,7 +103,7 @@ class ProjectListCreateAPIEndpoint(BaseAPIView):
             )
             .annotate(
                 total_members=ProjectMember.objects.filter(
-                    project_id=OuterRef("id"), member__is_bot=False, is_active=True
+                    member_visibility_q("member__"), project_id=OuterRef("id"), is_active=True
                 )
                 .order_by()
                 .annotate(count=Func(F("id"), function="Count"))
@@ -317,7 +318,7 @@ class ProjectDetailAPIEndpoint(BaseAPIView):
             )
             .annotate(
                 total_members=ProjectMember.objects.filter(
-                    project_id=OuterRef("id"), member__is_bot=False, is_active=True
+                    member_visibility_q("member__"), project_id=OuterRef("id"), is_active=True
                 )
                 .order_by()
                 .annotate(count=Func(F("id"), function="Count"))

@@ -14,6 +14,7 @@ from plane.license.api.permissions import InstanceAdminPermission
 from plane.db.models import Workspace, WorkspaceMember, Project
 from plane.license.api.serializers import WorkspaceSerializer
 from plane.utils.constants import RESTRICTED_WORKSPACE_SLUGS
+from plane.utils.agent_actor import member_visibility_q
 
 
 class InstanceWorkSpaceAvailabilityCheckEndpoint(BaseAPIView):
@@ -46,7 +47,7 @@ class InstanceWorkSpaceEndpoint(BaseAPIView):
         )
 
         member_count = (
-            WorkspaceMember.objects.filter(workspace=OuterRef("id"), member__is_bot=False, is_active=True)
+            WorkspaceMember.objects.filter(member_visibility_q("member__"), workspace=OuterRef("id"), is_active=True)
             .select_related("owner")
             .order_by()
             .annotate(count=Func(F("id"), function="Count"))

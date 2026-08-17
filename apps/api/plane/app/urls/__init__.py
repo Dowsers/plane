@@ -37,6 +37,7 @@ from .api_explorer import urlpatterns as api_explorer_settings_urls
 from .integrations import urlpatterns as integrations_urls
 from .github_integration import urlpatterns as github_integration_urls
 from .gitlab_integration import urlpatterns as gitlab_integration_urls
+from .agent import urlpatterns as agent_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -74,4 +75,5 @@ urlpatterns = [
     *integrations_urls,
     *github_integration_urls,
     *gitlab_integration_urls,
+    *agent_urls,
 ]

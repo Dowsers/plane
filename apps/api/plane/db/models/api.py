@@ -34,6 +34,20 @@ class APIToken(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bot_tokens")
     user_type = models.PositiveSmallIntegerField(choices=((0, "Human"), (1, "Bot")), default=0)
     workspace = models.ForeignKey("db.Workspace", related_name="api_tokens", on_delete=models.CASCADE, null=True)
+    # Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7. Type
+    # d'acteur agent de premiere classe" in plane-selfhost) - set alongside
+    # user_type=1 (Bot, reusing the existing field rather than duplicating
+    # the token-auth mechanism) whenever this token is issued through the
+    # agent-scoped token endpoint (plane.app.views.agent). Nullable: every
+    # pre-existing token (personal or category-7 integration bot) simply
+    # has no agent.
+    agent = models.ForeignKey(
+        "db.AgentProfile",
+        related_name="tokens",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
     expired_at = models.DateTimeField(blank=True, null=True)
     is_service = models.BooleanField(default=False)
     # "N/period" DRF SimpleRateThrottle-compatible string (e.g. "60/min").

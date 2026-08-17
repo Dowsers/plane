@@ -165,6 +165,28 @@ class Workspace(BaseModel):
         """Return name of the Workspace"""
         return self.name
 
+    def save(self, *args, **kwargs):
+        # Exigence 11 (docs/feature-specs/09-ai-features.md "7. Type
+        # d'acteur agent de premiere classe" in plane-selfhost): an agent
+        # can never become a workspace owner. This is deliberately a thin,
+        # model-level guard rather than endpoint-level plumbing - `owner`
+        # is in `read_only_fields` on every workspace serializer and no
+        # endpoint in this codebase writes it after creation (the only
+        # writer is `WorkSpaceViewSet.create`, always `owner=request.user`,
+        # and a bot can never hold a session per the auth-adapter guard in
+        # `plane.authentication.adapter.base.Adapter.complete_login_or_signup`)
+        # - so this path is dormant today, but cheap insurance against a
+        # future direct-ORM ownership-transfer feature.
+        if self.owner_id is not None:
+            from .user import BotTypeEnum
+
+            owner_is_agent = getattr(self.owner, "is_bot", False) and getattr(
+                self.owner, "bot_type", None
+            ) == BotTypeEnum.WORKSPACE_AGENT
+            if owner_is_agent:
+                raise ValidationError("An agent cannot be set as workspace owner.")
+        super().save(*args, **kwargs)
+
     @property
     def logo_url(self):
         # Return the logo asset url if it exists

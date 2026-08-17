@@ -25,6 +25,7 @@ from plane.db.models import (
 from plane.utils.content_validator import (
     validate_html_content,
 )
+from plane.utils.agent_actor import agent_role_error, is_member_visible, is_workspace_agent
 
 
 class ProjectSerializer(BaseSerializer):
@@ -106,6 +107,15 @@ class ProjectSerializer(BaseSerializer):
         if start_date is not None and target_date is not None and target_date < start_date:
             raise serializers.ValidationError({"target_date": "Target date cannot be before start date"})
 
+        # Exigence 11 (docs/feature-specs/09-ai-features.md "7. Type
+        # d'acteur agent de premiere classe" in plane-selfhost) - an agent
+        # can never be set as project lead. `project_lead` is a real,
+        # writable field on this serializer (fields = "__all__"), unlike
+        # `Workspace.owner`.
+        project_lead = data.get("project_lead")
+        if project_lead is not None and is_workspace_agent(project_lead):
+            raise serializers.ValidationError(agent_role_error("project_lead"))
+
         return data
 
     def create(self, validated_data):
@@ -149,7 +159,11 @@ class ProjectListSerializer(DynamicBaseSerializer):
         project_members = getattr(obj, "members_list", None)
         if project_members is not None:
             # Filter members by the project ID
-            return [member.member_id for member in project_members if member.is_active and not member.member.is_bot]
+            return [
+                member.member_id
+                for member in project_members
+                if member.is_active and is_member_visible(member.member)
+            ]
         return []
 
     def get_next_work_item_sequence(self, obj):

@@ -23,6 +23,7 @@ from plane.bgtasks.project_add_user_email_task import project_add_user_email
 from plane.utils.host import base_host
 from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 from plane.app.permissions.base import allow_permission, ROLE
+from plane.utils.agent_actor import agent_role_error, is_workspace_agent, member_visibility_q
 
 
 class ProjectMemberViewSet(BaseViewSet):
@@ -37,7 +38,7 @@ class ProjectMemberViewSet(BaseViewSet):
             .get_queryset()
             .filter(workspace__slug=self.kwargs.get("slug"))
             .filter(project_id=self.kwargs.get("project_id"))
-            .filter(member__is_bot=False)
+            .filter(member_visibility_q("member__"))
             .filter()
             .select_related("project")
             .select_related("member")
@@ -68,9 +69,19 @@ class ProjectMemberViewSet(BaseViewSet):
 
         # check the workspace role of the new user
         for member in member_roles:
-            workspace_member_role = WorkspaceMember.objects.get(
+            workspace_member = WorkspaceMember.objects.select_related("member").get(
                 workspace__slug=slug, member=member, is_active=True
-            ).role
+            )
+            workspace_member_role = workspace_member.role
+
+            # Exigence 8/11 (docs/feature-specs/09-ai-features.md "7. Type
+            # d'acteur agent de premiere classe" in plane-selfhost) - an
+            # agent can never be added to a project with the Admin role,
+            # exactly like the workspace/project member role-update
+            # guards below.
+            if member_roles.get(member) == ROLE.ADMIN.value and is_workspace_agent(workspace_member.member):
+                return Response(agent_role_error(), status=status.HTTP_400_BAD_REQUEST)
+
             if workspace_member_role in [20] and member_roles.get(member) in [5, 15]:
                 return Response(
                     {"error": "You cannot add a user with role lower than the workspace role"},
@@ -158,9 +169,9 @@ class ProjectMemberViewSet(BaseViewSet):
     def list(self, request, slug, project_id):
         # Get the list of project members for the project
         project_members = ProjectMember.objects.filter(
+            member_visibility_q("member__"),
             project_id=project_id,
             workspace__slug=slug,
-            member__is_bot=False,
             is_active=True,
             member__member_workspace__workspace__slug=slug,
             member__member_workspace__is_active=True,
@@ -180,10 +191,10 @@ class ProjectMemberViewSet(BaseViewSet):
 
         project_member = (
             ProjectMember.objects.filter(
+                member_visibility_q("member__"),
                 pk=pk,
                 project_id=project_id,
                 workspace__slug=slug,
-                member__is_bot=False,
                 is_active=True,
             )
             .select_related("project", "member", "workspace")
@@ -244,6 +255,12 @@ class ProjectMemberViewSet(BaseViewSet):
 
             new_role = int(request.data.get("role"))
 
+            # Exigence 8 (docs/feature-specs/09-ai-features.md "7. Type
+            # d'acteur agent de premiere classe" in plane-selfhost) - an
+            # agent can never be promoted to Admin.
+            if new_role == ROLE.ADMIN.value and is_workspace_agent(project_member.member):
+                return Response(agent_role_error(), status=status.HTTP_400_BAD_REQUEST)
+
             # Cannot assign a role equal to or higher than your own
             if new_role >= requested_project_member.role and not is_workspace_admin:
                 return Response(
@@ -268,10 +285,10 @@ class ProjectMemberViewSet(BaseViewSet):
     @allow_permission([ROLE.ADMIN])
     def destroy(self, request, slug, project_id, pk):
         project_member = ProjectMember.objects.get(
+            member_visibility_q("member__"),
             workspace__slug=slug,
             project_id=project_id,
             pk=pk,
-            member__is_bot=False,
             is_active=True,
         )
         # check requesting user role

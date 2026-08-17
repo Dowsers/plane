@@ -24,6 +24,7 @@ from plane.app.views.base import BaseAPIView
 from plane.db.models import Project, ProjectMember, WorkspaceMember, DraftIssue
 from plane.utils.cache import invalidate_cache
 from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
+from plane.utils.agent_actor import agent_role_error, is_workspace_agent, member_visibility_q
 
 from .. import BaseViewSet
 
@@ -77,13 +78,23 @@ class WorkSpaceMemberViewSet(BaseViewSet):
     @allow_permission(allowed_roles=[ROLE.ADMIN], level="WORKSPACE")
     def partial_update(self, request, slug, pk):
         workspace_member = WorkspaceMember.objects.get(
-            pk=pk, workspace__slug=slug, member__is_bot=False, is_active=True
+            member_visibility_q("member__"), pk=pk, workspace__slug=slug, is_active=True
         )
         if request.user.id == workspace_member.member_id:
             return Response(
                 {"error": "You cannot update your own role"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Exigence 8 (docs/feature-specs/09-ai-features.md "7. Type
+        # d'acteur agent de premiere classe" in plane-selfhost) - an agent
+        # can never be promoted to Admin.
+        if (
+            "role" in request.data
+            and int(request.data.get("role")) == ROLE.ADMIN.value
+            and is_workspace_agent(workspace_member.member)
+        ):
+            return Response(agent_role_error(), status=status.HTTP_400_BAD_REQUEST)
 
         # If a user is moved to a guest role he can't have any other role in projects
         if "role" in request.data and int(request.data.get("role")) == 5:
@@ -100,7 +111,7 @@ class WorkSpaceMemberViewSet(BaseViewSet):
     def destroy(self, request, slug, pk):
         # Check the user role who is deleting the user
         workspace_member = WorkspaceMember.objects.get(
-            workspace__slug=slug, pk=pk, member__is_bot=False, is_active=True
+            member_visibility_q("member__"), workspace__slug=slug, pk=pk, is_active=True
         )
 
         # check requesting user role

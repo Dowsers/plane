@@ -180,6 +180,8 @@ from .module.archive import ModuleArchiveUnarchiveEndpoint
 
 from .api import ApiTokenEndpoint
 
+from .agent import AgentProfileViewSet, AgentTokenListCreateEndpoint, AgentTokenRevokeEndpoint
+
 from .page.base import (
     PageViewSet,
     PageFavoriteViewSet,

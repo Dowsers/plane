@@ -32,6 +32,7 @@ from plane.db.models import (
 from plane.utils.analytics_plot import build_graph_plot, VALID_ANALYTICS_FIELDS, VALID_YAXIS
 from plane.utils.issue_filters import issue_filters
 from plane.app.permissions import allow_permission, ROLE
+from plane.utils.agent_actor import member_visibility_q
 
 
 class AnalyticsEndpoint(BaseAPIView):
@@ -445,7 +446,7 @@ class ProjectStatsEndpoint(BaseAPIView):
 
         if "total_members" in requested_fields:
             annotations["total_members"] = (
-                ProjectMember.objects.filter(project_id=OuterRef("id"), member__is_bot=False, is_active=True)
+                ProjectMember.objects.filter(member_visibility_q("member__"), project_id=OuterRef("id"), is_active=True)
                 .order_by()
                 .annotate(count=Func(F("id"), function="Count"))
                 .values("count")

@@ -11,7 +11,7 @@ from rest_framework import authentication
 from rest_framework.exceptions import AuthenticationFailed
 
 # Module imports
-from plane.db.models import APIToken
+from plane.db.models import AgentProfile, APIToken
 
 
 class APIKeyAuthentication(authentication.BaseAuthentication):
@@ -39,6 +39,18 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
         # save api token last used
         api_token.last_used = timezone.now()
         api_token.save(update_fields=["last_used"])
+
+        # Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7.
+        # Type d'acteur agent de premiere classe" in plane-selfhost) -
+        # cheap active/inactive indicator for the agent settings UI
+        # (`AgentProfile.last_seen_at`), updated on every request
+        # authenticated by one of that agent's tokens. A single UPDATE,
+        # no extra SELECT - this is the real, wired-in equivalent of the
+        # "middleware" the spec's data model section gestures at, without
+        # actually adding a new middleware class.
+        if api_token.agent_id:
+            AgentProfile.objects.filter(pk=api_token.agent_id).update(last_seen_at=timezone.now())
+
         # Returning the APIToken instance itself (not just the raw token
         # string) as the DRF "auth" object lets `request.auth.scope` be
         # read directly wherever a permission/view needs it (see

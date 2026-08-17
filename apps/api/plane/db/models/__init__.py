@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from .agent import AgentProfile
 from .analytic import AnalyticView
 from .api import APIActivityLog, APIToken
 from .api_explorer import WorkspaceAPIExplorerSettings
