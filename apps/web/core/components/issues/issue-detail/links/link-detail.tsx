@@ -7,7 +7,9 @@
 import { NewTabIcon, EditIcon, TrashIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
-import { getIconForLink, copyTextToClipboard, calculateTimeAgo } from "@plane/utils";
+import { getIconForLink, copyTextToClipboard, calculateTimeAgo, isWorkspaceAgentActor } from "@plane/utils";
+// components
+import { AgentBadge } from "@/components/common/agent-badge";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useMember } from "@/hooks/store/use-member";
@@ -47,6 +49,7 @@ export function IssueLinkDetail(props: TIssueLinkDetail) {
   return (
     <div key={linkId}>
       <div className="relative flex flex-col rounded-md bg-surface-2 p-2.5">
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- pre-existing "click row to copy link" convenience affordance; the row's own title/edit/open/delete controls below remain independently keyboard-reachable buttons/links. */}
         <div
           className="flex w-full cursor-pointer items-start justify-between gap-2"
           onClick={() => {
@@ -113,9 +116,13 @@ export function IssueLinkDetail(props: TIssueLinkDetail) {
             Added {calculateTimeAgo(linkDetail.created_at)}
             <br />
             {createdByDetails && (
-              <>
-                by {createdByDetails?.is_bot ? createdByDetails?.first_name + " Bot" : createdByDetails?.display_name}
-              </>
+              <span className="inline-flex items-center gap-1">
+                by{" "}
+                {createdByDetails?.is_bot && !isWorkspaceAgentActor(createdByDetails)
+                  ? createdByDetails?.first_name + " Bot"
+                  : createdByDetails?.display_name}
+                {isWorkspaceAgentActor(createdByDetails) && <AgentBadge />}
+              </span>
             )}
           </p>
         </div>

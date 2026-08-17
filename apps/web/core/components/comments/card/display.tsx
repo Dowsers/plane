@@ -15,8 +15,16 @@ import { useHashScroll } from "@plane/hooks";
 import { GlobeIcon, LockIcon } from "@plane/propel/icons";
 import { EIssueCommentAccessSpecifier } from "@plane/types";
 import type { TCommentsOperations, TIssueComment } from "@plane/types";
-import { calculateTimeAgo, cn, getFileURL, renderFormattedDate, renderFormattedTime } from "@plane/utils";
+import {
+  calculateTimeAgo,
+  cn,
+  getFileURL,
+  isWorkspaceAgentActor,
+  renderFormattedDate,
+  renderFormattedTime,
+} from "@plane/utils";
 // components
+import { AgentBadge } from "@/components/common/agent-badge";
 import { LiteTextEditor } from "@/components/editor/lite-text";
 // local imports
 import { CommentReactions } from "../comment-reaction";
@@ -70,9 +78,16 @@ export const CommentCardDisplay = observer(function CommentCardDisplay(props: TC
   // badge instead so it's not misread as a manual comment. See
   // `IssueComment.created_by_automation` in apps/api/plane/db/models/issue.py.
   const isAutomationComment = !!comment?.created_by_automation;
+  // Category 9 feature 7: a first-class workspace agent is rendered with
+  // its real display name + the shared `AgentBadge` (see JSX below),
+  // never the ad hoc "{first_name}Bot" suffix still used for the six
+  // category-7 integration bots (GitHub/GitLab/Slack/Figma/Sentry/support)
+  // when one of those posts an automated comment - that convention is
+  // untouched, only WORKSPACE_AGENT gets the new treatment.
+  const isWorkspaceAgentComment = isWorkspaceAgentActor(comment?.actor_detail);
   const displayName = isAutomationComment
     ? "Automation"
-    : comment?.actor_detail?.is_bot
+    : comment?.actor_detail?.is_bot && !isWorkspaceAgentComment
       ? comment?.actor_detail?.first_name + `Bot`
       : (userDetails?.display_name ?? comment?.actor_detail?.display_name);
   const avatarUrl = userDetails?.avatar_url ?? comment?.actor_detail?.avatar_url;
@@ -135,6 +150,7 @@ export const CommentCardDisplay = observer(function CommentCardDisplay(props: TC
         )}
         <div className="flex flex-1 flex-wrap items-center gap-1">
           <div className="text-caption-sm-medium">{displayName}</div>
+          {isWorkspaceAgentComment && <AgentBadge />}
           <div className="text-caption-sm-regular text-tertiary">
             commented{" "}
             <Tooltip

@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+export * from "./agent";
 export * from "./array";
 export * from "./attachment";
 export * from "./auth";

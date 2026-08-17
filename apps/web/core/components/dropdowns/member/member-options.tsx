@@ -17,7 +17,9 @@ import { CheckIcon, SearchIcon, SuspendedUserIcon } from "@plane/propel/icons";
 import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import type { IUserLite } from "@plane/types";
 import { Avatar } from "@plane/ui";
-import { cn, getFileURL, sortByCurrentUserThenSelected } from "@plane/utils";
+import { cn, getFileURL, isWorkspaceAgentActor, sortByCurrentUserThenSelected } from "@plane/utils";
+// components
+import { AgentBadge } from "@/components/common/agent-badge";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useUser } from "@/hooks/store/user";
@@ -77,10 +79,11 @@ export const MemberOptions = observer(function MemberOptions(props: Props) {
   useEffect(() => {
     if (isOpen) {
       onDropdownOpen?.();
-      if (!isMobile) {
-        inputRef.current && inputRef.current.focus();
+      if (!isMobile && inputRef.current) {
+        inputRef.current.focus();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onDropdownOpen is an optional, non-memoized callback prop; intentionally excluded to avoid re-running this open-focus effect on every parent render.
   }, [isOpen, isMobile]);
 
   const searchInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,6 +116,7 @@ export const MemberOptions = observer(function MemberOptions(props: Props) {
             >
               {currentUser?.id === userId ? t("you") : userDetails?.display_name}
             </span>
+            {isWorkspaceAgentActor(userDetails) && <AgentBadge />}
           </div>
         ),
       };

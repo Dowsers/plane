@@ -11,10 +11,12 @@ import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { SearchIcon } from "@plane/propel/icons";
+import { Tabs } from "@plane/propel/tabs";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspaceBulkInviteFormData } from "@plane/types";
 import { cn } from "@plane/utils";
 // components
+import { AgentListRoot } from "@/components/agents/agent-list-root";
 import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view";
 import { CountChip } from "@/components/common/count-chip";
 import { PageHead } from "@/components/core/page-title";
@@ -32,10 +34,14 @@ import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import type { Route } from "./+types/page";
 import { MembersWorkspaceSettingsHeader } from "./header";
 
+const TAB_MEMBERS = "members";
+const TAB_AGENTS = "agents";
+
 const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsPage({ params }: Route.ComponentProps) {
   // states
   const [inviteModal, setInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>(TAB_MEMBERS);
   // router
   const { workspaceSlug } = params;
   // store hooks
@@ -100,6 +106,49 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
     return <NotAuthorizedView section="settings" className="h-auto" />;
   }
 
+  const membersSectionContent = (
+    <section
+      className={cn("size-full", {
+        "opacity-60": !canPerformWorkspaceMemberActions,
+      })}
+    >
+      <div className="flex items-center justify-between gap-4 pb-3.5">
+        <h4 className="flex items-center gap-2.5 text-h3-medium">
+          {t("workspace_settings.settings.members.title")}
+          {workspaceMemberIds && workspaceMemberIds.length > 0 && (
+            <CountChip count={workspaceMemberIds.length} className="m-auto h-5" />
+          )}
+        </h4>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-md border border-subtle bg-surface-1 px-2.5 py-1.5">
+            <SearchIcon className="h-3.5 w-3.5 text-placeholder" />
+            <input
+              className="w-full max-w-[234px] border-none bg-transparent text-body-xs-regular outline-none placeholder:text-placeholder"
+              placeholder={`${t("search")}...`}
+              value={searchQuery}
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <MemberListFiltersDropdown
+            appliedFilters={appliedRoleFilters}
+            handleUpdate={handleRoleFilterUpdate}
+            memberType="workspace"
+          />
+          <MembersActivityButton workspaceSlug={workspaceSlug} />
+          {canPerformWorkspaceAdminActions && (
+            <Button variant="primary" size="lg" onClick={() => setInviteModal(true)}>
+              {t("workspace_settings.settings.members.add_member")}
+            </Button>
+          )}
+          <BillingActionsButton canPerformWorkspaceAdminActions={canPerformWorkspaceAdminActions} />
+        </div>
+      </div>
+      <WorkspaceMembersList searchQuery={searchQuery} isAdmin={canPerformWorkspaceAdminActions} />
+    </section>
+  );
+
   return (
     <SettingsContentWrapper header={<MembersWorkspaceSettingsHeader />} hugging>
       <PageHead title={pageTitle} />
@@ -108,46 +157,30 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
         onClose={() => setInviteModal(false)}
         onSubmit={handleWorkspaceInvite}
       />
-      <section
-        className={cn("size-full", {
-          "opacity-60": !canPerformWorkspaceMemberActions,
-        })}
-      >
-        <div className="flex items-center justify-between gap-4 pb-3.5">
-          <h4 className="flex items-center gap-2.5 text-h3-medium">
-            {t("workspace_settings.settings.members.title")}
-            {workspaceMemberIds && workspaceMemberIds.length > 0 && (
-              <CountChip count={workspaceMemberIds.length} className="m-auto h-5" />
-            )}
-          </h4>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-md border border-subtle bg-surface-1 px-2.5 py-1.5">
-              <SearchIcon className="h-3.5 w-3.5 text-placeholder" />
-              <input
-                className="w-full max-w-[234px] border-none bg-transparent text-body-xs-regular outline-none placeholder:text-placeholder"
-                placeholder={`${t("search")}...`}
-                value={searchQuery}
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <MemberListFiltersDropdown
-              appliedFilters={appliedRoleFilters}
-              handleUpdate={handleRoleFilterUpdate}
-              memberType="workspace"
-            />
-            <MembersActivityButton workspaceSlug={workspaceSlug} />
-            {canPerformWorkspaceAdminActions && (
-              <Button variant="primary" size="lg" onClick={() => setInviteModal(true)}>
-                {t("workspace_settings.settings.members.add_member")}
-              </Button>
-            )}
-            <BillingActionsButton canPerformWorkspaceAdminActions={canPerformWorkspaceAdminActions} />
-          </div>
-        </div>
-        <WorkspaceMembersList searchQuery={searchQuery} isAdmin={canPerformWorkspaceAdminActions} />
-      </section>
+      {canPerformWorkspaceAdminActions ? (
+        // Spec's own "Parametres d'espace de travail -> Membres : nouvel
+        // onglet 'Agents'" (docs/feature-specs/09-ai-features.md "7. Type
+        // d'acteur agent de premiere classe" in plane-selfhost) - the
+        // "Agents" tab is Admin-only, matching the backend's own
+        // Admin-only-for-every-verb gating on every `agent.py` endpoint;
+        // a Member/Guest never sees the tab bar at all, only the plain
+        // Members section below, unchanged from before this feature.
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as string)}>
+          <Tabs.List>
+            <Tabs.Trigger value={TAB_MEMBERS}>{t("workspace_settings.settings.members.title")}</Tabs.Trigger>
+            <Tabs.Trigger value={TAB_AGENTS}>Agents</Tabs.Trigger>
+            <Tabs.Indicator />
+          </Tabs.List>
+          <Tabs.Content value={TAB_MEMBERS} className="pt-4">
+            {membersSectionContent}
+          </Tabs.Content>
+          <Tabs.Content value={TAB_AGENTS} className="pt-4">
+            <AgentListRoot workspaceSlug={workspaceSlug} />
+          </Tabs.Content>
+        </Tabs>
+      ) : (
+        membersSectionContent
+      )}
     </SettingsContentWrapper>
   );
 });

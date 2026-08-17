@@ -13,7 +13,9 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
 import type { ILinkDetails } from "@plane/types";
 // plane ui
-import { getIconForLink, copyTextToClipboard, calculateTimeAgo } from "@plane/utils";
+import { getIconForLink, copyTextToClipboard, calculateTimeAgo, isWorkspaceAgentActor } from "@plane/utils";
+// components
+import { AgentBadge } from "@/components/common/agent-badge";
 // helpers
 //
 // hooks
@@ -104,8 +106,14 @@ export const ModulesLinksListItem = observer(function ModulesLinksListItem(props
         <p className="mt-0.5 flex items-center gap-1.5 stroke-[1.5] text-11 text-tertiary">
           Added {calculateTimeAgo(link.created_at)}{" "}
           {createdByDetails && (
-            <>by {createdByDetails?.is_bot ? createdByDetails?.first_name + " Bot" : createdByDetails?.display_name}</>
+            <>
+              by{" "}
+              {createdByDetails?.is_bot && !isWorkspaceAgentActor(createdByDetails)
+                ? createdByDetails?.first_name + " Bot"
+                : createdByDetails?.display_name}
+            </>
           )}
+          {isWorkspaceAgentActor(createdByDetails) && <AgentBadge />}
         </p>
       </div>
     </div>

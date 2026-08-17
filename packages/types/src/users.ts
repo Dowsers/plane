@@ -29,6 +29,19 @@ export interface IUserLite {
   first_name: string;
   id: string;
   is_bot: boolean;
+  // Category 9 feature 7 (docs/feature-specs/09-ai-features.md "7. Type
+  // d'acteur agent de premiere classe" in plane-selfhost) - both new,
+  // always present on `UserLiteSerializer`/`UserAdminLiteSerializer`
+  // responses (apps/api/plane/app/serializers/user.py). `bot_type` is the
+  // raw `BotTypeEnum` string (e.g. `"WORKSPACE_AGENT"`, `"GITHUB_BOT"`,
+  // `"WORKSPACE_SEED"`) or `null` for a human; `agent_type` is only
+  // non-null for a `WORKSPACE_AGENT` bot (sourced from its
+  // `AgentProfile.agent_type`, see `AgentTypeMixin` in that same
+  // serializer file). Use `isWorkspaceAgentActor` (@plane/utils) rather
+  // than checking `bot_type` directly, to stay in sync with the backend's
+  // own `plane.utils.agent_actor.is_workspace_agent`.
+  bot_type?: string | null;
+  agent_type?: string | null;
   last_name: string;
   joining_date?: string;
 }

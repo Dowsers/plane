@@ -10,6 +10,7 @@ import { computedFn } from "mobx-utils";
 // types
 import type { EUserPermissions } from "@plane/constants";
 import type { IWorkspaceBulkInviteFormData, IWorkspaceMember, IWorkspaceMemberInvitation } from "@plane/types";
+import { isWorkspaceAgentActor } from "@plane/utils";
 // plane-web constants
 // services
 import { WorkspaceService } from "@/services/workspace.service";
@@ -133,8 +134,17 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       (m) => m.member !== this.userStore?.data?.id,
       (m) => this.memberRoot?.memberMap?.[m.member]?.display_name?.toLowerCase(),
     ]);
-    //filter out bots
-    const memberIds = members.filter((m) => !this.memberRoot?.memberMap?.[m.member]?.is_bot).map((m) => m.member);
+    // filter out bots, but keep first-class workspace agents visible (category
+    // 9, feature 7 - see `isWorkspaceAgentActor` for why this can't stay a
+    // blanket `is_bot` exclusion: the six category-7 integration bots and
+    // `WORKSPACE_SEED` must stay hidden, but a `WORKSPACE_AGENT` bot is
+    // intentionally as visible as a human member).
+    const memberIds = members
+      .filter((m) => {
+        const user = this.memberRoot?.memberMap?.[m.member];
+        return !user?.is_bot || isWorkspaceAgentActor(user);
+      })
+      .map((m) => m.member);
     return memberIds;
   });
 
@@ -144,8 +154,11 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
    */
   getFilteredWorkspaceMemberIds = computedFn((workspaceSlug: string) => {
     let members = Object.values(this.workspaceMemberMap?.[workspaceSlug] ?? {});
-    //filter out bots and inactive members
-    members = members.filter((m) => !this.memberRoot?.memberMap?.[m.member]?.is_bot);
+    //filter out bots (except first-class workspace agents, see above) and inactive members
+    members = members.filter((m) => {
+      const user = this.memberRoot?.memberMap?.[m.member];
+      return !user?.is_bot || isWorkspaceAgentActor(user);
+    });
 
     // Use filters store to get filtered member ids
     const memberIds = this.filtersStore.getFilteredMemberIds(
@@ -286,6 +299,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       runInAction(() => {
         set(this.workspaceMemberMap, [workspaceSlug, userId, "is_active"], false);
       });
+      return;
     });
   };
 
@@ -323,7 +337,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
     invitationId: string,
     data: Partial<IWorkspaceMemberInvitation>
   ) => {
-    const originalMemberInvitations = [...this.workspaceMemberInvitations?.[workspaceSlug]]; // in case of error, we will revert back to original members
+    const originalMemberInvitations = [...(this.workspaceMemberInvitations?.[workspaceSlug] ?? [])]; // in case of error, we will revert back to original members
     try {
       const memberInvitations = originalMemberInvitations?.map((invitation) => ({
         ...invitation,
@@ -355,6 +369,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
           (inv) => inv.id !== invitationId
         );
       });
+      return;
     });
 
   isUserSuspended = computedFn((userId: string, workspaceSlug: string) => {

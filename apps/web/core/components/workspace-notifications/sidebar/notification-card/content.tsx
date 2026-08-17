@@ -9,11 +9,13 @@ import type { ReactNode } from "react";
 import type { TNotification } from "@plane/types";
 import {
   convertMinutesToHoursMinutesString,
+  isWorkspaceAgentActor,
   renderFormattedDate,
   sanitizeCommentForNotification,
   stripAndTruncateHTML,
 } from "@plane/utils";
 // components
+import { AgentBadge } from "@/components/common/agent-badge";
 import { LiteTextEditor } from "@/components/editor/lite-text";
 import {
   ADDITIONAL_NOTIFICATION_CONTENT_MAP,
@@ -173,8 +175,9 @@ export function NotificationContent({
   };
 
   const renderTriggerName = () => (
-    <span className="font-medium text-primary">
-      {triggeredBy?.is_bot ? triggeredBy.first_name : triggeredBy?.display_name}{" "}
+    <span className="inline-flex items-center gap-1 font-medium text-primary">
+      {triggeredBy?.is_bot && !isWorkspaceAgentActor(triggeredBy) ? triggeredBy.first_name : triggeredBy?.display_name}
+      {isWorkspaceAgentActor(triggeredBy) && <AgentBadge />}{" "}
     </span>
   );
 

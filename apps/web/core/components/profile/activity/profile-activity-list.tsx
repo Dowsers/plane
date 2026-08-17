@@ -10,8 +10,9 @@ import Link from "next/link";
 import useSWR from "swr";
 // icons
 import { History, MessageSquare } from "lucide-react";
-import { calculateTimeAgo, getFileURL } from "@plane/utils";
+import { calculateTimeAgo, getFileURL, isWorkspaceAgentActor } from "@plane/utils";
 // hooks
+import { AgentBadge } from "@/components/common/agent-badge";
 import { ActivityIcon, ActivityMessage } from "@/components/core/activity";
 import { RichTextEditor } from "@/components/editor/rich-text";
 import { ActivitySettingsLoader } from "@/components/ui/loader/settings/activity";
@@ -90,10 +91,11 @@ export const ProfileActivityListPage = observer(function ProfileActivityListPage
                     </div>
                     <div className="min-w-0 flex-1">
                       <div>
-                        <div className="text-11">
-                          {activityItem.actor_detail.is_bot
+                        <div className="flex items-center gap-1 text-11">
+                          {activityItem.actor_detail.is_bot && !isWorkspaceAgentActor(activityItem.actor_detail)
                             ? activityItem.actor_detail.first_name + " Bot"
                             : activityItem.actor_detail.display_name}
+                          {isWorkspaceAgentActor(activityItem.actor_detail) && <AgentBadge />}
                         </div>
                         <p className="mt-0.5 text-11 text-secondary">
                           Commented {calculateTimeAgo(activityItem.created_at)}
@@ -157,8 +159,14 @@ export const ProfileActivityListPage = observer(function ProfileActivityListPage
                           <div className="text-caption-md-regular break-words text-secondary">
                             {activityItem.field === "archived_at" && activityItem.new_value !== "restore" ? (
                               <span className="text-gray font-medium">Plane</span>
-                            ) : activityItem.actor_detail.is_bot ? (
+                            ) : activityItem.actor_detail.is_bot &&
+                              !isWorkspaceAgentActor(activityItem.actor_detail) ? (
                               <span className="text-gray font-medium">{activityItem.actor_detail.first_name} Bot</span>
+                            ) : isWorkspaceAgentActor(activityItem.actor_detail) ? (
+                              <span className="text-gray inline-flex items-center gap-1 font-medium">
+                                {activityItem.actor_detail.display_name}
+                                <AgentBadge />
+                              </span>
                             ) : (
                               <Link
                                 href={`/${activityItem.workspace_detail.slug}/profile/${activityItem.actor_detail.id}`}
