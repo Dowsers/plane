@@ -229,3 +229,5 @@ from .gitlab_integration import (
 )
 
 from .ai_config import WorkspaceAIConfigSerializer
+
+from .issue_comment_summary import IssueCommentSummarySerializer

@@ -200,3 +200,5 @@ from .support import (
 )
 
 from .ai_config import WorkspaceAIConfig, WorkspaceAIProvider
+
+from .issue_comment_summary import IssueCommentSummary, IssueCommentSummaryStatus

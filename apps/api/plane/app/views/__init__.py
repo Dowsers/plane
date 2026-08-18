@@ -365,3 +365,5 @@ from .gitlab_integration import (
 )
 
 from .workspace_ai_config import WorkspaceAIConfigEndpoint, WorkspaceAIConfigTestEndpoint
+
+from .issue_comment_summary import IssueCommentSummaryEndpoint

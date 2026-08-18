@@ -160,6 +160,19 @@ class Workspace(BaseModel):
     # knobs (max_depth/max_cost/timeout_ms), which have no flat-boolean
     # precedent in this codebase, live in that separate model.
     is_flexible_query_enabled = models.BooleanField(default=False)
+    # Settings > AI toggle for the "Resume IA de fils de discussion" (AI
+    # thread summary) feature - see
+    # docs/feature-specs/09-ai-features.md ("4. Resume IA de fils de
+    # discussion", exigence 6) in plane-selfhost. Opt-in (default False),
+    # same reasoning/convention as is_initiatives_enabled/is_roadmap_enabled/
+    # is_flexible_query_enabled above - a flat boolean directly on Workspace
+    # rather than a satellite model, since the only extra "config" this
+    # feature needs beyond the shared WorkspaceAIConfig connection
+    # (plane.db.models.ai_config) is this single on/off switch. Both this
+    # flag AND a `WorkspaceAIConfig` with `is_enabled=True` are required
+    # before a summary can be generated - see
+    # plane.app.views.issue_comment_summary.
+    is_ai_summary_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         """Return name of the Workspace"""

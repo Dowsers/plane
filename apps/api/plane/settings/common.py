@@ -142,6 +142,14 @@ REST_FRAMEWORK = {
         # docs/feature-specs/04-views-filters.md ("Assistant de filtre en
         # langage naturel") in plane-selfhost.
         "nl_filter_assistant": "4/min",
+        # Exigence 13 - docs/feature-specs/09-ai-features.md ("4. Resume IA
+        # de fils de discussion") in plane-selfhost. Per-workspace (see
+        # IssueCommentSummaryThrottle.get_cache_key) bound on how often a
+        # summary generation can be triggered, independent of per-issue
+        # idempotency (an already-PENDING generation is reused rather than
+        # re-triggered, so this only throttles genuinely new/regenerated
+        # generations).
+        "issue_comment_summary": "10/hour",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

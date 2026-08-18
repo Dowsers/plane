@@ -34,6 +34,7 @@ from plane.app.views import (
     IssueMetaEndpoint,
     IssueDetailIdentifierEndpoint,
     IssueConvertToRecurringEndpoint,
+    IssueCommentSummaryEndpoint,
 )
 
 urlpatterns = [
@@ -179,6 +180,14 @@ urlpatterns = [
         name="project-issue-comment",
     ),
     ## End IssueComments
+    # AI thread summary - docs/feature-specs/09-ai-features.md ("4. Resume
+    # IA de fils de discussion") in plane-selfhost.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/ai-summary/",
+        IssueCommentSummaryEndpoint.as_view(),
+        name="project-issue-comment-ai-summary",
+    ),
+    ## End AI thread summary
     # Issue Subscribers
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-subscribers/",
