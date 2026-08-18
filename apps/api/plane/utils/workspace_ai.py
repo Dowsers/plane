@@ -47,15 +47,19 @@ def call_llm(
     provider: str,
     system_prompt: Optional[str] = None,
     api_base_url: Optional[str] = None,
+    timeout: Optional[float] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
     """Make a single, synchronous, non-streaming chat-completion call
     against `provider` and return `(text, error)` - exactly the call shape
     `get_llm_response` used before this refactor (Anthropic/Gemini are
     still called via an OpenAI-compatible client shape).
 
-    `system_prompt`/`api_base_url` are additive, optional parameters new
-    per-workspace callers can use - passing neither reproduces the exact
-    prior `get_llm_response` behavior.
+    `system_prompt`/`api_base_url`/`timeout` are additive, optional
+    parameters new callers can use - passing none of them reproduces the
+    exact prior `get_llm_response` behavior. `timeout` (seconds) is added
+    for category 9 feature 6 (AI-assisted status update drafting, exigence
+    10's 20s timeout requirement) - when omitted, the `openai` client's own
+    default timeout applies, unchanged from before this parameter existed.
     """
     try:
         # For Gemini, prepend provider name to model - same quirk as before.
@@ -65,6 +69,8 @@ def call_llm(
         client_kwargs = {"api_key": api_key}
         if api_base_url:
             client_kwargs["base_url"] = api_base_url
+        if timeout is not None:
+            client_kwargs["timeout"] = timeout
         client = OpenAI(**client_kwargs)
 
         messages = []
@@ -82,6 +88,8 @@ def call_llm(
             return None, f"Invalid API key for {provider}"
         elif error_type == "RateLimitError":
             return None, f"Rate limit exceeded for {provider}"
+        elif error_type in ("APITimeoutError", "Timeout", "ReadTimeout"):
+            return None, f"Request to {provider} timed out"
         else:
             return None, f"Error occurred while generating response from {provider}"
 
@@ -98,13 +106,19 @@ def get_workspace_ai_config(workspace):
     return WorkspaceAIConfig.objects.filter(workspace=workspace).first()
 
 
-def get_workspace_llm_response(workspace, task: str, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+def get_workspace_llm_response(
+    workspace, task: str, prompt: str, timeout: Optional[float] = None
+) -> Tuple[Optional[str], Optional[str]]:
     """The function future category 9 features (thread summary,
     status-update drafting, auto-triage, digest, chat assistant) should
     actually call. Fetches the workspace's own `WorkspaceAIConfig` and
     calls `call_llm` - returns a clear "not configured" error if the
     workspace has no config row or has not enabled it. Never falls back to
     the instance-wide `LLM_API_KEY` (see module docstring).
+
+    `timeout` (seconds) is optional and additive - passed straight through
+    to `call_llm`. Existing callers that don't pass it see no behavior
+    change.
     """
     from plane.db.models.ai_config import WorkspaceAIProvider
 
@@ -122,4 +136,5 @@ def get_workspace_llm_response(workspace, task: str, prompt: str) -> Tuple[Optio
         model=config.model_name,
         provider=config.provider,
         api_base_url=config.api_base_url or None,
+        timeout=timeout,
     )

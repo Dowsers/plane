@@ -24,7 +24,7 @@ from .importer import Importer
 from .initiative import Initiative, InitiativeProject, InitiativeActivity
 from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
 from .milestone import Milestone
-from .project_update import ProjectUpdate, ProjectUpdateReminder
+from .project_update import ProjectUpdate, ProjectUpdateReminder, AIGenerationStatus
 from .project_template import (
     ProjectTemplate,
     ProjectTemplateState,
@@ -86,6 +86,7 @@ from .issue import (
     IssueMention,
     IssueReaction,
     IssueRelation,
+    IssueRelationChoices,
     IssueSequence,
     IssueSubscriber,
     IssueVote,
@@ -122,6 +123,7 @@ from .workspace import (
     WorkspaceUserLink,
     WorkspaceHomePreference,
     WorkspaceUserPreference,
+    WorkspaceAIUpdateDataScope,
 )
 
 from .favorite import UserFavorite
@@ -202,3 +204,5 @@ from .support import (
 from .ai_config import WorkspaceAIConfig, WorkspaceAIProvider
 
 from .issue_comment_summary import IssueCommentSummary, IssueCommentSummaryStatus
+
+from .ai_generation_log import AIGenerationLog

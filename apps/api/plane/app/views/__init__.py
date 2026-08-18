@@ -263,6 +263,10 @@ from .project_update.base import (
     ProjectUpdateLatestEndpoint,
     ProjectUpdateGenerateSummaryEndpoint,
 )
+from .project_update.ai_draft import (
+    ProjectUpdateAIDraftEndpoint,
+    ProjectUpdateAIGenerationLogEndpoint,
+)
 
 from .project_template.base import (
     ProjectTemplateViewSet,

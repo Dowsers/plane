@@ -231,3 +231,4 @@ from .gitlab_integration import (
 from .ai_config import WorkspaceAIConfigSerializer
 
 from .issue_comment_summary import IssueCommentSummarySerializer
+from .ai_generation_log import AIGenerationLogSerializer

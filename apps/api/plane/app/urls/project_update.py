@@ -8,6 +8,8 @@ from plane.app.views import (
     ProjectUpdateViewSet,
     ProjectUpdateLatestEndpoint,
     ProjectUpdateGenerateSummaryEndpoint,
+    ProjectUpdateAIDraftEndpoint,
+    ProjectUpdateAIGenerationLogEndpoint,
 )
 
 urlpatterns = [
@@ -25,6 +27,18 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/updates/generate-summary/",
         ProjectUpdateGenerateSummaryEndpoint.as_view(),
         name="project-update-generate-summary",
+    ),
+    # Category 9 feature 6 - AI-assisted status update drafting (Project
+    # only, see plane.utils.project_update_ai_draft module docstring).
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/updates/draft/",
+        ProjectUpdateAIDraftEndpoint.as_view(),
+        name="project-update-ai-draft",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/ai-update-logs/",
+        ProjectUpdateAIGenerationLogEndpoint.as_view(),
+        name="project-update-ai-generation-log",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/updates/<uuid:pk>/",

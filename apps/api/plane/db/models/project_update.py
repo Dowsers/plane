@@ -9,6 +9,19 @@ from django.db import models
 from .project import ProjectBaseModel
 
 
+class AIGenerationStatus(models.TextChoices):
+    """Shared status choices for a single AI-drafted-update generation
+    attempt - used both on `ProjectUpdate.ai_generation_status` (the latest
+    attempt behind that update's current draft) and on `AIGenerationLog`
+    (one row per attempt, see `plane.db.models.ai_generation_log`).
+    """
+
+    PENDING = "PENDING", "Pending"
+    SUCCESS = "SUCCESS", "Success"
+    FAILED = "FAILED", "Failed"
+    TIMEOUT = "TIMEOUT", "Timeout"
+
+
 class ProjectUpdate(ProjectBaseModel):
     """
     A historized, manually-authored status update for a project (On
@@ -33,6 +46,31 @@ class ProjectUpdate(ProjectBaseModel):
     # time - frozen, never regenerated on edit (exigence 6 de la spec).
     generated_summary_json = models.JSONField(default=dict, blank=True)
     is_summary_edited = models.BooleanField(default=False)
+
+    # AI-assisted drafting fields - category 9 feature 6 ("Redaction
+    # assistee des mises a jour de statut", docs/feature-specs/09-ai-features.md
+    # in plane-selfhost). PROJECT ONLY in v1 - see
+    # plane.utils.project_update_ai_draft module docstring for why
+    # Cycle/Module are a deliberate, documented gap rather than an
+    # oversight. Publication is unchanged (this endpoint's `create()` still
+    # IS publication) - these fields are simply carried through from a
+    # generated draft when the human submits the existing manual form.
+    is_ai_assisted = models.BooleanField(default=False)
+    # Raw generated text, kept verbatim even after the human edits the
+    # published description_html - exigence 8's audit/diff requirement.
+    ai_draft_content = models.TextField(null=True, blank=True)
+    ai_generation_status = models.CharField(
+        max_length=20, choices=AIGenerationStatus.choices, null=True, blank=True
+    )
+    # {llm_provider, llm_model, prompt_tokens, completion_tokens, latency_ms}
+    # - see plane.utils.project_update_ai_draft.generate_project_update_draft
+    # for the documented prompt_tokens/completion_tokens gap (the shared LLM
+    # helper doesn't currently surface provider token usage).
+    ai_generation_metadata = models.JSONField(null=True, blank=True)
+    # Serialized issue-delta list actually used for this generation -
+    # reproducibility/audit (exigence 8).
+    ai_source_snapshot = models.JSONField(null=True, blank=True)
+    ai_regeneration_count = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         verbose_name = "Project Update"

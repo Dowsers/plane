@@ -150,6 +150,13 @@ REST_FRAMEWORK = {
         # re-triggered, so this only throttles genuinely new/regenerated
         # generations).
         "issue_comment_summary": "10/hour",
+        # Fallback only - docs/feature-specs/09-ai-features.md ("6.
+        # Redaction assistee des mises a jour de statut") in plane-selfhost,
+        # exigence 11. ProjectUpdateAIDraftThrottle always overrides
+        # num_requests/duration per request from the requesting workspace's
+        # own Workspace.ai_update_daily_generation_limit (default 50/day) -
+        # see that class's docstring.
+        "project_update_ai_draft": "50/day",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

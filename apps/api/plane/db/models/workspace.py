@@ -19,6 +19,18 @@ from plane.utils.color import get_random_color
 ROLE_CHOICES = ((20, "Admin"), (15, "Member"), (5, "Guest"))
 
 
+class WorkspaceAIUpdateDataScope(models.TextChoices):
+    """Exigence 12, docs/feature-specs/09-ai-features.md ("6. Redaction
+    assistee des mises a jour de statut") in plane-selfhost - how much issue
+    detail is sent to the external LLM provider when drafting a
+    `ProjectUpdate`. Default never sends full descriptions or any PII beyond
+    assignee display names already visible in the workspace.
+    """
+
+    TITLES_STATES_ONLY = "TITLES_STATES_ONLY", "Titles, states, and assignees only"
+    FULL_DESCRIPTIONS = "FULL_DESCRIPTIONS", "Titles, states, assignees, and full descriptions"
+
+
 def get_default_props():
     return {
         "filters": {
@@ -173,6 +185,29 @@ class Workspace(BaseModel):
     # before a summary can be generated - see
     # plane.app.views.issue_comment_summary.
     is_ai_summary_enabled = models.BooleanField(default=False)
+    # Settings > AI toggle for AI-assisted status update drafting - see
+    # docs/feature-specs/09-ai-features.md ("6. Redaction assistee des
+    # mises a jour de statut") in plane-selfhost. PROJECT-ONLY in this fork
+    # (see plane.utils.project_update_ai_draft module docstring) - despite
+    # the spec wanting Cycle/Module too, no CycleUpdate/ModuleUpdate model
+    # exists here. Opt-in (default False), same reasoning/convention as
+    # is_ai_summary_enabled above - a flat boolean, requiring both this flag
+    # AND an enabled WorkspaceAIConfig before generation is allowed.
+    is_ai_update_draft_enabled = models.BooleanField(default=False)
+    # Exigence 12 - see WorkspaceAIUpdateDataScope above.
+    ai_update_data_scope = models.CharField(
+        max_length=30,
+        choices=WorkspaceAIUpdateDataScope.choices,
+        default=WorkspaceAIUpdateDataScope.TITLES_STATES_ONLY,
+    )
+    # Exigence 9 - max AI generations per unpublished draft-editing cycle.
+    # See plane.utils.project_update_ai_draft for the cache-based counting
+    # mechanism (no DB row exists to count against before a ProjectUpdate is
+    # published).
+    max_ai_update_regenerations = models.PositiveSmallIntegerField(default=5)
+    # Exigence 11 - per-workspace daily cap on generation calls, enforced by
+    # plane.throttles.project_update_ai_draft.ProjectUpdateAIDraftThrottle.
+    ai_update_daily_generation_limit = models.PositiveIntegerField(default=50)
 
     def __str__(self):
         """Return name of the Workspace"""
