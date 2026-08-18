@@ -2226,6 +2226,62 @@ export default {
         "Browse this instance's real OpenAPI schema and execute real calls against this workspace's own data, directly from the browser - no external docs site required.",
     },
   },
+  ai: {
+    label: "AI",
+    settings: {
+      title: "AI",
+      description:
+        "Connect a per-workspace LLM provider and turn on individual AI-assisted features. No workspace data is ever sent to a provider until it is explicitly configured and enabled here.",
+    },
+    provider: {
+      label: "Provider",
+      openai: "OpenAI",
+      anthropic: "Anthropic",
+      gemini: "Gemini",
+      custom_openai_compatible: "Custom (OpenAI-compatible)",
+    },
+    fields: {
+      api_key: "API key",
+      api_key_placeholder: "Enter a new API key to replace the stored one",
+      api_key_configured: "A key is already configured for this workspace.",
+      api_base_url: "API base URL",
+      api_base_url_hint: "Only used for the Custom (OpenAI-compatible) provider, e.g. a self-hosted endpoint.",
+      model_name: "Model name",
+      enabled: "Enabled",
+    },
+    test_connection: {
+      label: "Test connection",
+      success: "Connection successful.",
+      error: "Connection failed.",
+    },
+    toast: {
+      save_success: "AI configuration saved.",
+      error: "Something went wrong. Please try again.",
+    },
+    features: {
+      title: "Features",
+      description: "Turn on individual AI-assisted features once a provider is configured above.",
+      thread_summary: {
+        label: "AI thread summary",
+        description: "Summarize an issue's comment thread with citations back to the original comments.",
+        disabled_tooltip: "Configure and enable an AI provider above first.",
+      },
+    },
+    summary: {
+      title: "AI Summary",
+      generate: "Generate AI summary",
+      regenerate: "Regenerate",
+      generating: "Generating summary...",
+      stale_badge: "New comments since this summary",
+      failed: "Couldn't generate the summary, try again.",
+      not_configured_admin: "AI isn't configured for this workspace yet.",
+      not_configured_link: "Go to Settings > AI",
+      not_enough_comments: "This issue needs a few more comments before a summary is worth generating.",
+      no_summary_yet: "No summary yet.",
+      comment_deleted: "Comment deleted",
+      error: "Something went wrong. Please try again.",
+    },
+  },
   project_updates: {
     label: "Updates",
     post_update: "Post update",

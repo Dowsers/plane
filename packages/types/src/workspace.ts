@@ -41,6 +41,11 @@ export interface IWorkspace {
   // second, independent gate alongside the instance-wide
   // `FLEXIBLE_QUERY_ENABLED` env var.
   is_flexible_query_enabled?: boolean;
+  // Category 9, feature 4 - "AI thread summary" Settings > AI toggle. Also
+  // requires a `WorkspaceAIConfig` with `is_enabled: true` before a summary
+  // can actually be generated - see `Workspace.is_ai_summary_enabled`'s own
+  // field comment (apps/api/plane/db/models/workspace.py).
+  is_ai_summary_enabled?: boolean;
 }
 
 export interface IWorkspaceLite {

@@ -94,6 +94,19 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/api/`,
   },
+  ai: {
+    key: "ai",
+    i18n_label: "ai.settings.title",
+    href: `/settings/ai`,
+    // Mirrors the backend's own Admin-only-for-every-verb gating
+    // (`WorkspaceAIConfigEndpoint`/`WorkspaceAIConfigTestEndpoint`,
+    // apps/api/plane/app/views/workspace_ai_config.py, both
+    // `level="WORKSPACE"` + `ROLE.ADMIN`) - Member/Guest never see this
+    // configuration screen, only the read-only AI summary section in the
+    // issue detail sidebar once an admin has enabled it.
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/ai/`,
+  },
   "api-explorer": {
     key: "api-explorer",
     i18n_label: "api_explorer.settings.title",
@@ -121,6 +134,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["export"],
     WORKSPACE_SETTINGS["project-templates"],
     WORKSPACE_SETTINGS["sla-policies"],
+    WORKSPACE_SETTINGS["ai"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [

@@ -17,6 +17,7 @@ import { useTranslation } from "@plane/i18n";
 import type { TFileSignedURLResponse, TIssueComment } from "@plane/types";
 // components
 import { CommentCreate } from "@/components/comments/comment-create";
+import { AISummarySection } from "@/components/issues/issue-detail/ai-summary/root";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useProject } from "@/hooks/store/use-project";
@@ -127,6 +128,11 @@ export const IssueActivity = observer(function IssueActivity(props: TIssueActivi
           />
         </div>
       </div>
+
+      {/* category 9, feature 4 - "AI thread summary" (docs/feature-specs/09-ai-features.md
+      in plane-selfhost) - collapsible banner above the comment list, per
+      the spec's own wording ("bandeau 'Resume IA' en tete de liste"). */}
+      <AISummarySection workspaceSlug={workspaceSlug} projectId={projectId} issueId={issueId} disabled={disabled} />
 
       {/* rendering activity */}
       <div className="space-y-3">

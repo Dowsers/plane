@@ -7,6 +7,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpToLine,
+  Bot,
   Braces,
   Building,
   Compass,
@@ -32,4 +33,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   "sla-policies": Timer,
   api: Braces,
   "api-explorer": Compass,
+  ai: Bot,
 };

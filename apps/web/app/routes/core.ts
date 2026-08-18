@@ -353,6 +353,7 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/settings/api-explorer",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/api-explorer/page.tsx"
           ),
+          route(":workspaceSlug/settings/ai", "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/ai/page.tsx"),
         ]),
 
         // --------------------------------------------------------------------
