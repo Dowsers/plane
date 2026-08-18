@@ -2266,6 +2266,24 @@ export default {
         description: "Summarize an issue's comment thread with citations back to the original comments.",
         disabled_tooltip: "Configure and enable an AI provider above first.",
       },
+      update_draft: {
+        label: "AI-assisted status update drafting",
+        description:
+          "Draft a project status update from recent issue activity for a lead to review, edit, and publish. Project updates only.",
+        disabled_tooltip: "Configure and enable an AI provider above first.",
+      },
+    },
+    update_draft_settings: {
+      title: "Status update drafting",
+      description: "Extra controls for AI-assisted status update drafting.",
+      data_scope: {
+        label: "Data sent to the LLM provider",
+        titles_states_only: "Titles, states, and assignees only",
+        full_descriptions: "Titles, states, assignees, and full descriptions",
+      },
+      max_regenerations: "Max regenerations per draft",
+      daily_generation_limit: "Daily generation limit (workspace-wide)",
+      save_success: "Status update drafting settings saved.",
     },
     summary: {
       title: "AI Summary",
@@ -2285,12 +2303,29 @@ export default {
   project_updates: {
     label: "Updates",
     post_update: "Post update",
+    generate_draft: "Generate a draft with AI",
     status: {
       on_track: "On track",
       at_risk: "At risk",
       off_track: "Off track",
     },
     since_last_update: "Since the last update",
+    ai_draft: {
+      generating: "Generating a draft... this can take up to 20 seconds.",
+      suggested_status_hint: "AI-suggested status - change it if it doesn't look right.",
+      regenerate: "Regenerate",
+      regenerations_used: "{count}/{max} regenerations used",
+      limit_reached: "Regeneration limit reached. Publish the current draft, or start a new one after publishing.",
+      error: "Couldn't generate a draft. You can still write this update manually.",
+      badge_label: "Drafted with AI assistance",
+      badge_tooltip: "Generated on {date} using {model}",
+      unknown_model: "an unknown model",
+    },
+    audit_log: {
+      view_link: "View AI generation logs",
+      title: "AI generation log",
+      empty: "No AI generation attempts yet.",
+    },
     summary: {
       issues_created: "{count} issues created",
       issues_completed: "{count} issues completed",

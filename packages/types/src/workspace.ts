@@ -46,7 +46,27 @@ export interface IWorkspace {
   // can actually be generated - see `Workspace.is_ai_summary_enabled`'s own
   // field comment (apps/api/plane/db/models/workspace.py).
   is_ai_summary_enabled?: boolean;
+  // Category 9, feature 6 - "AI-assisted status update drafting" Settings >
+  // AI toggle (PROJECT-only in this fork - see `Workspace.
+  // is_ai_update_draft_enabled`'s own field comment,
+  // apps/api/plane/db/models/workspace.py). Also requires a
+  // `WorkspaceAIConfig` with `is_enabled: true` before drafting can
+  // actually be triggered, same convention as `is_ai_summary_enabled`.
+  is_ai_update_draft_enabled?: boolean;
+  // How much issue detail is sent to the LLM when drafting a status
+  // update - see `WorkspaceAIUpdateDataScope` (apps/api/plane/db/models/workspace.py).
+  ai_update_data_scope?: TWorkspaceAIUpdateDataScope;
+  // Max AI generations per unpublished draft-editing cycle before the
+  // draft endpoint returns 429 (default 5).
+  max_ai_update_regenerations?: number;
+  // Workspace-wide daily cap on AI update-draft generation calls (default 50).
+  ai_update_daily_generation_limit?: number;
 }
+
+/** `Workspace.ai_update_data_scope` choices - see `WorkspaceAIUpdateDataScope`
+ * (apps/api/plane/db/models/workspace.py). Default `TITLES_STATES_ONLY` never
+ * sends full issue descriptions to the external LLM provider. */
+export type TWorkspaceAIUpdateDataScope = "TITLES_STATES_ONLY" | "FULL_DESCRIPTIONS";
 
 export interface IWorkspaceLite {
   readonly id: string;

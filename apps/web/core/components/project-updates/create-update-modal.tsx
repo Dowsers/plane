@@ -5,12 +5,13 @@
  */
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
-import type { TProjectUpdateGeneratedSummary, TProjectUpdateStatus } from "@plane/types";
+import type { TProjectUpdateAIDraftResponse, TProjectUpdateGeneratedSummary, TProjectUpdateStatus } from "@plane/types";
 import { Button, EModalPosition, EModalWidth, Loader, ModalCore, TextArea } from "@plane/ui";
 import { cn } from "@plane/utils";
 // hooks
@@ -29,10 +30,18 @@ const STATUS_OPTIONS: { key: TProjectUpdateStatus; className: string }[] = [
 type Props = {
   isOpen: boolean;
   handleClose: () => void;
+  // Category 9, feature 6 ("Redaction assistee des mises a jour de statut",
+  // docs/feature-specs/09-ai-features.md in plane-selfhost) - present only
+  // when this modal was opened via the "Generate a draft with AI" button
+  // (see `ProjectUpdatesListRoot`), which has already called
+  // `POST .../updates/draft/` before opening this form. `null`/omitted means
+  // a plain manual "Add update" - none of the `ai_*` fields are ever sent
+  // in that case.
+  initialDraft?: TProjectUpdateAIDraftResponse | null;
 };
 
 export const CreateProjectUpdateModal = observer(function CreateProjectUpdateModal(props: Props) {
-  const { isOpen, handleClose } = props;
+  const { isOpen, handleClose, initialDraft = null } = props;
   const { workspaceSlug, projectId } = useParams();
   const { t } = useTranslation();
   const { createUpdate } = useProjectUpdate();
@@ -42,13 +51,50 @@ export const CreateProjectUpdateModal = observer(function CreateProjectUpdateMod
   const [summary, setSummary] = useState<TProjectUpdateGeneratedSummary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // The most recent AI draft response for this editing session - kept
+  // verbatim (never mutated by further edits to `descriptionHtml` below) so
+  // the published update's `ai_draft_content` stays the true original text
+  // for audit/diff purposes (exigence 8), even though the human is free to
+  // edit `descriptionHtml` before submitting.
+  const [aiDraft, setAiDraft] = useState<TProjectUpdateAIDraftResponse | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerationLimitMessage, setRegenerationLimitMessage] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isOpen || !workspaceSlug || !projectId) return;
-    setStatus("ON_TRACK");
-    setDescriptionHtml("");
+    setStatus(initialDraft?.suggested_status ?? "ON_TRACK");
+    setDescriptionHtml(initialDraft?.draft_content ?? "");
+    setAiDraft(initialDraft ?? null);
+    setRegenerationLimitMessage(null);
     setSummary(null);
     projectUpdateService.generateSummary(workspaceSlug.toString(), projectId.toString()).then(setSummary);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, workspaceSlug, projectId]);
+
+  const handleRegenerate = async () => {
+    if (!workspaceSlug || !projectId) return;
+    setIsRegenerating(true);
+    setRegenerationLimitMessage(null);
+    try {
+      const result = await projectUpdateService.generateDraft(workspaceSlug.toString(), projectId.toString());
+      setAiDraft(result);
+      setDescriptionHtml(result.draft_content);
+      setStatus(result.suggested_status);
+    } catch (error: unknown) {
+      const err = error as { error?: string; status?: number };
+      if (err?.status === 429) {
+        setRegenerationLimitMessage(err.error ?? t("project_updates.ai_draft.limit_reached"));
+      } else {
+        setToast({
+          type: TOAST_TYPE.ERROR,
+          title: t("toast.error"),
+          message: err?.error ?? t("project_updates.ai_draft.error"),
+        });
+      }
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!workspaceSlug || !projectId) return;
@@ -58,6 +104,19 @@ export const CreateProjectUpdateModal = observer(function CreateProjectUpdateMod
         status,
         description_html: descriptionHtml || "<p></p>",
         generated_summary_json: summary ?? {},
+        // Only ever included when this draft originated from the AI
+        // generator - a plain manual update never sends these (exigence 8
+        // provenance is opt-in by construction, not forced).
+        ...(aiDraft
+          ? {
+              is_ai_assisted: true,
+              ai_draft_content: aiDraft.draft_content,
+              ai_generation_status: aiDraft.ai_generation_status,
+              ai_generation_metadata: aiDraft.ai_generation_metadata,
+              ai_source_snapshot: aiDraft.ai_source_snapshot,
+              ai_regeneration_count: aiDraft.regeneration_count,
+            }
+          : {}),
       });
       setToast({
         type: TOAST_TYPE.SUCCESS,
@@ -72,26 +131,31 @@ export const CreateProjectUpdateModal = observer(function CreateProjectUpdateMod
     }
   };
 
+  const hasReachedRegenerationCap = !!aiDraft && aiDraft.regeneration_count >= aiDraft.max_regenerations;
+
   return (
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.CENTER} width={EModalWidth.XL}>
       <div className="flex flex-col gap-4 p-5">
         <h3 className="text-16 font-medium">{t("project_updates.post_update")}</h3>
 
-        <div className="flex items-center gap-2">
-          {STATUS_OPTIONS.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setStatus(option.key)}
-              className={cn(
-                "rounded-sm px-2.5 py-1 text-13 font-medium ring-1 ring-transparent ring-inset",
-                option.className,
-                status === option.key ? "opacity-100 ring-current" : "opacity-40"
-              )}
-            >
-              {t(`project_updates.status.${option.key.toLowerCase()}`)}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            {STATUS_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setStatus(option.key)}
+                className={cn(
+                  "rounded-sm px-2.5 py-1 text-13 font-medium ring-1 ring-transparent ring-inset",
+                  option.className,
+                  status === option.key ? "opacity-100 ring-current" : "opacity-40"
+                )}
+              >
+                {t(`project_updates.status.${option.key.toLowerCase()}`)}
+              </button>
+            ))}
+          </div>
+          {aiDraft && <p className="text-11 text-tertiary">{t("project_updates.ai_draft.suggested_status_hint")}</p>}
         </div>
 
         <div className="rounded-md border-[0.5px] border-subtle bg-layer-1 p-3">
@@ -120,6 +184,34 @@ export const CreateProjectUpdateModal = observer(function CreateProjectUpdateMod
           className="w-full"
           rows={6}
         />
+
+        {aiDraft && (
+          <div className="flex flex-col gap-1.5 rounded-md border-[0.5px] border-subtle bg-layer-1 p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-12 text-secondary">
+                <Sparkles className="size-3.5 text-tertiary" aria-hidden="true" />
+                {t("project_updates.ai_draft.regenerations_used", {
+                  count: aiDraft.regeneration_count,
+                  max: aiDraft.max_regenerations,
+                })}
+              </span>
+              <Button
+                variant="neutral-primary"
+                size="sm"
+                onClick={handleRegenerate}
+                loading={isRegenerating}
+                disabled={hasReachedRegenerationCap}
+              >
+                {t("project_updates.ai_draft.regenerate")}
+              </Button>
+            </div>
+            {(hasReachedRegenerationCap || regenerationLimitMessage) && (
+              <p className="text-11 text-warning-primary">
+                {regenerationLimitMessage ?? t("project_updates.ai_draft.limit_reached")}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-2 pt-2">
           <Button variant="neutral-primary" size="sm" onClick={handleClose}>
