@@ -206,3 +206,5 @@ from .ai_config import WorkspaceAIConfig, WorkspaceAIProvider
 from .issue_comment_summary import IssueCommentSummary, IssueCommentSummaryStatus
 
 from .ai_generation_log import AIGenerationLog
+
+from .issue_embedding import IssueEmbedding
