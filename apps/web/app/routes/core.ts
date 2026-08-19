@@ -114,6 +114,15 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/notifications", "./(all)/[workspaceSlug]/(projects)/notifications/page.tsx"),
         ]),
 
+        // Digests (category 9, feature 5 - "Digest periodique automatise") -
+        // a dedicated surface, independent of the real-time notification
+        // feed above, surfaced as a sibling entry point from it (see the
+        // "Digests" button in NotificationSidebarHeaderOptions).
+        layout("./(all)/[workspaceSlug]/(projects)/digests/layout.tsx", [
+          route(":workspaceSlug/digests", "./(all)/[workspaceSlug]/(projects)/digests/page.tsx"),
+          route(":workspaceSlug/digests/:digestId", "./(all)/[workspaceSlug]/(projects)/digests/[digestId]/page.tsx"),
+        ]),
+
         // Profile
         layout("./(all)/[workspaceSlug]/(projects)/profile/[userId]/layout.tsx", [
           route(":workspaceSlug/profile/:userId", "./(all)/[workspaceSlug]/(projects)/profile/[userId]/page.tsx"),

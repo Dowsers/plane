@@ -21,6 +21,7 @@ export * from "./cycle";
 export * from "./dashboard";
 export * from "./de-dupe";
 export * from "./description_version";
+export * from "./digest";
 export * from "./duplicate-detection-config";
 export * from "./editor";
 export * from "./enums";

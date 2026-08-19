@@ -5,13 +5,14 @@
  */
 
 import { observer } from "mobx-react";
-import { CheckCheck, RefreshCw } from "lucide-react";
+import { CheckCheck, Newspaper, RefreshCw } from "lucide-react";
 // plane imports
 import { ENotificationLoader, ENotificationQueryParamType } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Tooltip } from "@plane/propel/tooltip";
 import { Spinner } from "@plane/ui";
 // hooks
+import { useAppRouter } from "@/hooks/use-app-router";
 import { useWorkspaceNotifications } from "@/hooks/store/notifications";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // local imports
@@ -31,6 +32,7 @@ export const NotificationSidebarHeaderOptions = observer(function NotificationSi
   const { isMobile } = usePlatformOS();
   const { loader, getNotifications, markAllNotificationsAsRead } = useWorkspaceNotifications();
   const { t } = useTranslation();
+  const router = useAppRouter();
 
   const refreshNotifications = async () => {
     if (loader) return;
@@ -78,6 +80,20 @@ export const NotificationSidebarHeaderOptions = observer(function NotificationSi
 
       {/* notification filters */}
       <NotificationFilter />
+
+      {/* category 9, feature 5 - "Digest periodique automatise": sibling
+          entry point into the dedicated, standalone "Digests" surface
+          (:workspaceSlug/digests) - see DigestsSidebarRoot's own docstring
+          for why it's a separate route rather than a third
+          NOTIFICATION_TABS value. */}
+      <Tooltip tooltipContent={t("digest.nav.open_digests")} isMobile={isMobile} position="bottom">
+        <IconButton
+          size="base"
+          variant="ghost"
+          icon={Newspaper}
+          onClick={() => router.push(`/${workspaceSlug}/digests`)}
+        />
+      </Tooltip>
 
       {/* notification menu options */}
       <NotificationHeaderMenuOption />

@@ -14,6 +14,7 @@ import type {
   TWorkspaceAIConfig,
   TWorkspaceAIProvider,
   TWorkspaceAIUpdateDataScope,
+  TWorkspaceDigestSettings,
   TWorkspaceDuplicateDetectionConfig,
 } from "@plane/types";
 import { Button, CustomSelect, Input, ToggleSwitch } from "@plane/ui";
@@ -22,11 +23,13 @@ import { useWorkspace } from "@/hooks/store/use-workspace";
 // services
 import { AIConfigService } from "@/services/ai-config.service";
 import { DuplicateDetectionConfigService } from "@/services/duplicate-detection-config.service";
+import { WorkspaceDigestSettingsService } from "@/services/workspace-digest-settings.service";
 // local imports
 import { AIFeatureToggleRow } from "./feature-toggle-row";
 
 const aiConfigService = new AIConfigService();
 const duplicateDetectionConfigService = new DuplicateDetectionConfigService();
+const workspaceDigestSettingsService = new WorkspaceDigestSettingsService();
 
 const DUPLICATE_DETECTION_SCOPE_KEYS: TDuplicateDetectionScope[] = ["project", "workspace"];
 const DUPLICATE_DETECTION_SCOPE_I18N_KEYS: Record<TDuplicateDetectionScope, string> = {
@@ -116,6 +119,20 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
   const [dailyGenerationLimit, setDailyGenerationLimit] = useState(50);
   const [isSavingUpdateDraftSettings, setIsSavingUpdateDraftSettings] = useState(false);
 
+  // Category 9, feature 5 - "Digest periodique automatise" admin controls.
+  // `digest_feature_enabled` is a plain workspace-wide kill-switch,
+  // independent of whether AI is configured at all (the digest still works
+  // in TEMPLATE mode with no LLM), so it lives in its own dedicated
+  // endpoint/service (`WorkspaceDigestSettingsService`) rather than through
+  // `useWorkspace()`/`updateWorkspace()` - same reasoning as duplicate
+  // detection's own config above. `is_digest_llm_enrichment_enabled` IS an
+  // AI-gated feature and is rendered as an ordinary `AIFeatureToggleRow`
+  // below, disabled the same way as the other four rows.
+  const [digestSettings, setDigestSettings] = useState<TWorkspaceDigestSettings | null>(null);
+  const [hasDigestSettingsLoaded, setHasDigestSettingsLoaded] = useState(false);
+  const [isTogglingDigestFeature, setIsTogglingDigestFeature] = useState(false);
+  const [isTogglingDigestLlmEnrichment, setIsTogglingDigestLlmEnrichment] = useState(false);
+
   useEffect(() => {
     setDataScope(currentWorkspace?.ai_update_data_scope ?? "TITLES_STATES_ONLY");
     setMaxRegenerations(currentWorkspace?.max_ai_update_regenerations ?? 5);
@@ -167,6 +184,27 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       })
       .finally(() => {
         if (!cancelled) setHasDuplicateDetectionLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+    workspaceDigestSettingsService
+      .getSettings(workspaceSlug)
+      .then((data) => {
+        if (cancelled) return;
+        setDigestSettings(data);
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+      })
+      .finally(() => {
+        if (!cancelled) setHasDigestSettingsLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -306,6 +344,36 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
     } finally {
       setIsSavingDuplicateDetectionSettings(false);
+    }
+  };
+
+  const handleToggleDigestFeature = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    setIsTogglingDigestFeature(true);
+    try {
+      const updated = await workspaceDigestSettingsService.updateSettings(workspaceSlug, {
+        digest_feature_enabled: value,
+      });
+      setDigestSettings(updated);
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+    } finally {
+      setIsTogglingDigestFeature(false);
+    }
+  };
+
+  const handleToggleDigestLlmEnrichment = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    setIsTogglingDigestLlmEnrichment(true);
+    try {
+      const updated = await workspaceDigestSettingsService.updateSettings(workspaceSlug, {
+        is_digest_llm_enrichment_enabled: value,
+      });
+      setDigestSettings(updated);
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+    } finally {
+      setIsTogglingDigestLlmEnrichment(false);
     }
   };
 
@@ -462,6 +530,34 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           disabledTooltip={t("ai.features.duplicate_detection.disabled_tooltip")}
           isSaving={isTogglingDuplicateDetection}
         />
+        <AIFeatureToggleRow
+          key="digest_llm_enrichment"
+          label={t("ai.features.digest_llm_enrichment.label")}
+          description={t("ai.features.digest_llm_enrichment.description")}
+          value={!!digestSettings?.is_digest_llm_enrichment_enabled}
+          onChange={handleToggleDigestLlmEnrichment}
+          disabled={!isConfiguredAndEnabled || !hasDigestSettingsLoaded}
+          disabledTooltip={t("ai.features.digest_llm_enrichment.disabled_tooltip")}
+          isSaving={isTogglingDigestLlmEnrichment}
+        />
+
+        <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
+          <div>
+            <h5 className="text-13 font-medium text-primary">{t("digest.admin.title")}</h5>
+            <p className="text-12 text-tertiary">{t("digest.admin.description")}</p>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-13 text-secondary">{t("digest.admin.feature_enabled_label")}</span>
+              <span className="text-12 text-tertiary">{t("digest.admin.feature_enabled_hint")}</span>
+            </div>
+            <ToggleSwitch
+              value={!!digestSettings?.digest_feature_enabled}
+              onChange={handleToggleDigestFeature}
+              disabled={!hasDigestSettingsLoaded || isTogglingDigestFeature}
+            />
+          </div>
+        </div>
 
         <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
           <div>
