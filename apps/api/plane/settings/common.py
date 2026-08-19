@@ -157,6 +157,11 @@ REST_FRAMEWORK = {
         # own Workspace.ai_update_daily_generation_limit (default 50/day) -
         # see that class's docstring.
         "project_update_ai_draft": "50/day",
+        # Exigence 15, docs/feature-specs/09-ai-features.md ("1. Auto-triage
+        # assiste par IA") in plane-selfhost - see
+        # IssueTriageSuggestionRegenerateThrottle (per-issue, not
+        # per-workspace).
+        "issue_triage_regenerate": "1/min",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

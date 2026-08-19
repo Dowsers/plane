@@ -198,6 +198,39 @@ class Project(BaseModel):
         default=3, validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
 
+    # --- Category 9 feature 1 - "Auto-triage assiste par IA" project
+    # settings (docs/feature-specs/09-ai-features.md in plane-selfhost).
+    # Flat fields directly on Project, NOT a satellite "ProjectAITriageConfig"
+    # model as the spec's own data-model section proposes - matching this
+    # fork's established convention (is_initiatives_enabled/is_roadmap_enabled/
+    # is_flexible_query_enabled/is_ai_summary_enabled) of a plain boolean/
+    # numeric field directly on the owning model rather than a 1:1 satellite,
+    # since nothing here needs its own independent lifecycle or created_at/
+    # updated_at beyond Project's own. See
+    # plane.utils.issue_triage_suggestion for the logic that reads these.
+    #
+    # Nullable tri-state (unlike every sibling `is_*_enabled` boolean above,
+    # which default False): exigence 12 explicitly wants "une valeur par
+    # defaut heritee du reglage workspace" - a real third "inherit" state,
+    # not just a False default, so a project that has never touched this
+    # setting is indistinguishable from one that explicitly opted out.
+    # `None` means "inherit Workspace.is_ai_triage_enabled"; an explicit
+    # `True`/`False` overrides the inherited value (but `True` only takes
+    # effect if the workspace master switch is also `True` - see
+    # is_ai_triage_enabled_for_project).
+    is_ai_triage_enabled = models.BooleanField(null=True, blank=True, default=None)
+    ai_triage_auto_apply_module = models.BooleanField(default=False)
+    ai_triage_auto_apply_assignee = models.BooleanField(default=False)
+    ai_triage_auto_apply_labels = models.BooleanField(default=False)
+    ai_triage_confidence_threshold_module = models.FloatField(default=0.75)
+    ai_triage_confidence_threshold_assignee = models.FloatField(default=0.75)
+    ai_triage_confidence_threshold_labels = models.FloatField(default=0.75)
+    # Exigence 2 - cap on the number of suggested labels.
+    ai_triage_max_labels_suggested = models.PositiveSmallIntegerField(default=5)
+    # Exigence 10 - below this many qualified historical issues in the
+    # project, no suggestion is generated at all.
+    ai_triage_min_historical_issues = models.PositiveIntegerField(default=10)
+
     def __init__(self, *args, **kwargs):
         # Track if timezone is provided, if so, don't override it with the workspace timezone when saving
         self.is_timezone_provided = kwargs.get("timezone") is not None

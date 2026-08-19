@@ -68,6 +68,16 @@ class BotTypeEnum(models.TextChoices):
     # blocked from role=20/Admin - the bots above keep their existing
     # role=20 membership unchanged (plane.utils.integration_bot).
     WORKSPACE_AGENT = "WORKSPACE_AGENT", "Workspace Agent"
+    # Category 9 feature 1 (docs/feature-specs/09-ai-features.md "1.
+    # Auto-triage assiste par IA" in plane-selfhost, exigence 6) - the
+    # dedicated system actor auto-applied module/assignee/label
+    # suggestions are attributed to on the `IssueActivity` feed, created/
+    # fetched via the same `get_or_create_integration_bot` factory as the
+    # category 7 bots above (plane.utils.integration_bot) rather than a
+    # new bot-creation mechanism. Unlike WORKSPACE_AGENT, this bot is not
+    # meant to be member-visible/assignable - it exists purely to be an
+    # `IssueActivity.actor` distinguishable from a human.
+    AI_TRIAGE_BOT = "AI_TRIAGE_BOT", "AI Triage Bot"
 
 
 class User(AbstractBaseUser, PermissionsMixin):

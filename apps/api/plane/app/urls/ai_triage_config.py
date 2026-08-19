@@ -1,0 +1,20 @@
+# Copyright (c) 2023-present Plane Software, Inc. and contributors
+# SPDX-License-Identifier: AGPL-3.0-only
+# See the LICENSE file for details.
+
+from django.urls import path
+
+from plane.app.views import ProjectAITriageConfigEndpoint, WorkspaceAITriageConfigEndpoint
+
+urlpatterns = [
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/ai-triage-config/",
+        ProjectAITriageConfigEndpoint.as_view(),
+        name="project-ai-triage-config",
+    ),
+    path(
+        "workspaces/<str:slug>/ai-triage-config/",
+        WorkspaceAITriageConfigEndpoint.as_view(),
+        name="workspace-ai-triage-config",
+    ),
+]

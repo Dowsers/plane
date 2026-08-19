@@ -420,7 +420,7 @@ def webhook_activity(
 
     Args:
         event (str): Type of event (project, issue, module, cycle, issue_comment, workflow_rule,
-            workflow_transition)
+            workflow_transition, issue_triage_suggestion)
         verb (str): Action performed (created, updated, deleted, triggered)
         field (Optional[str]): Name of the field that was changed
         old_value (Any): Previous value of the field
@@ -489,6 +489,9 @@ def webhook_activity(
 
         if event == "merge_request_merged":
             webhooks = webhooks.filter(merge_request_merged=True)
+
+        if event == "issue_triage_suggestion":
+            webhooks = webhooks.filter(issue_triage_suggestion=True)
 
         event_data = (
             event_data_override

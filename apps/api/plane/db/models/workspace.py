@@ -208,6 +208,17 @@ class Workspace(BaseModel):
     # Exigence 11 - per-workspace daily cap on generation calls, enforced by
     # plane.throttles.project_update_ai_draft.ProjectUpdateAIDraftThrottle.
     ai_update_daily_generation_limit = models.PositiveIntegerField(default=50)
+    # Master switch for category 9 feature 1 - "Auto-triage assiste par IA"
+    # (docs/feature-specs/09-ai-features.md, exigence 12/13, in
+    # plane-selfhost). Opt-in (default False), same convention/reasoning as
+    # is_ai_summary_enabled/is_ai_update_draft_enabled above. A project's
+    # own `Project.is_ai_triage_enabled` only matters if this is ALSO True -
+    # see plane.utils.issue_triage_suggestion.is_ai_triage_enabled_for_project
+    # for the inheritance resolution (a project value of `None` inherits
+    # this workspace value; an explicit per-project `True`/`False` overrides
+    # it, but only ever narrows access - it can never turn triage on for a
+    # project if this master switch itself is off).
+    is_ai_triage_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         """Return name of the Workspace"""

@@ -208,3 +208,5 @@ from .issue_comment_summary import IssueCommentSummary, IssueCommentSummaryStatu
 from .ai_generation_log import AIGenerationLog
 
 from .issue_embedding import IssueEmbedding
+
+from .issue_triage_suggestion import IssueTriageSuggestion, IssueTriageSuggestionStatus

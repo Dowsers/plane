@@ -90,6 +90,16 @@ class Webhook(BaseModel):
     merge_request_linked = models.BooleanField(default=False)
     merge_request_state_changed = models.BooleanField(default=False)
     merge_request_merged = models.BooleanField(default=False)
+    # Category 9 feature 1 (docs/feature-specs/09-ai-features.md "1.
+    # Auto-triage assiste par IA" in plane-selfhost) - covers all three
+    # `issue_triage.suggested`/`issue_triage.applied`/`issue_triage.rejected`
+    # sub-events under ONE boolean, same "one column per activity stream,
+    # not one per verb" rationale already used for `workflow_transition`/
+    # `figma_link` above - the sub-event is carried in the delivered
+    # payload's own `action` field (see webhook_task.py's
+    # `webhook_activity`/`webhook_send_task`), not by which column let the
+    # event through the filter.
+    issue_triage_suggestion = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
     # Populated only by a test-send (never by a real event delivery via

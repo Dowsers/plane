@@ -47,6 +47,7 @@ from plane.bgtasks.view_subscription_task import notify_view_subscribers
 from plane.bgtasks.webhook_task import model_activity
 from plane.bgtasks.slack_sync_task import dispatch_slack_channel_notifications
 from plane.bgtasks.figma_sync_task import push_figma_status_comment
+from plane.bgtasks.issue_triage_suggestion_task import generate_issue_triage_suggestion_task
 from plane.db.models import FigmaFileLink
 from plane.db.models import (
     BulkIssueOperation,
@@ -466,6 +467,28 @@ class IssueViewSet(BaseViewSet):
                 event_type="issue_created",
                 summary_text=f"New issue created: {serializer.data.get('name', '')}",
                 payload_summary={"issue_id": str(serializer.data.get("id", None))},
+            )
+            # Category 9 feature 1 (docs/feature-specs/09-ai-features.md
+            # "1. Auto-triage assiste par IA", exigence 1) - always fired,
+            # unconditionally: the task itself (via
+            # is_ai_triage_enabled_for_project) is responsible for the
+            # workspace/project toggle check, so nothing here duplicates
+            # that lookup on the request/response path, matching how
+            # dispatch_slack_channel_notifications above is also fired
+            # unconditionally and self-gates on the worker side. Never
+            # blocks or slows down this response - `.delay()` only enqueues.
+            # `empty_fields` is exigence 9's "only suggest for fields left
+            # empty in the creation payload" - `module` is always included
+            # since Issue has no way to receive a module assignment at
+            # creation at all (see IssueTriageSuggestion's module docstring).
+            empty_fields_at_creation = ["module"]
+            if not request.data.get("assignee_ids"):
+                empty_fields_at_creation.append("assignees")
+            if not request.data.get("label_ids"):
+                empty_fields_at_creation.append("labels")
+            generate_issue_triage_suggestion_task.delay(
+                issue_id=str(serializer.data.get("id", None)),
+                empty_fields=empty_fields_at_creation,
             )
             queryset = self.get_queryset()
             queryset = self.apply_annotations(queryset)

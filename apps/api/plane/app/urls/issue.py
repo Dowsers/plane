@@ -35,6 +35,9 @@ from plane.app.views import (
     IssueDetailIdentifierEndpoint,
     IssueConvertToRecurringEndpoint,
     IssueCommentSummaryEndpoint,
+    IssueTriageSuggestionEndpoint,
+    IssueTriageSuggestionRegenerateEndpoint,
+    IssueTriageSuggestionResolveEndpoint,
 )
 
 urlpatterns = [
@@ -188,6 +191,24 @@ urlpatterns = [
         name="project-issue-comment-ai-summary",
     ),
     ## End AI thread summary
+    # AI-assisted auto-triage - docs/feature-specs/09-ai-features.md ("1.
+    # Auto-triage assiste par IA") in plane-selfhost.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/ai-triage-suggestion/",
+        IssueTriageSuggestionEndpoint.as_view(),
+        name="project-issue-ai-triage-suggestion",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/ai-triage-suggestion/regenerate/",
+        IssueTriageSuggestionRegenerateEndpoint.as_view(),
+        name="project-issue-ai-triage-suggestion-regenerate",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/ai-triage-suggestion/resolve/",
+        IssueTriageSuggestionResolveEndpoint.as_view(),
+        name="project-issue-ai-triage-suggestion-resolve",
+    ),
+    ## End AI-assisted auto-triage
     # Issue Subscribers
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-subscribers/",

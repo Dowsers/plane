@@ -20,6 +20,12 @@ exact shape - one bot per (workspace, bot_type) pair, created once and
 reused - to every category 7 connector, rather than each feature
 reimplementing user creation independently six times with six subtly
 different shapes.
+
+Also reused, unmodified, by category 9 feature 1 (AI-assisted auto-triage,
+`BotTypeEnum.AI_TRIAGE_BOT`, see `plane.utils.issue_triage_suggestion`) -
+the same "one bot per (workspace, bot_type)" shape applies equally well to
+an internally-generated automation actor as it does to an external
+connector's actor, so no second factory was written.
 """
 
 import uuid
@@ -41,6 +47,10 @@ DEFAULT_BOT_DISPLAY_NAMES = {
     BotTypeEnum.FIGMA_BOT: "Figma Bot",
     BotTypeEnum.SENTRY_BOT: "Sentry Bot",
     BotTypeEnum.SUPPORT_BOT: "Support Bot",
+    # Category 9 feature 1 (docs/feature-specs/09-ai-features.md "1.
+    # Auto-triage assiste par IA" in plane-selfhost, exigence 6) - matches
+    # the spec's own suggested display name ("compte bot 'Plane AI'").
+    BotTypeEnum.AI_TRIAGE_BOT: "Plane AI",
 }
 
 # Workspace role granted to every integration bot - matches the existing
