@@ -392,3 +392,11 @@ from .duplicate_detection_config import (
     WorkspaceDuplicateDetectionConfigEndpoint,
     WorkspaceDuplicateDetectionBackfillEndpoint,
 )
+
+from .digest import (
+    UserDigestPreferenceEndpoint,
+    UserDigestListEndpoint,
+    UserDigestDetailEndpoint,
+    UserDigestPreviewEndpoint,
+    WorkspaceDigestSettingsEndpoint,
+)

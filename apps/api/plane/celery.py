@@ -120,6 +120,21 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cleanup_task.delete_integration_event_logs",
         "schedule": crontab(hour=4, minute=0),  # UTC 04:00, after the other daily cleanup tasks
     },
+    # Automated periodic digest ("Pulse" equivalent) - see
+    # docs/feature-specs/09-ai-features.md ("5. Digest periodique
+    # automatise") in plane-selfhost. Unlike every other entry above (flat
+    # UTC crontab sweeps), this polls every 30 minutes and itself computes,
+    # per `DigestPreference`, whether THAT user's local time-of-day
+    # (`user.user_timezone`) currently falls in the matching window - see
+    # `plane.bgtasks.digest_task` module docstring.
+    "check-every-30-minutes-for-due-digests": {
+        "task": "plane.bgtasks.digest_task.enqueue_due_digests",
+        "schedule": crontab(minute="*/30"),
+    },
+    "check-every-day-to-delete-old-digest-runs": {
+        "task": "plane.bgtasks.cleanup_task.delete_old_digest_runs",
+        "schedule": crontab(hour=4, minute=15),  # UTC 04:15, after the other daily cleanup tasks
+    },
 }
 
 

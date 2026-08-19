@@ -167,6 +167,10 @@ REST_FRAMEWORK = {
         # see DuplicateDetectionBackfillThrottle (per-workspace, an admin
         # button that can enqueue a large batch sweep).
         "duplicate_detection_backfill": "1/hour",
+        # Exigence 15, docs/feature-specs/09-ai-features.md ("5. Digest
+        # periodique automatise") in plane-selfhost - see
+        # DigestPreviewThrottle (per user+workspace, not per-workspace).
+        "digest_preview": "3/hour",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

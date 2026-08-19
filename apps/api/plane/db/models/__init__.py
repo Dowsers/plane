@@ -213,3 +213,14 @@ from .issue_embedding import IssueEmbedding
 from .issue_triage_suggestion import IssueTriageSuggestion, IssueTriageSuggestionStatus
 
 from .issue_duplicate_suggestion import IssueDuplicateSuggestion, IssueDuplicateSuggestionStatus
+
+from .digest import (
+    DigestPreference,
+    DigestRun,
+    DigestItem,
+    DigestFrequency,
+    DigestScope,
+    DigestRunStatus,
+    DigestGenerationMethod,
+    DigestItemType,
+)

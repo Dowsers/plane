@@ -249,6 +249,24 @@ class Workspace(BaseModel):
         default=DuplicateDetectionScope.PROJECT,
     )
 
+    # Category 9 feature 5 - "Digest periodique automatise"
+    # (docs/feature-specs/09-ai-features.md, exigence 13, in
+    # plane-selfhost). Kill-switch, ON by default (unlike every other
+    # category 9 opt-in flag) - an individual user's digest still requires
+    # their own `DigestPreference.is_enabled=True` to actually receive
+    # anything, so a workspace defaulting to "not blocked" is safe. When
+    # False, `plane.bgtasks.digest_task.enqueue_due_digests` schedules no
+    # generation task for this workspace's members at all, regardless of
+    # their individual preferences.
+    digest_feature_enabled = models.BooleanField(default=True)
+    # Gates the optional "resume enrichi par LLM" mode (exigence 12) -
+    # only meaningful if a `WorkspaceAIConfig`
+    # (plane.db.models.ai_config) is ALSO configured and enabled for this
+    # workspace. If this is True but no enabled `WorkspaceAIConfig`
+    # exists, digest generation silently stays in TEMPLATE mode, never
+    # errors - see `plane.utils.digest_content.render_digest`.
+    is_digest_llm_enrichment_enabled = models.BooleanField(default=False)
+
     def __str__(self):
         """Return name of the Workspace"""
         return self.name

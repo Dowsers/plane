@@ -235,3 +235,11 @@ from .ai_generation_log import AIGenerationLogSerializer
 from .issue_triage_suggestion import IssueTriageSuggestionSerializer
 
 from .issue_duplicate_suggestion import IssueDuplicateSuggestionSerializer
+
+from .digest import (
+    DigestPreferenceSerializer,
+    DigestItemSerializer,
+    DigestRunSerializer,
+    DigestRunDetailSerializer,
+    WorkspaceDigestSettingsSerializer,
+)

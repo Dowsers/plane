@@ -27,6 +27,7 @@ from plane.db.models import (
     IssueDescriptionVersion,
     IntegrationEventLog,
     WebhookLog,
+    DigestRun,
 )
 from plane.settings.mongo import MongoConnection
 from plane.utils.exception_logger import log_exception
@@ -524,4 +525,56 @@ def delete_integration_event_logs():
         model=IntegrationEventLog,
         task_name="Integration Event Log",
         collection_name="integration_event_logs",
+    )
+
+
+def get_digest_runs_queryset():
+    """Exigence 14, docs/feature-specs/09-ai-features.md ("5. Digest
+    periodique automatise") in plane-selfhost - "conserve un nombre
+    configurable de jours (90 par defaut) puis purge". `DIGEST_RETENTION_DAYS`
+    is its own env var (not `HARD_DELETE_AFTER_DAYS`, shared by the generic
+    cleanup tasks above) since the spec gives this feature its own explicit
+    default, distinct from this instance's generic retention policy -
+    same reasoning as `get_integration_event_logs_queryset`'s fixed 30-day
+    window above. Deleting a `DigestRun` cascades (`on_delete=CASCADE`) to
+    its `DigestItem` rows, so no separate item-level cleanup is needed."""
+    cutoff_days = int(os.environ.get("DIGEST_RETENTION_DAYS", 90))
+    cutoff_time = timezone.now() - timedelta(days=cutoff_days)
+    logger.info(f"Digest runs cutoff time: {cutoff_time}")
+
+    return (
+        DigestRun.all_objects.filter(created_at__lte=cutoff_time)
+        .values(
+            "id",
+            "created_at",
+            "user_id",
+            "workspace_id",
+            "period_start",
+            "period_end",
+            "frequency",
+            "status",
+            "generation_method",
+            "summary_text",
+            "sent_at",
+            "item_count",
+        )
+        .order_by("created_at")
+        .iterator(chunk_size=BATCH_SIZE)
+    )
+
+
+def transform_digest_run(record: Dict) -> Dict:
+    return record
+
+
+@shared_task
+def delete_old_digest_runs():
+    """Delete digest runs (and, via cascade, their items) past the
+    retention window."""
+    process_cleanup_task(
+        queryset_func=get_digest_runs_queryset,
+        transform_func=transform_digest_run,
+        model=DigestRun,
+        task_name="Digest Run",
+        collection_name="digest_runs",
     )

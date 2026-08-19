@@ -41,6 +41,7 @@ from .agent import urlpatterns as agent_urls
 from .workspace_ai_config import urlpatterns as workspace_ai_config_urls
 from .ai_triage_config import urlpatterns as ai_triage_config_urls
 from .duplicate_detection_config import urlpatterns as duplicate_detection_config_urls
+from .digest import urlpatterns as digest_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -82,4 +83,5 @@ urlpatterns = [
     *workspace_ai_config_urls,
     *ai_triage_config_urls,
     *duplicate_detection_config_urls,
+    *digest_urls,
 ]
