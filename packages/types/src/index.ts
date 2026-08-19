@@ -7,6 +7,7 @@
 export * from "./activity";
 export * from "./agent";
 export * from "./ai";
+export * from "./ai-triage-config";
 export * from "./analytics";
 export * from "./api-explorer";
 export * from "./api_token";
@@ -34,6 +35,7 @@ export * from "./initiative";
 export * from "./instance";
 export * from "./integration";
 export * from "./issue-comment-summary";
+export * from "./issue-triage-suggestion";
 export * from "./issues";
 export * from "./issues/base"; // TODO: Remove this after development and the refactor/mobx-store-issue branch is stable
 export * from "./issues/issue-identifier";

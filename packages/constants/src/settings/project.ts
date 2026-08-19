@@ -120,6 +120,16 @@ export const PROJECT_SETTINGS: Record<TProjectSettingsTabs, TProjectSettingsItem
     access: [EUserProjectRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/governed-workflows/`,
   },
+  ai_triage: {
+    key: "ai_triage",
+    i18n_label: "project_settings.ai_triage.label",
+    href: `/ai-triage`,
+    // `ProjectAITriageConfigEndpoint` (apps/api/plane/app/views/ai_triage_config.py)
+    // is Admin-only for every verb, including read - matches the sibling
+    // `governed_workflows`/`automations` tabs' own gating.
+    access: [EUserProjectRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/ai-triage/`,
+  },
 };
 
 export const PROJECT_SETTINGS_FLAT_MAP: TProjectSettingsItem[] = Object.values(PROJECT_SETTINGS);
@@ -142,5 +152,6 @@ export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjec
     PROJECT_SETTINGS["automations"],
     PROJECT_SETTINGS["recurring_issue_templates"],
     PROJECT_SETTINGS["governed_workflows"],
+    PROJECT_SETTINGS["ai_triage"],
   ],
 };

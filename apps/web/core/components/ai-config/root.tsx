@@ -74,6 +74,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isTogglingSummary, setIsTogglingSummary] = useState(false);
   const [isTogglingUpdateDraft, setIsTogglingUpdateDraft] = useState(false);
+  const [isTogglingTriage, setIsTogglingTriage] = useState(false);
 
   // Category 9 feature 6's own extra knobs - kept as local state (synced
   // from `currentWorkspace` below) so number inputs aren't fired off to the
@@ -186,6 +187,18 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
     } finally {
       setIsTogglingUpdateDraft(false);
+    }
+  };
+
+  const handleToggleTriage = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    setIsTogglingTriage(true);
+    try {
+      await updateWorkspace(workspaceSlug, { is_ai_triage_enabled: value });
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+    } finally {
+      setIsTogglingTriage(false);
     }
   };
 
@@ -314,6 +327,16 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           disabled={!isConfiguredAndEnabled}
           disabledTooltip={t("ai.features.update_draft.disabled_tooltip")}
           isSaving={isTogglingUpdateDraft}
+        />
+        <AIFeatureToggleRow
+          key="ai_triage"
+          label={t("ai.features.triage.label")}
+          description={t("ai.features.triage.description")}
+          value={!!currentWorkspace?.is_ai_triage_enabled}
+          onChange={handleToggleTriage}
+          disabled={!isConfiguredAndEnabled}
+          disabledTooltip={t("ai.features.triage.disabled_tooltip")}
+          isSaving={isTogglingTriage}
         />
 
         <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">

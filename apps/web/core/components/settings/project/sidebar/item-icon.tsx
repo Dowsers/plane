@@ -5,7 +5,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { GitBranch, Repeat, Users, Zap } from "lucide-react";
+import { GitBranch, Repeat, Sparkles, Users, Zap } from "lucide-react";
 // plane imports
 import type { ISvgIcons } from "@plane/propel/icons";
 import {
@@ -36,4 +36,5 @@ export const PROJECT_SETTINGS_ICONS: Record<TProjectSettingsTabs, LucideIcon | R
   automations: Zap,
   recurring_issue_templates: Repeat,
   governed_workflows: GitBranch,
+  ai_triage: Sparkles,
 };

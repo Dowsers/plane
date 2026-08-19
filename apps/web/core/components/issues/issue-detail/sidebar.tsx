@@ -45,6 +45,7 @@ import { TransferHopInfo } from "@/plane-web/components/issues/issue-details/sid
 import { IssueWorklogProperty } from "@/plane-web/components/issues/worklog/property";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
 import { IssueSLAProperty } from "@/components/sla-policies/issue-sla-property";
+import { AITriageAppliedBadge, AITriageSuggestionSection } from "./ai-triage";
 import { IssueCycleSelect } from "./cycle-select";
 import { IssueLabel } from "./label";
 import { IssueMilestoneSelect } from "./milestone-select";
@@ -90,6 +91,21 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
       <div className="flex h-full w-full flex-col items-center divide-y-2 divide-subtle-1 overflow-hidden">
         <div className="h-full w-full overflow-y-auto px-6">
           <h5 className="mt-5 text-body-xs-medium">{t("common.properties")}</h5>
+          {/* Category 9, feature 1 - "AI-assisted auto-triage". Placed above
+              the whole properties list (rather than pinned next to just one
+              of Module/Assignees/Labels) since it covers all three - spec's
+              own "a proximite des champs Module/Assigne/Labels" wording,
+              satisfied here by sitting directly above the block containing
+              all three, always in view without scrolling further down. */}
+          <div className="mt-4">
+            <AITriageSuggestionSection
+              workspaceSlug={workspaceSlug}
+              projectId={projectId}
+              issueId={issueId}
+              issueOperations={issueOperations}
+              disabled={!isEditable}
+            />
+          </div>
           <div className={`mt-4 mb-2 space-y-2.5 truncate ${!isEditable ? "opacity-60" : ""}`}>
             <SidebarPropertyListItem icon={StatePropertyIcon} label={t("common.state")}>
               <StateDropdown
@@ -107,7 +123,20 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
               />
             </SidebarPropertyListItem>
 
-            <SidebarPropertyListItem icon={MembersPropertyIcon} label={t("common.assignees")}>
+            <SidebarPropertyListItem
+              icon={MembersPropertyIcon}
+              label={t("common.assignees")}
+              appendElement={
+                <AITriageAppliedBadge
+                  workspaceSlug={workspaceSlug}
+                  projectId={projectId}
+                  issueId={issueId}
+                  field="assignees"
+                  issueOperations={issueOperations}
+                  disabled={!isEditable}
+                />
+              }
+            >
               <MemberDropdown
                 value={issue?.assignee_ids ?? undefined}
                 onChange={(val) => issueOperations.update(workspaceSlug, projectId, issueId, { assignee_ids: val })}
@@ -214,7 +243,20 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
             )}
 
             {projectDetails?.module_view && (
-              <SidebarPropertyListItem icon={ModuleIcon} label={t("common.modules")}>
+              <SidebarPropertyListItem
+                icon={ModuleIcon}
+                label={t("common.modules")}
+                appendElement={
+                  <AITriageAppliedBadge
+                    workspaceSlug={workspaceSlug}
+                    projectId={projectId}
+                    issueId={issueId}
+                    field="module"
+                    issueOperations={issueOperations}
+                    disabled={!isEditable}
+                  />
+                }
+              >
                 <IssueModuleSelect
                   className="w-full grow"
                   workspaceSlug={workspaceSlug}
@@ -283,7 +325,20 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
               />
             </SidebarPropertyListItem>
 
-            <SidebarPropertyListItem icon={LabelPropertyIcon} label={t("common.labels")}>
+            <SidebarPropertyListItem
+              icon={LabelPropertyIcon}
+              label={t("common.labels")}
+              appendElement={
+                <AITriageAppliedBadge
+                  workspaceSlug={workspaceSlug}
+                  projectId={projectId}
+                  issueId={issueId}
+                  field="labels"
+                  issueOperations={issueOperations}
+                  disabled={!isEditable}
+                />
+              }
+            >
               <IssueLabel
                 workspaceSlug={workspaceSlug}
                 projectId={projectId}

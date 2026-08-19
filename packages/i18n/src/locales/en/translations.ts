@@ -2011,6 +2011,26 @@ export default {
     governed_workflows: {
       label: "Workflows",
     },
+    ai_triage: {
+      label: "AI Triage",
+      description:
+        "Suggest a module, assignees, and labels for newly created work items in this project, based on similarity to past issues.",
+      master_switch: "Enable AI triage for this project",
+      master_switch_description: "Overrides the workspace-wide default for this project only.",
+      workspace_disabled_tooltip: "AI-assisted auto-triage isn't enabled for this workspace yet. Go to Settings > AI.",
+      override: {
+        inherit: "Inherit from workspace",
+        on: "Force on",
+        off: "Force off",
+      },
+      field_module: "Module",
+      field_assignees: "Assignees",
+      field_labels: "Labels",
+      auto_apply: "Auto-apply",
+      max_labels_suggested: "Max labels suggested",
+      min_historical_issues: "Min. historical issues required",
+      save_success: "AI triage settings saved.",
+    },
     empty_state: {
       labels: {
         title: "No labels yet",
@@ -2272,6 +2292,12 @@ export default {
           "Draft a project status update from recent issue activity for a lead to review, edit, and publish. Project updates only.",
         disabled_tooltip: "Configure and enable an AI provider above first.",
       },
+      triage: {
+        label: "AI-assisted auto-triage",
+        description:
+          "Suggest a module, assignees, and labels for newly created work items based on similarity to past issues. Per-project settings and confidence thresholds live in each project's own settings.",
+        disabled_tooltip: "Configure and enable an AI provider above first.",
+      },
     },
     update_draft_settings: {
       title: "Status update drafting",
@@ -2298,6 +2324,30 @@ export default {
       no_summary_yet: "No summary yet.",
       comment_deleted: "Comment deleted",
       error: "Something went wrong. Please try again.",
+    },
+    triage: {
+      title: "AI suggestions",
+      fields: {
+        module: "Module",
+        assignees: "Assignees",
+        labels: "Labels",
+      },
+      accept: "Accept",
+      reject: "Reject",
+      why_suggestion: "Why this suggestion?",
+      based_on_issues: "Based on these similar issues",
+      similar_issues_unavailable: "These issues are no longer available.",
+      all_resolved: "No pending suggestions - every field has been resolved.",
+      dismissed_trace: "Suggestion dismissed for: {fields}",
+      regenerate: "Re-suggest",
+      terminal_state_tooltip: "Suggestions can't be regenerated for a work item in a completed or cancelled state.",
+      rate_limited: "You're regenerating too often - try again in a minute.",
+      regenerate_error: "Couldn't queue a new suggestion. Please try again.",
+      resolve_error: "Something went wrong. Please try again.",
+      undo_error: "Something went wrong. Please try again.",
+      applied_badge_label: "IA",
+      applied_badge_tooltip: "This value was suggested and applied by AI.",
+      undo: "Undo",
     },
   },
   project_updates: {

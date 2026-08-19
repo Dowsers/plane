@@ -427,6 +427,11 @@ export const coreRoutes: RouteConfigEntry[] = [
               ":workspaceSlug/settings/projects/:projectId/governed-workflows",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/governed-workflows/page.tsx"
             ),
+            // Project AI Triage
+            route(
+              ":workspaceSlug/settings/projects/:projectId/ai-triage",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/ai-triage/page.tsx"
+            ),
           ]),
         ]),
       ]),

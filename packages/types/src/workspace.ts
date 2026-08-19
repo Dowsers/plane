@@ -61,6 +61,14 @@ export interface IWorkspace {
   max_ai_update_regenerations?: number;
   // Workspace-wide daily cap on AI update-draft generation calls (default 50).
   ai_update_daily_generation_limit?: number;
+  // Category 9, feature 1 - "AI-assisted auto-triage" Settings > AI toggle
+  // (workspace master switch - see `Workspace.is_ai_triage_enabled`'s own
+  // field comment, apps/api/plane/db/models/workspace.py). A project's own
+  // `is_ai_triage_enabled` (nullable tri-state, exposed via the dedicated
+  // `.../ai-triage-config/` endpoint, not here) only matters if this is
+  // ALSO true - see `is_ai_triage_enabled_for_project`
+  // (apps/api/plane/utils/issue_triage_suggestion.py).
+  is_ai_triage_enabled?: boolean;
 }
 
 /** `Workspace.ai_update_data_scope` choices - see `WorkspaceAIUpdateDataScope`

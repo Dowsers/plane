@@ -43,7 +43,8 @@ export type TProjectSettingsTabs =
   | "estimates"
   | "automations"
   | "recurring_issue_templates"
-  | "governed_workflows";
+  | "governed_workflows"
+  | "ai_triage";
 export type TProjectSettingsItem = {
   key: TProjectSettingsTabs;
   i18n_label: string;
