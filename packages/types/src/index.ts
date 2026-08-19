@@ -21,6 +21,7 @@ export * from "./cycle";
 export * from "./dashboard";
 export * from "./de-dupe";
 export * from "./description_version";
+export * from "./duplicate-detection-config";
 export * from "./editor";
 export * from "./enums";
 export * from "./epics";
@@ -35,6 +36,7 @@ export * from "./initiative";
 export * from "./instance";
 export * from "./integration";
 export * from "./issue-comment-summary";
+export * from "./issue-duplicate-suggestion";
 export * from "./issue-triage-suggestion";
 export * from "./issues";
 export * from "./issues/base"; // TODO: Remove this after development and the refactor/mobx-store-issue branch is stable

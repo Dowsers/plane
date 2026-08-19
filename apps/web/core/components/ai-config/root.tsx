@@ -9,16 +9,30 @@ import { observer } from "mobx-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
-import type { TWorkspaceAIConfig, TWorkspaceAIProvider, TWorkspaceAIUpdateDataScope } from "@plane/types";
+import type {
+  TDuplicateDetectionScope,
+  TWorkspaceAIConfig,
+  TWorkspaceAIProvider,
+  TWorkspaceAIUpdateDataScope,
+  TWorkspaceDuplicateDetectionConfig,
+} from "@plane/types";
 import { Button, CustomSelect, Input, ToggleSwitch } from "@plane/ui";
 // hooks
 import { useWorkspace } from "@/hooks/store/use-workspace";
 // services
 import { AIConfigService } from "@/services/ai-config.service";
+import { DuplicateDetectionConfigService } from "@/services/duplicate-detection-config.service";
 // local imports
 import { AIFeatureToggleRow } from "./feature-toggle-row";
 
 const aiConfigService = new AIConfigService();
+const duplicateDetectionConfigService = new DuplicateDetectionConfigService();
+
+const DUPLICATE_DETECTION_SCOPE_KEYS: TDuplicateDetectionScope[] = ["project", "workspace"];
+const DUPLICATE_DETECTION_SCOPE_I18N_KEYS: Record<TDuplicateDetectionScope, string> = {
+  project: "ai.duplicate_detection_settings.scope.project",
+  workspace: "ai.duplicate_detection_settings.scope.workspace",
+};
 
 type Props = {
   workspaceSlug: string;
@@ -76,6 +90,23 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
   const [isTogglingUpdateDraft, setIsTogglingUpdateDraft] = useState(false);
   const [isTogglingTriage, setIsTogglingTriage] = useState(false);
 
+  // Category 9, feature 2 - "Detection de doublons/similarite". Unlike
+  // `is_ai_triage_enabled` above (a plain field on the generic workspace
+  // serializer, read/written through `useWorkspace()`), this feature's
+  // workspace config has its OWN dedicated endpoint (threshold/scope need
+  // range/choice validation) - see `DuplicateDetectionConfigService`'s own
+  // docstring - so it's tracked as separate local state, fetched/saved
+  // independently of `currentWorkspace`.
+  const [duplicateDetectionConfig, setDuplicateDetectionConfig] = useState<TWorkspaceDuplicateDetectionConfig | null>(
+    null
+  );
+  const [hasDuplicateDetectionLoaded, setHasDuplicateDetectionLoaded] = useState(false);
+  const [isTogglingDuplicateDetection, setIsTogglingDuplicateDetection] = useState(false);
+  const [duplicateDetectionThreshold, setDuplicateDetectionThreshold] = useState(0.82);
+  const [duplicateDetectionScope, setDuplicateDetectionScope] = useState<TDuplicateDetectionScope>("project");
+  const [isSavingDuplicateDetectionSettings, setIsSavingDuplicateDetectionSettings] = useState(false);
+  const [isBackfilling, setIsBackfilling] = useState(false);
+
   // Category 9 feature 6's own extra knobs - kept as local state (synced
   // from `currentWorkspace` below) so number inputs aren't fired off to the
   // backend on every keystroke; saved together via a single small Save
@@ -113,6 +144,29 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       })
       .finally(() => {
         if (!cancelled) setHasLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+    duplicateDetectionConfigService
+      .getWorkspaceConfig(workspaceSlug)
+      .then((data) => {
+        if (cancelled) return;
+        setDuplicateDetectionConfig(data);
+        setDuplicateDetectionThreshold(data.duplicate_detection_similarity_threshold);
+        setDuplicateDetectionScope(data.duplicate_detection_scope);
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      })
+      .finally(() => {
+        if (!cancelled) setHasDuplicateDetectionLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -216,6 +270,66 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
     } finally {
       setIsSavingUpdateDraftSettings(false);
+    }
+  };
+
+  const handleToggleDuplicateDetection = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    setIsTogglingDuplicateDetection(true);
+    try {
+      const updated = await duplicateDetectionConfigService.updateWorkspaceConfig(workspaceSlug, {
+        is_duplicate_detection_enabled: value,
+      });
+      setDuplicateDetectionConfig(updated);
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+    } finally {
+      setIsTogglingDuplicateDetection(false);
+    }
+  };
+
+  const handleSaveDuplicateDetectionSettings = async () => {
+    if (!workspaceSlug) return;
+    setIsSavingDuplicateDetectionSettings(true);
+    try {
+      const updated = await duplicateDetectionConfigService.updateWorkspaceConfig(workspaceSlug, {
+        duplicate_detection_similarity_threshold: duplicateDetectionThreshold,
+        duplicate_detection_scope: duplicateDetectionScope,
+      });
+      setDuplicateDetectionConfig(updated);
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: "Success!",
+        message: t("ai.duplicate_detection_settings.save_success"),
+      });
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+    } finally {
+      setIsSavingDuplicateDetectionSettings(false);
+    }
+  };
+
+  // Admin-only trigger for the existing `backfill_issue_embeddings_batch`
+  // task (see `DuplicateDetectionConfigService.triggerBackfill`'s own
+  // docstring) - the endpoint only ever enqueues the task and returns a
+  // plain confirmation string, there is no job id or progress to poll, so
+  // this deliberately shows nothing more than a toast (no fake progress
+  // bar the backend can't actually feed).
+  const handleBackfill = async () => {
+    if (!workspaceSlug) return;
+    setIsBackfilling(true);
+    try {
+      await duplicateDetectionConfigService.triggerBackfill(workspaceSlug);
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: "Success!",
+        message: t("ai.duplicate_detection_settings.backfill_started"),
+      });
+    } catch (error: unknown) {
+      const err = error as { error?: string };
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: err?.error ?? t("ai.toast.error") });
+    } finally {
+      setIsBackfilling(false);
     }
   };
 
@@ -338,6 +452,85 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           disabledTooltip={t("ai.features.triage.disabled_tooltip")}
           isSaving={isTogglingTriage}
         />
+        <AIFeatureToggleRow
+          key="duplicate_detection"
+          label={t("ai.features.duplicate_detection.label")}
+          description={t("ai.features.duplicate_detection.description")}
+          value={!!duplicateDetectionConfig?.is_duplicate_detection_enabled}
+          onChange={handleToggleDuplicateDetection}
+          disabled={!isConfiguredAndEnabled || !hasDuplicateDetectionLoaded}
+          disabledTooltip={t("ai.features.duplicate_detection.disabled_tooltip")}
+          isSaving={isTogglingDuplicateDetection}
+        />
+
+        <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
+          <div>
+            <h5 className="text-13 font-medium text-primary">{t("ai.duplicate_detection_settings.title")}</h5>
+            <p className="text-12 text-tertiary">{t("ai.duplicate_detection_settings.description")}</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-13 text-secondary">{t("ai.duplicate_detection_settings.threshold_label")}</span>
+              <span className="text-12 text-tertiary">{Math.round(duplicateDetectionThreshold * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={duplicateDetectionThreshold}
+              onChange={(e) => setDuplicateDetectionThreshold(Number(e.target.value))}
+              disabled={!hasDuplicateDetectionLoaded}
+              className="accent-accent-primary h-1.5 w-full cursor-pointer disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-13 text-secondary">{t("ai.duplicate_detection_settings.scope_label")}</span>
+            <CustomSelect
+              value={duplicateDetectionScope}
+              label={t(DUPLICATE_DETECTION_SCOPE_I18N_KEYS[duplicateDetectionScope])}
+              onChange={(value: TDuplicateDetectionScope) => setDuplicateDetectionScope(value)}
+              input
+              disabled={!hasDuplicateDetectionLoaded}
+            >
+              {DUPLICATE_DETECTION_SCOPE_KEYS.map((key) => (
+                <CustomSelect.Option key={key} value={key}>
+                  {t(DUPLICATE_DETECTION_SCOPE_I18N_KEYS[key])}
+                </CustomSelect.Option>
+              ))}
+            </CustomSelect>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="neutral-primary"
+              size="sm"
+              onClick={handleSaveDuplicateDetectionSettings}
+              loading={isSavingDuplicateDetectionSettings}
+              disabled={!hasDuplicateDetectionLoaded}
+            >
+              {t("save")}
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-1 border-t border-subtle pt-3">
+            <span className="text-13 text-secondary">{t("ai.duplicate_detection_settings.backfill_label")}</span>
+            <p className="text-12 text-tertiary">{t("ai.duplicate_detection_settings.backfill_description")}</p>
+            <div>
+              <Button
+                variant="neutral-primary"
+                size="sm"
+                onClick={handleBackfill}
+                loading={isBackfilling}
+                disabled={!hasDuplicateDetectionLoaded}
+              >
+                {t("ai.duplicate_detection_settings.backfill_button")}
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
           <div>

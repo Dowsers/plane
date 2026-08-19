@@ -44,7 +44,8 @@ export type TProjectSettingsTabs =
   | "automations"
   | "recurring_issue_templates"
   | "governed_workflows"
-  | "ai_triage";
+  | "ai_triage"
+  | "ai_duplicate_detection";
 export type TProjectSettingsItem = {
   key: TProjectSettingsTabs;
   i18n_label: string;

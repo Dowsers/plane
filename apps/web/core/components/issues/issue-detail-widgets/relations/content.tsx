@@ -22,6 +22,7 @@ import type { TIssueRelationTypes } from "@/plane-web/types";
 // helper
 import { DeleteIssueModal } from "../../delete-issue-modal";
 import { RelationIssueList } from "../../relations/issue-list";
+import { DuplicateSuggestionsSection } from "./duplicate-suggestions";
 import { useRelationOperations } from "./helper";
 
 type Props = {
@@ -73,6 +74,7 @@ export const RelationsCollapsibleContent = observer(function RelationsCollapsibl
   // store hooks
   const {
     relation: { getRelationsByIssueId, removeRelation },
+    issue: { getIssueById },
     toggleDeleteIssueModal,
     toggleCreateIssueModal,
   } = useIssueDetail(issueServiceType);
@@ -84,6 +86,7 @@ export const RelationsCollapsibleContent = observer(function RelationsCollapsibl
   // derived values
   const relations = getRelationsByIssueId(issueId);
   const ISSUE_RELATION_OPTIONS = useTimeLineRelationOptions();
+  const issueDetails = getIssueById(issueId);
 
   const handleIssueCrudState = (
     key: "update" | "delete" | "removeRelation",
@@ -135,6 +138,19 @@ export const RelationsCollapsibleContent = observer(function RelationsCollapsibl
 
   return (
     <>
+      {/* Category 9, feature 2 - "Detection de doublons/similarite"
+          (docs/feature-specs/09-ai-features.md in plane-selfhost). Renders
+          nothing itself unless pending suggestions exist - scoped to
+          regular work items only, not epics (this feature's backend
+          candidate search/scoping was never built with epics in mind). */}
+      {issueServiceType === EIssueServiceType.ISSUES && issueDetails?.project_id && (
+        <DuplicateSuggestionsSection
+          workspaceSlug={workspaceSlug}
+          projectId={issueDetails.project_id}
+          issueId={issueId}
+          issueServiceType={issueServiceType}
+        />
+      )}
       <div className="gap- flex flex-col">
         {filteredRelationsArray.map((relation) => (
           <div key={relation.relationKey}>

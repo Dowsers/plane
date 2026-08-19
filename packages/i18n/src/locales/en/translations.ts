@@ -2031,6 +2031,20 @@ export default {
       min_historical_issues: "Min. historical issues required",
       save_success: "AI triage settings saved.",
     },
+    ai_duplicate_detection: {
+      label: "AI Duplicate Detection",
+      description: "Warn about likely duplicate work items in this project, based on similarity to existing ones.",
+      master_switch: "Enable duplicate detection for this project",
+      master_switch_description: "Overrides the workspace-wide default for this project only.",
+      workspace_disabled_tooltip: "Duplicate detection isn't enabled for this workspace yet. Go to Settings > AI.",
+      override: {
+        inherit: "Inherit from workspace",
+        on: "Force on",
+        off: "Force off",
+      },
+      threshold_scope_hint: "The similarity threshold and search scope are configured workspace-wide in Settings > AI.",
+      save_success: "Duplicate detection settings saved.",
+    },
     empty_state: {
       labels: {
         title: "No labels yet",
@@ -2298,6 +2312,12 @@ export default {
           "Suggest a module, assignees, and labels for newly created work items based on similarity to past issues. Per-project settings and confidence thresholds live in each project's own settings.",
         disabled_tooltip: "Configure and enable an AI provider above first.",
       },
+      duplicate_detection: {
+        label: "Duplicate/similarity detection",
+        description:
+          "Warn while creating a work item if a very similar one already exists, and surface suggested duplicates on existing work items.",
+        disabled_tooltip: "Configure and enable an AI provider above first.",
+      },
     },
     update_draft_settings: {
       title: "Status update drafting",
@@ -2310,6 +2330,21 @@ export default {
       max_regenerations: "Max regenerations per draft",
       daily_generation_limit: "Daily generation limit (workspace-wide)",
       save_success: "Status update drafting settings saved.",
+    },
+    duplicate_detection_settings: {
+      title: "Duplicate detection",
+      description: "Extra controls for duplicate/similarity detection.",
+      threshold_label: "Similarity threshold",
+      scope_label: "Search scope",
+      scope: {
+        project: "This project only",
+        workspace: "Entire workspace",
+      },
+      save_success: "Duplicate detection settings saved.",
+      backfill_label: "Backfill existing work items",
+      backfill_description: "Compute embeddings for work items created before this feature was enabled.",
+      backfill_button: "Start backfill",
+      backfill_started: "Backfill started.",
     },
     summary: {
       title: "AI Summary",
@@ -2349,6 +2384,17 @@ export default {
       applied_badge_tooltip: "This value was suggested and applied by AI.",
       undo: "Undo",
     },
+  },
+  issue_duplicate_check: {
+    banner_title: "Similar work items detected",
+    dismiss_banner: "Dismiss",
+  },
+  issue_duplicate_suggestions: {
+    title: "Suggested duplicates",
+    dismiss: "Ignore",
+    mark_related: "Mark as related",
+    mark_duplicate: "Mark as duplicate",
+    action_error: "Something went wrong. Please try again.",
   },
   project_updates: {
     label: "Updates",

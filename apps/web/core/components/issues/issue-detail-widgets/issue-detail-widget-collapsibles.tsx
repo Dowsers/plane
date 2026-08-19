@@ -8,6 +8,7 @@ import React from "react";
 import { observer } from "mobx-react";
 // plane imports
 import type { TIssueServiceType, TWorkItemWidgets } from "@plane/types";
+import { EIssueServiceType } from "@plane/types";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 // Plane-web
@@ -17,6 +18,7 @@ import { useTimeLineRelationOptions } from "@/plane-web/components/relations";
 import { AttachmentsCollapsible } from "./attachments";
 import { LinksCollapsible } from "./links";
 import { RelationsCollapsible } from "./relations";
+import { useDuplicateSuggestions } from "./relations/duplicate-suggestions";
 import { SubIssuesCollapsible } from "./sub-issues";
 
 type Props = {
@@ -42,9 +44,24 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
   const subIssues = subIssuesByIssueId(issueId);
   const ISSUE_RELATION_OPTIONS = useTimeLineRelationOptions();
   const issueRelationsCount = getRelationCountByIssueId(issueId, ISSUE_RELATION_OPTIONS);
+  // Category 9, feature 2 - "Detection de doublons/similarite"
+  // (docs/feature-specs/09-ai-features.md in plane-selfhost). A pending
+  // duplicate suggestion has no `IssueRelation` yet (that's exactly what
+  // confirming one creates) - without this, an issue with zero real
+  // relations but a pending suggestion would never render the "Relations"
+  // collapsible at all, hiding the sub-section that lives inside it (see
+  // `relations/content.tsx`). Same shared SWR key as that sub-section's
+  // own hook, so this never fires a second/duplicate request.
+  const { suggestions: duplicateSuggestions } = useDuplicateSuggestions(
+    workspaceSlug,
+    projectId,
+    issueId,
+    issueServiceType === EIssueServiceType.ISSUES
+  );
   // render conditions
   const shouldRenderSubIssues = !!subIssues && subIssues.length > 0 && !hideWidgets?.includes("sub-work-items");
-  const shouldRenderRelations = issueRelationsCount > 0 && !hideWidgets?.includes("relations");
+  const shouldRenderRelations =
+    (issueRelationsCount > 0 || duplicateSuggestions.length > 0) && !hideWidgets?.includes("relations");
   const shouldRenderLinks = !!issue?.link_count && issue?.link_count > 0 && !hideWidgets?.includes("links");
   const attachmentUploads = getAttachmentsUploadStatusByIssueId(issueId);
   const attachmentsCount = getAttachmentsCountByIssueId(issueId);
