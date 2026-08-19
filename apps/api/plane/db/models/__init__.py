@@ -124,6 +124,7 @@ from .workspace import (
     WorkspaceHomePreference,
     WorkspaceUserPreference,
     WorkspaceAIUpdateDataScope,
+    DuplicateDetectionScope,
 )
 
 from .favorite import UserFavorite
@@ -210,3 +211,5 @@ from .ai_generation_log import AIGenerationLog
 from .issue_embedding import IssueEmbedding
 
 from .issue_triage_suggestion import IssueTriageSuggestion, IssueTriageSuggestionStatus
+
+from .issue_duplicate_suggestion import IssueDuplicateSuggestion, IssueDuplicateSuggestionStatus

@@ -48,6 +48,7 @@ from plane.bgtasks.webhook_task import model_activity
 from plane.bgtasks.slack_sync_task import dispatch_slack_channel_notifications
 from plane.bgtasks.figma_sync_task import push_figma_status_comment
 from plane.bgtasks.issue_triage_suggestion_task import generate_issue_triage_suggestion_task
+from plane.bgtasks.issue_duplicate_detection_task import generate_issue_duplicate_suggestions_task
 from plane.db.models import FigmaFileLink
 from plane.db.models import (
     BulkIssueOperation,
@@ -490,6 +491,18 @@ class IssueViewSet(BaseViewSet):
                 issue_id=str(serializer.data.get("id", None)),
                 empty_fields=empty_fields_at_creation,
             )
+            # Category 9 feature 2 (docs/feature-specs/09-ai-features.md "2.
+            # Detection de doublons/similarite", exigence 1/7) - always
+            # fired unconditionally, same "task self-gates on enablement"
+            # convention as the triage task above. Computes/persists this
+            # new issue's own embedding (so it becomes a candidate for
+            # future checks) and generates persisted "Doublons suggeres"
+            # suggestions for it (user story 4) - independent of the LIVE
+            # draft-check the frontend already ran before submission
+            # (IssueDuplicateCheckEndpoint), which never persists anything.
+            generate_issue_duplicate_suggestions_task.delay(
+                issue_id=str(serializer.data.get("id", None)), actor_id=str(request.user.id)
+            )
             queryset = self.get_queryset()
             queryset = self.apply_annotations(queryset)
             issue = (
@@ -692,6 +705,16 @@ class IssueViewSet(BaseViewSet):
 
         skip_activity = request.data.pop("skip_activity", False)
         is_description_update = request.data.get("description_html") is not None
+        # Category 9 feature 2 (docs/feature-specs/09-ai-features.md "2.
+        # Detection de doublons/similarite", exigence 7) - reuses this same
+        # "was title/description part of this payload" detection point
+        # (existing `is_description_update` above, extended with its title
+        # equivalent) rather than re-deriving "did the content change" from
+        # scratch. The actual "did it change MATERIALLY" decision still
+        # happens inside the task itself via `IssueEmbedding.content_hash`
+        # comparison - this is just the cheap request-time gate for whether
+        # it's even worth enqueueing that check.
+        is_title_update = "name" in request.data
 
         issue = (
             queryset.annotate(
@@ -865,6 +888,17 @@ class IssueViewSet(BaseViewSet):
                     issue_id=str(serializer.data.get("id", None)),
                     user_id=request.user.id,
                 )
+                # Category 9 feature 2 (docs/feature-specs/09-ai-features.md
+                # "2. Detection de doublons/similarite", exigence 7) - only
+                # enqueued when title or description was actually part of
+                # this PATCH payload; the task itself further self-gates on
+                # whether the content actually changed materially (via
+                # IssueEmbedding.content_hash) and on the feature being
+                # enabled at all (is_duplicate_detection_enabled_for_project).
+                if is_title_update or is_description_update:
+                    generate_issue_duplicate_suggestions_task.delay(
+                        issue_id=str(pk), actor_id=str(request.user.id)
+                    )
                 if "state_id" in request.data or "state" in request.data:
                     handle_sub_issue_automations(issue, request.user.id)
                     # Category 7 - only wired into this single, primary

@@ -31,6 +31,16 @@ class WorkspaceAIUpdateDataScope(models.TextChoices):
     FULL_DESCRIPTIONS = "FULL_DESCRIPTIONS", "Titles, states, assignees, and full descriptions"
 
 
+class DuplicateDetectionScope(models.TextChoices):
+    """Exigence 2, docs/feature-specs/09-ai-features.md ("2. Detection de
+    doublons/similarite") in plane-selfhost - "workspace entier" is an
+    explicit opt-in, disabled (project-scoped) by default for performance
+    and cross-project-relevance reasons the spec itself calls out."""
+
+    PROJECT = "project", "Current project only"
+    WORKSPACE = "workspace", "Entire workspace"
+
+
 def get_default_props():
     return {
         "filters": {
@@ -219,6 +229,25 @@ class Workspace(BaseModel):
     # it, but only ever narrows access - it can never turn triage on for a
     # project if this master switch itself is off).
     is_ai_triage_enabled = models.BooleanField(default=False)
+
+    # Master switch for category 9 feature 2 - "Detection de
+    # doublons/similarite" (docs/feature-specs/09-ai-features.md, exigence
+    # 10, in plane-selfhost). Opt-in (default False), same
+    # inherit/override convention as is_ai_triage_enabled above - see
+    # `Project.is_duplicate_detection_enabled` and
+    # `plane.utils.issue_duplicate_detection.is_duplicate_detection_enabled_for_project`.
+    is_duplicate_detection_enabled = models.BooleanField(default=False)
+    # Exigence 3 - cosine-similarity cutoff below which a candidate is not
+    # surfaced at all. Workspace-level only (no project override - only the
+    # on/off switch is overridable per project, matching this fork's
+    # decision to keep the tri-state pattern narrow).
+    duplicate_detection_similarity_threshold = models.FloatField(default=0.82)
+    # Exigence 2 - see DuplicateDetectionScope above.
+    duplicate_detection_scope = models.CharField(
+        max_length=20,
+        choices=DuplicateDetectionScope.choices,
+        default=DuplicateDetectionScope.PROJECT,
+    )
 
     def __str__(self):
         """Return name of the Workspace"""

@@ -162,6 +162,11 @@ REST_FRAMEWORK = {
         # IssueTriageSuggestionRegenerateThrottle (per-issue, not
         # per-workspace).
         "issue_triage_regenerate": "1/min",
+        # docs/feature-specs/09-ai-features.md ("2. Detection de
+        # doublons/similarite") in plane-selfhost, "Considerations API/UX" -
+        # see DuplicateDetectionBackfillThrottle (per-workspace, an admin
+        # button that can enqueue a large batch sweep).
+        "duplicate_detection_backfill": "1/hour",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

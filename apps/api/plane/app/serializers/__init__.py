@@ -233,3 +233,5 @@ from .ai_config import WorkspaceAIConfigSerializer
 from .issue_comment_summary import IssueCommentSummarySerializer
 from .ai_generation_log import AIGenerationLogSerializer
 from .issue_triage_suggestion import IssueTriageSuggestionSerializer
+
+from .issue_duplicate_suggestion import IssueDuplicateSuggestionSerializer

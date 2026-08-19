@@ -231,6 +231,16 @@ class Project(BaseModel):
     # project, no suggestion is generated at all.
     ai_triage_min_historical_issues = models.PositiveIntegerField(default=10)
 
+    # --- Category 9 feature 2 - "Detection de doublons/similarite" project
+    # override (docs/feature-specs/09-ai-features.md in plane-selfhost).
+    # Same nullable tri-state convention as `is_ai_triage_enabled` above
+    # (not a separate satellite model) - `None` inherits
+    # `Workspace.is_duplicate_detection_enabled`; an explicit `True`/`False`
+    # overrides it, but `True` only takes effect if the workspace master
+    # switch is also `True`. See
+    # plane.utils.issue_duplicate_detection.is_duplicate_detection_enabled_for_project.
+    is_duplicate_detection_enabled = models.BooleanField(null=True, blank=True, default=None)
+
     def __init__(self, *args, **kwargs):
         # Track if timezone is provided, if so, don't override it with the workspace timezone when saving
         self.is_timezone_provided = kwargs.get("timezone") is not None

@@ -38,6 +38,10 @@ from plane.app.views import (
     IssueTriageSuggestionEndpoint,
     IssueTriageSuggestionRegenerateEndpoint,
     IssueTriageSuggestionResolveEndpoint,
+    IssueDuplicateCheckEndpoint,
+    IssueDuplicateSuggestionListEndpoint,
+    IssueDuplicateSuggestionDismissEndpoint,
+    IssueDuplicateSuggestionConfirmEndpoint,
 )
 
 urlpatterns = [
@@ -209,6 +213,29 @@ urlpatterns = [
         name="project-issue-ai-triage-suggestion-resolve",
     ),
     ## End AI-assisted auto-triage
+    # Duplicate/similarity detection - docs/feature-specs/09-ai-features.md
+    # ("2. Detection de doublons/similarite") in plane-selfhost.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/duplicate-check/",
+        IssueDuplicateCheckEndpoint.as_view(),
+        name="project-issue-duplicate-check",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/duplicate-suggestions/",
+        IssueDuplicateSuggestionListEndpoint.as_view(),
+        name="project-issue-duplicate-suggestions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/duplicate-suggestions/<uuid:suggestion_id>/dismiss/",
+        IssueDuplicateSuggestionDismissEndpoint.as_view(),
+        name="project-issue-duplicate-suggestion-dismiss",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/duplicate-suggestions/<uuid:suggestion_id>/confirm/",
+        IssueDuplicateSuggestionConfirmEndpoint.as_view(),
+        name="project-issue-duplicate-suggestion-confirm",
+    ),
+    ## End duplicate/similarity detection
     # Issue Subscribers
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-subscribers/",

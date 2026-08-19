@@ -379,3 +379,16 @@ from .issue_triage_suggestion import (
 )
 
 from .ai_triage_config import ProjectAITriageConfigEndpoint, WorkspaceAITriageConfigEndpoint
+
+from .issue_duplicate_suggestion import (
+    IssueDuplicateCheckEndpoint,
+    IssueDuplicateSuggestionListEndpoint,
+    IssueDuplicateSuggestionDismissEndpoint,
+    IssueDuplicateSuggestionConfirmEndpoint,
+)
+
+from .duplicate_detection_config import (
+    ProjectDuplicateDetectionConfigEndpoint,
+    WorkspaceDuplicateDetectionConfigEndpoint,
+    WorkspaceDuplicateDetectionBackfillEndpoint,
+)
