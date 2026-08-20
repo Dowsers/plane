@@ -267,6 +267,28 @@ class Workspace(BaseModel):
     # errors - see `plane.utils.digest_content.render_digest`.
     is_digest_llm_enrichment_enabled = models.BooleanField(default=False)
 
+    # Master switch for category 9 feature 3 - "Assistant de chat IA
+    # in-app" (docs/feature-specs/09-ai-features.md, exigence 10/11, in
+    # plane-selfhost). Opt-in (default False), same flat-boolean/inherit-
+    # override convention as is_ai_triage_enabled/
+    # is_duplicate_detection_enabled above (NOT the spec's own
+    # WorkspaceAIConfig/ProjectAIConfig duplicate models) - see
+    # `Project.is_ai_assistant_enabled` for the per-project override and
+    # `plane.utils.ai_chat_assistant.is_ai_assistant_enabled_for_project`
+    # for the inheritance resolution. Both this AND an enabled
+    # `WorkspaceAIConfig` (plane.db.models.ai_config) are required before
+    # the assistant is reachable at all (exigence 10).
+    is_ai_assistant_enabled = models.BooleanField(default=False)
+    # Exigence 12 - per-(user, workspace) hourly cap on
+    # `POST .../ai-conversations/<id>/messages/`, enforced by
+    # `plane.throttles.ai_chat_message.AIChatMessageThrottle`. Same
+    # admin-configurable-field convention as
+    # `ai_update_daily_generation_limit` above, just per-user rather than
+    # per-workspace (exigence 12's own wording - "par utilisateur et par
+    # workspace" - a shared workspace-wide budget would let one chatty
+    # member starve everyone else).
+    ai_assistant_max_messages_per_user_per_hour = models.PositiveIntegerField(default=20)
+
     def __str__(self):
         """Return name of the Workspace"""
         return self.name

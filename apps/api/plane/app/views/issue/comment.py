@@ -20,6 +20,7 @@ from .. import BaseViewSet
 from plane.app.serializers import IssueCommentSerializer, CommentReactionSerializer
 from plane.app.permissions import allow_permission, ROLE
 from plane.db.models import IssueComment, ProjectMember, CommentReaction, Project, Issue
+from plane.bgtasks.ai_chat_assistant_task import handle_comment_mention
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.utils.host import base_host
@@ -111,6 +112,13 @@ class IssueCommentViewSet(BaseViewSet):
             # comment that itself came FROM Slack (anti-loop) - see
             # sync_issue_comment_to_slack's own docstring.
             sync_issue_comment_to_slack.delay(comment_id=str(serializer.data["id"]))
+            # Category 9 feature 3 (docs/feature-specs/09-ai-features.md
+            # "3. Assistant de chat IA in-app" in plane-selfhost) -
+            # best-effort, no-ops internally if the AI Assistant bot
+            # wasn't actually @mentioned or the feature isn't enabled for
+            # this workspace/project. See
+            # plane.bgtasks.ai_chat_assistant_task.handle_comment_mention.
+            handle_comment_mention.delay(comment_id=str(serializer.data["id"]))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

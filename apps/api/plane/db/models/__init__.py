@@ -224,3 +224,16 @@ from .digest import (
     DigestGenerationMethod,
     DigestItemType,
 )
+
+from .ai_chat import (
+    AIConversation,
+    AIConversationContextType,
+    AIConversationSource,
+    AIMessage,
+    AIMessageRole,
+    AIMessageMode,
+    AIMessageStatus,
+    AIChangeProposal,
+    AIChangeProposalTargetModel,
+    AIChangeProposalStatus,
+)

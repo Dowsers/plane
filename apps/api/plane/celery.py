@@ -135,6 +135,16 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cleanup_task.delete_old_digest_runs",
         "schedule": crontab(hour=4, minute=15),  # UTC 04:15, after the other daily cleanup tasks
     },
+    # In-app AI chat assistant proposal expiry - see
+    # docs/feature-specs/09-ai-features.md ("3. Assistant de chat IA
+    # in-app", exigence 8) in plane-selfhost. Runs more often than the
+    # daily cleanup sweeps above since a proposal becoming un-approvable
+    # exactly on time (not up to a day late) is user-facing behavior, not
+    # just housekeeping.
+    "check-every-hour-to-expire-ai-change-proposals": {
+        "task": "plane.bgtasks.cleanup_task.expire_ai_change_proposals",
+        "schedule": crontab(minute=45),  # every hour, offset from other hourly tasks
+    },
 }
 
 

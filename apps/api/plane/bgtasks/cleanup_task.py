@@ -578,3 +578,21 @@ def delete_old_digest_runs():
         task_name="Digest Run",
         collection_name="digest_runs",
     )
+
+
+@shared_task
+def expire_ai_change_proposals():
+    """Category 9 (AI features, docs/feature-specs/09-ai-features.md in
+    plane-selfhost), feature 3 - "Assistant de chat IA in-app", exigence
+    8 - a pending `AIChangeProposal` past its `expires_at` (default 7
+    days, see `plane.db.models.ai_chat.default_proposal_expiry`) can no
+    longer be approved/rejected. Unlike every other task in this module,
+    this is a simple status UPDATE, not a delete+Mongo-archive sweep - a
+    resolved proposal stays fully readable in the conversation history
+    (the feature's own explicit requirement), it just moves to a terminal
+    `expired` status. See `plane.utils.ai_chat_assistant.
+    expire_stale_proposals` for the actual query."""
+    from plane.utils.ai_chat_assistant import expire_stale_proposals
+
+    count = expire_stale_proposals()
+    logger.info(f"Expired {count} stale AI change proposal(s)")

@@ -243,3 +243,11 @@ from .digest import (
     DigestRunDetailSerializer,
     WorkspaceDigestSettingsSerializer,
 )
+
+from .ai_chat import (
+    AIConversationSerializer,
+    AIMessageSerializer,
+    AIChangeProposalSerializer,
+    AIConversationCreateSerializer,
+    AIConversationMessageCreateSerializer,
+)

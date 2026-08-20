@@ -241,6 +241,17 @@ class Project(BaseModel):
     # plane.utils.issue_duplicate_detection.is_duplicate_detection_enabled_for_project.
     is_duplicate_detection_enabled = models.BooleanField(null=True, blank=True, default=None)
 
+    # --- Category 9 feature 3 - "Assistant de chat IA in-app" project
+    # override (docs/feature-specs/09-ai-features.md, exigence 11, in
+    # plane-selfhost). Same nullable tri-state convention as
+    # `is_ai_triage_enabled`/`is_duplicate_detection_enabled` above - `None`
+    # inherits `Workspace.is_ai_assistant_enabled`; an explicit `True`/
+    # `False` overrides it, but `True` only takes effect if the workspace
+    # master switch is also `True` (a project lead can disable the
+    # assistant locally even when it's globally on, but can never turn it
+    # on locally when the workspace admin has it off).
+    is_ai_assistant_enabled = models.BooleanField(null=True, blank=True, default=None)
+
     def __init__(self, *args, **kwargs):
         # Track if timezone is provided, if so, don't override it with the workspace timezone when saving
         self.is_timezone_provided = kwargs.get("timezone") is not None

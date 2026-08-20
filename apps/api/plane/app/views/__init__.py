@@ -400,3 +400,14 @@ from .digest import (
     UserDigestPreviewEndpoint,
     WorkspaceDigestSettingsEndpoint,
 )
+
+from .ai_chat import (
+    AIConversationListCreateEndpoint,
+    AIConversationDetailEndpoint,
+    AIConversationMessageListCreateEndpoint,
+    AIChangeProposalListEndpoint,
+    AIChangeProposalApproveEndpoint,
+    AIChangeProposalRejectEndpoint,
+)
+
+from .ai_assistant_config import ProjectAIAssistantConfigEndpoint, WorkspaceAIAssistantConfigEndpoint

@@ -171,6 +171,13 @@ REST_FRAMEWORK = {
         # periodique automatise") in plane-selfhost - see
         # DigestPreviewThrottle (per user+workspace, not per-workspace).
         "digest_preview": "3/hour",
+        # Fallback only - docs/feature-specs/09-ai-features.md ("3.
+        # Assistant de chat IA in-app") in plane-selfhost, exigence 12.
+        # AIChatMessageThrottle always overrides num_requests/duration per
+        # request from the requesting workspace's own
+        # Workspace.ai_assistant_max_messages_per_user_per_hour (default
+        # 20/hour) - see that class's docstring.
+        "ai_chat_message": "20/hour",
     },
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

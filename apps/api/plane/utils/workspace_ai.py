@@ -33,7 +33,7 @@ returns a clear "not configured" error, never silently uses the
 instance-wide key.
 """
 
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from openai import OpenAI
 
@@ -41,13 +41,14 @@ from plane.utils.exception_logger import log_exception
 
 
 def call_llm(
-    prompt: str,
-    api_key: Optional[str],
-    model: str,
-    provider: str,
+    prompt: Optional[str] = None,
+    api_key: Optional[str] = None,
+    model: Optional[str] = None,
+    provider: Optional[str] = None,
     system_prompt: Optional[str] = None,
     api_base_url: Optional[str] = None,
     timeout: Optional[float] = None,
+    messages: Optional[List[Dict[str, str]]] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
     """Make a single, synchronous, non-streaming chat-completion call
     against `provider` and return `(text, error)` - exactly the call shape
@@ -60,6 +61,15 @@ def call_llm(
     for category 9 feature 6 (AI-assisted status update drafting, exigence
     10's 20s timeout requirement) - when omitted, the `openai` client's own
     default timeout applies, unchanged from before this parameter existed.
+
+    `messages` (added for category 9 feature 3, "Assistant de chat IA
+    in-app" - multi-turn conversation support) is an additive, optional
+    full `[{"role": ..., "content": ...}, ...]` list. When provided, it is
+    sent to the provider AS-IS, and `prompt`/`system_prompt` are ignored
+    entirely - the caller is responsible for including any system message
+    in this list. When omitted (every pre-existing caller), behavior is
+    byte-for-byte unchanged: a `[{"role": "user", ...}]` list, optionally
+    prefixed with a `system` message built from `system_prompt`.
     """
     try:
         # For Gemini, prepend provider name to model - same quirk as before.
@@ -73,10 +83,11 @@ def call_llm(
             client_kwargs["timeout"] = timeout
         client = OpenAI(**client_kwargs)
 
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+        if messages is None:
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
 
         chat_completion = client.chat.completions.create(model=model, messages=messages)
         text = chat_completion.choices[0].message.content
@@ -132,6 +143,41 @@ def get_workspace_llm_response(
     final_text = f"{task}\n{prompt}" if prompt else task
     return call_llm(
         prompt=final_text,
+        api_key=config.api_key,
+        model=config.model_name,
+        provider=config.provider,
+        api_base_url=config.api_base_url or None,
+        timeout=timeout,
+    )
+
+
+def get_workspace_llm_chat_response(
+    workspace, messages: List[Dict[str, str]], timeout: Optional[float] = None
+) -> Tuple[Optional[str], Optional[str]]:
+    """Multi-turn equivalent of `get_workspace_llm_response`, added for
+    category 9 feature 3 ("Assistant de chat IA in-app" - the in-app chat
+    assistant, the only category 9 feature that needs a full conversation
+    history rather than a single task+prompt string). Same "not configured
+    or not enabled" / "no API key" gating, same underlying `call_llm` -
+    this is a thin wrapper, not a third parallel LLM-calling
+    implementation.
+
+    `messages` is the full `[{"role": "system"|"user"|"assistant",
+    "content": ...}, ...]` list the caller wants sent - typically a system
+    prompt (context + instructions) followed by the conversation's prior
+    `AIMessage` rows in order.
+    """
+    from plane.db.models.ai_config import WorkspaceAIProvider
+
+    config = get_workspace_ai_config(workspace)
+    if config is None or not config.is_enabled:
+        return None, "AI features are not configured or not enabled for this workspace."
+
+    if not config.api_key and config.provider != WorkspaceAIProvider.CUSTOM_OPENAI_COMPATIBLE:
+        return None, f"No API key configured for provider {config.provider}."
+
+    return call_llm(
+        messages=messages,
         api_key=config.api_key,
         model=config.model_name,
         provider=config.provider,

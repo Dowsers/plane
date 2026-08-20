@@ -562,6 +562,19 @@ class IssueComment(ChangeTrackerMixin, ProjectBaseModel):
     # set to the rule's author (no dedicated bot user in this codebase),
     # this flag is what lets the UI render "Automation" instead.
     created_by_automation = models.BooleanField(default=False)
+    # Category 9 feature 3 (docs/feature-specs/09-ai-features.md "3.
+    # Assistant de chat IA in-app" in plane-selfhost) - links a bot-authored
+    # reply comment (posted when a comment @mentions the AI_ASSISTANT_BOT -
+    # see plane.bgtasks.ai_chat_assistant_task.handle_comment_mention) back
+    # to the full `AIConversation` it belongs to, so the UI can render a
+    # "See full conversation" link. Null for every ordinary human comment.
+    ai_conversation = models.ForeignKey(
+        "db.AIConversation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reply_comments",
+    )
 
     TRACKED_FIELDS = ["comment_stripped", "comment_json", "comment_html"]
 

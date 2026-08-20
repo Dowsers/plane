@@ -78,6 +78,19 @@ class BotTypeEnum(models.TextChoices):
     # meant to be member-visible/assignable - it exists purely to be an
     # `IssueActivity.actor` distinguishable from a human.
     AI_TRIAGE_BOT = "AI_TRIAGE_BOT", "AI Triage Bot"
+    # Category 9 feature 3 (docs/feature-specs/09-ai-features.md "3.
+    # Assistant de chat IA in-app" in plane-selfhost) - the in-app chat
+    # assistant's own actor identity, used so it can post its own reply
+    # messages as a real `IssueComment` author when @mentioned in a
+    # comment thread. Unlike `AI_TRIAGE_BOT` (never member-visible/
+    # mentionable) but LIKE `WORKSPACE_AGENT`, this bot type IS
+    # deliberately member-visible/mentionable via the `@AI Assistant`
+    # autocomplete - see `plane.utils.agent_actor`'s
+    # `PUBLICLY_VISIBLE_BOT_TYPES` (generalized to a set for exactly this
+    # second bot type rather than hardcoding WORKSPACE_AGENT alone).
+    # Created/fetched via the same `get_or_create_integration_bot` factory
+    # as every bot type above - no new bot-creation mechanism.
+    AI_ASSISTANT_BOT = "AI_ASSISTANT_BOT", "AI Assistant Bot"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -326,13 +339,18 @@ class Account(TimeAuditModel):
 def create_user_notification(sender, instance, created, **kwargs):
     # create preferences
     #
-    # A WORKSPACE_AGENT still needs a preference row even though it's a
-    # bot: unlike every other bot type it's member-visible and mentionable
-    # (category 9 feature 7 - see plane.utils.agent_actor), so
+    # A WORKSPACE_AGENT (and, since category 9 feature 3, AI_ASSISTANT_BOT
+    # too) still needs a preference row even though it's a bot: unlike
+    # every other bot type these are member-visible and mentionable (see
+    # plane.utils.agent_actor.PUBLICLY_VISIBLE_BOT_TYPES), so
     # notification_task's `UserNotificationPreference.objects.get(user_id=
     # mention_id)` would otherwise raise DoesNotExist and blow up the
-    # whole notification task the first time a human @-mentions an agent.
-    if created and (not instance.is_bot or instance.bot_type == BotTypeEnum.WORKSPACE_AGENT):
+    # whole notification task the first time a human @-mentions one of
+    # them. Local import to avoid a circular import (agent_actor imports
+    # BotTypeEnum from this module).
+    from plane.utils.agent_actor import PUBLICLY_VISIBLE_BOT_TYPES
+
+    if created and (not instance.is_bot or instance.bot_type in PUBLICLY_VISIBLE_BOT_TYPES):
         # Module imports
         from plane.db.models import UserNotificationPreference
 

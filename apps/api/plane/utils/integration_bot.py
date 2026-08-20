@@ -51,6 +51,11 @@ DEFAULT_BOT_DISPLAY_NAMES = {
     # Auto-triage assiste par IA" in plane-selfhost, exigence 6) - matches
     # the spec's own suggested display name ("compte bot 'Plane AI'").
     BotTypeEnum.AI_TRIAGE_BOT: "Plane AI",
+    # Category 9 feature 3 (docs/feature-specs/09-ai-features.md "3.
+    # Assistant de chat IA in-app" in plane-selfhost) - the @mentionable
+    # display name shown in autocomplete and as the comment-reply author,
+    # matching the spec's own literal `@AI Assistant` wording (exigence 1b).
+    BotTypeEnum.AI_ASSISTANT_BOT: "AI Assistant",
 }
 
 # Workspace role granted to every integration bot - matches the existing
