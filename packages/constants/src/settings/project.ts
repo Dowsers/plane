@@ -141,6 +141,17 @@ export const PROJECT_SETTINGS: Record<TProjectSettingsTabs, TProjectSettingsItem
     access: [EUserProjectRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/ai-duplicate-detection/`,
   },
+  ai_assistant: {
+    key: "ai_assistant",
+    i18n_label: "project_settings.ai_assistant.label",
+    href: `/ai-assistant`,
+    // `ProjectAIAssistantConfigEndpoint`
+    // (apps/api/plane/app/views/ai_assistant_config.py) is Admin-only for
+    // every verb, including read - matches the sibling `ai_triage`/
+    // `ai_duplicate_detection` tabs' own gating.
+    access: [EUserProjectRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/ai-assistant/`,
+  },
 };
 
 export const PROJECT_SETTINGS_FLAT_MAP: TProjectSettingsItem[] = Object.values(PROJECT_SETTINGS);
@@ -165,5 +176,6 @@ export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjec
     PROJECT_SETTINGS["governed_workflows"],
     PROJECT_SETTINGS["ai_triage"],
     PROJECT_SETTINGS["ai_duplicate_detection"],
+    PROJECT_SETTINGS["ai_assistant"],
   ],
 };

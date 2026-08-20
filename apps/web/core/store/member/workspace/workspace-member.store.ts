@@ -10,7 +10,7 @@ import { computedFn } from "mobx-utils";
 // types
 import type { EUserPermissions } from "@plane/constants";
 import type { IWorkspaceBulkInviteFormData, IWorkspaceMember, IWorkspaceMemberInvitation } from "@plane/types";
-import { isWorkspaceAgentActor } from "@plane/utils";
+import { isPubliclyVisibleBotActor } from "@plane/utils";
 // plane-web constants
 // services
 import { WorkspaceService } from "@/services/workspace.service";
@@ -134,15 +134,17 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       (m) => m.member !== this.userStore?.data?.id,
       (m) => this.memberRoot?.memberMap?.[m.member]?.display_name?.toLowerCase(),
     ]);
-    // filter out bots, but keep first-class workspace agents visible (category
-    // 9, feature 7 - see `isWorkspaceAgentActor` for why this can't stay a
-    // blanket `is_bot` exclusion: the six category-7 integration bots and
-    // `WORKSPACE_SEED` must stay hidden, but a `WORKSPACE_AGENT` bot is
-    // intentionally as visible as a human member).
+    // filter out bots, but keep every publicly-visible bot type visible
+    // (category 9, feature 7's `WORKSPACE_AGENT` and, since feature 3,
+    // `AI_ASSISTANT_BOT` too - see `isPubliclyVisibleBotActor` for why this
+    // can't stay a blanket `is_bot` exclusion: the six category-7
+    // integration bots and `WORKSPACE_SEED` must stay hidden, but these two
+    // bot types are intentionally as visible as a human member, e.g. in
+    // @mention autocomplete).
     const memberIds = members
       .filter((m) => {
         const user = this.memberRoot?.memberMap?.[m.member];
-        return !user?.is_bot || isWorkspaceAgentActor(user);
+        return isPubliclyVisibleBotActor(user);
       })
       .map((m) => m.member);
     return memberIds;
@@ -154,10 +156,10 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
    */
   getFilteredWorkspaceMemberIds = computedFn((workspaceSlug: string) => {
     let members = Object.values(this.workspaceMemberMap?.[workspaceSlug] ?? {});
-    //filter out bots (except first-class workspace agents, see above) and inactive members
+    //filter out bots (except publicly-visible bot types, see above) and inactive members
     members = members.filter((m) => {
       const user = this.memberRoot?.memberMap?.[m.member];
-      return !user?.is_bot || isWorkspaceAgentActor(user);
+      return isPubliclyVisibleBotActor(user);
     });
 
     // Use filters store to get filtered member ids

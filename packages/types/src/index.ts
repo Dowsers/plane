@@ -7,6 +7,7 @@
 export * from "./activity";
 export * from "./agent";
 export * from "./ai";
+export * from "./ai-chat";
 export * from "./ai-triage-config";
 export * from "./analytics";
 export * from "./api-explorer";

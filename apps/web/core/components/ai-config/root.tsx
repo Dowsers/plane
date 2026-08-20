@@ -11,6 +11,7 @@ import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type {
   TDuplicateDetectionScope,
+  TWorkspaceAIAssistantConfig,
   TWorkspaceAIConfig,
   TWorkspaceAIProvider,
   TWorkspaceAIUpdateDataScope,
@@ -21,6 +22,7 @@ import { Button, CustomSelect, Input, ToggleSwitch } from "@plane/ui";
 // hooks
 import { useWorkspace } from "@/hooks/store/use-workspace";
 // services
+import { AIAssistantConfigService } from "@/services/ai-assistant-config.service";
 import { AIConfigService } from "@/services/ai-config.service";
 import { DuplicateDetectionConfigService } from "@/services/duplicate-detection-config.service";
 import { WorkspaceDigestSettingsService } from "@/services/workspace-digest-settings.service";
@@ -30,6 +32,7 @@ import { AIFeatureToggleRow } from "./feature-toggle-row";
 const aiConfigService = new AIConfigService();
 const duplicateDetectionConfigService = new DuplicateDetectionConfigService();
 const workspaceDigestSettingsService = new WorkspaceDigestSettingsService();
+const aiAssistantConfigService = new AIAssistantConfigService();
 
 const DUPLICATE_DETECTION_SCOPE_KEYS: TDuplicateDetectionScope[] = ["project", "workspace"];
 const DUPLICATE_DETECTION_SCOPE_I18N_KEYS: Record<TDuplicateDetectionScope, string> = {
@@ -133,6 +136,19 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
   const [isTogglingDigestFeature, setIsTogglingDigestFeature] = useState(false);
   const [isTogglingDigestLlmEnrichment, setIsTogglingDigestLlmEnrichment] = useState(false);
 
+  // Category 9, feature 3 - "Assistant de chat IA in-app". Unlike
+  // `is_ai_triage_enabled` above, this feature's workspace master switch
+  // has its OWN dedicated Admin-only endpoint (paired with the
+  // per-user-per-hour rate limit field on that same resource) - see
+  // `AIAssistantConfigService`'s own docstring - so, like duplicate
+  // detection/digest above, it's tracked as separate local state rather
+  // than read/written through `useWorkspace()`.
+  const [assistantConfig, setAssistantConfig] = useState<TWorkspaceAIAssistantConfig | null>(null);
+  const [hasAssistantConfigLoaded, setHasAssistantConfigLoaded] = useState(false);
+  const [isTogglingAssistant, setIsTogglingAssistant] = useState(false);
+  const [assistantMaxMessagesPerHour, setAssistantMaxMessagesPerHour] = useState(20);
+  const [isSavingAssistantSettings, setIsSavingAssistantSettings] = useState(false);
+
   useEffect(() => {
     setDataScope(currentWorkspace?.ai_update_data_scope ?? "TITLES_STATES_ONLY");
     setMaxRegenerations(currentWorkspace?.max_ai_update_regenerations ?? 5);
@@ -205,6 +221,28 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       })
       .finally(() => {
         if (!cancelled) setHasDigestSettingsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+    aiAssistantConfigService
+      .getWorkspaceConfig(workspaceSlug)
+      .then((data) => {
+        if (cancelled) return;
+        setAssistantConfig(data);
+        setAssistantMaxMessagesPerHour(data.ai_assistant_max_messages_per_user_per_hour);
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      })
+      .finally(() => {
+        if (!cancelled) setHasAssistantConfigLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -377,6 +415,41 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
     }
   };
 
+  const handleToggleAssistant = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    setIsTogglingAssistant(true);
+    try {
+      const updated = await aiAssistantConfigService.updateWorkspaceConfig(workspaceSlug, {
+        is_ai_assistant_enabled: value,
+      });
+      setAssistantConfig(updated);
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+    } finally {
+      setIsTogglingAssistant(false);
+    }
+  };
+
+  const handleSaveAssistantSettings = async () => {
+    if (!workspaceSlug) return;
+    setIsSavingAssistantSettings(true);
+    try {
+      const updated = await aiAssistantConfigService.updateWorkspaceConfig(workspaceSlug, {
+        ai_assistant_max_messages_per_user_per_hour: assistantMaxMessagesPerHour,
+      });
+      setAssistantConfig(updated);
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: "Success!",
+        message: t("ai.assistant_settings.save_success"),
+      });
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+    } finally {
+      setIsSavingAssistantSettings(false);
+    }
+  };
+
   // Admin-only trigger for the existing `backfill_issue_embeddings_batch`
   // task (see `DuplicateDetectionConfigService.triggerBackfill`'s own
   // docstring) - the endpoint only ever enqueues the task and returns a
@@ -540,6 +613,45 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           disabledTooltip={t("ai.features.digest_llm_enrichment.disabled_tooltip")}
           isSaving={isTogglingDigestLlmEnrichment}
         />
+        <AIFeatureToggleRow
+          key="ai_assistant"
+          label={t("ai.features.assistant.label")}
+          description={t("ai.features.assistant.description")}
+          value={!!assistantConfig?.is_ai_assistant_enabled}
+          onChange={handleToggleAssistant}
+          disabled={!isConfiguredAndEnabled || !hasAssistantConfigLoaded}
+          disabledTooltip={t("ai.features.assistant.disabled_tooltip")}
+          isSaving={isTogglingAssistant}
+        />
+
+        <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
+          <div>
+            <h5 className="text-13 font-medium text-primary">{t("ai.assistant_settings.title")}</h5>
+            <p className="text-12 text-tertiary">{t("ai.assistant_settings.description")}</p>
+          </div>
+          <div className="flex flex-col gap-1 sm:w-1/2">
+            <span className="text-13 text-secondary">{t("ai.assistant_settings.max_messages_per_hour")}</span>
+            <Input
+              type="number"
+              min={0}
+              value={assistantMaxMessagesPerHour}
+              onChange={(e) => setAssistantMaxMessagesPerHour(Number(e.target.value))}
+              disabled={!hasAssistantConfigLoaded}
+              inputSize="sm"
+            />
+          </div>
+          <div>
+            <Button
+              variant="neutral-primary"
+              size="sm"
+              onClick={handleSaveAssistantSettings}
+              loading={isSavingAssistantSettings}
+              disabled={!hasAssistantConfigLoaded}
+            >
+              {t("save")}
+            </Button>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-3 rounded-md border-[0.5px] border-subtle p-4">
           <div>

@@ -7,6 +7,8 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
+// components
+import { AIChatAssistantModal } from "@/components/ai-chat-assistant";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { usePowerK } from "@/hooks/store/use-power-k";
@@ -80,6 +82,7 @@ export const ProjectsAppPowerKProvider = observer(function ProjectsAppPowerKProv
     <>
       <GlobalShortcutsProvider context={context} commands={commands} />
       {workspaceSlug && <WorkspaceLevelModals workspaceSlug={workspaceSlug.toString()} />}
+      {workspaceSlug && <AIChatAssistantModal workspaceSlug={workspaceSlug.toString()} />}
       {workspaceSlug && projectId && (
         <ProjectLevelModals workspaceSlug={workspaceSlug.toString()} projectId={projectId.toString()} />
       )}

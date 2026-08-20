@@ -2045,6 +2045,20 @@ export default {
       threshold_scope_hint: "The similarity threshold and search scope are configured workspace-wide in Settings > AI.",
       save_success: "Duplicate detection settings saved.",
     },
+    ai_assistant: {
+      label: "AI Assistant",
+      description:
+        "Let members open the in-app AI chat assistant scoped to this project's work items, cycles, modules, and pages.",
+      master_switch: "Enable the AI assistant for this project",
+      master_switch_description: "Overrides the workspace-wide default for this project only.",
+      workspace_disabled_tooltip: "The AI assistant isn't enabled for this workspace yet. Go to Settings > AI.",
+      override: {
+        inherit: "Inherit from workspace",
+        on: "Force on",
+        off: "Force off",
+      },
+      save_success: "AI assistant settings saved.",
+    },
     empty_state: {
       labels: {
         title: "No labels yet",
@@ -2324,6 +2338,12 @@ export default {
           "Rephrase each member's periodic digest into natural prose using the configured provider. The templated digest (grouped by project and change type) is always computed first and used as a fallback.",
         disabled_tooltip: "Configure and enable an AI provider above first.",
       },
+      assistant: {
+        label: "In-app AI chat assistant",
+        description:
+          "Let members open a chat panel to ask questions or propose field changes (state, assignees, labels...) on work items, cycles, modules, and pages, reviewed before anything is applied.",
+        disabled_tooltip: "Configure and enable an AI provider above first.",
+      },
     },
     update_draft_settings: {
       title: "Status update drafting",
@@ -2389,6 +2409,54 @@ export default {
       applied_badge_label: "IA",
       applied_badge_tooltip: "This value was suggested and applied by AI.",
       undo: "Undo",
+    },
+    assistant_settings: {
+      title: "Chat assistant",
+      description: "Extra controls for the in-app AI chat assistant.",
+      max_messages_per_hour: "Max messages per user, per hour",
+      save_success: "Chat assistant settings saved.",
+    },
+    chat: {
+      title: "AI Assistant",
+      new_chat: "New chat",
+      no_conversations: "No conversations yet.",
+      empty_thread: "Ask a question or propose a change to get started.",
+      assistant_label: "Assistant",
+      generating: "Thinking...",
+      generic_failure: "Something went wrong generating this reply.",
+      create_error: "Couldn't start a new conversation. Please try again.",
+      send_error: "Something went wrong. Please try again.",
+      propose_forbidden: "You need at least Member access here to use Propose mode.",
+      rate_limited: "You're sending too many messages - try again in a bit.",
+      propose_disabled_tooltip: "You need at least Member access here to use Propose mode.",
+      composer_placeholder_ask: "Ask the AI assistant anything about this context...",
+      composer_placeholder_propose: "Describe the change you'd like the assistant to propose...",
+      mode: {
+        ask: "Ask",
+        propose: "Propose",
+      },
+      context_type: {
+        workspace: "Workspace chat",
+        project: "Project chat",
+        issue: "Work item chat",
+        cycle: "Cycle chat",
+        module: "Module chat",
+        page: "Page chat",
+      },
+    },
+    proposals: {
+      approve: "Approve",
+      reject: "Reject",
+      approve_success: "Proposal approved and applied.",
+      reject_success: "Proposal rejected.",
+      resolve_error: "Something went wrong. Please try again.",
+      status: {
+        pending: "Pending",
+        approved: "Approved",
+        rejected: "Rejected",
+        applied: "Applied",
+        expired: "Expired",
+      },
     },
   },
   digest: {
@@ -3378,6 +3446,9 @@ export default {
     account_actions: {
       sign_out: "Sign out",
       workspace_invites: "Workspace invites",
+    },
+    general_actions: {
+      open_ai_assistant: "Ask AI Assistant",
     },
     miscellaneous_actions: {
       toggle_app_sidebar: "Toggle app sidebar",

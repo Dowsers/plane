@@ -446,6 +446,11 @@ export const coreRoutes: RouteConfigEntry[] = [
               ":workspaceSlug/settings/projects/:projectId/ai-duplicate-detection",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/ai-duplicate-detection/page.tsx"
             ),
+            // Project AI Assistant
+            route(
+              ":workspaceSlug/settings/projects/:projectId/ai-assistant",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/ai-assistant/page.tsx"
+            ),
           ]),
         ]),
       ]),

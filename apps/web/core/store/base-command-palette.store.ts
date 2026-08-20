@@ -9,7 +9,7 @@ import { computedFn } from "mobx-utils";
 // plane imports
 import type { TCreateModalStoreTypes, TCreatePageModal } from "@plane/constants";
 import { DEFAULT_CREATE_PAGE_MODAL_DATA, EPageAccess } from "@plane/constants";
-import type { TProfileSettingsTabs } from "@plane/types";
+import type { TAIConversationContextType, TProfileSettingsTabs } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
 // lib
 import { store } from "@/lib/store-context";
@@ -18,6 +18,22 @@ export interface ModalData {
   store: EIssuesStoreType;
   viewId: string;
 }
+
+/**
+ * Category 9, feature 3 - "Assistant de chat IA in-app"
+ * (docs/feature-specs/09-ai-features.md in plane-selfhost). The chat
+ * panel is command-palette-launched (see
+ * `power-k/config/ai-assistant-commands.ts`) - `contextType`/
+ * `contextObjectId` are derived from wherever the command was triggered
+ * (issue detail -> "issue", project -> "project", ... -> "workspace" as
+ * the fallback) and passed straight through to
+ * `POST .../ai-conversations/` when the modal creates a new conversation.
+ */
+export type TAIChatAssistantModalState = {
+  isOpen: boolean;
+  contextType: TAIConversationContextType;
+  contextObjectId: string | null;
+};
 
 export interface IBaseCommandPaletteStore {
   // observables
@@ -38,8 +54,10 @@ export interface IBaseCommandPaletteStore {
   };
   allStickiesModal: boolean;
   projectListOpenMap: Record<string, boolean>;
+  aiChatAssistantModal: TAIChatAssistantModalState;
   getIsProjectListOpen: (projectId: string) => boolean;
   // toggle actions
+  toggleAIChatAssistantModal: (payload?: Partial<TAIChatAssistantModalState>) => void;
   toggleCreateProjectModal: (value?: boolean) => void;
   toggleCreateCycleModal: (value?: boolean) => void;
   toggleCreateInitiativeModal: (value?: boolean) => void;
@@ -73,6 +91,11 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
   };
   allStickiesModal: boolean = false;
   projectListOpenMap: Record<string, boolean> = {};
+  aiChatAssistantModal: TAIChatAssistantModalState = {
+    isOpen: false,
+    contextType: "workspace",
+    contextObjectId: null,
+  };
 
   constructor() {
     makeObservable(this, {
@@ -91,7 +114,9 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       profileSettingsModal: observable,
       allStickiesModal: observable,
       projectListOpenMap: observable,
+      aiChatAssistantModal: observable,
       // toggle actions
+      toggleAIChatAssistantModal: action,
       toggleCreateProjectModal: action,
       toggleCreateCycleModal: action,
       toggleCreateInitiativeModal: action,
@@ -123,11 +148,34 @@ export abstract class BaseCommandPaletteStore implements IBaseCommandPaletteStor
       this.isBulkDeleteIssueModalOpen ||
       this.isDeleteIssueModalOpen ||
       this.createPageModal.isOpen ||
-      this.allStickiesModal
+      this.allStickiesModal ||
+      this.aiChatAssistantModal.isOpen
     );
   }
   // computedFn
   getIsProjectListOpen = computedFn((projectId: string) => this.projectListOpenMap[projectId]);
+
+  /**
+   * Toggles the AI chat assistant modal (category 9, feature 3). A partial
+   * payload merges over the current state (same convention as
+   * `toggleProfileSettingsModal`) so a caller can update just `isOpen`
+   * without having to re-pass the context, or set a fresh context and open
+   * it in one call. Called with no argument, it just flips `isOpen`.
+   * @param payload
+   */
+  toggleAIChatAssistantModal: IBaseCommandPaletteStore["toggleAIChatAssistantModal"] = (payload) => {
+    if (payload) {
+      this.aiChatAssistantModal = {
+        ...this.aiChatAssistantModal,
+        ...payload,
+      };
+    } else {
+      this.aiChatAssistantModal = {
+        ...this.aiChatAssistantModal,
+        isOpen: !this.aiChatAssistantModal.isOpen,
+      };
+    }
+  };
 
   /**
    * Toggles the project list open state
