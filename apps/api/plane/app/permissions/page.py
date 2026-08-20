@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
-from plane.db.models import ProjectMember, Page, Project
+from plane.db.models import ProjectMember, Page, Project, WorkspaceMember
 from plane.app.permissions import ROLE
 
 
@@ -209,5 +209,122 @@ class PageReactionPermission(BasePermission):
             project = Project.objects.filter(pk=project_id).only("guest_view_all_features").first()
             if project is not None and not project.guest_view_all_features:
                 return False
+
+        return role in (ADMIN, MEMBER, GUEST)
+
+
+class WorkspacePagePermission(BasePermission):
+    """
+    Category 10, feature 4 ("Wiki workspace en GA") - permission for the
+    new workspace-scoped Page endpoints (`is_global=True` pages with no
+    project link: `plane.app.views.page.workspace.WorkspacePageViewSet`
+    and friends).
+
+    Mirrors `ProjectPagePermission`'s own role-gating shape (owner always
+    allowed; a PRIVATE page denies every non-owner, exigence 8; a PUBLIC
+    page is readable by any active member and writable by ADMIN/MEMBER,
+    deletable by ADMIN only) but checks `WorkspaceMember` instead of
+    `ProjectMember` - a workspace Page has no project to scope a role
+    check against by definition. There is no GUEST
+    `guest_view_all_features`-style extra restriction here (that flag is
+    a `Project` field with no workspace-level equivalent) - a GUEST simply
+    follows the same public/private `access` rule as everyone else
+    (exigence 4/8's own wording: "Guest ... respecte les memes regles de
+    role que le reste du workspace").
+
+    The "root creation restricted to `wiki_root_creation_role`" rule
+    (exigence 4) is deliberately NOT enforced here - it only applies when
+    creating at the WIKI ROOT (no `collection_id`), which this
+    object-agnostic `has_permission` hook can't distinguish from
+    "creating inside a Collection" without inspecting the request body;
+    that check lives inline in `WorkspacePageViewSet.create`/
+    `WorkspacePageCollectionViewSet.create` instead.
+
+    Deliberately does NOT filter the `page_id` lookup on `is_global=True`
+    the way `WorkspacePagePermission`'s sibling classes elsewhere in this
+    module do: `WorkspacePageViewSet.convert` is reachable through this
+    same workspace-scoped URL for the project->global direction too, at
+    which point the page is *still* a project-scoped page
+    (`is_global=False`) at request time - gating on `is_global=True` here
+    would 403 that direction outright. Each individual view method (not
+    this permission class) is responsible for re-filtering `is_global`
+    appropriately for its own action - `convert` is the sole exception
+    that intentionally accepts either state.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            WorkspaceMember.objects.filter(member=request.user, workspace__slug=slug, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        if page_id:
+            page = Page.objects.filter(pk=page_id, workspace__slug=slug).first()
+            if page is None:
+                return False
+
+            # Owner always has access, regardless of role or page.access.
+            if page.owned_by_id == request.user.id:
+                return True
+
+            if page.access == Page.PRIVATE_ACCESS:
+                return False
+
+        method = request.method
+        if method == "POST":
+            return role in (ADMIN, MEMBER)
+        if method in SAFE_METHODS:
+            return role in (ADMIN, MEMBER, GUEST)
+        if method in ("PUT", "PATCH"):
+            return role in (ADMIN, MEMBER)
+        if method == "DELETE":
+            return role == ADMIN
+        return False
+
+
+class WorkspacePageReactionPermission(BasePermission):
+    """
+    Workspace-scope counterpart to `PageReactionPermission` (category 10,
+    feature 2/4) - gates the workspace-level page reactions endpoints on
+    READ access to the underlying Page only, same reasoning as that
+    class's own docstring: reacting is a lightweight, read-gated
+    interaction, not a Page content edit, so it deliberately does not
+    reuse `WorkspacePagePermission`'s verb-keyed write gating (which would
+    wrongly block a GUEST from reacting/un-reacting).
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            WorkspaceMember.objects.filter(member=request.user, workspace__slug=slug, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        page = Page.objects.filter(pk=page_id, workspace__slug=slug, is_global=True).first()
+        if page is None:
+            return False
+
+        if page.owned_by_id == request.user.id:
+            return True
+
+        if page.access == Page.PRIVATE_ACCESS:
+            return False
 
         return role in (ADMIN, MEMBER, GUEST)

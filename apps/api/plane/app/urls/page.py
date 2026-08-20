@@ -12,6 +12,11 @@ from plane.app.views import (
     PageVersionEndpoint,
     PageDuplicateEndpoint,
     PageReactionViewSet,
+    WorkspacePageViewSet,
+    WorkspacePagesDescriptionViewSet,
+    WorkspacePageVersionEndpoint,
+    WorkspacePageReactionViewSet,
+    WorkspacePageCollectionViewSet,
 )
 
 urlpatterns = [
@@ -86,4 +91,81 @@ urlpatterns = [
         name="project-page-reactions",
     ),
     ## End Page Reactions
+    ## Workspace-scoped Pages (category 10, feature 4 - "Wiki workspace en GA")
+    path(
+        "workspaces/<str:slug>/pages/",
+        WorkspacePageViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-pages",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/",
+        WorkspacePageViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-pages",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/archive/",
+        WorkspacePageViewSet.as_view({"post": "archive", "delete": "unarchive"}),
+        name="workspace-page-archive-unarchive",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/lock/",
+        WorkspacePageViewSet.as_view({"post": "lock", "delete": "unlock"}),
+        name="workspace-pages-lock-unlock",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/access/",
+        WorkspacePageViewSet.as_view({"post": "access"}),
+        name="workspace-pages-access",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/convert/",
+        WorkspacePageViewSet.as_view({"post": "convert"}),
+        name="workspace-pages-convert",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/reorder/",
+        WorkspacePageViewSet.as_view({"post": "reorder"}),
+        name="workspace-pages-reorder",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/description/",
+        WorkspacePagesDescriptionViewSet.as_view({"get": "retrieve", "patch": "partial_update"}),
+        name="workspace-page-description",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/versions/",
+        WorkspacePageVersionEndpoint.as_view(),
+        name="workspace-page-versions",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/versions/<uuid:pk>/",
+        WorkspacePageVersionEndpoint.as_view(),
+        name="workspace-page-versions",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/reactions/",
+        WorkspacePageReactionViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-page-reactions",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/reactions/<str:reaction_code>/",
+        WorkspacePageReactionViewSet.as_view({"delete": "destroy"}),
+        name="workspace-page-reactions",
+    ),
+    ## Workspace Page Collections (Wiki folders)
+    path(
+        "workspaces/<str:slug>/page-collections/",
+        WorkspacePageCollectionViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-page-collections",
+    ),
+    path(
+        "workspaces/<str:slug>/page-collections/<uuid:pk>/",
+        WorkspacePageCollectionViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="workspace-page-collections",
+    ),
+    path(
+        "workspaces/<str:slug>/page-collections/<uuid:pk>/reorder/",
+        WorkspacePageCollectionViewSet.as_view({"post": "reorder"}),
+        name="workspace-page-collections-reorder",
+    ),
 ]

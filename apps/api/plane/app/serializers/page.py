@@ -15,6 +15,7 @@ from plane.utils.content_validator import (
 )
 from plane.db.models import (
     Page,
+    PageCollection,
     PageLabel,
     PageReaction,
     Label,
@@ -34,6 +35,18 @@ class PageSerializer(BaseSerializer):
     # Many to many
     label_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
     project_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    # Category 10, feature 4 ("Wiki workspace en GA") - read-only on this
+    # shared serializer on purpose: `is_global`/`collection_id`/
+    # `sort_order` are mutated exclusively through the dedicated
+    # workspace-scoped `convert`/`reorder` endpoints
+    # (`plane.app.views.page.workspace`), never through a generic PATCH,
+    # since each of those three carries invariants (max Collection depth,
+    # descendant cascade, ProjectPage link bookkeeping) a plain
+    # serializer.save() can't safely express. `collection_id` reads
+    # `instance.collection_id` directly (the FK's attname) rather than
+    # joining through `collection` to avoid an extra query on every list
+    # row.
+    collection_id = serializers.UUIDField(read_only=True)
 
     class Meta:
         model = Page
@@ -57,8 +70,11 @@ class PageSerializer(BaseSerializer):
             "logo_props",
             "label_ids",
             "project_ids",
+            "is_global",
+            "collection_id",
+            "sort_order",
         ]
-        read_only_fields = ["workspace", "owned_by"]
+        read_only_fields = ["workspace", "owned_by", "is_global", "collection_id", "sort_order"]
 
     def create(self, validated_data):
         labels = validated_data.pop("labels", None)
@@ -236,3 +252,109 @@ class PageReactionSerializer(BaseSerializer):
         model = PageReaction
         fields = "__all__"
         read_only_fields = ["workspace", "page", "actor", "deleted_at"]
+
+
+class PageCollectionSerializer(BaseSerializer):
+    """Category 10, feature 4 ("Wiki workspace en GA") - folders used to
+    organize workspace-level Wiki pages. `parent` is the one writable
+    field with real invariants (max nesting depth of 3, no cycles) - see
+    `validate_parent` below and `plane.utils.page_collection` for the
+    depth-computation helpers it shares with the reparent/delete-cascade
+    logic in `plane.app.views.page.workspace`.
+    """
+
+    class Meta:
+        model = PageCollection
+        fields = [
+            "id",
+            "workspace",
+            "parent",
+            "name",
+            "logo_props",
+            "sort_order",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        ]
+        read_only_fields = ["workspace", "sort_order"]
+
+    def validate_parent(self, value):
+        from plane.utils.page_collection import validate_collection_depth
+
+        if value is None:
+            return value
+
+        workspace_id = self.context.get("workspace_id") or (self.instance.workspace_id if self.instance else None)
+        if workspace_id and str(value.workspace_id) != str(workspace_id):
+            raise serializers.ValidationError("The parent Collection must belong to the same workspace.")
+
+        if self.instance is not None:
+            if value.id == self.instance.id:
+                raise serializers.ValidationError("A Collection cannot be its own parent.")
+
+            from plane.utils.page_collection import collection_descendant_ids
+
+            if value.id in collection_descendant_ids(self.instance):
+                raise serializers.ValidationError("A Collection cannot be moved under one of its own descendants.")
+
+        try:
+            validate_collection_depth(new_parent=value, existing_instance=self.instance)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+
+        return value
+
+
+class WorkspacePageSerializer(PageSerializer):
+    """Category 10, feature 4 ("Wiki workspace en GA") - the create() path
+    for the workspace-scoped `/pages/` endpoint. Deliberately does NOT
+    reuse `PageSerializer.create()`: that path always creates exactly one
+    `ProjectPage` row from a required `project_id` context value, which is
+    the opposite of what a workspace Page needs (`is_global=True`, zero
+    `ProjectPage` rows, optionally filed straight into a Collection at
+    creation time via the `collection_id` context value).
+    """
+
+    def create(self, validated_data):
+        labels = validated_data.pop("labels", None)
+        owned_by_id = self.context["owned_by_id"]
+        workspace_id = self.context["workspace_id"]
+        collection_id = self.context.get("collection_id")
+        description_json = self.context["description_json"]
+        description_binary = self.context["description_binary"]
+        description_html = self.context["description_html"]
+
+        page = Page.objects.create(
+            **validated_data,
+            description_json=description_json,
+            description_binary=description_binary,
+            description_html=description_html,
+            owned_by_id=owned_by_id,
+            workspace_id=workspace_id,
+            is_global=True,
+            collection_id=collection_id,
+        )
+
+        if labels is not None:
+            PageLabel.objects.bulk_create(
+                [
+                    PageLabel(
+                        label=label,
+                        page=page,
+                        workspace_id=page.workspace_id,
+                        created_by_id=page.created_by_id,
+                        updated_by_id=page.updated_by_id,
+                    )
+                    for label in labels
+                ],
+                batch_size=10,
+            )
+        return page
+
+
+class WorkspacePageDetailSerializer(WorkspacePageSerializer):
+    description_html = serializers.CharField()
+
+    class Meta(WorkspacePageSerializer.Meta):
+        fields = WorkspacePageSerializer.Meta.fields + ["description_html"]

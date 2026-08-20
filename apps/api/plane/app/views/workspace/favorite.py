@@ -23,8 +23,18 @@ class WorkspaceFavoriteEndpoint(BaseAPIView):
     @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
     def get(self, request, slug):
         # the second filter is to check if the user is a member of the project
+        #
+        # Category 10, feature 4 ("Wiki workspace en GA", exigence 11) -
+        # this used to hard-exclude every project-less `entity_type="page"`
+        # favorite (`~Q(entity_type="page")` inside the `project__isnull`
+        # branch) on the assumption that a page favorite always had a
+        # project (true before this feature: every real Page URL was
+        # nested under a project). Now that a genuine workspace-level Page
+        # exists (`Page.is_global=True`, zero `ProjectPage` links), its
+        # favorites are project-less too and must show up here like any
+        # other project-less favorite - the exclusion is removed.
         favorites = UserFavorite.objects.filter(user=request.user, workspace__slug=slug, parent__isnull=True).filter(
-            Q(project__isnull=True) & ~Q(entity_type="page")
+            Q(project__isnull=True)
             | (
                 Q(project__isnull=False)
                 & Q(project__project_projectmember__member=request.user)

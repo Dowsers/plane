@@ -190,6 +190,13 @@ from .page.base import (
 )
 from .page.version import PageVersionEndpoint
 from .page.reaction import PageReactionViewSet
+from .page.workspace import (
+    WorkspacePageViewSet,
+    WorkspacePagesDescriptionViewSet,
+    WorkspacePageVersionEndpoint,
+    WorkspacePageReactionViewSet,
+    WorkspacePageCollectionViewSet,
+)
 
 from .search.base import GlobalSearchEndpoint, SearchEndpoint
 from .search.issue import IssueSearchEndpoint

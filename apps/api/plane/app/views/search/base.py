@@ -169,14 +169,31 @@ class GlobalSearchEndpoint(BaseAPIView):
             for field in fields:
                 q |= Q(**{f"{field}__icontains": query})
 
+        # Category 10, feature 4 ("Wiki workspace en GA", exigence 10) -
+        # this used to inner-join through
+        # `projects__project_projectmember`, meaning a project-less
+        # `is_global=True` Wiki page (the new workspace-level Page this
+        # feature introduces) could never surface here (Cmd+K/Power-K),
+        # since it has zero `ProjectPage` links to join through. The
+        # `global_page_q` branch below adds those pages back in, gated by
+        # the same public/private `access` + owner rule that already
+        # governs read access to a project Page (exigence 8) - just
+        # without the project-membership requirement a workspace Page by
+        # definition doesn't have.
+        project_page_q = Q(
+            projects__project_projectmember__member=self.request.user,
+            projects__project_projectmember__is_active=True,
+            projects__archived_at__isnull=True,
+        )
+        global_page_q = Q(
+            is_global=True,
+            workspace__workspace_member__member=self.request.user,
+            workspace__workspace_member__is_active=True,
+        ) & (Q(owned_by=self.request.user) | Q(access=Page.PUBLIC_ACCESS))
+
         pages = (
-            Page.objects.filter(
-                q,
-                projects__project_projectmember__member=self.request.user,
-                projects__project_projectmember__is_active=True,
-                projects__archived_at__isnull=True,
-                workspace__slug=slug,
-            )
+            Page.objects.filter(q, workspace__slug=slug)
+            .filter(project_page_q | global_page_q)
             .annotate(
                 project_ids=Coalesce(
                     ArrayAgg("projects__id", distinct=True, filter=~Q(projects__id=True)),
@@ -205,7 +222,11 @@ class GlobalSearchEndpoint(BaseAPIView):
         return (
             pages.order_by("-created_at")
             .distinct()
-            .values("name", "id", "project_ids", "project_identifiers", "workspace__slug")
+            # "is_global" added so the frontend can badge Wiki results
+            # distinctly from project pages (exigence 10) - the badge
+            # itself is a frontend concern for a later task, but the flag
+            # has to be present in this payload for that task to use it.
+            .values("name", "id", "project_ids", "project_identifiers", "workspace__slug", "is_global")
         )
 
     def filter_views(self, query, slug, project_id, workspace_search):

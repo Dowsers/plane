@@ -23,7 +23,13 @@ export interface StorePayloadWithContext extends storePayload {
   context: HocusPocusServerContext;
 }
 
-export type TDocumentTypes = "project_page";
+// Category 10 (Docs/Wiki & Collaboration, docs/feature-specs/10-docs-wiki.md
+// in plane-selfhost), feature 4 - "Wiki workspace en GA". "workspace_page"
+// is the real-time collaborative editing counterpart to the new
+// workspace-scoped Page endpoints (`plane.app.views.page.workspace` on the
+// Django side) - see `WorkspacePageService` (./services/page/workspace-page.service.ts)
+// for the basePath it maps to.
+export type TDocumentTypes = "project_page" | "workspace_page";
 
 // Additional Hocuspocus types that are not exported from the main package
 export type HocusPocusServerContext = {
