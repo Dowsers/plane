@@ -32,6 +32,19 @@ export const getFavoriteItemIcon = (type: string, logo?: TLogoProps) => {
 };
 
 export const generateFavoriteItemLink = (workspaceSlug: string, favorite: IFavorite) => {
+  // Category 10, feature 4 ("Wiki workspace en GA") exigence 11 - a
+  // favorited Wiki page has no `project_id` (see `BasePage.addToFavorites`,
+  // which sends `project_id: this.project_ids?.[0] ?? null`), so the
+  // generic `FAVORITE_ITEM_LINKS.page` entry (which always builds a
+  // `/projects/<project_id>/pages/<id>` link) would previously have
+  // produced a broken `/projects/undefined/pages/<id>` URL for it. This
+  // was purely a frontend link-generation gap - `WorkspaceFavoriteEndpoint`
+  // itself was already fixed backend-side to stop excluding these
+  // favorites from the panel at all.
+  if (favorite.entity_type === "page" && !favorite.project_id) {
+    return `/${workspaceSlug}/wiki/${favorite.entity_identifier}`;
+  }
+
   const entityLinkDetails = FAVORITE_ITEM_LINKS[favorite.entity_type];
 
   if (!entityLinkDetails) {

@@ -22,9 +22,14 @@ export const usePowerKPageContextBasedActions = (): TPowerKCommandConfig[] => {
   // navigation
   const { pageId } = useParams();
   // store hooks
-  const { getPageById } = usePageStore(EPageStoreType.PROJECT);
+  const { getPageById: getProjectPageById } = usePageStore(EPageStoreType.PROJECT);
+  // Category 10, feature 4 ("Wiki workspace en GA") - the project-scoped
+  // and workspace-scoped (Wiki) page-detail routes share the same
+  // `:pageId` param name, so this context-based command set applies to a
+  // Wiki page too once the lookup also tries the Wiki page store.
+  const { getPageById: getWorkspacePageById } = usePageStore(EPageStoreType.WORKSPACE);
   // derived values
-  const page = pageId ? getPageById(pageId.toString()) : null;
+  const page = pageId ? (getProjectPageById(pageId.toString()) ?? getWorkspacePageById(pageId.toString())) : null;
   const {
     access,
     archived_at,
@@ -62,7 +67,7 @@ export const usePowerKPageContextBasedActions = (): TPowerKCommandConfig[] => {
     const url = new URL(window.location.href);
     copyTextToClipboard(url.href)
       .then(() => {
-        setToast({
+        return setToast({
           type: TOAST_TYPE.SUCCESS,
           title: t("power_k.contextual_actions.page.copy_url_toast_success"),
         });

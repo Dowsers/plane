@@ -87,9 +87,17 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
   },
   page: {
     icon: FileText,
+    // Category 10, feature 4 ("Wiki workspace en GA") exigence 10 - a
+    // distinctive "Wiki" badge on a project-less (`is_global`) page
+    // result, in the same identifier-badge slot every other result type
+    // above already uses for its own tag (project identifier). This is
+    // the exact spot `is_global` was added to `IWorkspacePageSearchResult`
+    // for (the backend's `GlobalSearchEndpoint.filter_pages` payload
+    // already carried it).
     itemName: (page: IWorkspacePageSearchResult) => (
       <p>
-        <span className="text-11 text-tertiary">{page.project__identifiers?.[0]}</span> {page.name}
+        <span className="text-11 text-tertiary">{page.is_global ? "Wiki" : page.project__identifiers?.[0]}</span>{" "}
+        {page.name}
       </p>
     ),
     path: (page: IWorkspacePageSearchResult, projectId: string | undefined) => {

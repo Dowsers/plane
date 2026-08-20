@@ -37,10 +37,20 @@ export const useFavoriteItemDetails = (workspaceSlug: string, favorite: IFavorit
   // additional details
   const { getAdditionalFavoriteItemDetails } = useAdditionalFavoriteItemDetails();
   // derived values
-  const pageDetail = usePage({
+  // Category 10, feature 4 ("Wiki workspace en GA") exigence 11 - a
+  // favorited Wiki page has no `project_id` (see `generateFavoriteItemLink`'s
+  // own comment), so its details live in the workspace-scoped page store,
+  // not the project one. Both hooks are called unconditionally (rules of
+  // hooks) and the right one is picked based on `favorite.project_id`.
+  const projectPageDetail = usePage({
     pageId: favoriteItemId ?? "",
     storeType: EPageStoreType.PROJECT,
   });
+  const workspacePageDetail = usePage({
+    pageId: favoriteItemId ?? "",
+    storeType: EPageStoreType.WORKSPACE,
+  });
+  const pageDetail = favorite.project_id ? projectPageDetail : workspacePageDetail;
   const viewDetails = getViewById(favoriteItemId ?? "");
   const cycleDetail = getCycleById(favoriteItemId ?? "");
   const moduleDetail = getModuleById(favoriteItemId ?? "");
@@ -57,7 +67,10 @@ export const useFavoriteItemDetails = (workspaceSlug: string, favorite: IFavorit
       break;
     case "page":
       itemTitle = getPageName(pageDetail?.name ?? favoriteItemName);
-      itemIcon = getFavoriteItemIcon("page", pageDetail?.logo_props ?? favoriteItemLogoProps);
+      itemIcon = getFavoriteItemIcon(
+        favorite.project_id ? "page" : "wiki_page",
+        pageDetail?.logo_props ?? favoriteItemLogoProps
+      );
       break;
     case "view":
       itemTitle = viewDetails?.name ?? favoriteItemName;

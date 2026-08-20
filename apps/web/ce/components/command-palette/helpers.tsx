@@ -87,9 +87,13 @@ export const commandGroups: TCommandGroups = {
   },
   page: {
     icon: <PageIcon className="h-3 w-3" />,
+    // Category 10, feature 4 ("Wiki workspace en GA") exigence 10 - mirrors
+    // the same "Wiki" badge added to the Power-K result renderer
+    // (search-results-map.tsx) for a project-less (`is_global`) page.
     itemName: (page: IWorkspacePageSearchResult) => (
       <h6>
-        <span className="text-11 text-tertiary">{page.project__identifiers?.[0]}</span> {page.name}
+        <span className="text-11 text-tertiary">{page.is_global ? "Wiki" : page.project__identifiers?.[0]}</span>{" "}
+        {page.name}
       </h6>
     ),
     path: (page: IWorkspacePageSearchResult, projectId: string | undefined) => {

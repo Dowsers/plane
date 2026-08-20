@@ -27,7 +27,13 @@ export const useContextIndicator = (args: TArgs): string | null => {
   // store hooks
   const { getCycleById } = useCycle();
   const { getModuleById } = useModule();
-  const { getPageById } = usePageStore(EPageStoreType.PROJECT);
+  const { getPageById: getProjectPageById } = usePageStore(EPageStoreType.PROJECT);
+  // Category 10, feature 4 ("Wiki workspace en GA") - the `:pageId` route
+  // param is shared by the project-scoped and workspace-scoped (Wiki)
+  // page-detail routes alike, so `detectContextFromURL` already reports
+  // `"page"` for a Wiki page URL with no change needed there; only the
+  // lookup itself needs to also try the Wiki page store.
+  const { getPageById: getWorkspacePageById } = usePageStore(EPageStoreType.WORKSPACE);
   // extended context indicator
   const extendedIndicator = useExtendedContextIndicator({
     activeContext,
@@ -50,7 +56,9 @@ export const useContextIndicator = (args: TArgs): string | null => {
       break;
     }
     case "page": {
-      const pageInstance = pageId ? getPageById(pageId.toString()) : null;
+      const pageInstance = pageId
+        ? (getProjectPageById(pageId.toString()) ?? getWorkspacePageById(pageId.toString()))
+        : null;
       indicator = getPageName(pageInstance?.name);
       break;
     }
