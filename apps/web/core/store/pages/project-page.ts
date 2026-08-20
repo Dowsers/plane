@@ -12,8 +12,9 @@ import type { TPage } from "@plane/types";
 // plane web store
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { ProjectPageService } from "@/services/page";
+import { PageReactionService, ProjectPageService } from "@/services/page";
 const projectPageService = new ProjectPageService();
+const pageReactionService = new PageReactionService();
 // store
 import { BasePage } from "./base-page";
 import type { TPageInstance } from "./base-page";
@@ -58,6 +59,18 @@ export class ProjectPage extends BasePage implements TProjectPage {
       duplicate: async () => {
         if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
         return await projectPageService.duplicate(workspaceSlug, projectId, page.id);
+      },
+      listReactions: async () => {
+        if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+        return await pageReactionService.listReactions(workspaceSlug, projectId, page.id);
+      },
+      createReaction: async (reaction) => {
+        if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+        return await pageReactionService.createReaction(workspaceSlug, projectId, page.id, { reaction });
+      },
+      removeReaction: async (reaction) => {
+        if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+        await pageReactionService.removeReaction(workspaceSlug, projectId, page.id, reaction);
       },
     });
     makeObservable(this, {

@@ -44,6 +44,7 @@ import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
 import { PageContentLoader } from "../loaders/page-content-loader";
 import { PageEditorHeaderRoot } from "./header";
+import { PageReactions } from "./reactions";
 import { PageContentBrowser } from "./summary";
 
 export type TEditorBodyConfig = {
@@ -244,8 +245,10 @@ export const PageEditorBody = observer(function PageEditorBody(props: Props) {
           <div className="page-summary-container absolute top-[64px] right-0 z-[5] h-full">
             <div className="sticky top-[72px]">
               <div className="group/page-toc relative px-page-x">
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- pre-existing floating outline-preview affordance, unrelated to this change; the outline itself is reachable via the keyboard-accessible nav-pane toggle button elsewhere in this header */}
                 <div
                   className="max-h-[50vh] !cursor-pointer overflow-hidden"
+                  // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- see above
                   role="button"
                   aria-label={t("page_navigation_pane.outline_floating_button")}
                   onClick={handleOpenNavigationPane}
@@ -265,6 +268,29 @@ export const PageEditorBody = observer(function PageEditorBody(props: Props) {
               <PageEditorHeaderRoot page={page} projectId={projectId} />
             </div>
           </div>
+          {/*
+            Category 10, feature 2 ("Reactions emoji sur les Pages") - placed
+            right above the title (rendered inside the editor itself below),
+            reusing the same `page-header-container`/`blockWidthClassName`
+            pair as the header row right above for identical horizontal
+            padding/width, with no new layout scaffolding.
+
+            Deliberately NOT placed in `PageEditorToolbarRoot` next to
+            `PageCollaboratorsList` (the spec's own suggested "near the
+            collaborators avatar stack" placement): that whole toolbar
+            collapses to zero height whenever `isContentEditable` is false
+            (archived, locked, or read-only access) - exactly the states
+            where reactions must stay visible/usable (exigences 1/8/9).
+            Also NOT placed after the editor content ("bottom of content",
+            the spec's other candidate): the editor's own container carries
+            a large `pb-64` bottom padding, which would leave a large empty
+            gap between the visible end of the text and the reactions bar.
+          */}
+          <div className="page-header-container">
+            <div className={blockWidthClassName}>
+              <PageReactions page={page} className="mb-2" />
+            </div>
+          </div>
           <CollaborativeDocumentEditorWithRef
             editable={isContentEditable}
             id={pageId}
@@ -281,7 +307,7 @@ export const PageEditorBody = observer(function PageEditorBody(props: Props) {
                 if (!res) throw new Error("Failed in fetching mentions");
                 return res;
               },
-              renderComponent: (props) => <EditorMentionsRoot {...props} />,
+              renderComponent: (mentionProps) => <EditorMentionsRoot {...mentionProps} />,
               getMentionedEntityDetails: (id: string) => ({ display_name: getUserDetails(id)?.display_name ?? "" }),
             }}
             updatePageProperties={updatePageProperties}

@@ -6,6 +6,7 @@
 
 import type { TLogoProps } from "../common";
 import type { EPageAccess } from "../enums";
+import type { IUserLite } from "../users";
 import type { TPageExtended } from "./extended";
 
 export type TPage = {
@@ -73,6 +74,20 @@ export type TDocumentPayload = {
   description_binary: string;
   description_html: string;
   description_json: object;
+};
+
+// Category 10, feature 2 ("Reactions emoji sur les Pages") - mirrors the
+// shape of `PageReactionSerializer` (apps/api/plane/app/serializers/page.py).
+// `reaction` is a `-`-joined string of unicode codepoint decimals, exactly
+// like `TIssueReaction.reaction` - see `stringToEmoji`/`EmojiReactionPicker`
+// (@plane/propel) for the encode/decode helpers already used for issues.
+export type TPageReaction = {
+  id: string;
+  page: string;
+  actor: string;
+  actor_detail?: IUserLite;
+  reaction: string;
+  created_at?: string;
 };
 
 export type TWebhookConnectionQueryParams = {

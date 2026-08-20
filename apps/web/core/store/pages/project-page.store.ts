@@ -266,17 +266,31 @@ export class ProjectPageStore implements IProjectPageStore {
 
       const page = await this.service.fetchById(workspaceSlug, projectId, pageId, trackVisit ?? true);
 
+      let pageInstance: TProjectPage | undefined;
       runInAction(() => {
         if (page?.id) {
-          const pageInstance = this.getPageById(page.id);
+          pageInstance = this.getPageById(page.id);
           if (pageInstance) {
             pageInstance.mutateProperties(page, false);
           } else {
-            set(this.data, [page.id], new ProjectPage(this.store, page));
+            pageInstance = new ProjectPage(this.store, page);
+            set(this.data, [page.id], pageInstance);
           }
         }
         this.loader = undefined;
       });
+
+      // Category 10, feature 2 ("Reactions emoji sur les Pages") - reactions
+      // aren't embedded in the Page's own GET response, so fetch them as a
+      // side effect of the detail fetch, in parallel/fire-and-forget rather
+      // than blocking on it - mirrors the same pattern already used for
+      // issue sub-resources (e.g. `ProjectInboxStore.fetchInboxIssueById`
+      // fetching reactions/activity/comments/attachments alongside the
+      // main entity). This also means it automatically gets revalidated on
+      // the same cadence as the page itself (the `useSWR` call in the page
+      // route revalidates on focus/reconnect), satisfying this feature's
+      // "ordinary revalidation, no realtime push" scope decision.
+      pageInstance?.fetchReactions();
 
       return page;
     } catch (error) {

@@ -4,12 +4,12 @@
  * See the LICENSE file for details.
  */
 
-import { set } from "lodash-es";
+import { concat, find, reject, set } from "lodash-es";
 import { action, computed, makeObservable, observable, reaction, runInAction } from "mobx";
 // plane imports
 import { EPageAccess } from "@plane/constants";
 import type { TChangeHandlerProps } from "@plane/propel/emoji-icon-picker";
-import type { TDocumentPayload, TLogoProps, TNameDescriptionLoader, TPage } from "@plane/types";
+import type { TDocumentPayload, TLogoProps, TNameDescriptionLoader, TPage, TPageReaction } from "@plane/types";
 // plane web store
 import { ExtendedBasePage } from "@/plane-web/store/pages/extended-base-page";
 import type { RootStore } from "@/plane-web/store/root.store";
@@ -43,6 +43,11 @@ export type TBasePage = TPage & {
   duplicate: () => Promise<TPage | undefined>;
   mutateProperties: (data: Partial<TPage>, shouldUpdateName?: boolean) => void;
   setSyncingStatus: (status: "syncing" | "synced" | "error") => void;
+  // reactions (category 10, feature 2 - "Reactions emoji sur les Pages")
+  reactions: TPageReaction[];
+  fetchReactions: () => Promise<TPageReaction[] | undefined>;
+  createReaction: (reaction: string) => Promise<TPageReaction | undefined>;
+  removeReaction: (reaction: string, userId: string) => Promise<void>;
   // sub-store
   editor: PageEditorInstance;
 };
@@ -71,6 +76,9 @@ export type TBasePageServices = {
   }>;
   restore: () => Promise<void>;
   duplicate: () => Promise<TPage>;
+  listReactions: () => Promise<TPageReaction[]>;
+  createReaction: (reaction: string) => Promise<TPageReaction>;
+  removeReaction: (reaction: string) => Promise<void>;
 };
 
 export type TPageInstance = TBasePage &
@@ -102,6 +110,14 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   created_at: Date | undefined;
   updated_at: Date | undefined;
   deleted_at: Date | undefined;
+  // reactions (category 10, feature 2) - fetched separately from the
+  // page's own GET (no `reactions` field on `TPage`/the Page serializer),
+  // mirrors `label_ids`/`is_favorite` in spirit (simple observable state
+  // living directly on the page instance) rather than a separate global
+  // reaction-map store keyed by page id: unlike issues, only one Page is
+  // ever open/rendered at a time in this fork, so there is no need for a
+  // store shaped to serve many concurrent entities at once.
+  reactions: TPageReaction[] = [];
   // helpers
   oldName: string = "";
   // services
@@ -140,6 +156,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.updated_at = page?.updated_at || undefined;
     this.oldName = page?.name || "";
     this.deleted_at = page?.deleted_at || undefined;
+    this.reactions = [];
 
     makeObservable(this, {
       // loaders
@@ -165,6 +182,8 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       updated_at: observable.ref,
       deleted_at: observable.ref,
       isSyncingWithServer: observable.ref,
+      // reactions
+      reactions: observable,
       // helpers
       oldName: observable.ref,
       setIsSubmitting: action,
@@ -187,6 +206,9 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       removePageFromFavorites: action,
       duplicate: action,
       mutateProperties: action,
+      fetchReactions: action,
+      createReaction: action,
+      removeReaction: action,
     });
 
     // init
@@ -550,5 +572,69 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     runInAction(() => {
       this.isSyncingWithServer = status;
     });
+  };
+
+  /**
+   * @description fetch the page's reactions (category 10, feature 2).
+   * Fire-and-forget friendly: swallows and logs its own errors rather than
+   * throwing, since it is invoked as a side effect of the page detail
+   * fetch (see `ProjectPageStore.fetchPageDetails`) and should never block
+   * or fail that fetch.
+   */
+  fetchReactions = async () => {
+    if (!this.id) return undefined;
+    try {
+      const reactions = await this.services.listReactions();
+      runInAction(() => {
+        this.reactions = reactions;
+      });
+      return reactions;
+    } catch (error) {
+      console.error("Error in fetching page reactions", error);
+      return undefined;
+    }
+  };
+
+  /**
+   * @description add a reaction to the page. The server rejects a duplicate
+   * (same actor + same emoji) POST with a 400 rather than toggling it -
+   * toggle behaviour is handled by the caller (see `PageReactions`), which
+   * should call `removeReaction` instead when the current user already has
+   * that reaction.
+   */
+  createReaction = async (reactionEmoji: string) => {
+    const response = await this.services.createReaction(reactionEmoji);
+    runInAction(() => {
+      this.reactions = concat(this.reactions, response);
+    });
+    return response;
+  };
+
+  /**
+   * @description remove one of the current user's own reactions from the
+   * page. Optimistically removes it from local state first (rolled back on
+   * failure) - the DELETE endpoint itself is always scoped to
+   * `actor=request.user` server-side, so `userId` is only used here to look
+   * up the local reaction to remove, not sent to the server.
+   */
+  removeReaction = async (reactionEmoji: string, userId: string) => {
+    const currentReaction = find(this.reactions, { reaction: reactionEmoji, actor: userId });
+
+    if (currentReaction) {
+      runInAction(() => {
+        this.reactions = reject(this.reactions, { id: currentReaction.id });
+      });
+    }
+
+    try {
+      await this.services.removeReaction(reactionEmoji);
+    } catch (error) {
+      if (currentReaction) {
+        runInAction(() => {
+          this.reactions = concat(this.reactions, currentReaction);
+        });
+      }
+      throw error;
+    }
   };
 }
