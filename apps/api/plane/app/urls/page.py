@@ -11,6 +11,7 @@ from plane.app.views import (
     PagesDescriptionViewSet,
     PageVersionEndpoint,
     PageDuplicateEndpoint,
+    PageReactionViewSet,
 )
 
 urlpatterns = [
@@ -73,4 +74,16 @@ urlpatterns = [
         PageDuplicateEndpoint.as_view(),
         name="page-duplicate",
     ),
+    # Page Reactions
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/pages/<uuid:page_id>/reactions/",
+        PageReactionViewSet.as_view({"get": "list", "post": "create"}),
+        name="project-page-reactions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/pages/<uuid:page_id>/reactions/<str:reaction_code>/",
+        PageReactionViewSet.as_view({"delete": "destroy"}),
+        name="project-page-reactions",
+    ),
+    ## End Page Reactions
 ]

@@ -18,4 +18,4 @@ from .project import (
     ProjectAdminPermission,
 )
 from .base import allow_permission, ROLE
-from .page import ProjectPagePermission
+from .page import ProjectPagePermission, PageReactionPermission

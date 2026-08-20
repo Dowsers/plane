@@ -8,6 +8,7 @@ import base64
 
 # Module imports
 from .base import BaseSerializer
+from .user import UserLiteSerializer
 from plane.utils.content_validator import (
     validate_binary_data,
     validate_html_content,
@@ -15,6 +16,7 @@ from plane.utils.content_validator import (
 from plane.db.models import (
     Page,
     PageLabel,
+    PageReaction,
     Label,
     ProjectPage,
     Project,
@@ -223,3 +225,14 @@ class PageBinaryUpdateSerializer(serializers.Serializer):
 
         instance.save()
         return instance
+
+
+class PageReactionSerializer(BaseSerializer):
+    """Category 10, feature 2 - mirrors IssueReactionSerializer exactly."""
+
+    actor_detail = UserLiteSerializer(read_only=True, source="actor")
+
+    class Meta:
+        model = PageReaction
+        fields = "__all__"
+        read_only_fields = ["workspace", "page", "actor", "deleted_at"]
