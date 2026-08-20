@@ -6,23 +6,27 @@
 
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { ArrowUpToLine, Clipboard, History } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ArrowUpToLine, Briefcase, Clipboard, History } from "lucide-react";
 // plane imports
+import { WikiIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { ToggleSwitch } from "@plane/ui";
 // hooks
 import { useAppRouter } from "@/hooks/use-app-router";
+import { usePageConvertToWikiOperation } from "@/hooks/use-page-convert-operations";
 import { usePageFilters } from "@/hooks/use-page-filters";
 import { useQueryParams } from "@/hooks/use-query-params";
 // plane web imports
 import type { TPageNavigationPaneTab } from "@/plane-web/components/pages/navigation-pane";
-import type { EPageStoreType } from "@/plane-web/hooks/store";
+import { EPageStoreType } from "@/plane-web/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
 import { PageActions } from "../../dropdowns";
 import { ExportPageModal } from "../../modals/export-page-modal";
 import { PAGE_NAVIGATION_PANE_TABS_QUERY_PARAM } from "../../navigation-pane";
+import { MoveToProjectModal } from "../../wiki/modals/move-to-project-modal";
 
 type Props = {
   page: TPageInstance;
@@ -33,18 +37,27 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
   const { page, storeType } = props;
   // states
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isMoveToProjectModalOpen, setIsMoveToProjectModalOpen] = useState(false);
+  // params
+  const { workspaceSlug } = useParams();
   // navigation
   const router = useAppRouter();
   // store values
   const {
     name,
     isContentEditable,
+    canCurrentUserEditPage,
     editor: { editorRef },
   } = page;
   // page filters
   const { isFullWidth, handleFullWidth, isStickyToolbarEnabled, handleStickyToolbar } = usePageFilters();
   // query params
   const { updateQueryParams } = useQueryParams();
+  // Category 10, feature 4 ("Wiki workspace en GA") exigence 5 - project->Wiki direction
+  const { moveToWiki, isConverting } = usePageConvertToWikiOperation({
+    workspaceSlug: workspaceSlug?.toString() ?? "",
+    pageId: page.id,
+  });
   // menu items list
   const EXTRA_MENU_OPTIONS = useMemo(
     function EXTRA_MENU_OPTIONS(): React.ComponentProps<typeof PageActions>["extraOptions"] {
@@ -109,6 +122,26 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
           icon: ArrowUpToLine,
           shouldRender: true,
         },
+        // Category 10, feature 4 ("Wiki workspace en GA") exigence 5 - the
+        // two symmetric project<->Wiki scope-conversion actions, gated on
+        // the exact same edit-access rule the backend's `convert` endpoint
+        // enforces (owner, or workspace/project ADMIN+MEMBER) rather than
+        // the stricter admin/owner-only `canCurrentUserMovePage` (which
+        // governs the unrelated EE cross-project "Move" action).
+        {
+          key: "move-to-wiki",
+          action: moveToWiki,
+          title: "Move to Wiki",
+          icon: WikiIcon,
+          shouldRender: storeType === EPageStoreType.PROJECT && canCurrentUserEditPage && !isConverting,
+        },
+        {
+          key: "move-to-project",
+          action: () => setIsMoveToProjectModalOpen(true),
+          title: "Move to project",
+          icon: Briefcase,
+          shouldRender: storeType === EPageStoreType.WORKSPACE && canCurrentUserEditPage,
+        },
       ];
     },
     [
@@ -121,6 +154,10 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
       updateQueryParams,
       router,
       setIsExportModalOpen,
+      storeType,
+      canCurrentUserEditPage,
+      moveToWiki,
+      isConverting,
     ]
   );
 
@@ -132,6 +169,14 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
         onClose={() => setIsExportModalOpen(false)}
         pageTitle={name ?? ""}
       />
+      {storeType === EPageStoreType.WORKSPACE && (
+        <MoveToProjectModal
+          isOpen={isMoveToProjectModalOpen}
+          onClose={() => setIsMoveToProjectModalOpen(false)}
+          workspaceSlug={workspaceSlug?.toString() ?? ""}
+          page={page}
+        />
+      )}
       <PageActions
         extraOptions={EXTRA_MENU_OPTIONS}
         optionsOrder={[
@@ -144,6 +189,8 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
           "delete",
           "toggle-access",
           "export",
+          "move-to-wiki",
+          "move-to-project",
         ]}
         page={page}
         storeType={storeType}

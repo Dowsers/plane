@@ -120,6 +120,18 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/api-explorer/`,
   },
+  wiki: {
+    key: "wiki",
+    i18n_label: "wiki.settings.title",
+    href: `/settings/wiki`,
+    // Category 10, feature 4 ("Wiki workspace en GA") exigence 4 -
+    // readable by every member (the current root-creation policy is
+    // useful context even for a non-admin), editing the
+    // `wiki_root_creation_role` control itself is gated Admin-only inside
+    // the page, mirroring the `api`/`api-explorer` split above.
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/wiki/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -136,7 +148,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["sla-policies"],
     WORKSPACE_SETTINGS["ai"],
   ],
-  [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"]],
+  [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"], WORKSPACE_SETTINGS["wiki"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [
     WORKSPACE_SETTINGS["webhooks"],
     WORKSPACE_SETTINGS["api"],

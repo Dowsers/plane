@@ -17,11 +17,17 @@ import { filterPagesByPageType, getPageName, orderPages, shouldFilterPage } from
 // plane web store
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { ProjectPageService } from "@/services/page";
+import { ProjectPageService, WorkspacePageService } from "@/services/page";
 // store
 import type { CoreRootStore } from "../root.store";
 import type { TProjectPage } from "./project-page";
 import { ProjectPage } from "./project-page";
+
+// Category 10, feature 4 ("Wiki workspace en GA") - the `convert` endpoint
+// is workspace-scoped regardless of the page's current side of the
+// conversion (see `WorkspacePageService`'s own docstring), so
+// `ProjectPageStore.convertToWiki` below needs it too.
+const workspacePageService = new WorkspacePageService();
 
 type TLoader = "init-loader" | "mutation-loader" | undefined;
 
@@ -65,6 +71,7 @@ export interface IProjectPageStore {
   createPage: (pageData: Partial<TPage>) => Promise<TPage | undefined>;
   removePage: (params: { pageId: string; shouldSync?: boolean }) => Promise<void>;
   movePage: (workspaceSlug: string, projectId: string, pageId: string, newProjectId: string) => Promise<void>;
+  convertToWiki: (workspaceSlug: string, pageId: string) => Promise<TPage | undefined>;
 }
 
 export class ProjectPageStore implements IProjectPageStore {
@@ -100,6 +107,7 @@ export class ProjectPageStore implements IProjectPageStore {
       createPage: action,
       removePage: action,
       movePage: action,
+      convertToWiki: action,
     });
     this.rootStore = store;
     // service
@@ -381,5 +389,20 @@ export class ProjectPageStore implements IProjectPageStore {
       console.error("Unable to move page", error);
       throw error;
     }
+  };
+
+  /**
+   * Category 10, feature 4 ("Wiki workspace en GA") exigence 5 -
+   * "Deplacer vers le Wiki". Evicts the page from this store's local
+   * cache on success (it's no longer a project page); the workspace Wiki
+   * page store lazily re-fetches it on navigation, same cross-store
+   * eviction pattern `movePage`/`removePage` above already use.
+   */
+  convertToWiki = async (workspaceSlug: string, pageId: string) => {
+    const page = await workspacePageService.convert(workspaceSlug, pageId, { target: "global" });
+    runInAction(() => {
+      unset(this.data, [pageId]);
+    });
+    return page;
   };
 }

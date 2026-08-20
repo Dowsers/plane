@@ -110,6 +110,13 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   created_at: Date | undefined;
   updated_at: Date | undefined;
   deleted_at: Date | undefined;
+  // Category 10, feature 4 ("Wiki workspace en GA") - present on every
+  // Page payload regardless of scope (read-only server-side, see `TPage`'s
+  // own comment); `collection_id`/`sort_order` are only ever meaningful
+  // when `is_global` is true.
+  is_global: boolean;
+  collection_id: string | null | undefined;
+  sort_order: number | undefined;
   // reactions (category 10, feature 2) - fetched separately from the
   // page's own GET (no `reactions` field on `TPage`/the Page serializer),
   // mirrors `label_ids`/`is_favorite` in spirit (simple observable state
@@ -156,6 +163,9 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.updated_at = page?.updated_at || undefined;
     this.oldName = page?.name || "";
     this.deleted_at = page?.deleted_at || undefined;
+    this.is_global = page?.is_global || false;
+    this.collection_id = page?.collection_id || undefined;
+    this.sort_order = page?.sort_order ?? undefined;
     this.reactions = [];
 
     makeObservable(this, {
@@ -182,6 +192,10 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       updated_at: observable.ref,
       deleted_at: observable.ref,
       isSyncingWithServer: observable.ref,
+      // Category 10, feature 4 ("Wiki workspace en GA")
+      is_global: observable.ref,
+      collection_id: observable.ref,
+      sort_order: observable.ref,
       // reactions
       reactions: observable,
       // helpers
@@ -262,6 +276,9 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       created_at: this.created_at,
       updated_at: this.updated_at,
       deleted_at: this.deleted_at,
+      is_global: this.is_global,
+      collection_id: this.collection_id,
+      sort_order: this.sort_order,
       ...this.asJSONExtended,
     };
   }

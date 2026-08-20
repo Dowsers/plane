@@ -21,7 +21,8 @@ export type TWorkspaceSettingsTabs =
   | "sla-policies"
   | "api"
   | "api-explorer"
-  | "ai";
+  | "ai"
+  | "wiki";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;

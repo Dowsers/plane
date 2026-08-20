@@ -41,7 +41,11 @@ export type TPageActions =
   | "delete"
   | "version-history"
   | "export"
-  | "move";
+  | "move"
+  // Category 10, feature 4 ("Wiki workspace en GA") exigence 5 - the two
+  // symmetric project<->Wiki scope-conversion actions.
+  | "move-to-wiki"
+  | "move-to-project";
 
 type Props = {
   extraOptions?: (TContextMenuItem & { key: TPageActions })[];

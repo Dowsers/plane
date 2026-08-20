@@ -3333,6 +3333,75 @@ export default {
     close_button: "Close navigation pane",
     outline_floating_button: "Open outline",
   },
+  // Category 10, feature 4 - "Wiki workspace en GA". English-only, per this
+  // fork's established convention for new features.
+  wiki: {
+    label: "Wiki",
+    no_folder: "No folder",
+    archived: "Archived",
+    new_page: "New page",
+    new_folder: "New folder",
+    new: "New",
+    rename_folder: "Rename folder",
+    delete_folder: "Delete folder",
+    move_to_wiki: "Move to Wiki",
+    move_to_project: "Move to project",
+    move_to_project_description:
+      "Choose the project this page should move into. Its version history and sub-pages are preserved.",
+    empty_state: {
+      all: {
+        title: "Nothing here yet",
+        description: "Create your first Wiki page or folder to start documenting.",
+      },
+      public: {
+        title: "No public pages",
+        description: "Public Wiki pages will show up here.",
+      },
+      private: {
+        title: "No private pages",
+        description: "Private Wiki pages you own will show up here.",
+      },
+      archived: {
+        title: "No archived pages",
+        description: "Archived Wiki pages and folders will show up here.",
+      },
+    },
+    folder_form: {
+      create_title: "New folder",
+      rename_title: "Rename folder",
+      name_placeholder: "Folder name",
+    },
+    delete_folder_modal: {
+      title: "Delete folder",
+      description_empty: "Are you sure you want to delete this folder? This action cannot be undone.",
+      description_non_empty:
+        "This folder contains pages or sub-folders. Choose what should happen to them, then confirm deletion.",
+      option_promote: "Move its contents up a level",
+      option_promote_description: "Pages and sub-folders move to this folder's parent (or the Wiki root).",
+      option_cascade: "Delete everything inside it",
+      option_cascade_description: "This folder, and every page and sub-folder inside it, will be deleted.",
+    },
+    toast: {
+      folder_create_success: "Folder created successfully.",
+      folder_update_success: "Folder updated successfully.",
+      folder_delete_success: "Folder deleted successfully.",
+      folder_error: "Something went wrong. Please try again.",
+      page_move_success: "Page moved successfully.",
+      page_move_error: "The page could not be moved. Please try again.",
+      convert_to_wiki_success: "Page moved to the Wiki.",
+      convert_to_project_success: "Page moved to the project.",
+      convert_error: "The page could not be moved. Please try again.",
+      max_depth_error: "Folders can only be nested 3 levels deep.",
+    },
+    settings: {
+      title: "Wiki",
+      description: "Control who can create folders and pages at the top level of the workspace Wiki.",
+      root_creation_role_label: "Who can create at the Wiki root",
+      root_creation_role_admin: "Admins only",
+      root_creation_role_member: "Admins and Members",
+    },
+    search_badge: "Wiki",
+  },
   project_members: {
     full_name: "Full name",
     display_name: "Display name",

@@ -29,6 +29,13 @@ export type TPage = {
   workspace: string | undefined;
   logo_props: TLogoProps | undefined;
   deleted_at: Date | undefined;
+  // Category 10, feature 4 ("Wiki workspace en GA") - read-only on the
+  // shared PageSerializer server-side (mutated only through the dedicated
+  // convert/reorder endpoints - see PageCollection/WorkspacePageService),
+  // but present on every Page payload regardless of scope.
+  is_global: boolean;
+  collection_id: string | null | undefined;
+  sort_order: number | undefined;
 } & TPageExtended;
 
 // page filters

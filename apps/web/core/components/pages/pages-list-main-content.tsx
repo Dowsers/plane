@@ -24,7 +24,7 @@ import { EPageStoreType, usePageStore } from "@/plane-web/hooks/store";
 type Props = {
   children: React.ReactNode;
   pageType: TPageNavigationTabs;
-  storeType: EPageStoreType;
+  storeType: EPageStoreType.PROJECT;
 };
 
 export const PagesListMainContent = observer(function PagesListMainContent(props: Props) {
@@ -61,7 +61,7 @@ export const PagesListMainContent = observer(function PagesListMainContent(props
     await createPage(payload)
       .then((res) => {
         const pageId = `/${workspaceSlug}/projects/${currentProjectDetails?.id}/pages/${res?.id}`;
-        router.push(pageId);
+        return router.push(pageId);
       })
       .catch((err) => {
         setToast({

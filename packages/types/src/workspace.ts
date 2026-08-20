@@ -69,6 +69,13 @@ export interface IWorkspace {
   // ALSO true - see `is_ai_triage_enabled_for_project`
   // (apps/api/plane/utils/issue_triage_suggestion.py).
   is_ai_triage_enabled?: boolean;
+  // Category 10, feature 4 ("Wiki workspace en GA") - who may create a
+  // Collection/page at the Wiki root (exigence 4). "MEMBER" (default)
+  // allows Admin+Member; "ADMIN" restricts root creation to Admins only.
+  // Sub-Collection/sub-page creation *inside* an existing Collection is
+  // never gated by this - see `Workspace.wiki_root_creation_role`
+  // (apps/api/plane/db/models/workspace.py).
+  wiki_root_creation_role?: "ADMIN" | "MEMBER";
 }
 
 /** `Workspace.ai_update_data_scope` choices - see `WorkspaceAIUpdateDataScope`
@@ -183,6 +190,10 @@ export interface IWorkspacePageSearchResult {
   project_ids: string[];
   project__identifiers: string[];
   workspace__slug: string;
+  // Category 10, feature 4 ("Wiki workspace en GA", exigence 10) - lets the
+  // Cmd+K/Power-K result renderer show a distinctive "Wiki" badge. See
+  // `GlobalSearchEndpoint.filter_pages` (apps/api/plane/app/views/search/base.py).
+  is_global: boolean;
 }
 
 export interface IWorkspaceProjectSearchResult {

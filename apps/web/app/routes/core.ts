@@ -78,6 +78,18 @@ export const coreRoutes: RouteConfigEntry[] = [
           ),
         ]),
 
+        // Wiki (category 10, feature 4 - "Wiki workspace en GA") - a
+        // top-level workspace-scoped section, sibling to Initiatives/
+        // Projects, matching the `/${workspaceSlug}/wiki/${pageId}` URL
+        // shape already assumed by the Cmd+K/Power-K dead-link fallback in
+        // `search-results-map.tsx`/`command-palette/helpers.tsx`.
+        layout("./(all)/[workspaceSlug]/(projects)/wiki/layout.tsx", [
+          route(":workspaceSlug/wiki", "./(all)/[workspaceSlug]/(projects)/wiki/page.tsx"),
+        ]),
+        layout("./(all)/[workspaceSlug]/(projects)/wiki/(detail)/[pageId]/layout.tsx", [
+          route(":workspaceSlug/wiki/:pageId", "./(all)/[workspaceSlug]/(projects)/wiki/(detail)/[pageId]/page.tsx"),
+        ]),
+
         // Roadmap
         layout("./(all)/[workspaceSlug]/(projects)/roadmap/layout.tsx", [
           route(":workspaceSlug/roadmap", "./(all)/[workspaceSlug]/(projects)/roadmap/page.tsx"),
@@ -363,6 +375,10 @@ export const coreRoutes: RouteConfigEntry[] = [
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/api-explorer/page.tsx"
           ),
           route(":workspaceSlug/settings/ai", "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/ai/page.tsx"),
+          route(
+            ":workspaceSlug/settings/wiki",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/wiki/page.tsx"
+          ),
         ]),
 
         // --------------------------------------------------------------------
