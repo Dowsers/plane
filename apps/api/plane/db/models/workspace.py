@@ -289,6 +289,28 @@ class Workspace(BaseModel):
     # member starve everyone else).
     ai_assistant_max_messages_per_user_per_hour = models.PositiveIntegerField(default=20)
 
+    # Settings > Wiki toggle for category 10, feature 4 ("Wiki workspace en
+    # GA") - see docs/feature-specs/10-docs-wiki.md ("4. Wiki workspace en
+    # GA", exigence 4) in plane-selfhost. Flat field directly on Workspace,
+    # same convention as every other per-workspace toggle above (no
+    # satellite `WorkspaceSetting` model exists anywhere in this fork).
+    # Governs ROOT creation only (a page or Collection created with no
+    # `collection_id`/`parent`) - creating inside an existing Collection
+    # only ever needs ordinary Member+ workspace access, per the exigence's
+    # own wording. ADMIN can always create at the root regardless of this
+    # value; MEMBER can only do so when this is "MEMBER" (the default).
+    WIKI_ROOT_CREATION_ADMIN = "ADMIN"
+    WIKI_ROOT_CREATION_MEMBER = "MEMBER"
+    WIKI_ROOT_CREATION_ROLE_CHOICES = (
+        (WIKI_ROOT_CREATION_ADMIN, "Admin"),
+        (WIKI_ROOT_CREATION_MEMBER, "Member"),
+    )
+    wiki_root_creation_role = models.CharField(
+        max_length=10,
+        choices=WIKI_ROOT_CREATION_ROLE_CHOICES,
+        default=WIKI_ROOT_CREATION_MEMBER,
+    )
+
     def __str__(self):
         """Return name of the Workspace"""
         return self.name

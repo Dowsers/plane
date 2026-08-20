@@ -57,11 +57,30 @@ class Page(BaseModel):
     external_id = models.CharField(max_length=255, null=True, blank=True)
     external_source = models.CharField(max_length=255, null=True, blank=True)
 
+    # Category 10, feature 4 ("Wiki workspace en GA") - the Collection
+    # (folder) a workspace-level Wiki page is filed under. Only ever set
+    # when `is_global = True` (enforced at the serializer/view layer, see
+    # `plane.app.views.page.workspace`) - a project-scoped page can never
+    # be filed into a Wiki Collection. `related_name="pages"` collides
+    # with `Workspace.pages`/`Project.pages` (both M2M reverse accessors
+    # named "pages" already) only in the abstract sense that Django scopes
+    # related_name per-model, not globally, so this is safe.
+    collection = models.ForeignKey(
+        "db.PageCollection",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pages",
+    )
+
     class Meta:
         verbose_name = "Page"
         verbose_name_plural = "Pages"
         db_table = "pages"
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["workspace", "is_global"], name="page_workspace_is_global_idx"),
+        ]
 
     def __str__(self):
         """Return owner email and page name"""

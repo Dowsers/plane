@@ -239,3 +239,4 @@ from .ai_chat import (
 )
 
 from .page_reaction import PageReaction
+from .page_collection import PageCollection
