@@ -162,6 +162,76 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
           />
         }
       />
+      {/*
+        Category 10, feature 5 ("Abonnements/notifications par page") -
+        same form, same `UserService.updateCurrentUserEmailNotificationSettings`
+        endpoint (`PATCH /api/users/me/notification-preferences/`) the
+        toggles above already use - `UserNotificationPreferenceSerializer`
+        is `fields = "__all__"` server-side, so no serializer change was
+        needed to accept these 3 new keys (see this feature's backend
+        commit, `bd3e86442`).
+      */}
+      <div className="pt-4 pb-1 text-13 font-medium text-tertiary">{t("page_notifications_heading")}</div>
+      <SettingsControlItem
+        title={t("page_edits")}
+        description={t("page_edits_description")}
+        control={
+          <Controller
+            control={control}
+            name="page_edits"
+            render={({ field: { value, onChange } }) => (
+              <ToggleSwitch
+                value={value}
+                onChange={(newValue) => {
+                  onChange(newValue);
+                  handleSettingChange("page_edits", newValue);
+                }}
+                size="sm"
+              />
+            )}
+          />
+        }
+      />
+      <SettingsControlItem
+        title={t("page_mentions")}
+        description={t("page_mentions_description")}
+        control={
+          <Controller
+            control={control}
+            name="page_mentions"
+            render={({ field: { value, onChange } }) => (
+              <ToggleSwitch
+                value={value}
+                onChange={(newValue) => {
+                  onChange(newValue);
+                  handleSettingChange("page_mentions", newValue);
+                }}
+                size="sm"
+              />
+            )}
+          />
+        }
+      />
+      <SettingsControlItem
+        title={t("page_comments")}
+        description={t("page_comments_description")}
+        control={
+          <Controller
+            control={control}
+            name="page_comments"
+            render={({ field: { value, onChange } }) => (
+              <ToggleSwitch
+                value={value}
+                onChange={(newValue) => {
+                  onChange(newValue);
+                  handleSettingChange("page_comments", newValue);
+                }}
+                size="sm"
+              />
+            )}
+          />
+        }
+      />
     </div>
   );
 });

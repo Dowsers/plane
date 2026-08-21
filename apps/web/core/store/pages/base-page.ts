@@ -9,7 +9,15 @@ import { action, computed, makeObservable, observable, reaction, runInAction } f
 // plane imports
 import { EPageAccess } from "@plane/constants";
 import type { TChangeHandlerProps } from "@plane/propel/emoji-icon-picker";
-import type { TDocumentPayload, TLogoProps, TNameDescriptionLoader, TPage, TPageReaction } from "@plane/types";
+import type {
+  TDocumentPayload,
+  TLogoProps,
+  TNameDescriptionLoader,
+  TPage,
+  TPageReaction,
+  TPageSubscriber,
+  TPageSubscriptionStatus,
+} from "@plane/types";
 // plane web store
 import { ExtendedBasePage } from "@/plane-web/store/pages/extended-base-page";
 import type { RootStore } from "@/plane-web/store/root.store";
@@ -50,6 +58,17 @@ export type TBasePage = TPage & {
   fetchReactions: () => Promise<TPageReaction[] | undefined>;
   createReaction: (reaction: string) => Promise<TPageReaction | undefined>;
   removeReaction: (reaction: string, userId: string) => Promise<void>;
+  // Category 10, feature 5 ("Abonnements/notifications par page") - like
+  // `reactions` above, not embedded in the Page's own GET response, so
+  // fetched separately and kept as simple observable state directly on the
+  // page instance (see this feature's own build report for why - same
+  // "only one Page open at a time" reasoning `reactions` already gives).
+  isSubscribed: boolean;
+  subscribers: TPageSubscriber[];
+  fetchSubscription: () => Promise<boolean | undefined>;
+  subscribe: () => Promise<void>;
+  unsubscribe: () => Promise<void>;
+  fetchSubscribers: () => Promise<TPageSubscriber[] | undefined>;
   // sub-store
   editor: PageEditorInstance;
   // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
@@ -103,6 +122,19 @@ export type TBasePageServices = {
   // Category 10, features 1+3 (merged) - see `PageCommentsStore`
   // (./page-comments) for how this bag is consumed.
   comments: TPageCommentsServices;
+  // Category 10, feature 5 ("Abonnements/notifications par page")
+  subscription: TBasePageSubscriptionServices;
+};
+
+/** Category 10, feature 5 - bound (workspaceSlug/projectId/pageId already
+ * closed over) subscription operations, mirroring `listReactions`/
+ * `createReaction`/`removeReaction`'s own shape above. See `ProjectPage`/
+ * `WorkspacePage` for the two concrete wirings. */
+export type TBasePageSubscriptionServices = {
+  getStatus: () => Promise<TPageSubscriptionStatus>;
+  subscribe: () => Promise<TPageSubscriptionStatus>;
+  unsubscribe: () => Promise<void>;
+  listSubscribers: () => Promise<TPageSubscriber[]>;
 };
 
 export type TPageInstance = TBasePage &
@@ -158,6 +190,11 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   // ever open/rendered at a time in this fork, so there is no need for a
   // store shaped to serve many concurrent entities at once.
   reactions: TPageReaction[] = [];
+  // Category 10, feature 5 ("Abonnements/notifications par page") - see
+  // `TBasePage`'s own comment on these two fields for why they're fetched
+  // separately rather than embedded on `TPage`.
+  isSubscribed: boolean = false;
+  subscribers: TPageSubscriber[] = [];
   // helpers
   oldName: string = "";
   // services
@@ -204,6 +241,8 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.sort_order = page?.sort_order ?? undefined;
     this.unresolved_comment_count = page?.unresolved_comment_count ?? 0;
     this.reactions = [];
+    this.isSubscribed = false;
+    this.subscribers = [];
 
     makeObservable(this, {
       // loaders
@@ -237,6 +276,9 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       unresolved_comment_count: observable.ref,
       // reactions
       reactions: observable,
+      // Category 10, feature 5 ("Abonnements/notifications par page")
+      isSubscribed: observable.ref,
+      subscribers: observable,
       // helpers
       oldName: observable.ref,
       setIsSubmitting: action,
@@ -262,6 +304,11 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       fetchReactions: action,
       createReaction: action,
       removeReaction: action,
+      // Category 10, feature 5 ("Abonnements/notifications par page")
+      fetchSubscription: action,
+      subscribe: action,
+      unsubscribe: action,
+      fetchSubscribers: action,
     });
 
     // init
@@ -693,6 +740,87 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
         });
       }
       throw error;
+    }
+  };
+
+  /**
+   * @description Category 10, feature 5 ("Abonnements/notifications par
+   * page") - fetch the current user's subscription state for this page.
+   * Fire-and-forget friendly, same reasoning as `fetchReactions` above
+   * (invoked as a side effect of the page detail fetch, see
+   * `ProjectPageStore`/`WorkspacePageStore.fetchPageDetails`).
+   */
+  fetchSubscription = async () => {
+    if (!this.id) return undefined;
+    try {
+      const { subscribed } = await this.services.subscription.getStatus();
+      runInAction(() => {
+        this.isSubscribed = subscribed;
+      });
+      return subscribed;
+    } catch (error) {
+      console.error("Error in fetching page subscription status", error);
+      return undefined;
+    }
+  };
+
+  /**
+   * @description subscribe the current user to this page's notifications
+   * (exigence 1/2/4 - re-subscribing after an explicit unsubscribe is
+   * always allowed server-side). Optimistic, rolled back on failure.
+   */
+  subscribe = async () => {
+    const wasSubscribed = this.isSubscribed;
+    runInAction(() => {
+      this.isSubscribed = true;
+    });
+    try {
+      await this.services.subscription.subscribe();
+    } catch (error) {
+      runInAction(() => {
+        this.isSubscribed = wasSubscribed;
+      });
+      throw error;
+    }
+  };
+
+  /**
+   * @description unsubscribe the current user from this page's
+   * notifications (exigence 4). Allowed unconditionally server-side, even
+   * without current read access to the page (exigence 9).
+   */
+  unsubscribe = async () => {
+    const wasSubscribed = this.isSubscribed;
+    runInAction(() => {
+      this.isSubscribed = false;
+    });
+    try {
+      await this.services.subscription.unsubscribe();
+    } catch (error) {
+      runInAction(() => {
+        this.isSubscribed = wasSubscribed;
+      });
+      throw error;
+    }
+  };
+
+  /**
+   * @description Category 10, feature 5 - fetch the page's subscriber
+   * list (exigence 12), for the small avatar-stack UI in the page header.
+   * Fire-and-forget friendly, same reasoning as `fetchReactions`/
+   * `fetchSubscription` above.
+   */
+  fetchSubscribers = async () => {
+    if (!this.id) return undefined;
+    try {
+      const subscribers = await this.services.subscription.listSubscribers();
+      runInAction(() => {
+        this.subscribers = subscribers;
+      });
+      return subscribers;
+    } catch (error) {
+      console.error("Error in fetching page subscribers", error);
+      return undefined;
     }
   };
 }

@@ -8,3 +8,4 @@ export * from "./comment";
 export * from "./core";
 export * from "./extended";
 export * from "./page-collection";
+export * from "./subscriber";

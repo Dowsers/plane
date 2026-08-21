@@ -200,6 +200,15 @@ export interface IUserEmailNotificationSettings {
   comment: boolean;
   mention: boolean;
   issue_completed: boolean;
+  // Category 10, feature 5 ("Abonnements/notifications par page") - mirrors
+  // `UserNotificationPreference.page_edits`/`page_mentions`/`page_comments`
+  // (apps/api/plane/db/models/notification.py), opt-out/default `true` like
+  // every field above. `page_edits` also covers the metadata-level events
+  // with no dedicated toggle of their own (rename/lock/archive/access
+  // change) - see `plane.bgtasks.page_subscription_task.EVENT_PREFERENCE_FIELD`.
+  page_edits: boolean;
+  page_mentions: boolean;
+  page_comments: boolean;
 }
 
 export type TProfileViews = "assigned" | "created" | "subscribed";

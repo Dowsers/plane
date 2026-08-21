@@ -209,6 +209,10 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       // Category 10, feature 2 reactions - fetched as a side effect of the
       // detail fetch, same pattern as `ProjectPageStore.fetchPageDetails`.
       pageInstance?.fetchReactions();
+      // Category 10, feature 5 - see `ProjectPageStore.fetchPageDetails`'s
+      // own comment.
+      pageInstance?.fetchSubscription();
+      pageInstance?.fetchSubscribers();
 
       return page;
     } catch (error) {

@@ -7,6 +7,7 @@
 export * from "./page-collection.service";
 export * from "./page-comment.service";
 export * from "./page-reaction.service";
+export * from "./page-subscription.service";
 export * from "./project-page-version.service";
 export * from "./project-page.service";
 export * from "./workspace-page-version.service";

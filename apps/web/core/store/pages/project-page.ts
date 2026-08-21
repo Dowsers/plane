@@ -12,10 +12,11 @@ import type { TPage } from "@plane/types";
 // plane web store
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { PageCommentService, PageReactionService, ProjectPageService } from "@/services/page";
+import { PageCommentService, PageReactionService, PageSubscriptionService, ProjectPageService } from "@/services/page";
 const projectPageService = new ProjectPageService();
 const pageReactionService = new PageReactionService();
 const pageCommentService = new PageCommentService();
+const pageSubscriptionService = new PageSubscriptionService();
 // store
 import { BasePage } from "./base-page";
 import type { TPageInstance } from "./base-page";
@@ -113,6 +114,25 @@ export class ProjectPage extends BasePage implements TProjectPage {
         removeReaction: async (commentId, reaction) => {
           if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
           await pageCommentService.removeCommentReaction(workspaceSlug, projectId, page.id, commentId, reaction);
+        },
+      },
+      // Category 10, feature 5 ("Abonnements/notifications par page")
+      subscription: {
+        getStatus: async () => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.getSubscriptionStatus(workspaceSlug, projectId, page.id);
+        },
+        subscribe: async () => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.subscribe(workspaceSlug, projectId, page.id);
+        },
+        unsubscribe: async () => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          await pageSubscriptionService.unsubscribe(workspaceSlug, projectId, page.id);
+        },
+        listSubscribers: async () => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.listSubscribers(workspaceSlug, projectId, page.id);
         },
       },
     });

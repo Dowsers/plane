@@ -109,6 +109,15 @@ export default {
   comments_description: "Notify me when someone leaves a comment on the work item",
   mentions: "Mentions",
   mentions_description: "Notify me only when someone mentions me in the comments or description",
+  // Category 10, feature 5 ("Abonnements/notifications par page") - mirrors
+  // `UserNotificationPreference.page_edits`/`page_mentions`/`page_comments`.
+  page_notifications_heading: "Pages",
+  page_edits: "Page edits",
+  page_edits_description: "Notify me when a Page I'm subscribed to is edited, renamed, locked, or archived.",
+  page_mentions: "Page mentions",
+  page_mentions_description: "Notify me when someone mentions me in a Page's content or comments.",
+  page_comments: "Page comments",
+  page_comments_description: "Notify me when someone comments on a Page I'm subscribed to.",
   old_password: "Old password",
   general_settings: "General settings",
   sign_out: "Sign out",

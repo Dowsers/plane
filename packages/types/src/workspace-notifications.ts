@@ -27,6 +27,34 @@ export type TNotificationIssueLite = {
   state_group: string | undefined;
 };
 
+// Category 10, feature 5 ("Abonnements/notifications par page") - mirrors
+// the `data` payload built by `notify_page_subscribers`/`notify_page_mention`
+// (apps/api/plane/bgtasks/page_subscription_task.py) for an
+// `entity_name === "page"` notification. Both keys are optional (rather
+// than folded into `TNotificationData` unconditionally) because they are
+// only ever present together, and only on this one notification kind -
+// see `NotificationItem`'s own `isPageNotification` branch
+// (@/components/workspace-notifications/sidebar/notification-card/item),
+// which is the sole reader.
+export type TNotificationPageLite = {
+  id: string;
+  name: string;
+};
+
+export type TNotificationPageActivity = {
+  // "edited" (debounced content edit), "renamed", "locked", "unlocked",
+  // "archived", "unarchived", "access_changed", "commented", "mentioned" -
+  // deliberately typed as a plain `string` (not a union), mirroring
+  // `PageActivity.verb`'s own deliberately-open `CharField` (no
+  // `choices=`) server-side.
+  verb: string;
+  field: string | null | undefined;
+  actor: string | null | undefined;
+  old_value?: string | null;
+  new_value?: string | null;
+  comment_id?: string | null;
+};
+
 export type TNotificationData = {
   issue: TNotificationIssueLite | undefined;
   issue_activity: {
@@ -38,6 +66,8 @@ export type TNotificationData = {
     new_value: string | undefined;
     old_value: string | undefined;
   };
+  page?: TNotificationPageLite;
+  page_activity?: TNotificationPageActivity;
 };
 
 export type TNotification = {

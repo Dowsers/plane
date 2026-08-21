@@ -11,10 +11,16 @@ import type { TPage } from "@plane/types";
 // plane web store
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { PageCommentService, PageReactionService, WorkspacePageService } from "@/services/page";
+import {
+  PageCommentService,
+  PageReactionService,
+  PageSubscriptionService,
+  WorkspacePageService,
+} from "@/services/page";
 const workspacePageService = new WorkspacePageService();
 const pageReactionService = new PageReactionService();
 const pageCommentService = new PageCommentService();
+const pageSubscriptionService = new PageSubscriptionService();
 // store
 import { BasePage } from "./base-page";
 import type { TPageInstance } from "./base-page";
@@ -119,6 +125,25 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
         removeReaction: async (commentId, reaction) => {
           if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
           await pageCommentService.removeWorkspaceCommentReaction(workspaceSlug, page.id, commentId, reaction);
+        },
+      },
+      // Category 10, feature 5 ("Abonnements/notifications par page")
+      subscription: {
+        getStatus: async () => {
+          if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.getWorkspaceSubscriptionStatus(workspaceSlug, page.id);
+        },
+        subscribe: async () => {
+          if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.subscribeWorkspacePage(workspaceSlug, page.id);
+        },
+        unsubscribe: async () => {
+          if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
+          await pageSubscriptionService.unsubscribeWorkspacePage(workspaceSlug, page.id);
+        },
+        listSubscribers: async () => {
+          if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
+          return await pageSubscriptionService.listWorkspaceSubscribers(workspaceSlug, page.id);
         },
       },
     });

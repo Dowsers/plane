@@ -299,6 +299,12 @@ export class ProjectPageStore implements IProjectPageStore {
       // route revalidates on focus/reconnect), satisfying this feature's
       // "ordinary revalidation, no realtime push" scope decision.
       pageInstance?.fetchReactions();
+      // Category 10, feature 5 ("Abonnements/notifications par page") -
+      // same "fetch as a side effect of the detail fetch" reasoning as
+      // `fetchReactions` above; backs the bell icon's subscribed state and
+      // the small subscriber avatar stack in the page header.
+      pageInstance?.fetchSubscription();
+      pageInstance?.fetchSubscribers();
 
       return page;
     } catch (error) {

@@ -211,6 +211,12 @@ export class WorkspaceService extends APIService {
       project_id?: string;
       search: string;
       workspace_search: boolean;
+      // Category 10, feature 5 ("Abonnements/notifications par page") -
+      // scopes the search to a subset of `GlobalSearchEndpoint.
+      // MODELS_MAPPER` (apps/api/plane/app/views/search/base.py), e.g.
+      // `"page"`. Optional/additive - every existing call site keeps
+      // searching every entity type, exactly as before.
+      entities?: string;
     }
   ): Promise<IWorkspaceSearchResults> {
     return this.get(`/api/workspaces/${workspaceSlug}/search/`, {
