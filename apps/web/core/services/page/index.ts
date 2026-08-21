@@ -5,6 +5,7 @@
  */
 
 export * from "./page-collection.service";
+export * from "./page-comment.service";
 export * from "./page-reaction.service";
 export * from "./project-page-version.service";
 export * from "./project-page.service";

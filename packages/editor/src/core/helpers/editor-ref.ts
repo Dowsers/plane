@@ -140,7 +140,11 @@ export const getEditorRefHelpers = (args: TArgs): EditorRefApi => {
       const { itemKey } = props;
       const editorItems = getEditorMenuItems(editor);
 
-      const getEditorMenuItem = (itemKey: TEditorCommands) => editorItems.find((item) => item.key === itemKey);
+      // Renamed from `itemKey` (pre-existing shadowing of the outer
+      // `itemKey` destructured above, flagged by `eslint(no-shadow)` -
+      // fixed here as a required side-effect of this file's own
+      // pre-commit hook running with --deny-warnings).
+      const getEditorMenuItem = (key: TEditorCommands) => editorItems.find((item) => item.key === key);
 
       const item = getEditorMenuItem(itemKey);
       if (item) {
@@ -149,9 +153,40 @@ export const getEditorRefHelpers = (args: TArgs): EditorRefApi => {
         console.warn(`No command found for item: ${itemKey}`);
       }
     },
-    focus: (args) => editor?.commands.focus(args),
+    // Renamed from `args` for the same reason - shadowed the outer
+    // `getEditorRefHelpers(args: TArgs)` parameter.
+    focus: (focusArgs) => editor?.commands.focus(focusArgs),
     getCoordsFromPos: (pos) => editor?.view.coordsAtPos(pos ?? editor.state.selection.from),
     getCurrentCursorPosition: () => editor?.state.selection.from,
+    // Category 10, features 1+3 (merged) - see this method's own docstring
+    // in `@/types/editor` (`CoreEditorRefApi.getCommentAnchorRect`) for why
+    // a direct DOM query (rather than resolving a ProseMirror position via
+    // `coordsAtPos`/`posToDOMRect`) is deliberately the simpler, equally
+    // correct choice here: `data-comment-id` is already a stable DOM
+    // handle the Mark renders, we don't need a document position at all,
+    // only the rendered element's rect. `querySelector` returns the FIRST
+    // match in document order, i.e. the anchor's topmost/earliest
+    // occurrence - exactly what the gutter wants to align against when an
+    // anchor was duplicated (exigence 7).
+    getCommentAnchorRect: (anchorId) =>
+      editor?.view.dom.querySelector<HTMLElement>(`[data-comment-id="${anchorId}"]`)?.getBoundingClientRect(),
+    scrollToCommentAnchor: (anchorId) => {
+      const element = editor?.view.dom.querySelector<HTMLElement>(`[data-comment-id="${anchorId}"]`);
+      if (!element) return false;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.classList.add("inline-comment-mark--flash");
+      window.setTimeout(() => element.classList.remove("inline-comment-mark--flash"), 1500);
+      return true;
+    },
+    setResolvedCommentAnchorIds: (resolvedAnchorIds) => {
+      if (!editor) return;
+      const resolvedSet = new Set(resolvedAnchorIds);
+      const nodes = editor.view.dom.querySelectorAll<HTMLElement>("[data-comment-id]");
+      nodes.forEach((node) => {
+        const anchorId = node.getAttribute("data-comment-id");
+        node.classList.toggle("inline-comment-mark--resolved", !!anchorId && resolvedSet.has(anchorId));
+      });
+    },
     getAttributesWithExtendedMark: (mark, attribute) => {
       if (!editor) return;
       editor.commands.extendMarkRange(mark);
@@ -195,7 +230,9 @@ export const getEditorRefHelpers = (args: TArgs): EditorRefApi => {
       const { itemKey } = props;
       const editorItems = getEditorMenuItems(editor);
 
-      const getEditorMenuItem = (itemKey: TEditorCommands) => editorItems.find((item) => item.key === itemKey);
+      // Renamed for the same `no-shadow` reason as `executeMenuItemCommand`
+      // above.
+      const getEditorMenuItem = (key: TEditorCommands) => editorItems.find((item) => item.key === key);
       const item = getEditorMenuItem(itemKey);
       if (!item) return false;
 

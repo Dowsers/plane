@@ -15,6 +15,8 @@ import { ExtendedBasePage } from "@/plane-web/store/pages/extended-base-page";
 import type { RootStore } from "@/plane-web/store/root.store";
 // local imports
 import { PageEditorInstance } from "./page-editor-info";
+import { PageCommentsStore } from "./page-comments";
+import type { TPageCommentsServices } from "./page-comments";
 
 export type TBasePage = TPage & {
   // observables
@@ -50,6 +52,11 @@ export type TBasePage = TPage & {
   removeReaction: (reaction: string, userId: string) => Promise<void>;
   // sub-store
   editor: PageEditorInstance;
+  // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+  // + "Resolution de fils de commentaires") - see `PageCommentsStore`'s own
+  // docstring for why this is a dedicated sub-store rather than a flat
+  // array like `reactions` above.
+  comments: PageCommentsStore;
 };
 
 export type TBasePagePermissions = {
@@ -63,6 +70,20 @@ export type TBasePagePermissions = {
   canCurrentUserFavoritePage: boolean;
   canCurrentUserMovePage: boolean;
   isContentEditable: boolean;
+  // Category 10, features 1+3 (merged) - mirrors `PageCommentPermission`/
+  // `WorkspacePageCommentPermission`'s write-role gate (project/workspace
+  // role ADMIN or MEMBER, unconditionally - no owner or public-access
+  // exception, unlike `isContentEditable`) for creating a root thread, a
+  // reply, or resolving/reopening one. UI-only - the server enforces this
+  // independently, see this feature's build report.
+  canCurrentUserCommentOnPage: boolean;
+  // Category 10, features 1+3 (merged) - mirrors
+  // `can_user_moderate_page_comment_thread`'s "Page owner or Admin" half
+  // (the "thread author" half is comment-specific, checked directly
+  // against `actor` where a thread/reply is rendered). Combined with
+  // `canCurrentUserCommentOnPage` (still required - see above) this gates
+  // resolve/reopen/delete for non-authors.
+  canCurrentUserModeratePageComments: boolean;
 };
 
 export type TBasePageServices = {
@@ -79,6 +100,9 @@ export type TBasePageServices = {
   listReactions: () => Promise<TPageReaction[]>;
   createReaction: (reaction: string) => Promise<TPageReaction>;
   removeReaction: (reaction: string) => Promise<void>;
+  // Category 10, features 1+3 (merged) - see `PageCommentsStore`
+  // (./page-comments) for how this bag is consumed.
+  comments: TPageCommentsServices;
 };
 
 export type TPageInstance = TBasePage &
@@ -117,6 +141,15 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   is_global: boolean;
   collection_id: string | null | undefined;
   sort_order: number | undefined;
+  // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+  // + "Resolution de fils de commentaires") - read-only, annotated
+  // server-side on every Page list/detail response (see `TPage`'s own
+  // comment). NOT used to drive the comment gutter/thread list itself -
+  // `PageCommentsStore.unresolvedCount` (computed from the threads it has
+  // actually fetched) is the source of truth there and can't drift from
+  // it; this is only kept for parity with the API response shape (e.g. a
+  // future Page-list badge, out of this feature's own scope).
+  unresolved_comment_count: number;
   // reactions (category 10, feature 2) - fetched separately from the
   // page's own GET (no `reactions` field on `TPage`/the Page serializer),
   // mirrors `label_ids`/`is_favorite` in spirit (simple observable state
@@ -135,6 +168,9 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   rootStore: RootStore;
   // sub-store
   editor: PageEditorInstance;
+  // Category 10, features 1+3 (merged) - see `PageCommentsStore`'s own
+  // docstring; constructed below alongside `editor`.
+  comments: PageCommentsStore;
 
   constructor(
     private store: RootStore,
@@ -166,6 +202,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.is_global = page?.is_global || false;
     this.collection_id = page?.collection_id || undefined;
     this.sort_order = page?.sort_order ?? undefined;
+    this.unresolved_comment_count = page?.unresolved_comment_count ?? 0;
     this.reactions = [];
 
     makeObservable(this, {
@@ -196,6 +233,8 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       is_global: observable.ref,
       collection_id: observable.ref,
       sort_order: observable.ref,
+      // Category 10, features 1+3 (merged)
+      unresolved_comment_count: observable.ref,
       // reactions
       reactions: observable,
       // helpers
@@ -229,6 +268,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.services = services;
     this.rootStore = store;
     this.editor = new PageEditorInstance();
+    this.comments = new PageCommentsStore(services.comments);
 
     const titleDisposer = reaction(
       () => this.name,
@@ -279,6 +319,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       is_global: this.is_global,
       collection_id: this.collection_id,
       sort_order: this.sort_order,
+      unresolved_comment_count: this.unresolved_comment_count,
       ...this.asJSONExtended,
     };
   }

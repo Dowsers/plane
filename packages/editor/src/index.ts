@@ -14,6 +14,7 @@ export {
 
 // constants
 export * from "@/constants/common";
+export * from "@/constants/inline-comment";
 
 // helpers
 export * from "@/helpers/common";

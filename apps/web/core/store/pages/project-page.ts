@@ -12,9 +12,10 @@ import type { TPage } from "@plane/types";
 // plane web store
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { PageReactionService, ProjectPageService } from "@/services/page";
+import { PageCommentService, PageReactionService, ProjectPageService } from "@/services/page";
 const projectPageService = new ProjectPageService();
 const pageReactionService = new PageReactionService();
+const pageCommentService = new PageCommentService();
 // store
 import { BasePage } from "./base-page";
 import type { TPageInstance } from "./base-page";
@@ -72,6 +73,48 @@ export class ProjectPage extends BasePage implements TProjectPage {
         if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
         await pageReactionService.removeReaction(workspaceSlug, projectId, page.id, reaction);
       },
+      // Category 10, features 1+3 (merged, "Commentaires ancres sur les
+      // Pages" + "Resolution de fils de commentaires")
+      comments: {
+        list: async (params) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.listComments(workspaceSlug, projectId, page.id, params);
+        },
+        create: async (payload) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.createComment(workspaceSlug, projectId, page.id, payload);
+        },
+        update: async (commentId, payload) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.updateComment(workspaceSlug, projectId, page.id, commentId, payload);
+        },
+        remove: async (commentId) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          await pageCommentService.deleteComment(workspaceSlug, projectId, page.id, commentId);
+        },
+        reply: async (threadId, payload) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.replyToComment(workspaceSlug, projectId, page.id, threadId, payload);
+        },
+        resolve: async (threadId) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.resolveComment(workspaceSlug, projectId, page.id, threadId);
+        },
+        reopen: async (threadId) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.reopenComment(workspaceSlug, projectId, page.id, threadId);
+        },
+        createReaction: async (commentId, reaction) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          return await pageCommentService.createCommentReaction(workspaceSlug, projectId, page.id, commentId, {
+            reaction,
+          });
+        },
+        removeReaction: async (commentId, reaction) => {
+          if (!workspaceSlug || !projectId || !page.id) throw new Error("Missing required fields.");
+          await pageCommentService.removeCommentReaction(workspaceSlug, projectId, page.id, commentId, reaction);
+        },
+      },
     });
     makeObservable(this, {
       // computed
@@ -85,6 +128,8 @@ export class ProjectPage extends BasePage implements TProjectPage {
       canCurrentUserFavoritePage: computed,
       canCurrentUserMovePage: computed,
       isContentEditable: computed,
+      canCurrentUserCommentOnPage: computed,
+      canCurrentUserModeratePageComments: computed,
     });
   }
 
@@ -194,6 +239,29 @@ export class ProjectPage extends BasePage implements TProjectPage {
     return (
       !isArchived && !isLocked && (isOwner || (isPublic && !!highestRole && highestRole >= EUserPermissions.MEMBER))
     );
+  }
+
+  /**
+   * @description Category 10, features 1+3 (merged) - mirrors
+   * `PageCommentPermission`'s write-role gate exactly: project role ADMIN
+   * or MEMBER, unconditionally (no owner/public-access exception, unlike
+   * `canCurrentUserEditPage` above) - gates creating a root thread, a
+   * reply, and resolving/reopening one.
+   */
+  get canCurrentUserCommentOnPage() {
+    const highestRole = this.getHighestRoleAcrossProjects();
+    return !!highestRole && highestRole >= EUserPermissions.MEMBER;
+  }
+
+  /**
+   * @description Category 10, features 1+3 (merged) - mirrors
+   * `can_user_moderate_page_comment_thread`'s "Page owner or Admin" half
+   * (the thread-author half is checked directly against a comment's
+   * `actor` where it's rendered, not here).
+   */
+  get canCurrentUserModeratePageComments() {
+    const highestRole = this.getHighestRoleAcrossProjects();
+    return this.isCurrentUserOwner || highestRole === EUserPermissions.ADMIN;
   }
 
   getRedirectionLink = computedFn(() => {

@@ -31,9 +31,10 @@ import { CORE_EXTENSIONS } from "@/constants/extension";
 // extensions
 import { isCellSelection } from "@/extensions/table/table/utilities/helpers";
 // types
-import type { IEditorPropsExtended, TEditorCommands, TExtensions } from "@/types";
+import type { IEditorPropsExtended, TEditorCommands, TExtensions, TInlineCommentHandler } from "@/types";
 // local imports
 import { TextAlignmentSelector } from "./alignment-selector";
+import { BubbleMenuCommentSelector } from "./comment-selector";
 import { BubbleMenuLinkSelector } from "./link-selector";
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, "children">;
@@ -70,10 +71,13 @@ type Props = {
   editor: Editor;
   extendedEditorProps: IEditorPropsExtended;
   flaggedExtensions: TExtensions[];
+  // Category 10, features 1+3 (merged) - `undefined` on every editor
+  // variant other than the Page document editor, see `IEditorProps.commentHandler`.
+  commentHandler?: TInlineCommentHandler;
 };
 
 export function EditorBubbleMenu(props: Props) {
-  const { editor } = props;
+  const { editor, commentHandler } = props;
   // states
   const [isSelecting, setIsSelecting] = useState(false);
   // refs
@@ -92,7 +96,12 @@ export function EditorBubbleMenu(props: Props) {
 
   const editorState: EditorStateType = useEditorState({
     editor,
-    selector: ({ editor }) => ({
+    // Renamed from `editor` (pre-existing shadowing of the outer `editor`
+    // this component received as a prop, flagged by `eslint(no-shadow)` -
+    // fixed here as a required side-effect of this file's own pre-commit
+    // hook running with --deny-warnings). `useEditorState`'s own
+    // transaction-scoped snapshot is still what's used below, unchanged.
+    selector: ({ editor: snapshotEditor }) => ({
       code: formattingItems.code.isActive(),
       bold: formattingItems.bold.isActive(),
       italic: formattingItems.italic.isActive(),
@@ -101,8 +110,8 @@ export function EditorBubbleMenu(props: Props) {
       left: formattingItems["text-align"].isActive({ alignment: "left" }),
       right: formattingItems["text-align"].isActive({ alignment: "right" }),
       center: formattingItems["text-align"].isActive({ alignment: "center" }),
-      color: COLORS_LIST.find((c) => TextColorItem(editor).isActive({ color: c.key })),
-      backgroundColor: COLORS_LIST.find((c) => BackgroundColorItem(editor).isActive({ color: c.key })),
+      color: COLORS_LIST.find((c) => TextColorItem(snapshotEditor).isActive({ color: c.key })),
+      backgroundColor: COLORS_LIST.find((c) => BackgroundColorItem(snapshotEditor).isActive({ color: c.key })),
     }),
   });
 
@@ -112,15 +121,16 @@ export function EditorBubbleMenu(props: Props) {
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
     editor,
-    shouldShow: ({ state, editor }) => {
+    // Renamed from `editor` for the same reason as `snapshotEditor` above.
+    shouldShow: ({ state, editor: bubbleEditor }) => {
       const { selection } = state;
       const { empty } = selection;
 
       if (
         empty ||
-        !editor.isEditable ||
-        editor.isActive(CORE_EXTENSIONS.IMAGE) ||
-        editor.isActive(CORE_EXTENSIONS.CUSTOM_IMAGE) ||
+        !bubbleEditor.isEditable ||
+        bubbleEditor.isActive(CORE_EXTENSIONS.IMAGE) ||
+        bubbleEditor.isActive(CORE_EXTENSIONS.CUSTOM_IMAGE) ||
         isNodeSelection(selection) ||
         isCellSelection(selection) ||
         isSelecting
@@ -199,6 +209,11 @@ export function EditorBubbleMenu(props: Props) {
           {!editorState.code && (
             <div className="px-2">
               <BubbleMenuLinkSelector editor={editor} />
+            </div>
+          )}
+          {!editorState.code && commentHandler && (
+            <div className="px-2">
+              <BubbleMenuCommentSelector editor={editor} commentHandler={commentHandler} />
             </div>
           )}
           {!editorState.code && (

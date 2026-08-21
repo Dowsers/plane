@@ -7,8 +7,12 @@
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { Extensions } from "@tiptap/core";
 import { CharacterCount } from "@tiptap/extension-character-count";
-import TaskItem from "@tiptap/extension-task-item";
-import TaskList from "@tiptap/extension-task-list";
+// Renamed on default import (pre-existing "TaskItem"/"TaskList" triggered
+// eslint-plugin-import's no-named-as-default - the module also exports a
+// same-named export - fixed here as a required side-effect of this
+// file's own pre-commit hook running with --deny-warnings).
+import TiptapTaskItem from "@tiptap/extension-task-item";
+import TiptapTaskList from "@tiptap/extension-task-list";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Underline } from "@tiptap/extension-underline";
 import { Markdown } from "tiptap-markdown";
@@ -26,6 +30,7 @@ import {
   CustomTextAlignExtension,
   CustomTypographyExtension,
   ImageExtension,
+  InlineCommentExtension,
   ListKeymap,
   Table,
   TableCell,
@@ -89,15 +94,21 @@ export const CoreEditorExtensions = (args: TArguments): Extensions => {
     CustomKeymap,
     ListKeymap({ tabIndex }),
     CustomLinkExtension,
+    // Category 10, features 1+3 (merged) - registered here (the
+    // interactive editor schema, shared by every editor variant) but
+    // deliberately NOT in `core-without-props.ts` - see this extension's
+    // own module docstring for why that keeps PDF/Word/Markdown exports
+    // comment-free for free (exigence 13).
+    InlineCommentExtension,
     CustomTypographyExtension,
     Underline,
     TextStyle,
-    TaskList.configure({
+    TiptapTaskList.configure({
       HTMLAttributes: {
         class: "not-prose pl-2 space-y-2",
       },
     }),
-    TaskItem.configure({
+    TiptapTaskItem.configure({
       HTMLAttributes: {
         class: "relative",
       },

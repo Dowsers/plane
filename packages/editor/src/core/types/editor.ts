@@ -29,6 +29,7 @@ import type {
   TEditorAsset,
   TExtensions,
   TFileHandler,
+  TInlineCommentHandler,
   TMentionHandler,
   TRealtimeConfig,
   TServerHandler,
@@ -118,6 +119,39 @@ export type CoreEditorRefApi = {
   ) => Record<string, any> | undefined;
   getCoordsFromPos: (pos?: number) => ReturnType<EditorView["coordsAtPos"]> | undefined;
   getCurrentCursorPosition: () => number | undefined;
+  /**
+   * Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+   * + "Resolution de fils de commentaires") - the live viewport rect of
+   * the FIRST rendered occurrence (document order) of the `InlineComment`
+   * Mark carrying this `anchorId`, or `undefined` if none is currently
+   * rendered (an orphaned thread, or one whose Mark hasn't synced into the
+   * DOM yet). The comment gutter (apps/web) calls this on every
+   * recompute tick to keep each thread card vertically aligned with its
+   * anchor - see that component's own docs for the full positioning/
+   * collision-avoidance algorithm.
+   */
+  getCommentAnchorRect: (anchorId: string) => DOMRect | undefined;
+  /**
+   * Category 10, features 1+3 (merged) - scrolls the first rendered
+   * occurrence of the given anchor into view and applies a brief
+   * "flash" highlight (`.inline-comment-mark--flash`, auto-removed) - the
+   * gutter-card-click -> document-highlight direction of feature 1's
+   * "clic ... fait defiler jusqu'au fil correspondant ... (et
+   * inversement)". Returns `false` if the anchor isn't currently rendered
+   * (orphaned thread).
+   */
+  scrollToCommentAnchor: (anchorId: string) => boolean;
+  /**
+   * Category 10, features 1+3 (merged) - toggles the
+   * `.inline-comment-mark--resolved` (dimmed) class on every rendered
+   * `InlineComment` Mark whose `anchorId` is in `resolvedAnchorIds`, and
+   * removes it from every other one. The Mark itself never stores
+   * resolution state (only `anchor_id`/`data-comment-id` - resolution
+   * lives on `PageComment.is_resolved`, fetched separately) - callers
+   * (the comment gutter/thread list) call this whenever the resolved set
+   * changes.
+   */
+  setResolvedCommentAnchorIds: (resolvedAnchorIds: string[]) => void;
   getDocument: () => {
     binary: Uint8Array | null;
     html: string;
@@ -171,6 +205,16 @@ export type IEditorProps = {
   initialValue: string;
   isTouchDevice?: boolean;
   mentionHandler: TMentionHandler;
+  /**
+   * Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+   * + "Resolution de fils de commentaires") - optional, mirroring
+   * `aiHandler`'s own optionality: only the Page document editor passes
+   * this (via `apps/web/core/components/pages/editor/editor-body.tsx`).
+   * Every other editor variant (issue descriptions/comments, lite-text,
+   * ...) leaves it `undefined`, which simply hides the bubble menu's
+   * "Commenter" button - see `EditorBubbleMenu`/`BubbleMenuCommentSelector`.
+   */
+  commentHandler?: TInlineCommentHandler;
   onAssetChange?: (assets: TEditorAsset[]) => void;
   onEditorFocus?: () => void;
   onChange?: (json: object, html: string, { isMigrationUpdate }?: { isMigrationUpdate?: boolean }) => void;

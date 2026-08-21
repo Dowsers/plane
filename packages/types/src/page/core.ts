@@ -36,6 +36,14 @@ export type TPage = {
   is_global: boolean;
   collection_id: string | null | undefined;
   sort_order: number | undefined;
+  // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+  // + "Resolution de fils de commentaires") - read-only, computed via a
+  // queryset annotation on both the project-scoped and workspace-scoped
+  // Page list/detail responses (see `PageViewSet.get_queryset`/
+  // `WorkspacePageViewSet.get_queryset`, apps/api/plane/app/views/page/),
+  // same precedent as `TIssue.sub_issues_count` - never denormalized on
+  // `Page` itself.
+  unresolved_comment_count: number;
 } & TPageExtended;
 
 // page filters

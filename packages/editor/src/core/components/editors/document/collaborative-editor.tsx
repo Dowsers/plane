@@ -25,6 +25,8 @@ function CollaborativeDocumentEditorInner(props: ICollaborativeDocumentEditorPro
   const {
     aiHandler,
     bubbleMenuEnabled = true,
+    // Category 10, features 1+3 (merged) - see `IEditorProps.commentHandler`.
+    commentHandler,
     containerClassName,
     documentLoaderClassName,
     extensions = [],
@@ -116,6 +118,7 @@ function CollaborativeDocumentEditorInner(props: ICollaborativeDocumentEditorPro
         <PageRenderer
           aiHandler={aiHandler}
           bubbleMenuEnabled={bubbleMenuEnabled}
+          commentHandler={commentHandler}
           displayConfig={displayConfig}
           documentLoaderClassName={documentLoaderClassName}
           disabledExtensions={disabledExtensions}

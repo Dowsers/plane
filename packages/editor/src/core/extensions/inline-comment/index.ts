@@ -4,7 +4,4 @@
  * See the LICENSE file for details.
  */
 
-export * from "./comment";
-export * from "./core";
-export * from "./extended";
-export * from "./page-collection";
+export * from "./extension";

@@ -24,6 +24,10 @@ export enum CORE_EXTENSIONS {
   HEADINGS_LIST = "headingsList",
   HISTORY = "history",
   HORIZONTAL_RULE = "horizontalRule",
+  // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+  // + "Resolution de fils de commentaires") - inline Mark carrying the
+  // `data-comment-id` attribute shared with `PageComment.anchor_id`.
+  INLINE_COMMENT = "inlineComment",
   IMAGE = "image",
   ITALIC = "italic",
   LIST_ITEM = "listItem",

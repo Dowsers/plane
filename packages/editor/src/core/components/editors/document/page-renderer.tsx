@@ -19,11 +19,14 @@ import type {
   IEditorPropsExtended,
   TAIHandler,
   TDisplayConfig,
+  TInlineCommentHandler,
 } from "@/types";
 
 type Props = {
   aiHandler?: TAIHandler;
   bubbleMenuEnabled: boolean;
+  // Category 10, features 1+3 (merged) - see `IEditorProps.commentHandler`.
+  commentHandler?: TInlineCommentHandler;
   disabledExtensions: IEditorProps["disabledExtensions"];
   displayConfig: TDisplayConfig;
   documentLoaderClassName?: string;
@@ -44,6 +47,7 @@ type Props = {
 export function PageRenderer(props: Props) {
   const {
     bubbleMenuEnabled,
+    commentHandler,
     disabledExtensions,
     displayConfig,
     documentLoaderClassName,
@@ -102,6 +106,7 @@ export function PageRenderer(props: Props) {
                 {bubbleMenuEnabled && (
                   <EditorBubbleMenu
                     editor={editor}
+                    commentHandler={commentHandler}
                     disabledExtensions={disabledExtensions}
                     extendedEditorProps={extendedEditorProps}
                     flaggedExtensions={flaggedExtensions}

@@ -10,6 +10,7 @@ export * from "./code-inline";
 export * from "./custom-link";
 export * from "./custom-list-keymap";
 export * from "./image";
+export * from "./inline-comment";
 export * from "./mentions";
 export * from "./slash-commands";
 export * from "./table";

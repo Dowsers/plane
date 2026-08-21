@@ -12,6 +12,7 @@ export * from "./editor";
 export * from "./embed";
 export * from "./extensions";
 export * from "./hook";
+export * from "./inline-comment";
 export * from "./mention";
 export * from "./slash-commands-suggestion";
 export * from "./document-collaborative-events";
