@@ -328,3 +328,211 @@ class WorkspacePageReactionPermission(BasePermission):
             return False
 
         return role in (ADMIN, MEMBER, GUEST)
+
+
+class PageCommentPermission(BasePermission):
+    """
+    Category 10, features 1+3 (merged, "Commentaires ancres sur les
+    Pages" + "Resolution de fils de commentaires") - project-scoped.
+
+    Read access (GET) mirrors `PageReactionPermission` exactly: the same
+    owner/private/public-with-guest-view-all-features rule that already
+    governs whether a user can see a Page at all, applied here to reading
+    its comment threads (decision #5 of this feature's build brief: "a
+    Guest can READ comment threads ... if they can already read the
+    Page").
+
+    Writes (POST/PATCH/DELETE - create a root thread, add a reply, edit
+    own text, soft-delete, resolve, reopen) additionally require the
+    caller's role to be ADMIN or MEMBER - a GUEST is unconditionally
+    excluded from every write action here, regardless of `page.access` or
+    `guest_view_all_features` (decision #5: "ne peut jamais creer un
+    commentaire racine, une reponse, resoudre, ou reouvrir un fil ...
+    contrairement au libelle plus permissif de l'exigence 3 de la feature
+    1"). This permission class only enforces the coarse role/read-access
+    gate; the finer per-object checks (author-only edit; author/owner/
+    admin delete and resolve/reopen, via
+    `plane.utils.page_comment.can_user_moderate_page_comment_thread`; the
+    locked/archived write block, via
+    `plane.utils.page_comment.page_comment_write_block_reason`) are all
+    enforced inline in the view methods themselves, the same way
+    `ProjectPagePermission`'s own object-level owner/private checks are
+    layered on top of its role gate.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        project_id = view.kwargs.get("project_id")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            ProjectMember.objects.filter(
+                member=request.user,
+                workspace__slug=slug,
+                is_active=True,
+                project_id=project_id,
+            )
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        page = Page.objects.filter(
+            pk=page_id,
+            workspace__slug=slug,
+            projects__id=project_id,
+            project_pages__deleted_at__isnull=True,
+        ).first()
+        if page is None:
+            return False
+
+        has_read_access = True
+        if page.owned_by_id != request.user.id:
+            if page.access == Page.PRIVATE_ACCESS:
+                has_read_access = False
+            elif role == GUEST:
+                project = Project.objects.filter(pk=project_id).only("guest_view_all_features").first()
+                if project is not None and not project.guest_view_all_features:
+                    has_read_access = False
+
+        if not has_read_access:
+            return False
+
+        if request.method in SAFE_METHODS:
+            return True
+
+        return role in (ADMIN, MEMBER)
+
+
+class WorkspacePageCommentPermission(BasePermission):
+    """
+    Workspace-scope counterpart to `PageCommentPermission` (category 10,
+    features 1+3, wired to the Wiki GA workspace-scoped Page endpoints -
+    feature 4). Same read/write split, checked against `WorkspaceMember`
+    instead of `ProjectMember` - no `guest_view_all_features`-style extra
+    restriction here, same reasoning as `WorkspacePagePermission` above (a
+    workspace Page has no project to carry that flag on).
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            WorkspaceMember.objects.filter(member=request.user, workspace__slug=slug, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        page = Page.objects.filter(pk=page_id, workspace__slug=slug, is_global=True).first()
+        if page is None:
+            return False
+
+        has_read_access = True
+        if page.owned_by_id != request.user.id and page.access == Page.PRIVATE_ACCESS:
+            has_read_access = False
+
+        if not has_read_access:
+            return False
+
+        if request.method in SAFE_METHODS:
+            return True
+
+        return role in (ADMIN, MEMBER)
+
+
+class PageCommentReactionPermission(BasePermission):
+    """
+    Category 10, features 1+3 - gates the project-scoped page COMMENT
+    reactions endpoints on READ access to the underlying Page, mirroring
+    `PageReactionPermission` exactly (including allowing GUEST for both
+    read and write here): reacting to a comment is the same lightweight,
+    read-gated interaction as reacting to a Page, not a moderation action -
+    decision #5 of this feature's build brief only names root-comment/
+    reply/resolve/reopen as GUEST-blocked, reactions are not in that list.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        project_id = view.kwargs.get("project_id")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            ProjectMember.objects.filter(
+                member=request.user,
+                workspace__slug=slug,
+                is_active=True,
+                project_id=project_id,
+            )
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        page = Page.objects.filter(
+            pk=page_id,
+            workspace__slug=slug,
+            projects__id=project_id,
+            project_pages__deleted_at__isnull=True,
+        ).first()
+        if page is None:
+            return False
+
+        if page.owned_by_id == request.user.id:
+            return True
+
+        if page.access == Page.PRIVATE_ACCESS:
+            return False
+
+        if role == GUEST:
+            project = Project.objects.filter(pk=project_id).only("guest_view_all_features").first()
+            if project is not None and not project.guest_view_all_features:
+                return False
+
+        return role in (ADMIN, MEMBER, GUEST)
+
+
+class WorkspacePageCommentReactionPermission(BasePermission):
+    """Workspace-scope counterpart to `PageCommentReactionPermission`,
+    mirroring `WorkspacePageReactionPermission` exactly.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            WorkspaceMember.objects.filter(member=request.user, workspace__slug=slug, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        page = Page.objects.filter(pk=page_id, workspace__slug=slug, is_global=True).first()
+        if page is None:
+            return False
+
+        if page.owned_by_id == request.user.id:
+            return True
+
+        if page.access == Page.PRIVATE_ACCESS:
+            return False
+
+        return role in (ADMIN, MEMBER, GUEST)

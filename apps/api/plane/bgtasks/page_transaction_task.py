@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from celery import shared_task
 from plane.db.models import Page, PageLog
 from plane.utils.exception_logger import log_exception
+from plane.utils.page_comment import reconcile_page_comment_anchors
 
 logger = logging.getLogger("plane.worker")
 
@@ -86,9 +87,39 @@ def page_transaction(new_description_html, old_description_html, page_id):
     """
     Tracks changes in page content (mentions, embeds, etc.)
     and logs them in PageLog for audit and reference.
+
+    Category 10 (Docs/Wiki & Collaboration), features 1+3 (merged,
+    "Commentaires ancres sur les Pages" + "Resolution de fils de
+    commentaires") also piggybacks its orphan-anchor reconciliation on
+    this exact task, deliberately - this is the one task already invoked,
+    with the freshly-saved `description_html`/`page_id`, from every
+    current description-mutating view: `PageViewSet`/`WorkspacePageViewSet`
+    .create()/.partial_update(), `Pages(Description)ViewSet`/
+    `WorkspacePagesDescriptionViewSet`.partial_update() (both scopes'
+    autosave endpoint), and `PageDuplicateEndpoint` - see
+    `plane.app.views.page.base`/`.workspace`. Hooking reconciliation in
+    here, rather than adding a call at each of those sites, means any
+    future call site that reuses this same task (the established
+    convention for every description write in this codebase) gets
+    reconciliation for free. Note: as of this feature, no `PageVersion`
+    "restore" endpoint actually exists server-side in this fork (the
+    frontend's `restoreVersion()` calls a URL that isn't registered in
+    urls.py and 404s today - pre-existing, unrelated to this feature) - if
+    one is added later and it writes `description_html` through this same
+    task, reconciliation covers it automatically; if it writes the field
+    directly instead, it will need its own explicit call to
+    `reconcile_page_comment_anchors`.
     """
     try:
         page = Page.objects.get(pk=page_id)
+
+        # Orphan-anchor reconciliation (see docstring above) - kept in its
+        # own try/except so a failure here never blocks the mention/embed
+        # extraction below, and vice versa.
+        try:
+            reconcile_page_comment_anchors(page_id, new_description_html)
+        except Exception as e:
+            log_exception(e)
 
         has_existing_logs = PageLog.objects.filter(page_id=page_id).exists()
 

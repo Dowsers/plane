@@ -190,12 +190,15 @@ from .page.base import (
 )
 from .page.version import PageVersionEndpoint
 from .page.reaction import PageReactionViewSet
+from .page.comment import PageCommentViewSet, PageCommentReactionViewSet
 from .page.workspace import (
     WorkspacePageViewSet,
     WorkspacePagesDescriptionViewSet,
     WorkspacePageVersionEndpoint,
     WorkspacePageReactionViewSet,
     WorkspacePageCollectionViewSet,
+    WorkspacePageCommentViewSet,
+    WorkspacePageCommentReactionViewSet,
 )
 
 from .search.base import GlobalSearchEndpoint, SearchEndpoint

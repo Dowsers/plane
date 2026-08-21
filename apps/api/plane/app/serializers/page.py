@@ -16,6 +16,8 @@ from plane.utils.content_validator import (
 from plane.db.models import (
     Page,
     PageCollection,
+    PageComment,
+    PageCommentReaction,
     PageLabel,
     PageReaction,
     Label,
@@ -47,6 +49,13 @@ class PageSerializer(BaseSerializer):
     # joining through `collection` to avoid an extra query on every list
     # row.
     collection_id = serializers.UUIDField(read_only=True)
+    # Category 10, features 1+3 (merged, "Commentaires ancres sur les
+    # Pages" + "Resolution de fils de commentaires") - decision #11:
+    # computed via a queryset annotation
+    # (`plane.app.views.page.base.PageViewSet.get_queryset`/
+    # `plane.app.views.page.workspace.WorkspacePageViewSet.get_queryset`),
+    # NOT denormalized on `Page` - same precedent as `TIssue.sub_issues_count`.
+    unresolved_comment_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Page
@@ -73,6 +82,7 @@ class PageSerializer(BaseSerializer):
             "is_global",
             "collection_id",
             "sort_order",
+            "unresolved_comment_count",
         ]
         read_only_fields = ["workspace", "owned_by", "is_global", "collection_id", "sort_order"]
 
@@ -252,6 +262,92 @@ class PageReactionSerializer(BaseSerializer):
         model = PageReaction
         fields = "__all__"
         read_only_fields = ["workspace", "page", "actor", "deleted_at"]
+
+
+class PageCommentReactionSerializer(BaseSerializer):
+    """Category 10, features 1+3 (merged) - mirrors `PageReactionSerializer`
+    exactly, scoped to `PageComment` instead of `Page`.
+    """
+
+    actor_detail = UserLiteSerializer(read_only=True, source="actor")
+
+    class Meta:
+        model = PageCommentReaction
+        fields = "__all__"
+        read_only_fields = ["workspace", "comment", "actor", "deleted_at"]
+
+
+class PageCommentSerializer(BaseSerializer):
+    """Category 10, features 1+3 (merged, "Commentaires ancres sur les
+    Pages" + "Resolution de fils de commentaires") - mirrors
+    `IssueCommentSerializer`'s shape/fields where it makes sense.
+
+    `page`/`parent`/`anchor_id`/`anchor_text`/`is_orphaned`/`is_resolved`/
+    `resolved_by`/`resolved_at`/`actor` are all read-only here: the
+    *viewset* decides every one of them (root create vs. the dedicated
+    `replies`/`resolve`/`reopen` actions), never a generic PATCH - same
+    reasoning `PageSerializer` above already documents for
+    `is_global`/`collection_id`/`sort_order`. `anchor_id`/`anchor_text` ARE
+    writable, but only through `PageCommentCreateSerializer` below (root
+    creation only) - this plain serializer is used for read/list/detail
+    output and for the author-only text edit (PATCH), where the anchor
+    must stay untouchable.
+    """
+
+    actor_detail = UserLiteSerializer(read_only=True, source="actor")
+    reactions = PageCommentReactionSerializer(read_only=True, many=True)
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PageComment
+        fields = "__all__"
+        read_only_fields = [
+            "workspace",
+            "page",
+            "parent",
+            "anchor_id",
+            "anchor_text",
+            "is_orphaned",
+            "is_resolved",
+            "resolved_by",
+            "resolved_at",
+            "actor",
+            "deleted_at",
+        ]
+
+    def get_replies(self, obj):
+        # Only a thread root ever has replies of its own - a reply's
+        # `replies` accessor would technically still resolve (self-FK) but
+        # is never meant to be populated; short-circuiting avoids an
+        # unnecessary query on every reply row when a whole thread
+        # (root + replies) is serialized together.
+        if obj.parent_id is not None:
+            return []
+        replies = obj.replies.all().order_by("created_at")
+        return PageCommentSerializer(replies, many=True, context=self.context).data
+
+
+class PageCommentCreateSerializer(PageCommentSerializer):
+    """Root-thread creation only (`PageCommentViewSet.create` and its
+    workspace-scoped counterpart) - the one place `anchor_id`/`anchor_text`
+    are genuinely client-writable (feature 1 exigence 1/2: the client mints
+    `anchor_id` client-side when the Tiptap `InlineComment` Mark is
+    inserted, and snapshots `anchor_text` from the current selection).
+    Replies (`.../replies/`) reuse the plain `PageCommentSerializer`
+    instead, since anchor fields must stay untouchable there - a reply
+    inherits the root's anchor (feature 1 exigence 3), it never carries
+    its own.
+
+    `anchor_id` is made required here (the model field itself is
+    `null=True` to stay valid for a reply) since every root MUST carry one.
+    """
+
+    anchor_id = serializers.UUIDField(required=True)
+
+    class Meta(PageCommentSerializer.Meta):
+        read_only_fields = [
+            field for field in PageCommentSerializer.Meta.read_only_fields if field not in ("anchor_id", "anchor_text")
+        ]
 
 
 class PageCollectionSerializer(BaseSerializer):

@@ -18,6 +18,15 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     id = factory.LazyFunction(uuid4)
     email = factory.Sequence(lambda n: f"user{n}@plane.so")
+    # `User.username` is `unique=True` with no model-level default/auto-fill
+    # (unlike `display_name`, which `User.save()` derives from `email` when
+    # blank) - left unset, every factory-created User would get the same
+    # `username=""`, so a second `UserFactory()` call in the same test would
+    # violate the unique constraint. Drive-by fix found while writing this
+    # feature's own throwaway test suite (category 10, features 1+3), which
+    # is the first place in this codebase to call `UserFactory()` more than
+    # once per test.
+    username = factory.Sequence(lambda n: f"user{n}")
     password = factory.PostGenerationMethodCall("set_password", "password")
     first_name = factory.Sequence(lambda n: f"First{n}")
     last_name = factory.Sequence(lambda n: f"Last{n}")

@@ -113,6 +113,9 @@ from .page import (
     PageCollectionSerializer,
     WorkspacePageSerializer,
     WorkspacePageDetailSerializer,
+    PageCommentSerializer,
+    PageCommentCreateSerializer,
+    PageCommentReactionSerializer,
 )
 
 from .estimate import (

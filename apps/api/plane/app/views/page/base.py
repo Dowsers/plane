@@ -19,6 +19,7 @@ from django.db.models import (
     Case,
     When,
     IntegerField,
+    Subquery,
 )
 from django.http import StreamingHttpResponse
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -38,6 +39,7 @@ from plane.app.serializers import (
 )
 from plane.db.models import (
     Page,
+    PageComment,
     PageLog,
     UserFavorite,
     ProjectMember,
@@ -121,6 +123,22 @@ class PageViewSet(BaseViewSet):
                     ArrayAgg("projects__id", distinct=True, filter=~Q(projects__id=True)),
                     Value([], output_field=ArrayField(UUIDField())),
                 ),
+            )
+            .annotate(
+                # Category 10, features 1+3 (merged) - decision #11:
+                # computed via annotation, not denormalized on `Page`.
+                # Only thread ROOTS carry `is_resolved` (see
+                # `PageComment.save()`), hence `parent__isnull=True`.
+                unresolved_comment_count=Coalesce(
+                    Subquery(
+                        PageComment.objects.filter(page=OuterRef("id"), parent__isnull=True, is_resolved=False)
+                        .values("page")
+                        .annotate(count=Count("id"))
+                        .values("count")[:1]
+                    ),
+                    Value(0),
+                    output_field=IntegerField(),
+                )
             )
             .filter(project=True)
             .distinct()

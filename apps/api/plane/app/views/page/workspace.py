@@ -26,7 +26,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, IntegrityError
-from django.db.models import Exists, OuterRef, Q, UUIDField, Value
+from django.db.models import Count, Exists, IntegerField, OuterRef, Q, Subquery, UUIDField, Value
 from django.db.models.functions import Coalesce
 from django.http import StreamingHttpResponse
 from rest_framework import status
@@ -36,11 +36,14 @@ from plane.app.permissions import (
     ROLE,
     WorkspacePagePermission,
     WorkspacePageReactionPermission,
+    WorkspacePageCommentPermission,
+    WorkspacePageCommentReactionPermission,
     allow_permission,
 )
 from plane.app.serializers import (
     PageBinaryUpdateSerializer,
     PageCollectionSerializer,
+    PageCommentReactionSerializer,
     PageDetailSerializer,
     PageReactionSerializer,
     PageVersionDetailSerializer,
@@ -54,6 +57,8 @@ from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.db.models import (
     Page,
     PageCollection,
+    PageComment,
+    PageCommentReaction,
     PageLog,
     PageReaction,
     PageVersion,
@@ -69,6 +74,7 @@ from plane.utils.page_collection import collection_descendant_ids, validate_coll
 
 from ..base import BaseAPIView, BaseViewSet
 from .base import unarchive_archive_page_and_descendants
+from .comment import PageCommentReactionViewSet, PageCommentViewSet
 from .reaction import PageReactionViewSet
 
 ADMIN = ROLE.ADMIN.value
@@ -156,6 +162,22 @@ class WorkspacePageViewSet(BaseViewSet):
                     ArrayAgg("projects__id", distinct=True, filter=~Q(projects__id=True)),
                     Value([], output_field=ArrayField(UUIDField())),
                 ),
+            )
+            .annotate(
+                # Category 10, features 1+3 (merged) - decision #11:
+                # computed via annotation, not denormalized on `Page`.
+                # Only thread ROOTS carry `is_resolved` (see
+                # `PageComment.save()`), hence `parent__isnull=True`.
+                unresolved_comment_count=Coalesce(
+                    Subquery(
+                        PageComment.objects.filter(page=OuterRef("id"), parent__isnull=True, is_resolved=False)
+                        .values("page")
+                        .annotate(count=Count("id"))
+                        .values("count")[:1]
+                    ),
+                    Value(0),
+                    output_field=IntegerField(),
+                )
             )
             .order_by("-is_favorite", self.request.GET.get("order_by", "sort_order"), "-created_at")
             .distinct()
@@ -755,3 +777,118 @@ class WorkspacePageCollectionViewSet(BaseViewSet):
         collection.save()
 
         return Response(PageCollectionSerializer(collection).data, status=status.HTTP_200_OK)
+
+
+class WorkspacePageCommentViewSet(PageCommentViewSet):
+    """Category 10, features 1+3 (merged) - `PageComment`/
+    `PageCommentReaction`, exposed a second time at the workspace scope
+    FROM THE START (unlike feature 2's `PageReaction`, which deliberately
+    deferred its workspace URL until Wiki GA existed - Wiki GA has now
+    already shipped as of feature 4, so there is no reason to defer here
+    too - see this feature's own build brief). Reuses every model/
+    serializer/helper unchanged; only the queryset and the small set of
+    methods that build a `Page`/`project_id`-scoped lookup are overridden
+    to drop the `project_id` requirement, exactly mirroring
+    `WorkspacePageReactionViewSet`'s own relationship to
+    `PageReactionViewSet`.
+
+    Every other action (`retrieve`/`partial_update`/`destroy`/`replies`/
+    `resolve`/`reopen`) is reached through the parent class's own
+    implementation unchanged - each of those already resolves
+    `self.get_queryset()` polymorphically (this subclass's override, not
+    the parent's), so passing `project_id=None` through is enough to reuse
+    every object-level lookup, authorization check
+    (`can_user_moderate_page_comment_thread` correctly takes the workspace-
+    Admin branch once `page.is_global` is true, regardless of
+    `project_id`) and the locked/archived write-block helper unchanged.
+    """
+
+    permission_classes = [WorkspacePageCommentPermission]
+
+    def get_queryset(self):
+        return (
+            super(PageCommentViewSet, self)
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"))
+            .filter(page_id=self.kwargs.get("page_id"), page__is_global=True)
+            .select_related("actor", "resolved_by", "page")
+            .order_by("created_at")
+            .distinct()
+        )
+
+    def _get_page(self, slug, project_id, page_id):
+        # `project_id` is unused here - kept so this override's call
+        # signature matches the parent class's private helper exactly.
+        return Page.objects.get(pk=page_id, workspace__slug=slug, is_global=True)
+
+    def list(self, request, slug, page_id):
+        return super().list(request, slug, None, page_id)
+
+    def create(self, request, slug, page_id):
+        return super().create(request, slug, None, page_id)
+
+    def retrieve(self, request, slug, page_id, pk):
+        return super().retrieve(request, slug, None, page_id, pk)
+
+    def partial_update(self, request, slug, page_id, pk):
+        return super().partial_update(request, slug, None, page_id, pk)
+
+    def destroy(self, request, slug, page_id, pk):
+        return super().destroy(request, slug, None, page_id, pk)
+
+    def replies(self, request, slug, page_id, pk):
+        return super().replies(request, slug, None, page_id, pk)
+
+    def resolve(self, request, slug, page_id, pk):
+        return super().resolve(request, slug, None, page_id, pk)
+
+    def reopen(self, request, slug, page_id, pk):
+        return super().reopen(request, slug, None, page_id, pk)
+
+
+class WorkspacePageCommentReactionViewSet(PageCommentReactionViewSet):
+    """Workspace-scope counterpart to `PageCommentReactionViewSet`,
+    mirroring `WorkspacePageReactionViewSet`'s own relationship to
+    `PageReactionViewSet`.
+    """
+
+    permission_classes = [WorkspacePageCommentReactionPermission]
+
+    def get_queryset(self):
+        return (
+            super(PageCommentReactionViewSet, self)
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"))
+            .filter(comment_id=self.kwargs.get("comment_id"))
+            .filter(comment__page_id=self.kwargs.get("page_id"), comment__page__is_global=True)
+            .order_by("-created_at")
+            .distinct()
+        )
+
+    def create(self, request, slug, page_id, comment_id):
+        comment = PageComment.objects.get(
+            pk=comment_id, page_id=page_id, workspace__slug=slug, page__is_global=True
+        )
+        serializer = PageCommentReactionSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                serializer.save(comment_id=comment.id, actor=request.user, workspace_id=comment.workspace_id)
+            except IntegrityError:
+                return Response(
+                    {"error": "Reaction already exists for the user"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, slug, page_id, comment_id, reaction_code):
+        reaction = PageCommentReaction.objects.get(
+            workspace__slug=slug,
+            comment_id=comment_id,
+            comment__page_id=page_id,
+            comment__page__is_global=True,
+            reaction=reaction_code,
+            actor=request.user,
+        )
+        reaction.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
