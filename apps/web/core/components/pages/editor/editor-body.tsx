@@ -42,6 +42,8 @@ import { useEditorFlagging } from "@/plane-web/hooks/use-editor-flagging";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
+import { PageCommentsGutter } from "./comments/gutter";
+import { usePageCommentHandler } from "./comments/use-page-comment-handler";
 import { PageContentLoader } from "../loaders/page-content-loader";
 import { PageEditorHeaderRoot } from "./header";
 import { PageReactions } from "./reactions";
@@ -126,6 +128,9 @@ export const PageEditorBody = observer(function PageEditorBody(props: Props) {
   const { fontSize, fontStyle, isFullWidth } = usePageFilters();
   // translation
   const { t } = useTranslation();
+  // Category 10, features 1+3 (merged, "Commentaires ancres sur les Pages"
+  // + "Resolution de fils de commentaires")
+  const commentHandler = usePageCommentHandler(page);
   // derived values
   const displayConfig: TDisplayConfig = useMemo(
     () => ({
@@ -322,7 +327,19 @@ export const PageEditorBody = observer(function PageEditorBody(props: Props) {
             onAssetChange={updateAssetsList}
             extendedEditorProps={extendedEditorProps}
             isFetchingFallbackBinary={isFetchingFallbackBinary}
+            commentHandler={commentHandler}
           />
+          {/*
+            Category 10, features 1+3 (merged, "Commentaires ancres sur
+            les Pages" + "Resolution de fils de commentaires") - the
+            comment gutter, positioned like the table-of-content rail
+            above (an absolutely-positioned overlay anchored within this
+            same `#page-content-container`), but spanning the document's
+            full scroll height rather than a fixed top-area preview - see
+            `PageCommentsGutter`'s own docstring for the positioning
+            algorithm and why it deliberately isn't `position: sticky`.
+          */}
+          <PageCommentsGutter page={page} isFullWidth={isFullWidth} />
         </div>
       </div>
     </Row>
