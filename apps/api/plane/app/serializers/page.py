@@ -20,6 +20,7 @@ from plane.db.models import (
     PageCommentReaction,
     PageLabel,
     PageReaction,
+    PageSubscriber,
     Label,
     ProjectPage,
     Project,
@@ -114,6 +115,20 @@ class PageSerializer(BaseSerializer):
             page_id=page.id,
             created_by_id=page.created_by_id,
             updated_by_id=page.updated_by_id,
+        )
+
+        # Category 10, feature 5 ("Abonnements/notifications par page"),
+        # exigence 3 - the creator is automatically subscribed, no action
+        # required.
+        PageSubscriber.objects.get_or_create(
+            page=page,
+            subscriber_id=owned_by_id,
+            defaults={
+                "workspace_id": page.workspace_id,
+                "subscribed_manually": True,
+                "created_by_id": page.created_by_id,
+                "updated_by_id": page.updated_by_id,
+            },
         )
 
         # Create page labels
@@ -251,6 +266,19 @@ class PageBinaryUpdateSerializer(serializers.Serializer):
 
         instance.save()
         return instance
+
+
+class PageSubscriberSerializer(BaseSerializer):
+    """Category 10, feature 5 ("Abonnements/notifications par page") -
+    backs `GET .../subscribers/` (exigence 12: "id, avatar, display_name").
+    """
+
+    subscriber_detail = UserLiteSerializer(read_only=True, source="subscriber")
+
+    class Meta:
+        model = PageSubscriber
+        fields = "__all__"
+        read_only_fields = ["workspace", "page", "subscriber", "deleted_at"]
 
 
 class PageReactionSerializer(BaseSerializer):
@@ -430,6 +458,18 @@ class WorkspacePageSerializer(PageSerializer):
             workspace_id=workspace_id,
             is_global=True,
             collection_id=collection_id,
+        )
+
+        # Category 10, feature 5 - see PageSerializer.create's own comment.
+        PageSubscriber.objects.get_or_create(
+            page=page,
+            subscriber_id=owned_by_id,
+            defaults={
+                "workspace_id": page.workspace_id,
+                "subscribed_manually": True,
+                "created_by_id": page.created_by_id,
+                "updated_by_id": page.updated_by_id,
+            },
         )
 
         if labels is not None:

@@ -14,6 +14,7 @@ from plane.app.views import (
     PageReactionViewSet,
     PageCommentViewSet,
     PageCommentReactionViewSet,
+    PageSubscriptionViewSet,
     WorkspacePageViewSet,
     WorkspacePagesDescriptionViewSet,
     WorkspacePageVersionEndpoint,
@@ -21,6 +22,7 @@ from plane.app.views import (
     WorkspacePageCollectionViewSet,
     WorkspacePageCommentViewSet,
     WorkspacePageCommentReactionViewSet,
+    WorkspacePageSubscriptionViewSet,
 )
 
 urlpatterns = [
@@ -134,6 +136,19 @@ urlpatterns = [
         name="project-page-comment-reactions",
     ),
     ## End Page Comments
+    ## Page Subscriptions (category 10, feature 5 - "Abonnements/
+    ## notifications par page")
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/pages/<uuid:page_id>/subscribe/",
+        PageSubscriptionViewSet.as_view({"get": "retrieve", "post": "create", "delete": "destroy"}),
+        name="project-page-subscribe",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/pages/<uuid:page_id>/subscribers/",
+        PageSubscriptionViewSet.as_view({"get": "subscribers"}),
+        name="project-page-subscribers",
+    ),
+    ## End Page Subscriptions
     ## Workspace-scoped Pages (category 10, feature 4 - "Wiki workspace en GA")
     path(
         "workspaces/<str:slug>/pages/",
@@ -232,6 +247,18 @@ urlpatterns = [
         name="workspace-page-comment-reactions",
     ),
     ## End Workspace-scoped Page Comments
+    ## Workspace-scoped Page Subscriptions (category 10, feature 5)
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/subscribe/",
+        WorkspacePageSubscriptionViewSet.as_view({"get": "retrieve", "post": "create", "delete": "destroy"}),
+        name="workspace-page-subscribe",
+    ),
+    path(
+        "workspaces/<str:slug>/pages/<uuid:page_id>/subscribers/",
+        WorkspacePageSubscriptionViewSet.as_view({"get": "subscribers"}),
+        name="workspace-page-subscribers",
+    ),
+    ## End Workspace-scoped Page Subscriptions
     ## Workspace Page Collections (Wiki folders)
     path(
         "workspaces/<str:slug>/page-collections/",

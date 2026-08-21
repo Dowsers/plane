@@ -55,6 +55,7 @@ from plane.bgtasks.page_transaction_task import page_transaction
 from plane.bgtasks.page_version_task import track_page_version
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.bgtasks.copy_s3_object import copy_s3_objects_of_description_and_assets
+from plane.bgtasks.page_subscription_task import notify_page_subscribers
 from plane.app.permissions import ProjectPagePermission
 
 
@@ -199,6 +200,11 @@ class PageViewSet(BaseViewSet):
 
             serializer = PageDetailSerializer(page, data=request.data, partial=True)
             page_description = page.description_html
+            # Category 10, feature 5 - snapshot before save() so a rename/
+            # access-change can be diffed and reported as an immediate
+            # (non-debounced) notification, per exigence 6.
+            old_name = page.name
+            old_access = page.access
             if serializer.is_valid():
                 serializer.save()
                 # capture the page transaction
@@ -207,6 +213,22 @@ class PageViewSet(BaseViewSet):
                         new_description_html=request.data.get("description_html", "<p></p>"),
                         old_description_html=page_description,
                         page_id=page_id,
+                        user_id=request.user.id,
+                    )
+
+                if page.name != old_name:
+                    notify_page_subscribers.delay(
+                        str(page.id),
+                        "renamed",
+                        str(request.user.id),
+                        extra={"field": "name", "old_value": old_name, "new_value": page.name},
+                    )
+                if page.access != old_access:
+                    notify_page_subscribers.delay(
+                        str(page.id),
+                        "access_changed",
+                        str(request.user.id),
+                        extra={"field": "access", "old_value": str(old_access), "new_value": str(page.access)},
                     )
 
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -271,6 +293,7 @@ class PageViewSet(BaseViewSet):
 
         page.is_locked = True
         page.save()
+        notify_page_subscribers.delay(str(page.id), "locked", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def unlock(self, request, slug, project_id, page_id):
@@ -284,6 +307,7 @@ class PageViewSet(BaseViewSet):
         page.is_locked = False
         page.save()
 
+        notify_page_subscribers.delay(str(page.id), "unlocked", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def access(self, request, slug, project_id, page_id):
@@ -302,8 +326,16 @@ class PageViewSet(BaseViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        old_access = page.access
         page.access = access
         page.save()
+        if page.access != old_access:
+            notify_page_subscribers.delay(
+                str(page.id),
+                "access_changed",
+                str(request.user.id),
+                extra={"field": "access", "old_value": str(old_access), "new_value": str(page.access)},
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def list(self, request, slug, project_id):
@@ -352,6 +384,7 @@ class PageViewSet(BaseViewSet):
 
         unarchive_archive_page_and_descendants(page_id, datetime.now())
 
+        notify_page_subscribers.delay(str(page.id), "archived", str(request.user.id))
         return Response({"archived_at": str(datetime.now())}, status=status.HTTP_200_OK)
 
     def unarchive(self, request, slug, project_id, page_id):
@@ -381,6 +414,7 @@ class PageViewSet(BaseViewSet):
 
         unarchive_archive_page_and_descendants(page_id, None)
 
+        notify_page_subscribers.delay(str(page.id), "unarchived", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy(self, request, slug, project_id, page_id):
@@ -580,6 +614,7 @@ class PagesDescriptionViewSet(BaseViewSet):
                     new_description_html=request.data.get("description_html", "<p></p>"),
                     old_description_html=old_description_html,
                     page_id=page_id,
+                    user_id=request.user.id,
                 )
 
             # Run background tasks

@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from celery import shared_task
 from plane.db.models import Page, PageLog
 from plane.utils.exception_logger import log_exception
+from plane.utils.html_processor import strip_tags
 from plane.utils.page_comment import reconcile_page_comment_anchors
 
 logger = logging.getLogger("plane.worker")
@@ -83,7 +84,7 @@ def get_entity_details(component: str, mention: dict):
 
 
 @shared_task
-def page_transaction(new_description_html, old_description_html, page_id):
+def page_transaction(new_description_html, old_description_html, page_id, user_id=None):
     """
     Tracks changes in page content (mentions, embeds, etc.)
     and logs them in PageLog for audit and reference.
@@ -109,6 +110,23 @@ def page_transaction(new_description_html, old_description_html, page_id):
     task, reconciliation covers it automatically; if it writes the field
     directly instead, it will need its own explicit call to
     `reconcile_page_comment_anchors`.
+
+    Category 10, feature 5 ("Abonnements/notifications par page") also
+    piggybacks on this same choke point for the same reason (correction
+    #3 of that feature's build brief): mention auto-subscribe+notify on
+    `description_html` (`handle_page_description_mentions`) runs on every
+    call (covers both a brand new Page and an edit), and the debounced
+    "edited" notification (`schedule_debounced_page_edit_notification`) is
+    scheduled only when this is a genuine edit of existing content
+    (`old_description_html is not None` - a `None` value, per every call
+    site above, means this is a Page CREATE/duplicate, not an edit; there
+    are no subscribers besides the just-auto-subscribed owner yet, so
+    there is nothing to debounce-notify). `user_id` is the editor who made
+    THIS save (the request's `request.user.id`, passed by the caller) -
+    falls back to the page's own `owned_by_id` when omitted (defensive,
+    for any future call site that reuses this task without threading the
+    actor through), so mention/edit attribution is never silently
+    "nobody".
     """
     try:
         page = Page.objects.get(pk=page_id)
@@ -165,6 +183,35 @@ def page_transaction(new_description_html, old_description_html, page_id):
 
         if deleted_transaction_ids:
             PageLog.objects.filter(transaction__in=deleted_transaction_ids).delete()
+
+        # Category 10, feature 5 ("Abonnements/notifications par page") -
+        # see this task's own docstring for why this is the right choke
+        # point. Kept in its own try/except, same reasoning as the
+        # anchor-reconciliation block above: a failure here must never
+        # block the mention/embed extraction this task exists for.
+        try:
+            from plane.bgtasks.page_subscription_task import (
+                handle_page_description_mentions,
+                schedule_debounced_page_edit_notification,
+            )
+
+            editor_id = user_id or page.owned_by_id
+
+            handle_page_description_mentions(
+                page,
+                actor_id=editor_id,
+                new_description_html=new_description_html,
+                old_description_html=old_description_html,
+            )
+
+            if old_description_html is not None and new_description_html != old_description_html:
+                schedule_debounced_page_edit_notification(
+                    page,
+                    actor_id=editor_id,
+                    old_description_stripped=strip_tags(old_description_html) if old_description_html else "",
+                )
+        except Exception as e:
+            log_exception(e)
 
     except Page.DoesNotExist:
         return

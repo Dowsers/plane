@@ -38,6 +38,7 @@ from plane.app.permissions import (
     WorkspacePageReactionPermission,
     WorkspacePageCommentPermission,
     WorkspacePageCommentReactionPermission,
+    WorkspacePageSubscriptionPermission,
     allow_permission,
 )
 from plane.app.serializers import (
@@ -54,6 +55,7 @@ from plane.app.serializers import (
 from plane.bgtasks.page_transaction_task import page_transaction
 from plane.bgtasks.page_version_task import track_page_version
 from plane.bgtasks.recent_visited_task import recent_visited_task
+from plane.bgtasks.page_subscription_task import notify_page_subscribers
 from plane.db.models import (
     Page,
     PageCollection,
@@ -76,6 +78,7 @@ from ..base import BaseAPIView, BaseViewSet
 from .base import unarchive_archive_page_and_descendants
 from .comment import PageCommentReactionViewSet, PageCommentViewSet
 from .reaction import PageReactionViewSet
+from .subscription import PageSubscriptionViewSet
 
 ADMIN = ROLE.ADMIN.value
 MEMBER = ROLE.MEMBER.value
@@ -304,6 +307,10 @@ class WorkspacePageViewSet(BaseViewSet):
 
         serializer = WorkspacePageDetailSerializer(page, data=request.data, partial=True)
         page_description = page.description_html
+        # Category 10, feature 5 - see PageViewSet.partial_update's own
+        # comment for why this is snapshotted before save().
+        old_name = page.name
+        old_access = page.access
         if serializer.is_valid():
             serializer.save()
             if request.data.get("description_html"):
@@ -311,7 +318,24 @@ class WorkspacePageViewSet(BaseViewSet):
                     new_description_html=request.data.get("description_html", "<p></p>"),
                     old_description_html=page_description,
                     page_id=page_id,
+                    user_id=request.user.id,
                 )
+
+            if page.name != old_name:
+                notify_page_subscribers.delay(
+                    str(page.id),
+                    "renamed",
+                    str(request.user.id),
+                    extra={"field": "name", "old_value": old_name, "new_value": page.name},
+                )
+            if page.access != old_access:
+                notify_page_subscribers.delay(
+                    str(page.id),
+                    "access_changed",
+                    str(request.user.id),
+                    extra={"field": "access", "old_value": str(old_access), "new_value": str(page.access)},
+                )
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -366,6 +390,7 @@ class WorkspacePageViewSet(BaseViewSet):
 
         unarchive_archive_page_and_descendants(page_id, datetime.now())
 
+        notify_page_subscribers.delay(str(page.id), "archived", str(request.user.id))
         return Response({"archived_at": str(datetime.now())}, status=status.HTTP_200_OK)
 
     def unarchive(self, request, slug, page_id):
@@ -388,18 +413,21 @@ class WorkspacePageViewSet(BaseViewSet):
 
         unarchive_archive_page_and_descendants(page_id, None)
 
+        notify_page_subscribers.delay(str(page.id), "unarchived", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def lock(self, request, slug, page_id):
         page = Page.objects.get(pk=page_id, workspace__slug=slug, is_global=True)
         page.is_locked = True
         page.save()
+        notify_page_subscribers.delay(str(page.id), "locked", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def unlock(self, request, slug, page_id):
         page = Page.objects.get(pk=page_id, workspace__slug=slug, is_global=True)
         page.is_locked = False
         page.save()
+        notify_page_subscribers.delay(str(page.id), "unlocked", str(request.user.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def access(self, request, slug, page_id):
@@ -412,8 +440,16 @@ class WorkspacePageViewSet(BaseViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        old_access = page.access
         page.access = access
         page.save()
+        if page.access != old_access:
+            notify_page_subscribers.delay(
+                str(page.id),
+                "access_changed",
+                str(request.user.id),
+                extra={"field": "access", "old_value": str(old_access), "new_value": str(page.access)},
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def convert(self, request, slug, page_id):
@@ -576,6 +612,7 @@ class WorkspacePagesDescriptionViewSet(BaseViewSet):
                     new_description_html=request.data.get("description_html", "<p></p>"),
                     old_description_html=old_description_html,
                     page_id=page_id,
+                    user_id=request.user.id,
                 )
 
             track_page_version.delay(
@@ -892,3 +929,30 @@ class WorkspacePageCommentReactionViewSet(PageCommentReactionViewSet):
         )
         reaction.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class WorkspacePageSubscriptionViewSet(PageSubscriptionViewSet):
+    """Workspace-scope counterpart to `PageSubscriptionViewSet` (category
+    10, feature 5), mirroring `WorkspacePageReactionViewSet`'s own
+    relationship to `PageReactionViewSet`: reuses the exact same model/
+    serializer, only the Page lookup drops the `project_id` requirement.
+    """
+
+    permission_classes = [WorkspacePageSubscriptionPermission]
+
+    def _get_page(self, slug, project_id, page_id):
+        # `project_id` unused - kept so this override's signature matches
+        # the parent class's private helper exactly.
+        return Page.objects.get(pk=page_id, workspace__slug=slug, is_global=True)
+
+    def retrieve(self, request, slug, page_id):
+        return super().retrieve(request, slug, None, page_id)
+
+    def create(self, request, slug, page_id):
+        return super().create(request, slug, None, page_id)
+
+    def destroy(self, request, slug, page_id):
+        return super().destroy(request, slug, None, page_id)
+
+    def subscribers(self, request, slug, page_id):
+        return super().subscribers(request, slug, None, page_id)

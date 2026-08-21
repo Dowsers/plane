@@ -107,6 +107,16 @@ class UserNotificationPreference(BaseModel):
     mention = models.BooleanField(default=True)
     issue_completed = models.BooleanField(default=True)
 
+    # Category 10 (Docs/Wiki & Collaboration), feature 5 - "Abonnements/
+    # notifications par page" (exigence 11 - opt-out, default enabled, no
+    # workspace/project scoping distinct from the issue preferences
+    # above). "edits" also covers the metadata-level events with no
+    # dedicated toggle of their own (rename/lock/archive/access-change) -
+    # see `plane.bgtasks.page_subscription_task.EVENT_PREFERENCE_FIELD`.
+    page_edits = models.BooleanField(default=True)
+    page_mentions = models.BooleanField(default=True)
+    page_comments = models.BooleanField(default=True)
+
     class Meta:
         verbose_name = "UserNotificationPreference"
         verbose_name_plural = "UserNotificationPreferences"

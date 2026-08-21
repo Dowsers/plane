@@ -191,6 +191,7 @@ from .page.base import (
 from .page.version import PageVersionEndpoint
 from .page.reaction import PageReactionViewSet
 from .page.comment import PageCommentViewSet, PageCommentReactionViewSet
+from .page.subscription import PageSubscriptionViewSet
 from .page.workspace import (
     WorkspacePageViewSet,
     WorkspacePagesDescriptionViewSet,
@@ -199,6 +200,7 @@ from .page.workspace import (
     WorkspacePageCollectionViewSet,
     WorkspacePageCommentViewSet,
     WorkspacePageCommentReactionViewSet,
+    WorkspacePageSubscriptionViewSet,
 )
 
 from .search.base import GlobalSearchEndpoint, SearchEndpoint

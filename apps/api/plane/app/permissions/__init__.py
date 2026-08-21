@@ -27,4 +27,6 @@ from .page import (
     WorkspacePageCommentPermission,
     PageCommentReactionPermission,
     WorkspacePageCommentReactionPermission,
+    PageSubscriptionPermission,
+    WorkspacePageSubscriptionPermission,
 )

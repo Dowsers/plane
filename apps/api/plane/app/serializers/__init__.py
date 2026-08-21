@@ -116,6 +116,7 @@ from .page import (
     PageCommentSerializer,
     PageCommentCreateSerializer,
     PageCommentReactionSerializer,
+    PageSubscriberSerializer,
 )
 
 from .estimate import (

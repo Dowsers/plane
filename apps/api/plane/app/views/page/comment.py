@@ -59,6 +59,27 @@ def _write_block_response(page):
     return None
 
 
+def _notify_page_comment_created(page, comment, actor_id):
+    """Category 10, feature 5 ("Abonnements/notifications par page") - the
+    real comment/mention wiring this feature was deliberately built LAST
+    to reach, once this real `PageComment` creation event existed to hook
+    into (rather than a stub): every `PageComment` creation (root or
+    reply, either URL scope - `WorkspacePageCommentViewSet.create`/
+    `.replies` delegate straight into `PageCommentViewSet`'s own methods
+    below, so this call site covers both) notifies the page's current
+    subscribers (exigence 6), excluding the comment's own author (exigence
+    5, enforced inside `notify_page_subscribers` itself). Any `@mention`
+    inside the comment's own HTML additionally auto-subscribes+notifies
+    the mentioned user (exigence 3/4), identically to a description
+    mention - see `plane.bgtasks.page_subscription_task.
+    handle_page_comment_mentions`.
+    """
+    from plane.bgtasks.page_subscription_task import handle_page_comment_mentions, notify_page_subscribers
+
+    notify_page_subscribers.delay(str(page.id), "commented", str(actor_id), extra={"comment_id": str(comment.id)})
+    handle_page_comment_mentions(page, comment, actor_id=str(actor_id))
+
+
 class PageCommentViewSet(BaseViewSet):
     serializer_class = PageCommentSerializer
     model = PageComment
@@ -115,7 +136,8 @@ class PageCommentViewSet(BaseViewSet):
 
         serializer = PageCommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(page_id=page.id, workspace_id=page.workspace_id, actor=request.user, parent=None)
+            comment = serializer.save(page_id=page.id, workspace_id=page.workspace_id, actor=request.user, parent=None)
+            _notify_page_comment_created(page, comment, request.user.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -184,7 +206,7 @@ class PageCommentViewSet(BaseViewSet):
 
         serializer = PageCommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(
+            comment = serializer.save(
                 page_id=page.id,
                 workspace_id=page.workspace_id,
                 actor=request.user,
@@ -192,6 +214,7 @@ class PageCommentViewSet(BaseViewSet):
                 anchor_id=None,
                 anchor_text=None,
             )
+            _notify_page_comment_created(page, comment, request.user.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -68,7 +68,20 @@ class NotificationViewSet(BaseViewSet, BasePaginator):
             # resolve correctly for them - see
             # docs/feature-specs/04-views-filters.md ("Abonnements/
             # notifications par vue") in plane-selfhost.
-            .filter(Q(entity_name="issue") | Q(entity_name="VIEW_SUBSCRIPTION"))
+            #
+            # Category 10, feature 5 ("Abonnements/notifications par
+            # page") - correction #2 of that feature's build brief: this
+            # allowlist is the real reason a bespoke `entity_name` gets
+            # created (see `plane.bgtasks.page_subscription_task.
+            # notify_page_subscribers`/`notify_page_mention`) but never
+            # actually surfaces in the notification-center bell icon
+            # without also being added here. `entity_identifier` for a
+            # "page" notification is a Page id, not an Issue id, so the
+            # is_inbox_issue/is_intake_issue annotations above simply
+            # resolve to False for these rows (the OuterRef subquery finds
+            # no matching Issue) - harmless, same as it already is for
+            # "VIEW_SUBSCRIPTION" whenever its own issue lookup misses.
+            .filter(Q(entity_name="issue") | Q(entity_name="VIEW_SUBSCRIPTION") | Q(entity_name="page"))
             .annotate(is_inbox_issue=Exists(intake_issue))
             .annotate(is_intake_issue=Exists(intake_issue))
             .annotate(

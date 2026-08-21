@@ -536,3 +536,107 @@ class WorkspacePageCommentReactionPermission(BasePermission):
             return False
 
         return role in (ADMIN, MEMBER, GUEST)
+
+
+class PageSubscriptionPermission(BasePermission):
+    """
+    Category 10, feature 5 ("Abonnements/notifications par page") -
+    project-scoped. Gates the subscribe-state (GET/POST) and subscribers-
+    list (GET) actions on READ access to the underlying Page (exigence
+    8/12) - mirrors `PageReactionPermission`'s own reasoning: subscribing
+    is a lightweight, read-gated interaction, not a Page content edit, so
+    every active role (including GUEST, subject to the same
+    `guest_view_all_features` restriction the read path already applies
+    elsewhere) may subscribe/view.
+
+    DELETE (unsubscribe) is the one deliberate exception: always allowed
+    to any active project member regardless of current Page-level read
+    access. Exigence 9's "frozen" behaviour means a subscriber can lose
+    read access (e.g. the page turns private) without their
+    `PageSubscriber` row being deleted - they must still be able to
+    explicitly opt out of that now-invisible-to-them subscription, and
+    unsubscribing itself reveals nothing about the Page's content.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        project_id = view.kwargs.get("project_id")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            ProjectMember.objects.filter(
+                member=request.user,
+                workspace__slug=slug,
+                is_active=True,
+                project_id=project_id,
+            )
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        if request.method == "DELETE":
+            return True
+
+        page = Page.objects.filter(
+            pk=page_id,
+            workspace__slug=slug,
+            projects__id=project_id,
+            project_pages__deleted_at__isnull=True,
+        ).first()
+        if page is None:
+            return False
+
+        if page.owned_by_id == request.user.id:
+            return True
+
+        if page.access == Page.PRIVATE_ACCESS:
+            return False
+
+        if role == GUEST:
+            project = Project.objects.filter(pk=project_id).only("guest_view_all_features").first()
+            if project is not None and not project.guest_view_all_features:
+                return False
+
+        return role in (ADMIN, MEMBER, GUEST)
+
+
+class WorkspacePageSubscriptionPermission(BasePermission):
+    """Workspace-scope counterpart to `PageSubscriptionPermission`,
+    mirroring `WorkspacePageReactionPermission`'s own relationship to
+    `PageReactionPermission`.
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        page_id = view.kwargs.get("page_id")
+
+        role = (
+            WorkspaceMember.objects.filter(member=request.user, workspace__slug=slug, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        if not role:
+            return False
+
+        if request.method == "DELETE":
+            return True
+
+        page = Page.objects.filter(pk=page_id, workspace__slug=slug, is_global=True).first()
+        if page is None:
+            return False
+
+        if page.owned_by_id == request.user.id:
+            return True
+
+        if page.access == Page.PRIVATE_ACCESS:
+            return False
+
+        return role in (ADMIN, MEMBER, GUEST)
