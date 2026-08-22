@@ -355,6 +355,22 @@ class ProjectMember(ProjectBaseModel):
     preferences = models.JSONField(default=get_default_preferences)
     sort_order = models.FloatField(default=65535)
     is_active = models.BooleanField(default=True)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 5 - "Rôle Owner dédié + Team/Project Owner
+    # délégué", exigence 8. Persisted (unlike `WorkspaceMember.is_owner`,
+    # a computed property comparing to `Workspace.owner_id` - there is no
+    # equivalent single FK to compare against at the project level, so this
+    # needs its own bit) permission-bearing flag, deliberately decoupled
+    # from `Project.project_lead` (which stays purely informational/UX) -
+    # see the data migration that seeds this from `project_lead` once at
+    # deploy time, after which the two notions diverge freely (exigence,
+    # "Implications sur le modele de donnees"). Auto-cleared (exigence 12)
+    # via explicit calls at every real role/is_active-mutating call site -
+    # see `plane.utils.project_owner.revoke_project_owner_if_ineligible` -
+    # NOT a Django signal (this fork has added zero new signals across 10
+    # already-shipped categories; a signal would also be silently bypassed
+    # by the `bulk_update()` calls that exist at some of those call sites).
+    is_owner = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if self._state.adding and self.member:
@@ -381,7 +397,14 @@ class ProjectMember(ProjectBaseModel):
                 fields=["project", "member"],
                 condition=Q(deleted_at__isnull=True),
                 name="project_member_unique_project_member_when_deleted_at_null",
-            )
+            ),
+            # Category 11, feature 5, "Implications sur le modele de
+            # donnees" - at most one active Project Owner per project.
+            models.UniqueConstraint(
+                fields=["project"],
+                condition=Q(is_owner=True),
+                name="unique_project_owner",
+            ),
         ]
         verbose_name = "Project Member"
         verbose_name_plural = "Project Members"

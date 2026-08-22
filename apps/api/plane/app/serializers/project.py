@@ -198,6 +198,13 @@ class ProjectMemberSerializer(BaseSerializer):
     class Meta:
         model = ProjectMember
         fields = "__all__"
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 5 - `is_owner` must only ever change via
+        # the dedicated `ProjectOwnerEndpoint` (assign/revoke, with its own
+        # eligibility checks and audit trail), never as a side effect of
+        # this serializer's generic member PATCH
+        # (`ProjectMemberViewSet.partial_update`).
+        read_only_fields = ["is_owner"]
 
 
 class ProjectMemberPreferenceSerializer(BaseSerializer):
@@ -227,8 +234,8 @@ class ProjectMemberRoleSerializer(DynamicBaseSerializer):
 
     class Meta:
         model = ProjectMember
-        fields = ("id", "role", "member", "project", "original_role", "created_at")
-        read_only_fields = ["original_role", "created_at"]
+        fields = ("id", "role", "member", "project", "original_role", "created_at", "is_owner")
+        read_only_fields = ["original_role", "created_at", "is_owner"]
 
 
 class ProjectMemberInviteSerializer(BaseSerializer):

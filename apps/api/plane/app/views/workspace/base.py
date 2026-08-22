@@ -29,12 +29,14 @@ from plane.app.permissions import (
     WorkSpaceAdminPermission,
     WorkSpaceBasePermission,
     WorkspaceEntityPermission,
+    is_workspace_owner,
 )
 
 # Module imports
 from plane.app.serializers import WorkSpaceSerializer, WorkspaceThemeSerializer
 from plane.app.views.base import BaseAPIView, BaseViewSet
 from plane.db.models import (
+    AuditEventType,
     Issue,
     IssueActivity,
     Workspace,
@@ -51,6 +53,7 @@ from plane.utils.url import contains_url
 from plane.utils.analytics_events import WORKSPACE_CREATED, WORKSPACE_DELETED
 from plane.utils.csv_utils import sanitize_csv_row
 from plane.utils.agent_actor import member_visibility_q
+from plane.utils.audit_log import log_audit_event
 
 
 class WorkSpaceViewSet(BaseViewSet):
@@ -185,7 +188,32 @@ class WorkSpaceViewSet(BaseViewSet):
     def destroy(self, request, *args, **kwargs):
         # Get the workspace
         workspace = self.get_object()
+
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 5, exigence 5 - "Seul l'Owner peut
+        # supprimer le workspace (généralisation du contrôle déjà
+        # partiellement existant sur cette action précise)" - the
+        # `@allow_permission([ROLE.ADMIN], ...)` decorator above only
+        # narrows this to "some workspace Admin"; this is the actual
+        # Owner-exclusive generalization, built on the shared
+        # `is_workspace_owner` check (decision #4) rather than a bespoke
+        # inline comparison.
+        if not is_workspace_owner(request.user, workspace.slug):
+            return Response(
+                {"error": "Only the workspace owner can perform this action."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         self.remove_last_workspace_ids_from_user_settings(workspace.id)
+        log_audit_event(
+            AuditEventType.WORKSPACE_DELETED,
+            request=request,
+            workspace=workspace,
+            actor=request.user,
+            target_type="Workspace",
+            target_id=str(workspace.id),
+            metadata={"workspace_name": workspace.name, "workspace_slug": workspace.slug},
+        )
         track_event.delay(
             user_id=request.user.id,
             event_name=WORKSPACE_DELETED,

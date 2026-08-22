@@ -45,6 +45,9 @@ from plane.app.views import (
     UserRecentVisitViewSet,
     WorkspaceHomePreferenceViewSet,
     WorkspaceStickyViewSet,
+    WorkspaceOwnerTransferEndpoint,
+    WorkspaceAuditLogViewSet,
+    WorkspaceAuditLogExportEndpoint,
     WorkspaceUserPreferenceViewSet,
 )
 
@@ -316,5 +319,27 @@ urlpatterns = [
         "workspaces/<str:slug>/sidebar-preferences/",
         WorkspaceUserPreferenceViewSet.as_view(),
         name="workspace-user-preference",
+    ),
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), features 3+5 merged - Owner transfer + audit log.
+    path(
+        "workspaces/<str:slug>/owner/transfer/",
+        WorkspaceOwnerTransferEndpoint.as_view(),
+        name="workspace-owner-transfer",
+    ),
+    path(
+        "workspaces/<str:slug>/audit-logs/",
+        WorkspaceAuditLogViewSet.as_view(),
+        name="workspace-audit-logs",
+    ),
+    path(
+        "workspaces/<str:slug>/audit-logs/<uuid:pk>/",
+        WorkspaceAuditLogViewSet.as_view(),
+        name="workspace-audit-logs",
+    ),
+    path(
+        "workspaces/<str:slug>/audit-logs/export/",
+        WorkspaceAuditLogExportEndpoint.as_view(),
+        name="workspace-audit-logs-export",
     ),
 ]

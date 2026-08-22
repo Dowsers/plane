@@ -4,6 +4,8 @@
 
 from .instance import InstanceEndpoint, SignUpScreenVisitedEndpoint
 
+from .audit_log import InstanceAuditLogEndpoint
+
 
 from .configuration import (
     EmailCredentialCheckEndpoint,

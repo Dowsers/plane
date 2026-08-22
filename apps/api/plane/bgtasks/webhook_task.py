@@ -68,6 +68,17 @@ SERIALIZER_MAPPER = {
     "intake_issue": IntakeIssueSerializer,
 }
 
+# Category 11 (docs/feature-specs/11-admin-security-sso.md in
+# plane-selfhost), features 3+5 merged, decision #5 - every event gated by
+# the single `Webhook.workspace_security` boolean column, keyed off the
+# event string rather than one hardcoded `if event == ...` block per event
+# (unlike every other boolean column above) precisely so that feature 6 of
+# this same category ("Politiques de sécurité configurables"), which
+# reuses this exact column for its own future events, only ever needs to
+# add its event name(s) to this one set - never a new column, never a new
+# dispatch branch.
+WORKSPACE_SECURITY_EVENTS = {"audit_log", "workspace_ownership", "project_owner"}
+
 MODEL_MAPPER = {
     "project": Project,
     "issue": Issue,
@@ -492,6 +503,9 @@ def webhook_activity(
 
         if event == "issue_triage_suggestion":
             webhooks = webhooks.filter(issue_triage_suggestion=True)
+
+        if event in WORKSPACE_SECURITY_EVENTS:
+            webhooks = webhooks.filter(workspace_security=True)
 
         event_data = (
             event_data_override

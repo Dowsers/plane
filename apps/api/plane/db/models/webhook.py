@@ -100,6 +100,23 @@ class Webhook(BaseModel):
     # `webhook_activity`/`webhook_send_task`), not by which column let the
     # event through the filter.
     issue_triage_suggestion = models.BooleanField(default=False)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), features 3+5 merged ("Journal d'audit de sécurité
+    # workspace" + "Rôle Owner dédié"). Covers `audit_log.created`,
+    # `workspace.ownership_transferred`, `project.owner_assigned` and
+    # `project.owner_revoked` under ONE boolean, same "one column per
+    # activity stream, not one per verb" rationale already used for
+    # `workflow_transition`/`figma_link`/`issue_triage_suggestion` above -
+    # the sub-event is carried in the delivered payload's own `event`/
+    # `action` fields, not by which column let it through the filter. Per
+    # decision #5 of that category's implementation, a LATER feature in
+    # this same category (feature 6, "Politiques de sécurité
+    # configurables") will emit its own events under this SAME column
+    # rather than adding another one - see
+    # `plane.bgtasks.webhook_task.WORKSPACE_SECURITY_EVENTS` for the
+    # generic (event-string-keyed, not hardcoded-per-event) dispatch that
+    # makes that reuse trivial when it lands.
+    workspace_security = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
     # Populated only by a test-send (never by a real event delivery via

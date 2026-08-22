@@ -145,6 +145,13 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cleanup_task.expire_ai_change_proposals",
         "schedule": crontab(minute=45),  # every hour, offset from other hourly tasks
     },
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), features 3+5 merged, exigence 7 - workspace audit
+    # log retention purge (`AUDIT_LOG_RETENTION_DAYS`, default 90 days).
+    "check-every-day-to-purge-expired-audit-logs": {
+        "task": "plane.bgtasks.cleanup_task.purge_expired_audit_logs",
+        "schedule": crontab(hour=4, minute=30),  # UTC 04:30, after the other daily cleanup tasks
+    },
 }
 
 

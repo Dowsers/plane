@@ -29,6 +29,12 @@ class ExporterHistory(BaseModel):
         choices=(
             ("issue_exports", "Issue Exports"),
             ("issue_worklogs", "Issue Worklogs"),
+            # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+            # plane-selfhost), features 3+5 merged - "réutilise l'infra
+            # d'export existante de Plane" (spec's own wording) rather than
+            # building a new async-job mechanism - see
+            # plane.bgtasks.audit_log_export_task.
+            ("audit_log_exports", "Audit Log Exports"),
         ),
     )
     workspace = models.ForeignKey("db.WorkSpace", on_delete=models.CASCADE, related_name="workspace_exporters")

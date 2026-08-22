@@ -10,7 +10,8 @@ from django.utils import timezone
 
 # Module imports
 from plane.authentication.utils.host import user_ip, base_host
-from plane.db.models import User
+from plane.db.models import AuditEventType, User
+from plane.utils.audit_log import log_audit_event
 
 
 class SignOutAuthEndpoint(View):
@@ -23,6 +24,13 @@ class SignOutAuthEndpoint(View):
             user.save()
             # Log the user out
             logout(request)
+            log_audit_event(
+                AuditEventType.LOGOUT,
+                request=request,
+                actor=user,
+                target_user=user,
+                fan_out_actor_workspaces=True,
+            )
             return HttpResponseRedirect(base_host(request=request, is_app=True))
         except Exception:
             return HttpResponseRedirect(base_host(request=request, is_app=True))

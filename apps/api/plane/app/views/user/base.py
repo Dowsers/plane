@@ -35,6 +35,7 @@ from plane.app.serializers import (
 from plane.app.views.base import BaseAPIView, BaseViewSet
 from plane.db.models import (
     Account,
+    AuditEventType,
     IssueActivity,
     Profile,
     ProjectMember,
@@ -43,6 +44,8 @@ from plane.db.models import (
     WorkspaceMemberInvite,
     Session,
 )
+from plane.utils.audit_log import log_audit_event
+from plane.utils.project_owner import emit_project_owner_revoked_events
 from plane.license.models import Instance, InstanceAdmin
 from plane.utils.paginator import BasePaginator
 from plane.authentication.utils.host import user_ip
@@ -261,8 +264,18 @@ class UserEndpoint(BaseViewSet):
 
         projects_to_deactivate = []
         workspaces_to_deactivate = []
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 5, exigence 12/decision #3 - this
+        # method's own `ProjectMember.objects.bulk_update()` call below is
+        # a real auto-revoke gap: deactivating the account bypasses
+        # `ProjectMember.save()` entirely, so any `is_owner=True` row this
+        # user held must be fixed up in-memory here, before that single
+        # bulk write - not via a signal.
+        revoked_owner_project_members = []
 
-        projects = ProjectMember.objects.filter(member=request.user, is_active=True).annotate(
+        projects = ProjectMember.objects.filter(member=request.user, is_active=True).select_related(
+            "workspace"
+        ).annotate(
             other_admin_exists=Count(
                 Case(
                     When(Q(role=20, is_active=True) & ~Q(member=request.user), then=1),
@@ -276,6 +289,9 @@ class UserEndpoint(BaseViewSet):
         for project in projects:
             if project.other_admin_exists > 0 or (project.total_members == 1):
                 project.is_active = False
+                if project.is_owner:
+                    project.is_owner = False
+                    revoked_owner_project_members.append(project)
                 projects_to_deactivate.append(project)
             else:
                 return Response(
@@ -283,7 +299,9 @@ class UserEndpoint(BaseViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        workspaces = WorkspaceMember.objects.filter(member=request.user, is_active=True).annotate(
+        workspaces = WorkspaceMember.objects.filter(member=request.user, is_active=True).select_related(
+            "workspace"
+        ).annotate(
             other_admin_exists=Count(
                 Case(
                     When(Q(role=20, is_active=True) & ~Q(member=request.user), then=1),
@@ -304,9 +322,25 @@ class UserEndpoint(BaseViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        ProjectMember.objects.bulk_update(projects_to_deactivate, ["is_active"], batch_size=100)
+        ProjectMember.objects.bulk_update(projects_to_deactivate, ["is_active", "is_owner"], batch_size=100)
+        if revoked_owner_project_members:
+            emit_project_owner_revoked_events(
+                revoked_owner_project_members,
+                actor=request.user,
+                request=request,
+                reason="account_deactivated",
+            )
 
         WorkspaceMember.objects.bulk_update(workspaces_to_deactivate, ["is_active"], batch_size=100)
+        for workspace_member in workspaces_to_deactivate:
+            log_audit_event(
+                AuditEventType.MEMBER_DEACTIVATED,
+                request=request,
+                workspace=workspace_member.workspace,
+                actor=request.user,
+                target_user=user,
+                metadata={"role_at_deactivation": workspace_member.role},
+            )
 
         # Delete all workspace invites
         WorkspaceMemberInvite.objects.filter(email=user.email).delete()

@@ -28,6 +28,7 @@ from plane.db.models import (
     IntegrationEventLog,
     WebhookLog,
     DigestRun,
+    WorkspaceAuditLog,
 )
 from plane.settings.mongo import MongoConnection
 from plane.utils.exception_logger import log_exception
@@ -596,3 +597,42 @@ def expire_ai_change_proposals():
 
     count = expire_stale_proposals()
     logger.info(f"Expired {count} stale AI change proposal(s)")
+
+
+def get_audit_log_retention_days() -> int:
+    """Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    plane-selfhost), features 3+5 merged, exigence 6/decision #6 -
+    `AUDIT_LOG_RETENTION_DAYS` is a real `InstanceConfiguration` row
+    (unlike `HARD_DELETE_AFTER_DAYS`/`DIGEST_RETENTION_DAYS` above, which
+    are plain env vars), so it goes through
+    `plane.license.utils.instance_value.get_configuration_value` - the
+    same env-var-or-DB-row resolution every other `InstanceConfiguration`
+    key already uses - rather than `os.environ.get` directly."""
+    from plane.license.utils.instance_value import get_configuration_value
+
+    (value,) = get_configuration_value(
+        [{"key": "AUDIT_LOG_RETENTION_DAYS", "default": os.environ.get("AUDIT_LOG_RETENTION_DAYS", "90")}]
+    )
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 90
+
+
+@shared_task
+def purge_expired_audit_logs():
+    """Category 11, features 3+5 merged, exigence 5/7 - the ONLY way
+    `WorkspaceAuditLog` rows are ever removed (immutability - no
+    update/delete API exists for an individual entry). Simple hard
+    delete via `all_objects` (bypassing the soft-delete default manager,
+    same as `flush_to_mongo_and_delete` above) - unlike the other cleanup
+    tasks in this module, there is no Mongo cold-archive step for audit
+    log rows (the spec's own "Hors périmètre" explicitly rules out SIEM/
+    cold-storage streaming for this feature; a purged entry is simply
+    gone, matching a "simple TTL global" retention policy)."""
+    retention_days = get_audit_log_retention_days()
+    cutoff_time = timezone.now() - timedelta(days=retention_days)
+    logger.info(f"Workspace audit log cutoff time: {cutoff_time} ({retention_days} days retention)")
+
+    deleted_count, _ = WorkspaceAuditLog.all_objects.filter(created_at__lt=cutoff_time).delete()
+    logger.info(f"Purged {deleted_count} expired workspace audit log entr(y/ies)")

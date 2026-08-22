@@ -23,7 +23,7 @@ from plane.api.rate_limit import (
     RateLimitOverrideError,
 )
 from plane.settings.redis import redis_instance
-from plane.app.permissions import WorkspaceOwnerPermission
+from plane.app.permissions import WorkspaceAdminOnlyPermission
 
 
 class RateLimitStatusEndpoint(BaseAPIView):
@@ -114,14 +114,21 @@ class APITokenRateLimitOverrideEndpoint(BaseAPIView):
     this workspace" - the closest real proxy this codebase's data model
     actually supports for "a token that belongs to my workspace".
 
-    Uses `WorkspaceOwnerPermission` (role == Admin, 20) rather than the
+    Uses `WorkspaceAdminOnlyPermission` (role == Admin, 20) rather than the
     confusingly-named `WorkSpaceAdminPermission` (which actually allows
     role in [Admin, Member]) - this is an admin-only, security-sensitive
     action per the spec's own wording ("administrateur de workspace"),
     not a general member action.
+
+    Note (category 11, docs/feature-specs/11-admin-security-sso.md in
+    plane-selfhost, decision #4): this class was renamed from
+    `WorkspaceOwnerPermission` - it never checked real ownership, only
+    `role == Admin`, and this call site's own intent (per this docstring)
+    was always "any Admin", not the workspace Owner specifically. Renamed
+    for honesty, behavior unchanged.
     """
 
-    permission_classes = [WorkspaceOwnerPermission]
+    permission_classes = [WorkspaceAdminOnlyPermission]
 
     def patch(self, request, slug, pk):
         if not Workspace.objects.filter(slug=slug).exists():

@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 from .base import BaseSerializer
+from .audit import WorkspaceAuditLogSerializer, WorkspaceAuditLogExportSerializer
 from .user import (
     UserSerializer,
     UserLiteSerializer,

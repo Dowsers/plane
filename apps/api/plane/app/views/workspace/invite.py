@@ -27,7 +27,8 @@ from plane.app.serializers import (
 from plane.app.views.base import BaseAPIView
 from plane.bgtasks.event_tracking_task import track_event
 from plane.bgtasks.workspace_invitation_task import workspace_invitation
-from plane.db.models import User, Workspace, WorkspaceMember, WorkspaceMemberInvite
+from plane.db.models import AuditEventType, User, Workspace, WorkspaceMember, WorkspaceMemberInvite
+from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import invalidate_cache, invalidate_cache_directly
 from plane.utils.host import base_host
 from plane.utils.analytics_events import USER_JOINED_WORKSPACE, USER_INVITED_TO_WORKSPACE
@@ -138,11 +139,34 @@ class WorkspaceInvitationsViewset(BaseViewSet):
                     "invitee_email": invitation.email,
                 },
             )
+            # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+            # plane-selfhost), features 3+5 merged, exigence 1 -
+            # `MEMBER_INVITED`. The invitee may not have a Plane account
+            # yet - `target_user` is only populated when the invited email
+            # genuinely resolves to an existing user (decision #1); the
+            # email itself always goes in `metadata` regardless.
+            log_audit_event(
+                AuditEventType.MEMBER_INVITED,
+                request=request,
+                workspace=workspace,
+                actor=request.user,
+                target_user=User.objects.filter(email=invitation.email).first(),
+                new_value={"role": invitation.role},
+                metadata={"invited_email": invitation.email},
+            )
 
         return Response({"message": "Emails sent successfully"}, status=status.HTTP_200_OK)
 
     def destroy(self, request, slug, pk):
         workspace_member_invite = WorkspaceMemberInvite.objects.get(pk=pk, workspace__slug=slug)
+        log_audit_event(
+            AuditEventType.MEMBER_INVITE_REVOKED,
+            request=request,
+            workspace=workspace_member_invite.workspace,
+            actor=request.user,
+            target_user=User.objects.filter(email=workspace_member_invite.email).first(),
+            metadata={"invited_email": workspace_member_invite.email},
+        )
         workspace_member_invite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -203,6 +227,14 @@ class WorkspaceJoinEndpoint(BaseAPIView):
                     # Set the user last_workspace_id to the accepted workspace
                     user.last_workspace_id = workspace_invite.workspace.id
                     user.save()
+                    log_audit_event(
+                        AuditEventType.MEMBER_INVITE_ACCEPTED,
+                        request=request,
+                        workspace=workspace_invite.workspace,
+                        actor=user,
+                        target_user=user,
+                        new_value={"role": workspace_invite.role},
+                    )
                     track_event.delay(
                         user_id=user.id,
                         event_name=USER_JOINED_WORKSPACE,
@@ -269,6 +301,15 @@ class UserWorkspaceInvitationsViewSet(BaseViewSet):
             # Update the WorkspaceMember for this specific invitation
             WorkspaceMember.objects.filter(workspace_id=invitation.workspace_id, member=request.user).update(
                 is_active=True, role=invitation.role
+            )
+
+            log_audit_event(
+                AuditEventType.MEMBER_INVITE_ACCEPTED,
+                request=request,
+                workspace=invitation.workspace,
+                actor=request.user,
+                target_user=request.user,
+                new_value={"role": invitation.role},
             )
 
             # Track event

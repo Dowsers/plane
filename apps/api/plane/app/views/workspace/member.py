@@ -21,8 +21,10 @@ from plane.app.serializers import (
     WorkSpaceMemberSerializer,
 )
 from plane.app.views.base import BaseAPIView
-from plane.db.models import Project, ProjectMember, WorkspaceMember, DraftIssue
+from plane.db.models import AuditEventType, Project, ProjectMember, WorkspaceMember, DraftIssue
+from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import invalidate_cache
+from plane.utils.project_owner import emit_project_owner_revoked_events
 from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 from plane.utils.agent_actor import agent_role_error, is_workspace_agent, member_visibility_q
 
@@ -41,7 +43,7 @@ class WorkSpaceMemberViewSet(BaseViewSet):
             super()
             .get_queryset()
             .filter(workspace__slug=self.kwargs.get("slug"))
-            .select_related("member", "member__avatar_asset")
+            .select_related("member", "member__avatar_asset", "workspace")
         )
 
     @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
@@ -96,14 +98,52 @@ class WorkSpaceMemberViewSet(BaseViewSet):
         ):
             return Response(agent_role_error(), status=status.HTTP_400_BAD_REQUEST)
 
+        old_role = workspace_member.role
+
         # If a user is moved to a guest role he can't have any other role in projects
         if "role" in request.data and int(request.data.get("role")) == 5:
-            ProjectMember.objects.filter(workspace__slug=slug, member_id=workspace_member.member_id).update(role=5)
+            # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+            # plane-selfhost), feature 5, exigence 12/13 - this `.update()`
+            # is a QuerySet-level bulk write, bypassing `ProjectMember.save()`
+            # and any signal exactly like the `bulk_update()` calls flagged
+            # in decision #3 - a demotion to workspace Guest always makes
+            # every one of this member's `ProjectMember.is_owner=True` rows
+            # ineligible (role is forced to 5 < 20 here), so `is_owner=False`
+            # is included directly in the same `.update()` call rather than
+            # a separate pass.
+            revoked_owner_project_members = list(
+                ProjectMember.objects.filter(
+                    workspace__slug=slug,
+                    member_id=workspace_member.member_id,
+                    is_owner=True,
+                ).select_related("workspace")
+            )
+            ProjectMember.objects.filter(workspace__slug=slug, member_id=workspace_member.member_id).update(
+                role=5, is_owner=False
+            )
+            if revoked_owner_project_members:
+                emit_project_owner_revoked_events(
+                    revoked_owner_project_members,
+                    actor=request.user,
+                    request=request,
+                    reason="workspace_role_demoted_to_guest",
+                )
 
         serializer = WorkSpaceMemberSerializer(workspace_member, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
+            new_role = serializer.instance.role
+            if new_role != old_role:
+                log_audit_event(
+                    AuditEventType.MEMBER_ROLE_CHANGED,
+                    request=request,
+                    workspace=workspace_member.workspace,
+                    actor=request.user,
+                    target_user=workspace_member.member,
+                    old_value={"role": old_role},
+                    new_value={"role": new_role},
+                )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -152,13 +192,39 @@ class WorkSpaceMemberViewSet(BaseViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Deactivate the users from the projects where the user is part of
+        # Deactivate the users from the projects where the user is part of.
+        # Category 11, feature 5, exigence 12/13 - same bulk-write
+        # auto-revoke fix as `partial_update` above: deactivation makes
+        # every `is_owner=True` row for this member ineligible.
+        revoked_owner_project_members = list(
+            ProjectMember.objects.filter(
+                workspace__slug=slug,
+                member_id=workspace_member.member_id,
+                is_active=True,
+                is_owner=True,
+            ).select_related("workspace")
+        )
         _ = ProjectMember.objects.filter(
             workspace__slug=slug, member_id=workspace_member.member_id, is_active=True
-        ).update(is_active=False, updated_at=timezone.now())
+        ).update(is_active=False, is_owner=False, updated_at=timezone.now())
+        if revoked_owner_project_members:
+            emit_project_owner_revoked_events(
+                revoked_owner_project_members,
+                actor=request.user,
+                request=request,
+                reason="workspace_member_removed",
+            )
 
         workspace_member.is_active = False
         workspace_member.save()
+        log_audit_event(
+            AuditEventType.MEMBER_REMOVED,
+            request=request,
+            workspace=workspace_member.workspace,
+            actor=request.user,
+            target_user=workspace_member.member,
+            metadata={"role_at_removal": workspace_member.role},
+        )
         deactivate_user_view_subscriptions(workspace_member.member_id, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -207,14 +273,39 @@ class WorkSpaceMemberViewSet(BaseViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # # Deactivate the users from the projects where the user is part of
+        # # Deactivate the users from the projects where the user is part of.
+        # Same bulk-write auto-revoke fix as `destroy`/`partial_update`
+        # above.
+        revoked_owner_project_members = list(
+            ProjectMember.objects.filter(
+                workspace__slug=slug,
+                member_id=workspace_member.member_id,
+                is_active=True,
+                is_owner=True,
+            ).select_related("workspace")
+        )
         _ = ProjectMember.objects.filter(
             workspace__slug=slug, member_id=workspace_member.member_id, is_active=True
-        ).update(is_active=False, updated_at=timezone.now())
+        ).update(is_active=False, is_owner=False, updated_at=timezone.now())
+        if revoked_owner_project_members:
+            emit_project_owner_revoked_events(
+                revoked_owner_project_members,
+                actor=request.user,
+                request=request,
+                reason="workspace_member_left",
+            )
 
         # # Deactivate the user
         workspace_member.is_active = False
         workspace_member.save()
+        log_audit_event(
+            AuditEventType.MEMBER_REMOVED,
+            request=request,
+            workspace=workspace_member.workspace,
+            actor=request.user,
+            target_user=workspace_member.member,
+            metadata={"role_at_removal": workspace_member.role, "self_initiated": True},
+        )
         deactivate_user_view_subscriptions(workspace_member.member_id, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -9,6 +9,7 @@ from plane.license.api.views import (
     InstanceAdminEndpoint,
     InstanceAdminSignInEndpoint,
     InstanceAdminSignUpEndpoint,
+    InstanceAuditLogEndpoint,
     InstanceConfigurationEndpoint,
     DisableEmailFeatureEndpoint,
     InstanceEndpoint,
@@ -81,5 +82,12 @@ urlpatterns = [
         "rate-limit-tiers/<uuid:pk>/",
         RateLimitTierEndpoint.as_view(),
         name="rate-limit-tiers-details",
+    ),
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), features 3+5 merged, exigence 10.
+    path(
+        "audit-logs/",
+        InstanceAuditLogEndpoint.as_view(),
+        name="instance-audit-logs",
     ),
 ]

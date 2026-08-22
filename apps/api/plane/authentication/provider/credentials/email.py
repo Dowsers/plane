@@ -11,8 +11,9 @@ from plane.authentication.adapter.error import (
     AUTHENTICATION_ERROR_CODES,
     AuthenticationException,
 )
-from plane.db.models import User
+from plane.db.models import AuditEventType, User
 from plane.license.utils.instance_value import get_configuration_value
+from plane.utils.audit_log import log_audit_event
 
 
 class EmailProvider(CredentialAdapter):
@@ -73,6 +74,24 @@ class EmailProvider(CredentialAdapter):
             # Check user password
             if not user.check_password(self.code):
                 self.logger.warning("Authentication failed - invalid credentials")
+                # Category 11 (docs/feature-specs/11-admin-security-sso.md
+                # in plane-selfhost), features 3+5 merged, exigence 1/3 -
+                # `LOGIN_FAILED`, reason captured in `metadata` (never the
+                # password/code itself). Only logged when the email
+                # resolves to a real, known user - see
+                # `plane.bgtasks.audit_log_task.create_audit_log_entry`'s
+                # own docstring for why an unknown email has nowhere
+                # meaningful to be scoped to and is deliberately dropped
+                # (this method already returns before reaching here for
+                # that case, via the `USER_DOES_NOT_EXIST` branch above).
+                log_audit_event(
+                    AuditEventType.LOGIN_FAILED,
+                    request=self.request,
+                    actor=user,
+                    target_user=user,
+                    metadata={"reason": "invalid_password"},
+                    fan_out_actor_workspaces=True,
+                )
                 raise AuthenticationException(
                     error_message=(
                         "AUTHENTICATION_FAILED_SIGN_UP" if self.is_signup else "AUTHENTICATION_FAILED_SIGN_IN"

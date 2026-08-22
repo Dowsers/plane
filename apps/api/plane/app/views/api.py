@@ -13,8 +13,9 @@ from rest_framework import status
 
 # Module import
 from .base import BaseAPIView
-from plane.db.models import APIToken
+from plane.db.models import APIToken, AuditEventType
 from plane.app.serializers import APITokenSerializer, APITokenReadSerializer
+from plane.utils.audit_log import log_audit_event
 
 
 class ApiTokenEndpoint(BaseAPIView):
@@ -34,6 +35,24 @@ class ApiTokenEndpoint(BaseAPIView):
             expired_at=expired_at,
         )
 
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), features 3+5 merged, exigence 1 -
+        # `API_TOKEN_CREATED`. `APIToken` has no reliable single-workspace
+        # link for a personal token (see
+        # `plane.api.views.rate_limit.RateLimitStatusEndpoint`'s own
+        # docstring) - fanned out across the creating user's active
+        # workspace memberships instead, same resolution as
+        # LOGIN_SUCCESS/LOGIN_FAILED/LOGOUT/PASSWORD_CHANGED below.
+        log_audit_event(
+            AuditEventType.API_TOKEN_CREATED,
+            request=request,
+            actor=request.user,
+            target_type="APIToken",
+            target_id=str(api_token.id),
+            metadata={"label": label},
+            fan_out_actor_workspaces=True,
+        )
+
         serializer = APITokenSerializer(api_token)
         # Token will be only visible while creating
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -50,6 +69,15 @@ class ApiTokenEndpoint(BaseAPIView):
 
     def delete(self, request: Request, pk: str) -> Response:
         api_token = APIToken.objects.get(user=request.user, pk=pk, is_service=False)
+        log_audit_event(
+            AuditEventType.API_TOKEN_REVOKED,
+            request=request,
+            actor=request.user,
+            target_type="APIToken",
+            target_id=str(api_token.id),
+            metadata={"label": api_token.label},
+            fan_out_actor_workspaces=True,
+        )
         api_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

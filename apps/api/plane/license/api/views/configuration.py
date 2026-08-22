@@ -27,6 +27,17 @@ from plane.license.api.serializers import InstanceConfigurationSerializer
 from plane.license.utils.encryption import encrypt_data
 from plane.utils.cache import cache_response, invalidate_cache
 from plane.license.utils.instance_value import get_email_configuration
+from plane.db.models import AuditEventType
+from plane.utils.audit_log import log_audit_event
+
+# Category 11 (docs/feature-specs/11-admin-security-sso.md in
+# plane-selfhost), features 3+5 merged, exigence 1/10 - `OAUTH_CONFIG_UPDATED`
+# fires when this god-mode PATCH touches any key in one of these
+# categories (matching `InstanceConfiguration.category`, not a key-name
+# pattern match - the fixture data in
+# `plane.utils.instance_config_variables` already tags every OAuth/SSO
+# provider credential row this way).
+OAUTH_CONFIG_CATEGORIES = {"GOOGLE", "GITHUB", "GITLAB", "GITEA"}
 
 
 class InstanceConfigurationEndpoint(BaseAPIView):
@@ -44,9 +55,12 @@ class InstanceConfigurationEndpoint(BaseAPIView):
         configurations = InstanceConfiguration.objects.filter(key__in=request.data.keys())
 
         bulk_configurations = []
+        oauth_keys_touched = []
         for configuration in configurations:
             raw_value = request.data.get(configuration.key, configuration.value)
             value = "" if raw_value is None else str(raw_value).strip()
+            if configuration.category in OAUTH_CONFIG_CATEGORIES:
+                oauth_keys_touched.append(configuration.key)
             if configuration.is_encrypted:
                 configuration.value = encrypt_data(value)
             else:
@@ -54,6 +68,20 @@ class InstanceConfigurationEndpoint(BaseAPIView):
             bulk_configurations.append(configuration)
 
         InstanceConfiguration.objects.bulk_update(bulk_configurations, ["value"], batch_size=100)
+
+        if oauth_keys_touched:
+            # Instance-scoped (workspace=None) - exigence 10, distinct from
+            # the per-workspace audit log, visible only to Instance Admins
+            # via `GET /api/instances/audit-logs/`. Never logs the actual
+            # secret values (`old_value`/`new_value` deliberately omitted
+            # here) - only which keys were changed.
+            log_audit_event(
+                AuditEventType.OAUTH_CONFIG_UPDATED,
+                request=request,
+                workspace=None,
+                actor=request.user,
+                metadata={"keys_updated": oauth_keys_touched},
+            )
 
         serializer = InstanceConfigurationSerializer(configurations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -4,7 +4,7 @@
 
 from .workspace import (
     WorkSpaceBasePermission,
-    WorkspaceOwnerPermission,
+    WorkspaceAdminOnlyPermission,
     WorkSpaceAdminPermission,
     WorkspaceEntityPermission,
     WorkspaceViewerPermission,

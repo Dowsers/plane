@@ -14,6 +14,7 @@ from plane.app.views import (
     ProjectUserViewsEndpoint,
     ProjectIdentifierEndpoint,
     ProjectFavoritesViewSet,
+    ProjectOwnerEndpoint,
     UserProjectInvitationsViewset,
     UserProjectRolesEndpoint,
     ProjectArchiveUnarchiveEndpoint,
@@ -95,6 +96,13 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/members/leave/",
         ProjectMemberViewSet.as_view({"post": "leave"}),
         name="project-member",
+    ),
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 5 - Project Owner assign/revoke.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/owner/",
+        ProjectOwnerEndpoint.as_view(),
+        name="project-owner",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/project-views/",

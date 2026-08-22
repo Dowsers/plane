@@ -21,6 +21,11 @@ from plane.app.permissions import WorkspaceUserPermission
 from plane.db.models import Project, ProjectMember, ProjectUserProperty, WorkspaceMember
 from plane.bgtasks.project_add_user_email_task import project_add_user_email
 from plane.utils.host import base_host
+from plane.utils.project_owner import (
+    emit_project_owner_revoked_events,
+    revoke_project_owner_if_ineligible,
+    should_revoke_project_owner,
+)
 from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 from plane.app.permissions.base import allow_permission, ROLE
 from plane.utils.agent_actor import agent_role_error, is_workspace_agent, member_visibility_q
@@ -94,17 +99,37 @@ class ProjectMemberViewSet(BaseViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # Update roles in the members array based on the member_roles dictionary and set is_active to True
+        # Update roles in the members array based on the member_roles dictionary and set is_active to True.
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 5, exigence 12/decision #3 - this is
+        # the bulk-add-members `bulk_update()` call flagged as a real
+        # auto-revoke gap: it silently bypasses `ProjectMember.save()` (and
+        # any signal), so a member re-added with a lower role while still
+        # flagged `is_owner=True` must be fixed up here, in-memory, before
+        # the single `bulk_update()` write - not via a signal or a
+        # per-instance `save()` loop.
+        revoked_owner_project_members = []
         for project_member in ProjectMember.objects.filter(
             project_id=project_id,
             member_id__in=[member.get("member_id") for member in members],
-        ):
-            project_member.role = member_roles[str(project_member.member_id)]
+        ).select_related("workspace"):
+            new_role = member_roles[str(project_member.member_id)]
+            if should_revoke_project_owner(project_member.is_owner, new_role, True):
+                project_member.is_owner = False
+                revoked_owner_project_members.append(project_member)
+            project_member.role = new_role
             project_member.is_active = True
             bulk_project_members.append(project_member)
 
         # Update the roles of the existing members
-        ProjectMember.objects.bulk_update(bulk_project_members, ["is_active", "role"], batch_size=100)
+        ProjectMember.objects.bulk_update(bulk_project_members, ["is_active", "role", "is_owner"], batch_size=100)
+        if revoked_owner_project_members:
+            emit_project_owner_revoked_events(
+                revoked_owner_project_members,
+                actor=request.user,
+                request=request,
+                reason="bulk_add_members_role_demoted",
+            )
 
         # Get the minimum sort_order for each member in the workspace
         member_sort_orders = (
@@ -279,6 +304,17 @@ class ProjectMemberViewSet(BaseViewSet):
 
         if serializer.is_valid():
             serializer.save()
+            # Category 11, feature 5, exigence 12 - the single-PATCH path's
+            # auto-revoke: `serializer.save()` above goes through
+            # `ProjectMember.save()` (unlike the bulk paths), but
+            # auto-revoke is still an explicit call, not a signal, per
+            # decision #3.
+            revoke_project_owner_if_ineligible(
+                serializer.instance,
+                actor=request.user,
+                request=request,
+                reason="single_role_update_demoted",
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -313,6 +349,12 @@ class ProjectMemberViewSet(BaseViewSet):
 
         project_member.is_active = False
         project_member.save()
+        revoke_project_owner_if_ineligible(
+            project_member,
+            actor=request.user,
+            request=request,
+            reason="removed_from_project",
+        )
         deactivate_user_view_subscriptions(project_member.member_id, slug, project_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -342,6 +384,12 @@ class ProjectMemberViewSet(BaseViewSet):
         # Deactivate the user
         project_member.is_active = False
         project_member.save()
+        revoke_project_owner_if_ineligible(
+            project_member,
+            actor=request.user,
+            request=request,
+            reason="left_project",
+        )
         deactivate_user_view_subscriptions(project_member.member_id, slug, project_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

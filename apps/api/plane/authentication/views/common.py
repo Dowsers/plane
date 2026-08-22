@@ -15,12 +15,13 @@ from zxcvbn import zxcvbn
 ## Module imports
 from plane.app.serializers import UserSerializer
 from plane.authentication.utils.login import user_login
-from plane.db.models import User
+from plane.db.models import AuditEventType, User
 from plane.authentication.adapter.error import (
     AuthenticationException,
     AUTHENTICATION_ERROR_CODES,
 )
 from django.middleware.csrf import get_token
+from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import invalidate_cache
 from plane.authentication.utils.host import base_host
 
@@ -92,6 +93,13 @@ class ChangePasswordEndpoint(APIView):
         user.set_password(new_password)
         user.is_password_autoset = False
         user.save()
+        log_audit_event(
+            AuditEventType.PASSWORD_CHANGED,
+            request=request,
+            actor=user,
+            target_user=user,
+            fan_out_actor_workspaces=True,
+        )
         user_login(user=user, request=request, is_app=True)
         return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
 
@@ -131,6 +139,14 @@ class SetUserPasswordEndpoint(APIView):
         user.set_password(password)
         user.is_password_autoset = False
         user.save()
+        log_audit_event(
+            AuditEventType.PASSWORD_CHANGED,
+            request=request,
+            actor=user,
+            target_user=user,
+            metadata={"initial_set": True},
+            fan_out_actor_workspaces=True,
+        )
         # Login the user as the session is invalidated
         user_login(user=user, request=request, is_app=True)
         # Return the user

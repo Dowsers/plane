@@ -16,12 +16,13 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.db.models import Webhook, WebhookLog, Workspace
+from plane.db.models import AuditEventType, Webhook, WebhookLog, Workspace
 from plane.db.models.webhook import generate_token
 from ..base import BaseAPIView
 from plane.app.permissions import allow_permission, ROLE
 from plane.app.serializers import WebhookSerializer, WebhookLogSerializer
 from plane.bgtasks.webhook_task import sign_webhook_payload, save_webhook_log
+from plane.utils.audit_log import log_audit_event
 from plane.utils.exception_logger import log_exception
 from plane.utils.ip_address import validate_url
 
@@ -90,6 +91,15 @@ class WebhookEndpoint(BaseAPIView):
             serializer = WebhookSerializer(data=request.data, context={"request": request})
             if serializer.is_valid():
                 serializer.save(workspace_id=workspace.id)
+                log_audit_event(
+                    AuditEventType.WEBHOOK_CREATED,
+                    request=request,
+                    workspace=workspace,
+                    actor=request.user,
+                    target_type="Webhook",
+                    target_id=str(serializer.instance.id),
+                    metadata={"url": serializer.instance.url},
+                )
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError as e:
@@ -166,12 +176,30 @@ class WebhookEndpoint(BaseAPIView):
         )
         if serializer.is_valid():
             serializer.save()
+            log_audit_event(
+                AuditEventType.WEBHOOK_UPDATED,
+                request=request,
+                workspace=webhook.workspace,
+                actor=request.user,
+                target_type="Webhook",
+                target_id=str(webhook.id),
+                new_value=dict(request.data),
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @allow_permission(allowed_roles=[ROLE.ADMIN], level="WORKSPACE")
     def delete(self, request, slug, pk):
         webhook = Webhook.objects.get(pk=pk, workspace__slug=slug)
+        log_audit_event(
+            AuditEventType.WEBHOOK_DELETED,
+            request=request,
+            workspace=webhook.workspace,
+            actor=request.user,
+            target_type="Webhook",
+            target_id=str(webhook.id),
+            metadata={"url": webhook.url},
+        )
         webhook.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

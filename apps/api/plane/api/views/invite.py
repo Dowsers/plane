@@ -17,20 +17,30 @@ from drf_spectacular.utils import (
 from plane.api.views.base import BaseViewSet
 from plane.db.models import WorkspaceMemberInvite, Workspace
 from plane.api.serializers import WorkspaceInviteSerializer
-from plane.utils.permissions import WorkspaceOwnerPermission
+from plane.utils.permissions import WorkspaceAdminOnlyPermission
 from plane.utils.openapi.parameters import WORKSPACE_SLUG_PARAMETER
 
 
 class WorkspaceInvitationsViewset(BaseViewSet):
     """
     Endpoint for creating, listing and deleting workspace invites.
+
+    Permission note (category 11, docs/feature-specs/11-admin-security-sso.md
+    in plane-selfhost, decision #4): uses `WorkspaceAdminOnlyPermission`
+    (renamed from `WorkspaceOwnerPermission`, which despite its name only
+    ever checked `role == Admin`, never real ownership) - this endpoint's
+    behavior is unchanged by the rename. Its intent was confirmed to be
+    "any Admin", matching the equivalent app/ BFF viewset
+    (`plane.app.views.workspace.invite.WorkspaceInvitationsViewset`, gated
+    by `WorkSpaceAdminPermission`, itself Admin-or-Member) rather than
+    Owner-exclusive.
     """
 
     serializer_class = WorkspaceInviteSerializer
     model = WorkspaceMemberInvite
 
     permission_classes = [
-        WorkspaceOwnerPermission,
+        WorkspaceAdminOnlyPermission,
     ]
 
     def get_queryset(self):

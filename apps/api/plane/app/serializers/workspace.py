@@ -83,28 +83,51 @@ class WorkspaceLiteSerializer(BaseSerializer):
         read_only_fields = fields
 
 
+def _get_workspace_member_is_owner(obj) -> bool:
+    """Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    plane-selfhost), feature 5, "Implications sur le modele de donnees" -
+    `WorkspaceMember.is_owner` is deliberately NOT a persisted field (no
+    new role tier - `Admin=20/Member=15/Guest=5` stays exactly as-is, to
+    avoid breaking every existing `role__gte=20` check in this codebase) -
+    it's a computed comparison against `Workspace.owner_id`, exposed as a
+    `SerializerMethodField` per the spec's own wording."""
+    return bool(obj.workspace_id) and obj.member_id == obj.workspace.owner_id
+
+
 class WorkSpaceMemberSerializer(DynamicBaseSerializer):
     member = UserLiteSerializer(read_only=True)
+    is_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkspaceMember
         fields = "__all__"
+
+    def get_is_owner(self, obj):
+        return _get_workspace_member_is_owner(obj)
 
 
 class WorkspaceMemberMeSerializer(BaseSerializer):
     draft_issue_count = serializers.IntegerField(read_only=True)
+    is_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkspaceMember
         fields = "__all__"
+
+    def get_is_owner(self, obj):
+        return _get_workspace_member_is_owner(obj)
 
 
 class WorkspaceMemberAdminSerializer(DynamicBaseSerializer):
     member = UserAdminLiteSerializer(read_only=True)
+    is_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkspaceMember
         fields = "__all__"
+
+    def get_is_owner(self, obj):
+        return _get_workspace_member_is_owner(obj)
 
 
 class WorkSpaceMemberInviteSerializer(BaseSerializer):

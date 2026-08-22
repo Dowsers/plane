@@ -4,6 +4,7 @@
 
 from .agent import AgentProfile
 from .analytic import AnalyticView
+from .audit import AuditEventType, WorkspaceAuditLog
 from .api import APIActivityLog, APIToken
 from .api_explorer import WorkspaceAPIExplorerSettings
 from .asset import FileAsset

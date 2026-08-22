@@ -48,7 +48,22 @@ class WorkSpaceBasePermission(BasePermission):
             ).exists()
 
 
-class WorkspaceOwnerPermission(BasePermission):
+class WorkspaceAdminOnlyPermission(BasePermission):
+    """Renamed from `WorkspaceOwnerPermission` - category 11
+    (docs/feature-specs/11-admin-security-sso.md in plane-selfhost),
+    features 3+5, decision #4. See the identical class in
+    `plane.app.permissions.workspace` for the full investigation this
+    rename is based on - this module is a literal duplicate of that one
+    and this class's ONE real call site here (`plane/api/views/invite.py`)
+    was confirmed to actually want "any Admin" (its equivalent app/ BFF
+    viewset uses `WorkSpaceAdminPermission`, itself Admin-or-Member) -
+    despite the old name, this has ALWAYS checked `role == Admin (20)`,
+    never real ownership. A genuine Owner-exclusive permission class
+    (`IsWorkspaceOwner`) was deliberately NOT added to this module - no
+    call site reached from here needs it yet; see
+    `plane.app.permissions.workspace.IsWorkspaceOwner` if that changes.
+    """
+
     def has_permission(self, request, view):
         if request.user.is_anonymous:
             return False

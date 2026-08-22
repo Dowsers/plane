@@ -26,6 +26,7 @@ from .project.member import (
     UserProjectRolesEndpoint,
     ProjectMemberPreferenceEndpoint,
 )
+from .project.owner import ProjectOwnerEndpoint
 
 from .user.base import (
     UserEndpoint,
@@ -85,6 +86,8 @@ from .workspace.module import WorkspaceModulesEndpoint
 from .workspace.cycle import WorkspaceCyclesEndpoint, WorkspaceActiveCyclesEndpoint
 from .workspace.quick_link import QuickLinkViewSet
 from .workspace.sticky import WorkspaceStickyViewSet
+from .workspace.owner import WorkspaceOwnerTransferEndpoint
+from .workspace.audit_log import WorkspaceAuditLogViewSet, WorkspaceAuditLogExportEndpoint
 
 from .state.base import StateViewSet, IntakeStateEndpoint
 from .view.base import (
