@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { useSearchParams } from "next/navigation";
 // plane imports
+import type { TSAMLDiscoverResponse } from "@plane/types";
 import { OAuthOptions } from "@plane/ui";
 // helpers
 import type { TAuthErrorInfo } from "@/helpers/authentication.helper";
@@ -26,6 +27,7 @@ import { TermsAndConditions } from "../terms-and-conditions";
 import { AuthBanner } from "./auth-banner";
 import { AuthHeader, AuthHeaderBase } from "./auth-header";
 import { AuthFormRoot } from "./form-root";
+import { SAMLContinueForm } from "./saml-continue";
 
 type TAuthRoot = {
   authMode: EAuthModes;
@@ -39,6 +41,7 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
   const invitation_id = searchParams.get("invitation_id");
   const workspaceSlug = searchParams.get("slug");
   const error_code = searchParams.get("error_code");
+  const nextPath = searchParams.get("next_path");
   // props
   const { authMode: currentAuthMode } = props;
   // states
@@ -46,6 +49,17 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
   const [authStep, setAuthStep] = useState<EAuthSteps>(EAuthSteps.EMAIL);
   const [email, setEmail] = useState(emailParam ? emailParam.toString() : "");
   const [errorInfo, setErrorInfo] = useState<TAuthErrorInfo | undefined>(undefined);
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 6 - result
+  // of `POST /auth/saml/discover/` for the currently entered email, set by
+  // `AuthFormRoot` right after email submit (before it would otherwise
+  // move on to the password/unique-code step). While `sso_applies` is
+  // true, OAuth options and the normal email/password/OTP form are both
+  // hidden in favor of `SAMLContinueForm` below - `authStep` itself is
+  // deliberately left at `EAuthSteps.EMAIL` throughout (discovery short-
+  // circuits before any `setAuthStep` call), so clearing this state alone
+  // is enough to fall back to the normal email step.
+  const [ssoDiscovery, setSsoDiscovery] = useState<TSAMLDiscoverResponse | null>(null);
   // store hooks
   const { config } = useInstance();
   // derived values
@@ -125,24 +139,43 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
         authMode={authMode}
         currentAuthStep={authStep}
       />
-      {isOAuthEnabled && (
-        <OAuthOptions
-          options={oAuthOptions}
-          compact={authStep === EAuthSteps.PASSWORD}
-          showDivider={isEmailBasedAuthEnabled}
-        />
-      )}
-      {isEmailBasedAuthEnabled && (
-        <AuthFormRoot
-          authStep={authStep}
-          authMode={authMode}
+      {ssoDiscovery?.sso_applies ? (
+        // Exigence 6 - a domain covered by an active SAML configuration
+        // shows ONLY the "Continue with {IdP}" button: no OAuth options,
+        // no password/OTP form.
+        <SAMLContinueForm
           email={email}
-          setEmail={(email) => setEmail(email)}
-          setAuthMode={(authMode) => setAuthMode(authMode)}
-          setAuthStep={(authStep) => setAuthStep(authStep)}
-          setErrorInfo={(errorInfo) => setErrorInfo(errorInfo)}
-          currentAuthMode={currentAuthMode}
+          name={ssoDiscovery.name}
+          loginUrl={ssoDiscovery.login_url}
+          nextPath={nextPath?.toString() || undefined}
+          handleEmailClear={() => {
+            setSsoDiscovery(null);
+            setEmail("");
+          }}
         />
+      ) : (
+        <>
+          {isOAuthEnabled && (
+            <OAuthOptions
+              options={oAuthOptions}
+              compact={authStep === EAuthSteps.PASSWORD}
+              showDivider={isEmailBasedAuthEnabled}
+            />
+          )}
+          {isEmailBasedAuthEnabled && (
+            <AuthFormRoot
+              authStep={authStep}
+              authMode={authMode}
+              email={email}
+              setEmail={(nextEmail) => setEmail(nextEmail)}
+              setAuthMode={(nextAuthMode) => setAuthMode(nextAuthMode)}
+              setAuthStep={(nextAuthStep) => setAuthStep(nextAuthStep)}
+              setErrorInfo={(nextErrorInfo) => setErrorInfo(nextErrorInfo)}
+              currentAuthMode={currentAuthMode}
+              onSsoDiscovered={setSsoDiscovery}
+            />
+          )}
+        </>
       )}
       <TermsAndConditions authType={authMode} />
     </AuthContainer>

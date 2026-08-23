@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { observer } from "mobx-react";
 import { useSearchParams } from "next/navigation";
 import { EAuthModes, EAuthSteps } from "@plane/constants";
-import type { IEmailCheckData } from "@plane/types";
+import type { IEmailCheckData, TSAMLDiscoverResponse } from "@plane/types";
 // helpers
 import type { TAuthErrorInfo } from "@/helpers/authentication.helper";
 import { authErrorHandler } from "@/helpers/authentication.helper";
@@ -31,12 +31,28 @@ type TAuthFormRoot = {
   setAuthStep: (authStep: EAuthSteps) => void;
   setErrorInfo: (errorInfo: TAuthErrorInfo | undefined) => void;
   currentAuthMode: EAuthModes;
+  /** Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), feature 1 ("SSO SAML 2.0 natif") - reports the
+   * `/auth/saml/discover/` result for the just-submitted email back up to
+   * `AuthRoot`, which owns whether to show the normal OAuth/password/OTP
+   * UI or the SAML-only "Continue with {IdP}" button. */
+  onSsoDiscovered: (info: TSAMLDiscoverResponse | null) => void;
 };
 
 const authService = new AuthService();
 
 export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot) {
-  const { authStep, authMode, email, setEmail, setAuthMode, setAuthStep, setErrorInfo, currentAuthMode } = props;
+  const {
+    authStep,
+    authMode,
+    email,
+    setEmail,
+    setAuthMode,
+    setAuthStep,
+    setErrorInfo,
+    currentAuthMode,
+    onSsoDiscovered,
+  } = props;
   // router
   const router = useAppRouter();
   // query params
@@ -53,6 +69,25 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
   const handleEmailVerification = async (data: IEmailCheckData) => {
     setEmail(data.email);
     setErrorInfo(undefined);
+
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 6 - check
+    // SAML routing BEFORE the normal email-check flow: if the domain is
+    // covered by an active SAML configuration, short-circuit straight to
+    // the "Continue with {IdP}" UI instead of ever asking for a password
+    // or OTP. Fails open on a network/server hiccup on this check alone -
+    // SSO discovery is a UX nicety here, not the real enforcement (that
+    // happens server-side, at actual login time, for every credential
+    // provider alike - see `Adapter.complete_login_or_signup`).
+    try {
+      const ssoInfo = await authService.discoverSAML(data.email);
+      onSsoDiscovered(ssoInfo.sso_applies ? ssoInfo : null);
+      if (ssoInfo.sso_applies) return;
+    } catch (error) {
+      console.error(error);
+      onSsoDiscovered(null);
+    }
+
     await authService
       .emailCheck(data)
       .then(async (response) => {
@@ -74,6 +109,7 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
           }
         }
         setIsExistingEmail(response.existing);
+        return;
       })
       .catch((error) => {
         const errorhandler = authErrorHandler(error?.error_code?.toString(), data?.email || undefined);
@@ -90,9 +126,9 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
   };
 
   // generating the unique code
-  const generateEmailUniqueCode = async (email: string): Promise<{ code: string } | undefined> => {
+  const generateEmailUniqueCode = async (targetEmail: string): Promise<{ code: string } | undefined> => {
     if (!isSMTPConfigured) return;
-    const payload = { email: email };
+    const payload = { email: targetEmail };
     return await authService
       .generateUniqueCode(payload)
       .then(() => ({ code: "" }))

@@ -8,6 +8,8 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { EUserPermissions, EUserPermissionsLevel, LOGIN_MEDIUM_LABELS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
+import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
+import { Tooltip } from "@plane/propel/tooltip";
 import { renderFormattedDate } from "@plane/utils";
 import { MemberHeaderColumn } from "@/components/project/member-header-column";
 import type { RowData } from "@/components/workspace/settings/member-columns";
@@ -117,8 +119,26 @@ export const useMemberColumns = () => {
       tdRender: (rowData: RowData) => {
         if (isSuspended(rowData)) return null;
         const loginMedium = rowData.member.last_login_medium;
-        if (!loginMedium) return null;
-        return <div>{LOGIN_MEDIUM_LABELS[loginMedium]}</div>;
+        return (
+          <div className="flex items-center gap-1.5">
+            {loginMedium && <div>{LOGIN_MEDIUM_LABELS[loginMedium]}</div>}
+            {/* Category 11 (docs/feature-specs/11-admin-security-sso.md in
+                plane-selfhost), feature 1 - "Provisioned via SSO" badge:
+                whether this member has ever signed in via a SAML IdP
+                (durable fact, unlike `last_login_medium` above which is
+                just the most recent login method and can point elsewhere
+                even for a SAML-linked member). */}
+            {rowData.member.is_sso_provisioned && (
+              <Tooltip tooltipContent="This member's account is linked to a SAML identity provider.">
+                <span>
+                  <Pill variant={EPillVariant.PRIMARY} size={EPillSize.SM}>
+                    Provisioned via SSO
+                  </Pill>
+                </span>
+              </Tooltip>
+            )}
+          </div>
+        );
       },
     },
 

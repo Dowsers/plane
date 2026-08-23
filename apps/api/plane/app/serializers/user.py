@@ -174,6 +174,21 @@ class UserLiteSerializer(AgentTypeMixin, BaseSerializer):
 
 class UserAdminLiteSerializer(AgentTypeMixin, BaseSerializer):
     agent_type = serializers.SerializerMethodField()
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 1 "SSO SAML 2.0 natif" - "Surfaces UI" wording:
+    # "Workspace Settings > Members : badge 'Provisionne via SSO' sur les
+    # membres concernes, utile pour le support." No existing serializer
+    # exposed this (`Account.provider` is a separate model from `User`/
+    # `WorkspaceMember` in the API surface, per that same section's own
+    # explicit warning) - small, deliberate backend addition, kept minimal
+    # per that section's own guidance (a single boolean). Durable "has ever
+    # signed in via a SAML IdP" fact (an `Account(provider="saml")` row is
+    # created/linked - never removed - on first SAML login, see
+    # `plane.authentication.adapter.saml.SAMLAdapter.create_update_account`),
+    # deliberately NOT `last_login_medium` (already on this serializer)
+    # which only reflects the MOST RECENT login method and would flip away
+    # the moment the same member logs in some other way.
+    is_sso_provisioned = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -189,8 +204,12 @@ class UserAdminLiteSerializer(AgentTypeMixin, BaseSerializer):
             "display_name",
             "email",
             "last_login_medium",
+            "is_sso_provisioned",
         ]
         read_only_fields = ["id", "is_bot", "bot_type", "agent_type"]
+
+    def get_is_sso_provisioned(self, obj):
+        return Account.objects.filter(user_id=obj.id, provider="saml").exists()
 
 
 class ChangePasswordSerializer(serializers.Serializer):

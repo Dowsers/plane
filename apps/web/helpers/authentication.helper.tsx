@@ -97,6 +97,27 @@ export enum EAuthenticationErrorCodes {
   ADMIN_USER_ALREADY_EXIST = "5180",
   ADMIN_USER_DOES_NOT_EXIST = "5185",
   ADMIN_USER_DEACTIVATED = "5190",
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 6 ("Politiques de securite configurables") -
+  // raised by the email/password and magic-link credential providers when
+  // the login email's domain has `WorkspaceSecurityPolicy.
+  // enforce_sso_only=True` (never for OAuth, which is what this error
+  // tells the user to use instead). This login screen has no pre-submit
+  // discovery for this per-workspace mechanism the way it does for SAML
+  // below (`SAML_LOGIN_FAILED`) - there is no public "which workspace
+  // does this email belong to" endpoint to check against before
+  // submitting credentials - so this is handled reactively, as a banner
+  // on the credential-submission error, same as every other code above.
+  SSO_ENFORCED_FOR_DOMAIN = "5200",
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 15 - the
+  // ONLY error the ACS endpoint (`/auth/saml/<id>/acs/`) ever redirects an
+  // end user's browser back to `/` with, regardless of the real
+  // validation failure reason (invalid signature, expired assertion,
+  // wrong audience, replay, missing attribute, ...) - the real reason is
+  // logged server-side only, never exposed here. Deliberately generic per
+  // that same exigence's own wording.
+  SAML_LOGIN_FAILED = "5202",
   // Rate limit
   RATE_LIMIT_EXCEEDED = "5900",
 }
@@ -370,6 +391,33 @@ const errorCodeMessages: {
     title: "",
     message: () => `Rate limit exceeded. Please try again later.`,
   },
+
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), features 1 + 6.
+  [EAuthenticationErrorCodes.SSO_ENFORCED_FOR_DOMAIN]: {
+    title: `Single sign-on required`,
+    message: () =>
+      `Your workspace requires signing in through a connected OAuth provider. Please use one of the options above.`,
+  },
+  [EAuthenticationErrorCodes.SAML_LOGIN_FAILED]: {
+    title: `Sign-in failed`,
+    message: () => (
+      <div>
+        We couldn&apos;t complete your sign-in through your organization&apos;s identity provider.&nbsp;
+        {SUPPORT_EMAIL ? (
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="font-medium underline underline-offset-4 transition-all hover:font-bold"
+          >
+            Contact your administrator
+          </a>
+        ) : (
+          "Contact your administrator"
+        )}
+        .
+      </div>
+    ),
+  },
 };
 
 export const authErrorHandler = (errorCode: EAuthenticationErrorCodes, email?: string): TAuthErrorInfo | undefined => {
@@ -425,6 +473,8 @@ export const authErrorHandler = (errorCode: EAuthenticationErrorCodes, email?: s
     EAuthenticationErrorCodes.ADMIN_USER_DEACTIVATED,
     EAuthenticationErrorCodes.RATE_LIMIT_EXCEEDED,
     EAuthenticationErrorCodes.PASSWORD_TOO_WEAK,
+    EAuthenticationErrorCodes.SSO_ENFORCED_FOR_DOMAIN,
+    EAuthenticationErrorCodes.SAML_LOGIN_FAILED,
   ];
 
   if (bannerAlertErrorCodes.includes(errorCode))

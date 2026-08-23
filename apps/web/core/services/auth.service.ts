@@ -6,7 +6,7 @@
 
 // types
 import { API_BASE_URL } from "@plane/constants";
-import type { ICsrfTokenData, IEmailCheckData, IEmailCheckResponse } from "@plane/types";
+import type { ICsrfTokenData, IEmailCheckData, IEmailCheckResponse, TSAMLDiscoverResponse } from "@plane/types";
 // helpers
 // services
 import { APIService } from "@/services/api.service";
@@ -26,6 +26,20 @@ export class AuthService extends APIService {
 
   emailCheck = async (data: IEmailCheckData): Promise<IEmailCheckResponse> =>
     this.post("/auth/email-check/", data, { headers: {} })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+
+  /**
+   * Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), feature 1 ("SSO SAML 2.0 natif") - public/
+   * unauthenticated `POST /auth/saml/discover/`, called by the sign-in
+   * screen right after email entry to decide whether to show password/
+   * OTP/OAuth or a "Continue with {IdP}" button (exigence 6).
+   */
+  discoverSAML = async (email: string): Promise<TSAMLDiscoverResponse> =>
+    this.post("/auth/saml/discover/", { email }, { headers: {} })
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
@@ -79,6 +93,7 @@ export class AuthService extends APIService {
       document.body.appendChild(form);
 
       form.submit();
+      return;
     });
   }
 }
