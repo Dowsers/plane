@@ -20,6 +20,10 @@ from plane.license.api.views import (
     InstanceWorkSpaceAvailabilityCheckEndpoint,
     InstanceWorkSpaceEndpoint,
     RateLimitTierEndpoint,
+    InstanceSAMLConfigurationEndpoint,
+    InstanceSAMLDomainEndpoint,
+    InstanceSAMLDomainVerifyEndpoint,
+    InstanceSAMLTestConnectionEndpoint,
 )
 
 urlpatterns = [
@@ -89,5 +93,34 @@ urlpatterns = [
         "audit-logs/",
         InstanceAuditLogEndpoint.as_view(),
         name="instance-audit-logs",
+    ),
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 1 "SSO SAML 2.0 natif" - instance-admin
+    # (god-mode) endpoints. Instance-admin-only via `BaseAPIView`'s own
+    # default `InstanceAdminPermission` (decision #6).
+    path(
+        "admin/saml-configurations/",
+        InstanceSAMLConfigurationEndpoint.as_view(),
+        name="instance-saml-configurations",
+    ),
+    path(
+        "admin/saml-configurations/<uuid:pk>/",
+        InstanceSAMLConfigurationEndpoint.as_view(),
+        name="instance-saml-configuration-detail",
+    ),
+    path(
+        "admin/saml-configurations/<uuid:pk>/domains/",
+        InstanceSAMLDomainEndpoint.as_view(),
+        name="instance-saml-configuration-domains",
+    ),
+    path(
+        "admin/saml-configurations/<uuid:pk>/domains/<uuid:domain_id>/verify/",
+        InstanceSAMLDomainVerifyEndpoint.as_view(),
+        name="instance-saml-configuration-domain-verify",
+    ),
+    path(
+        "admin/saml-configurations/<uuid:pk>/test-connection/",
+        InstanceSAMLTestConnectionEndpoint.as_view(),
+        name="instance-saml-configuration-test-connection",
     ),
 ]

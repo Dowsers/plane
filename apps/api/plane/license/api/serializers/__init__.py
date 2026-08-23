@@ -9,3 +9,5 @@ from .admin import InstanceAdminSerializer, InstanceAdminMeSerializer
 from .workspace import WorkspaceSerializer
 
 from .rate_limit import RateLimitTierSerializer
+
+from .saml import InstanceSAMLConfigurationSerializer, SAMLVerifiedDomainSerializer

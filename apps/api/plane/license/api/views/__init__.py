@@ -30,3 +30,10 @@ from .workspace import (
 )
 
 from .rate_limit import RateLimitTierEndpoint
+
+from .saml import (
+    InstanceSAMLConfigurationEndpoint,
+    InstanceSAMLDomainEndpoint,
+    InstanceSAMLDomainVerifyEndpoint,
+    InstanceSAMLTestConnectionEndpoint,
+)

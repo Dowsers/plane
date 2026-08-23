@@ -84,6 +84,23 @@ AUTHENTICATION_ERROR_CODES = {
     # OAuth providers, which are exactly what this error tells the user to
     # use instead (`payload["allowed_methods"]`).
     "SSO_ENFORCED_FOR_DOMAIN": 5200,
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 1 "SSO SAML 2.0 natif", exigence 11 -
+    # raised by the SHARED `Adapter.complete_login_or_signup()` choke
+    # point (so it covers email/OTP, password, AND every OAuth provider
+    # alike, unlike `SSO_ENFORCED_FOR_DOMAIN` above which deliberately
+    # never blocks OAuth) when the login email's domain is covered by a
+    # verified `SAMLVerifiedDomain` whose `InstanceSAMLConfiguration` has
+    # `enforce_sso=True`. Never raised for the SAML adapter's own login
+    # completion.
+    "SAML_SSO_ENFORCED_FOR_DOMAIN": 5201,
+    # Exigence 15 - the ONLY error the ACS endpoint (`/auth/saml/<id>/acs`)
+    # ever returns to an end user's browser, regardless of the real
+    # validation failure reason (invalid signature, expired assertion,
+    # wrong audience, replay, missing attribute, ...) - the real reason is
+    # logged server-side only, never included in this payload. See
+    # `plane.authentication.views.saml` module docstring.
+    "SAML_LOGIN_FAILED": 5202,
     # Exigence 8 - re-authentication challenge. Raised by
     # `plane.utils.reauth.require_recent_authentication` when
     # `WorkspaceSecurityPolicy.force_reauth_for_sensitive_actions=True` and

@@ -636,3 +636,28 @@ def purge_expired_audit_logs():
 
     deleted_count, _ = WorkspaceAuditLog.all_objects.filter(created_at__lt=cutoff_time).delete()
     logger.info(f"Purged {deleted_count} expired workspace audit log entr(y/ies)")
+
+
+@shared_task
+def purge_expired_saml_assertion_replays():
+    """Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    plane-selfhost), feature 1 "SSO SAML 2.0 natif", exigence 8 - purges
+    `SAMLAssertionReplay` rows once their `expires_at` (set to the
+    assertion's own `NotOnOrAfter` at insert time, see
+    `plane.utils.saml_xml.check_and_record_assertion`) has passed. Safe to
+    purge at that point: an assertion whose validity window is over can
+    never be replayed successfully anyway (`verify_and_extract_assertion`
+    rejects it on the `NotOnOrAfter` check well before replay is even
+    checked), so keeping the row around forever serves no purpose. Local
+    import of `plane.license.models`, matching
+    `get_audit_log_retention_days`/`purge_expired_audit_logs` above's own
+    precedent for reaching into `plane.license` from this module."""
+    from plane.license.models import SAMLAssertionReplay
+
+    # `all_objects` (plain manager, real hard delete), NOT `objects` (the
+    # soft-delete-aware default manager, whose `.delete()` would just set
+    # `deleted_at` rather than actually removing the row) - same choice
+    # `purge_expired_audit_logs` makes above, for the same reason: this is
+    # a genuine reclaim-the-table purge, not a soft delete.
+    deleted_count, _ = SAMLAssertionReplay.all_objects.filter(expires_at__lt=timezone.now()).delete()
+    logger.info(f"Purged {deleted_count} expired SAML assertion replay entr(y/ies)")

@@ -152,6 +152,14 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cleanup_task.purge_expired_audit_logs",
         "schedule": crontab(hour=4, minute=30),  # UTC 04:30, after the other daily cleanup tasks
     },
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 1 "SSO SAML 2.0 natif", exigence 8 - purge
+    # of consumed SAML assertion-replay ledger rows past their own
+    # NotOnOrAfter.
+    "check-every-day-to-purge-expired-saml-assertion-replays": {
+        "task": "plane.bgtasks.cleanup_task.purge_expired_saml_assertion_replays",
+        "schedule": crontab(hour=4, minute=45),  # UTC 04:45, after the other daily cleanup tasks
+    },
 }
 
 

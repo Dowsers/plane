@@ -38,8 +38,23 @@ def resolve_saml_config_for_email(email: str):
     if not domain:
         return None
 
+    # `saml_configuration__deleted_at__isnull=True` is deliberate, not
+    # redundant: `saml_configuration__...` traverses the FK via a raw SQL
+    # JOIN and does NOT go through `InstanceSAMLConfiguration.objects`'s
+    # own soft-delete-aware manager - a soft-deleted-but-still-
+    # `is_enabled=True` config (should never happen via this feature's own
+    # admin endpoint, which hard-deletes - see `plane.license.api.views.
+    # saml.InstanceSAMLConfigurationEndpoint.delete`'s own docstring - but
+    # defense in depth against any other code path reaching a plain
+    # `.delete()`) would otherwise keep silently routing/enforcing SSO for
+    # its domains, breaking exigence 16's immediate-fallback guarantee.
     verified_domain = (
-        SAMLVerifiedDomain.objects.filter(domain=domain, is_verified=True, saml_configuration__is_enabled=True)
+        SAMLVerifiedDomain.objects.filter(
+            domain=domain,
+            is_verified=True,
+            saml_configuration__is_enabled=True,
+            saml_configuration__deleted_at__isnull=True,
+        )
         .select_related("saml_configuration")
         .first()
     )

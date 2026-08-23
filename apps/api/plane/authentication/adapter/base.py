@@ -293,6 +293,39 @@ class Adapter:
         # Sanitize email
         email = self.sanitize_email(email)
 
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 1 "SSO SAML 2.0 natif", exigence 11 -
+        # instance-level SAML domain enforcement. This is THE shared choke
+        # point for every provider that reaches `complete_login_or_signup`
+        # (email/password and magic-link via `CredentialAdapter`, every
+        # OAuth provider via `OauthAdapter`) EXCEPT the SAML adapter's own
+        # login completion (`self.provider == "saml"`, excluded below) -
+        # unlike feature 6's workspace-level `enforce_sso_only` (see
+        # `CredentialAdapter._enforce_sso_policy`, deliberately NOT here,
+        # since that mechanism must never block the very OAuth methods it
+        # redirects users toward), this instance-level SAML check blocks
+        # OAuth too, per exigence 11's own wording ("email/OTP, mot de
+        # passe ET OAuth Google/GitHub") - so it belongs at the one place
+        # both credential and OAuth logins already funnel through, rather
+        # than being duplicated into `CredentialAdapter` AND `OauthAdapter`
+        # separately. The two checks are independent and compose: either
+        # one alone is sufficient to reject a login attempt.
+        if self.provider != "saml" and email:
+            from plane.utils.saml_enforcement import get_saml_enforcement_for_email
+
+            saml_config = get_saml_enforcement_for_email(email)
+            if saml_config is not None:
+                self.logger.warning(f"{self.provider} login blocked by instance SAML enforcement policy: {email}")
+                raise AuthenticationException(
+                    error_code=AUTHENTICATION_ERROR_CODES["SAML_SSO_ENFORCED_FOR_DOMAIN"],
+                    error_message="SAML_SSO_ENFORCED_FOR_DOMAIN",
+                    payload={
+                        "email": email,
+                        "saml_config_id": str(saml_config.id),
+                        "saml_config_name": saml_config.name,
+                    },
+                )
+
         # Check if the user is present
         user = User.objects.filter(email=email).first()
 

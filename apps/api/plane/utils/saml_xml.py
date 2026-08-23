@@ -55,6 +55,22 @@ from plane.utils.saml_keys import get_or_create_sp_signing_key
 
 logger = logging.getLogger("plane.utils.saml_xml")
 
+SAML_METADATA_PATH_TEMPLATE = "/auth/saml/{config_id}/metadata/"
+SAML_ACS_PATH_TEMPLATE = "/auth/saml/{config_id}/acs/"
+
+# Exigence 13 - marks an ACS hit as a "test connection" round-trip (no
+# user created/logged in) rather than a real login. Shared between the
+# admin test-connection endpoint (`plane.license.api.views.saml`, which
+# builds the redirect with this RelayState) and the public ACS endpoint
+# (`plane.authentication.views.saml`, which checks for it) - kept here,
+# not in either views module, to avoid a views-importing-views coupling
+# across the `license`/`authentication` app boundary. A bare fixed marker
+# string, not a per-request secret: the real security boundary is the
+# assertion's OWN signature (required in test mode exactly like a real
+# one) - RelayState is only ever a mode flag here, never itself relied on
+# for authorization.
+SAML_TEST_RELAY_STATE = "saml-test"
+
 SAML_PROTOCOL_NS = "urn:oasis:names:tc:SAML:2.0:protocol"
 SAML_ASSERTION_NS = "urn:oasis:names:tc:SAML:2.0:assertion"
 
@@ -99,6 +115,25 @@ class SAMLAssertionResult:
 # --------------------------------------------------------------------------
 # Certificate handling
 # --------------------------------------------------------------------------
+
+
+def sp_metadata_url(request, config_id) -> str:
+    """The ONE computation both the admin create view (storing
+    `sp_entity_id`, once, at creation) and the public metadata/login/ACS
+    views (recomputing it fresh on every request) must use identically -
+    kept here, not duplicated in `plane.license.api.views.saml` and
+    `plane.authentication.views.saml` separately."""
+    from plane.authentication.utils.host import base_host
+
+    base = base_host(request=request, is_app=True).rstrip("/")
+    return f"{base}{SAML_METADATA_PATH_TEMPLATE.format(config_id=config_id)}"
+
+
+def sp_acs_url(request, config_id) -> str:
+    from plane.authentication.utils.host import base_host
+
+    base = base_host(request=request, is_app=True).rstrip("/")
+    return f"{base}{SAML_ACS_PATH_TEMPLATE.format(config_id=config_id)}"
 
 
 def normalize_certificate_pem(raw: str) -> str:

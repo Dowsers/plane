@@ -46,6 +46,18 @@ from .views import (
     GiteaOauthInitiateSpaceEndpoint,
 )
 
+# Category 11 (docs/feature-specs/11-admin-security-sso.md in
+# plane-selfhost), feature 1 "SSO SAML 2.0 natif" - public/unauthenticated
+# SAML endpoints. Separate import block (not folded into the `.views`
+# import above) since these live in their own `plane.authentication.views.
+# saml` module rather than `.views.app`/`.views.space`.
+from .views.saml import (
+    SAMLACSEndpoint,
+    SAMLDiscoverEndpoint,
+    SAMLLoginInitiateEndpoint,
+    SAMLMetadataEndpoint,
+)
+
 urlpatterns = [
     # credentials
     path("sign-in/", SignInAuthEndpoint.as_view(), name="sign-in"),
@@ -150,4 +162,11 @@ urlpatterns = [
         GiteaCallbackSpaceEndpoint.as_view(),
         name="space-gitea-callback",
     ),
+    ## SAML SSO (category 11, feature 1) - public/unauthenticated, matching
+    ## every other unauthenticated auth endpoint's namespace convention
+    ## above rather than a new prefix.
+    path("saml/discover/", SAMLDiscoverEndpoint.as_view(), name="saml-discover"),
+    path("saml/<uuid:pk>/metadata/", SAMLMetadataEndpoint.as_view(), name="saml-metadata"),
+    path("saml/<uuid:pk>/login/", SAMLLoginInitiateEndpoint.as_view(), name="saml-login"),
+    path("saml/<uuid:pk>/acs/", SAMLACSEndpoint.as_view(), name="saml-acs"),
 ]
