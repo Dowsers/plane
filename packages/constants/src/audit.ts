@@ -34,6 +34,10 @@ export const AUDIT_EVENT_TYPE_LABELS: Record<TAuditEventType, string> = {
   PROJECT_OWNER_REVOKED: "Project Owner revoked",
   OWNERSHIP_TRANSFERRED: "Workspace ownership transferred",
   WORKSPACE_DELETED: "Workspace deleted",
+  SECURITY_POLICY_UPDATED: "Security policy updated",
+  VERIFIED_DOMAIN_ADDED: "Verified domain added",
+  DOMAIN_VERIFICATION_STATUS_CHANGED: "Domain verification status changed",
+  VERIFIED_DOMAIN_REMOVED: "Verified domain removed",
 };
 
 export const AUDIT_EVENT_TYPE_OPTIONS: { value: TAuditEventType; label: string }[] = (

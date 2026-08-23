@@ -26,7 +26,22 @@ export abstract class APIService {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response && error.response.status === 401) {
+        // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        // plane-selfhost), feature 6 ("Politiques de securite
+        // configurables"), exigence 8 - `POST .../reauth/`'s own guard
+        // (`plane.utils.reauth.guard_sensitive_action`) deliberately
+        // returns a 401 for a STILL-VALID session that merely needs to
+        // re-prove identity before a sensitive action (workspace
+        // deletion, full data export, security-policy modification, API
+        // token revocation) - not a real "your session died" 401 like
+        // `plane.utils.session_activity`'s own idle-timeout gate
+        // (`error_code: "WORKSPACE_SESSION_EXPIRED"`). Only THIS specific
+        // `error_code` is excluded from the hard redirect-to-login below,
+        // so a caller (see `@/hooks/use-sensitive-action-guard`) can catch
+        // it and show the reauth modal in place instead of losing the
+        // in-progress form/action to a full navigation.
+        const errorCode = error?.response?.data?.error_code;
+        if (error.response && error.response.status === 401 && errorCode !== "REAUTH_REQUIRED") {
           const currentPath = window.location.pathname;
           window.location.replace(`/${currentPath ? `?next_path=${currentPath}` : ``}`);
         }

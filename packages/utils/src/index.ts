@@ -15,6 +15,7 @@ export * from "./custom-dashboard";
 export * from "./cycle";
 export * from "./datetime";
 export * from "./distribution-update";
+export * from "./domain-verification";
 export * from "./editor";
 export * from "./emoji";
 export * from "./estimates";

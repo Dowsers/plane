@@ -39,7 +39,12 @@ export type TAuditEventType =
   | "PROJECT_OWNER_ASSIGNED"
   | "PROJECT_OWNER_REVOKED"
   | "OWNERSHIP_TRANSFERRED"
-  | "WORKSPACE_DELETED";
+  | "WORKSPACE_DELETED"
+  // Feature 6's 4 security-policy/verified-domain event types (exigence 9)
+  | "SECURITY_POLICY_UPDATED"
+  | "VERIFIED_DOMAIN_ADDED"
+  | "DOMAIN_VERIFICATION_STATUS_CHANGED"
+  | "VERIFIED_DOMAIN_REMOVED";
 
 /**
  * Matches `AUDIT_LOG_LIST_FIELDS`/`WorkspaceAuditLogListSerializer`
