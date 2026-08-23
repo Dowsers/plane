@@ -68,6 +68,17 @@ class AuditEventType(models.TextChoices):
     VERIFIED_DOMAIN_ADDED = "VERIFIED_DOMAIN_ADDED"
     DOMAIN_VERIFICATION_STATUS_CHANGED = "DOMAIN_VERIFICATION_STATUS_CHANGED"
     VERIFIED_DOMAIN_REMOVED = "VERIFIED_DOMAIN_REMOVED"
+    # Category 11 feature 2 ("SCIM 2.0 natif") - decision #3: routed into
+    # THIS already-shipped unified audit log rather than the spec's own
+    # proposed separate `SCIMAuditLog` model, matching how feature 6 above
+    # already did the same for its own domain/policy events. Reactivation
+    # (PATCH active:true) and other mutable-attribute PATCH/PUT updates
+    # both use SCIM_USER_UPDATED - no separate "reactivated" event type,
+    # the direction is carried in `old_value`/`new_value`.
+    SCIM_USER_CREATED = "SCIM_USER_CREATED"
+    SCIM_USER_UPDATED = "SCIM_USER_UPDATED"
+    SCIM_USER_DEACTIVATED = "SCIM_USER_DEACTIVATED"
+    SCIM_SYNC_ERROR = "SCIM_SYNC_ERROR"
 
 
 class WorkspaceAuditLog(BaseModel):

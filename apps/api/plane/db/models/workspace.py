@@ -422,6 +422,23 @@ class WorkspaceMember(BaseModel):
     # workspace's API calls only, not other workspaces the same browser
     # session might still be looking at.
     last_workspace_activity_at = models.DateTimeField(null=True, blank=True)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 2 ("SCIM 2.0 natif"), exigence 8 - the
+    # IdP-side `externalId` for this membership, stored/indexed so a SCIM
+    # PATCH/DELETE/GET-by-filter can resolve this row without depending on
+    # `member.email` alone (an IdP's own internal id for a user is more
+    # stable than its email across some directory reorganizations).
+    # Deliberately scoped to `WorkspaceMember` (not `User`) - the SAME
+    # global `User` can in principle be provisioned into more than one
+    # workspace by two unrelated SCIM connections (two different IdPs, or
+    # the same IdP configured twice), each with its own `externalId`.
+    scim_external_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    # Marks a membership whose lifecycle is SCIM-driven (exigence 3's own
+    # "distinguer dans l'UI les membres invites manuellement" wording) -
+    # read only by the (separate, frontend) member-management UI to warn
+    # an Admin before a manual role/removal change on a SCIM-managed row;
+    # this backend never itself blocks a manual change based on this flag.
+    scim_managed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["workspace", "member", "deleted_at"]
@@ -430,7 +447,18 @@ class WorkspaceMember(BaseModel):
                 fields=["workspace", "member"],
                 condition=models.Q(deleted_at__isnull=True),
                 name="workspace_member_unique_workspace_member_when_deleted_at_null",
-            )
+            ),
+            # Exigence 8 data-model section - "Contrainte unique_together
+            # sur (workspace, scim_external_id) lorsque non nul". A
+            # partial `UniqueConstraint` (not a plain `unique_together`,
+            # which cannot express "only when non-null" in a
+            # cross-database-portable way) - same pattern this category
+            # already used for `deleted_at__isnull=True` above.
+            models.UniqueConstraint(
+                fields=["workspace", "scim_external_id"],
+                condition=models.Q(scim_external_id__isnull=False),
+                name="workspace_member_unique_workspace_scim_external_id_when_set",
+            ),
         ]
         verbose_name = "Workspace Member"
         verbose_name_plural = "Workspace Members"

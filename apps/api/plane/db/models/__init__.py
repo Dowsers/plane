@@ -161,6 +161,8 @@ from .workflow_transition import (
 
 from .rate_limit import RateLimitTier
 
+from .scim import SCIMToken
+
 from .flexible_query import WorkspaceQuerySettings, FlexibleQueryLog
 
 from .github_integration import (

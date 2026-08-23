@@ -49,4 +49,31 @@ extended_config_variables = [
         "category": "SECURITY",
         "is_encrypted": False,
     },
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 2 ("SCIM 2.0 natif"), exigence 3 - instance-
+    # wide kill switch, same "0"/"1" string-boolean shape every other
+    # god-mode toggle in this table already uses (see `ENABLE_SIGNUP`,
+    # `ENABLE_GOOGLE_SYNC`, etc. read via
+    # `plane.license.utils.instance_value.get_configuration_value`).
+    # Defaults OFF - a workspace Owner/Admin cannot create a SCIM token
+    # (`plane.app.views.workspace.scim_admin`) NOR can the `/api/scim/v2/*`
+    # protocol surface itself (`plane.scim.authentication.
+    # SCIMTokenAuthentication`) authenticate ANY request while this is
+    # off, even with an otherwise-valid token - see that module's own
+    # docstring for why the protocol layer re-checks this flag live on
+    # every request rather than trusting that a token could only exist if
+    # SCIM was once enabled. Editable via the existing generic god-mode
+    # PATCH endpoint like every other row in this table - no new view code
+    # needed for the toggle itself. This entry alone only seeds the key on
+    # a genuinely FRESH instance (`configure_instance` runs `get_or_create`)
+    # - for already-deployed instances, see the accompanying hand-written
+    # data migration `plane.license.migrations.0010_enable_scim_config`,
+    # matching `AUDIT_LOG_RETENTION_DAYS`/`INSTANCE_MAX_SESSION_TIMEOUT_MINUTES`'s
+    # own precedent above.
+    {
+        "key": "ENABLE_SCIM",
+        "value": os.environ.get("ENABLE_SCIM", "0"),
+        "category": "SECURITY",
+        "is_encrypted": False,
+    },
 ]
