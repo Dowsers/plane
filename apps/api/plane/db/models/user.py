@@ -336,6 +336,17 @@ class Account(TimeAuditModel):
         ("google", "Google"),
         ("github", "Github"),
         ("gitlab", "GitLab"),
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 1 "SSO SAML 2.0 natif", decision #2 -
+        # Django choices are validation-hint only (this fork's real
+        # `gitea` OAuth adapter already writes an out-of-tuple
+        # `provider="gitea"` value, proving this empirically), so adding
+        # this entry is for documentation/admin-form clarity only, not a
+        # functional requirement. `provider_account_id` stores the SAML
+        # assertion's `NameID`; `metadata` (already existing JSONField
+        # below) stores the last-received SAML attributes - see
+        # `plane.authentication.adapter.saml.SAMLAdapter.create_update_account`.
+        ("saml", "SAML"),
     )
 
     id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True, primary_key=True)

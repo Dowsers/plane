@@ -3,3 +3,10 @@
 # See the LICENSE file for details.
 
 from .instance import Instance, InstanceAdmin, InstanceConfiguration, InstanceEdition
+
+from .saml import (
+    InstanceSAMLConfiguration,
+    SAMLAssertionReplay,
+    SAMLSignatureAlgorithm,
+    SAMLVerifiedDomain,
+)
