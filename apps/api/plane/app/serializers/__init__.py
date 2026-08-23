@@ -5,6 +5,7 @@
 from .base import BaseSerializer
 from .audit import WorkspaceAuditLogSerializer, WorkspaceAuditLogExportSerializer
 from .workspace_security import WorkspaceSecurityPolicySerializer, WorkspaceVerifiedDomainSerializer
+from .scim import SCIMTokenReadSerializer, SCIMTokenWriteSerializer
 from .user import (
     UserSerializer,
     UserLiteSerializer,

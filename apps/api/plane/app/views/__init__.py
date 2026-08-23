@@ -94,6 +94,7 @@ from .workspace.security import (
     WorkspaceVerifiedDomainVerifyEndpoint,
     WorkspaceReauthChallengeEndpoint,
 )
+from .workspace.scim_admin import WorkspaceSCIMTokenEndpoint, WorkspaceSCIMProvisioningLogEndpoint
 
 from .state.base import StateViewSet, IntakeStateEndpoint
 from .view.base import (

@@ -53,6 +53,8 @@ from plane.app.views import (
     WorkspaceVerifiedDomainEndpoint,
     WorkspaceVerifiedDomainVerifyEndpoint,
     WorkspaceReauthChallengeEndpoint,
+    WorkspaceSCIMTokenEndpoint,
+    WorkspaceSCIMProvisioningLogEndpoint,
 )
 
 
@@ -367,6 +369,25 @@ urlpatterns = [
         "workspaces/<str:slug>/verified-domains/<uuid:pk>/verify/",
         WorkspaceVerifiedDomainVerifyEndpoint.as_view(),
         name="workspace-verified-domain-verify",
+    ),
+    # Category 11 feature 2 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost) - "SCIM 2.0 natif", admin-facing token management +
+    # provisioning-log surface. NOT the `/api/scim/v2/*` protocol endpoints
+    # themselves (see plane/scim/urls.py, mounted at the project root).
+    path(
+        "workspaces/<str:slug>/scim/tokens/",
+        WorkspaceSCIMTokenEndpoint.as_view(),
+        name="workspace-scim-tokens",
+    ),
+    path(
+        "workspaces/<str:slug>/scim/tokens/<uuid:pk>/",
+        WorkspaceSCIMTokenEndpoint.as_view(),
+        name="workspace-scim-tokens",
+    ),
+    path(
+        "workspaces/<str:slug>/scim/provisioning-log/",
+        WorkspaceSCIMProvisioningLogEndpoint.as_view(),
+        name="workspace-scim-provisioning-log",
     ),
     path(
         "workspaces/<str:slug>/reauth/",
