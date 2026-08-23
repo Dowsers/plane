@@ -9,10 +9,12 @@ import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 
 import { Disclosure } from "@headlessui/react";
+import { Crown } from "lucide-react";
 // plane imports
 import { ROLE, EUserPermissions, EUserPermissionsLevel, MEMBER_TRACKER_ELEMENTS } from "@plane/constants";
 import { TrashIcon, SuspendedUserIcon } from "@plane/propel/icons";
 import { Pill, EPillVariant, EPillSize } from "@plane/propel/pill";
+import { Tooltip } from "@plane/propel/tooltip";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IUser, IWorkspaceMember } from "@plane/types";
 // plane ui
@@ -27,6 +29,15 @@ export interface RowData {
   member: IWorkspaceMember;
   role: EUserPermissions;
   is_active: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - despite `RowData.member` being typed as
+  // `IWorkspaceMember` above, `WorkspaceMembersListItem`
+  // (apps/web/core/components/workspace/settings/members-list-item.tsx)
+  // force-casts an `IWorkspaceMember[]` (whose OWN top-level `is_owner`
+  // field - see packages/types/src/workspace.ts - sits alongside `member`/
+  // `role`/`is_active`) into `RowData[]`, so this field really is present
+  // on every `rowData` at runtime, matching `role`/`is_active` above.
+  is_owner?: boolean;
 }
 
 type NameProps = {
@@ -35,6 +46,12 @@ type NameProps = {
   isAdmin: boolean;
   currentUser: IUser | undefined;
   setRemoveMemberModal: (rowData: RowData) => void;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - only ever invoked for the current
+  // Owner's own row (see the `isCurrentUser && rowData.is_owner` guard
+  // below), so a plain optional prop is enough - every other row simply
+  // never offers the option.
+  setTransferOwnershipModal?: () => void;
 };
 
 type AccountTypeProps = {
@@ -43,10 +60,16 @@ type AccountTypeProps = {
 };
 
 export function NameColumn(props: NameProps) {
-  const { rowData, workspaceSlug, isAdmin, currentUser, setRemoveMemberModal } = props;
+  const { rowData, workspaceSlug, isAdmin, currentUser, setRemoveMemberModal, setTransferOwnershipModal } = props;
   // derived values
   const { avatar_url, display_name, email, first_name, id, last_name } = rowData.member;
   const isSuspended = rowData.is_active === false;
+  const isCurrentUser = id === currentUser?.id;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - "Transfer ownership" is only ever offered
+  // on the current Owner's own row.
+  const canTransferOwnership = isCurrentUser && rowData.is_owner && Boolean(setTransferOwnershipModal);
+  const menuItems: Array<"transfer" | "remove"> = [...(canTransferOwnership ? (["transfer"] as const) : []), "remove"];
 
   return (
     <Disclosure>
@@ -78,31 +101,39 @@ export function NameColumn(props: NameProps) {
               <span className={isSuspended ? "text-placeholder" : ""}>
                 {first_name} {last_name}
               </span>
+              {rowData.is_owner && (
+                <Tooltip tooltipContent="Workspace Owner">
+                  <Crown className="size-3.5 shrink-0 text-warning-primary" aria-label="Workspace Owner" />
+                </Tooltip>
+              )}
             </div>
 
-            {!isSuspended && (isAdmin || id === currentUser?.id) && (
+            {!isSuspended && (isAdmin || isCurrentUser) && (
               <PopoverMenu
-                data={[""]}
+                data={menuItems}
                 keyExtractor={(item) => item}
                 popoverClassName="justify-end"
                 buttonClassName="outline-none	origin-center rotate-90 size-8 aspect-square flex-shrink-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"
-                render={() => (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="flex cursor-pointer items-center gap-x-3"
-                    onClick={() => setRemoveMemberModal(rowData)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setRemoveMemberModal(rowData);
-                      }
-                    }}
-                    data-ph-element={MEMBER_TRACKER_ELEMENTS.WORKSPACE_MEMBER_TABLE_CONTEXT_MENU}
-                  >
-                    <TrashIcon className="size-3.5 align-middle" /> {id === currentUser?.id ? "Leave " : "Remove "}
-                  </div>
-                )}
+                render={(item) =>
+                  item === "transfer" ? (
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center gap-x-3"
+                      onClick={() => setTransferOwnershipModal?.()}
+                    >
+                      <Crown className="size-3.5 align-middle" /> Transfer ownership
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center gap-x-3"
+                      onClick={() => setRemoveMemberModal(rowData)}
+                      data-ph-element={MEMBER_TRACKER_ELEMENTS.WORKSPACE_MEMBER_TABLE_CONTEXT_MENU}
+                    >
+                      <TrashIcon className="size-3.5 align-middle" /> {isCurrentUser ? "Leave " : "Remove "}
+                    </button>
+                  )
+                }
               />
             )}
           </div>
@@ -150,9 +181,9 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
           name="role"
           control={control}
           rules={{ required: "Role is required." }}
-          render={({ field: { value } }) => (
+          render={({ field: { value: selectedRole } }) => (
             <CustomSelect
-              value={value as EUserPermissions}
+              value={selectedRole as EUserPermissions}
               onChange={async (value: EUserPermissions) => {
                 if (!workspaceSlug) return;
                 try {

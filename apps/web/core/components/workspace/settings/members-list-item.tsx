@@ -15,6 +15,7 @@ import { Table } from "@plane/ui";
 import { MembersLayoutLoader } from "@/components/ui/loader/layouts/members-layout-loader";
 import { ConfirmWorkspaceMemberRemove } from "@/components/workspace/confirm-workspace-member-remove";
 import type { RowData } from "@/components/workspace/settings/member-columns";
+import { TransferOwnershipModal } from "@/components/workspace/transfer-ownership-modal";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useWorkspace } from "@/hooks/store/use-workspace";
@@ -29,7 +30,14 @@ type Props = {
 
 export const WorkspaceMembersListItem = observer(function WorkspaceMembersListItem(props: Props) {
   const { memberDetails } = props;
-  const { columns, workspaceSlug, removeMemberModal, setRemoveMemberModal } = useMemberColumns();
+  const {
+    columns,
+    workspaceSlug,
+    removeMemberModal,
+    setRemoveMemberModal,
+    transferOwnershipModal,
+    setTransferOwnershipModal,
+  } = useMemberColumns();
   // router
   const router = useAppRouter();
   // store hooks
@@ -38,7 +46,7 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
     workspace: { removeMemberFromWorkspace },
   } = useMember();
   const { leaveWorkspace } = useUserPermissions();
-  const { getWorkspaceRedirectionUrl } = useWorkspace();
+  const { currentWorkspace, getWorkspaceRedirectionUrl } = useWorkspace();
   const { fetchCurrentUserSettings } = useUserSettings();
   const { t } = useTranslation();
   // derived values
@@ -103,6 +111,11 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
           onSubmit={() => handleRemove(removeMemberModal.member.id)}
         />
       )}
+      <TransferOwnershipModal
+        isOpen={transferOwnershipModal}
+        workspace={currentWorkspace}
+        onClose={() => setTransferOwnershipModal(false)}
+      />
       <Table<RowData>
         columns={columns ?? []}
         data={

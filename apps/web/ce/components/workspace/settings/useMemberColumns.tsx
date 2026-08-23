@@ -16,9 +16,14 @@ import { useMember } from "@/hooks/store/use-member";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import type { IMemberFilters } from "@/store/member/utils";
 
+const isSuspended = (rowData: RowData) => rowData.is_active === false;
+
 export const useMemberColumns = () => {
   // states
   const [removeMemberModal, setRemoveMemberModal] = useState<RowData | null>(null);
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - "Transfer ownership" modal trigger.
+  const [transferOwnershipModal, setTransferOwnershipModal] = useState(false);
 
   const { workspaceSlug } = useParams();
 
@@ -33,8 +38,6 @@ export const useMemberColumns = () => {
 
   // derived values
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
-
-  const isSuspended = (rowData: RowData) => rowData.is_active === false;
 
   // handlers
   const handleDisplayFilterUpdate = (filterUpdates: Partial<IMemberFilters>) => {
@@ -60,6 +63,7 @@ export const useMemberColumns = () => {
           isAdmin={isAdmin}
           currentUser={currentUser}
           setRemoveMemberModal={setRemoveMemberModal}
+          setTransferOwnershipModal={() => setTransferOwnershipModal(true)}
         />
       ),
     },
@@ -132,5 +136,12 @@ export const useMemberColumns = () => {
       ),
     },
   ];
-  return { columns, workspaceSlug, removeMemberModal, setRemoveMemberModal };
+  return {
+    columns,
+    workspaceSlug,
+    removeMemberModal,
+    setRemoveMemberModal,
+    transferOwnershipModal,
+    setTransferOwnershipModal,
+  };
 };

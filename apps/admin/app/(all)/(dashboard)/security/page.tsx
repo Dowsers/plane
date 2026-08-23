@@ -90,7 +90,7 @@ const InstanceAuditLogPage = observer(function InstanceAuditLogPage(_props: Rout
 
       <div className="flex items-center justify-end gap-2 border-t border-subtle pt-3">
         <Button
-          variant="neutral-primary"
+          variant="secondary"
           size="sm"
           disabled={!data?.prev_page_results || !data?.prev_cursor}
           onClick={() => setCursor(data?.prev_cursor)}
@@ -98,7 +98,7 @@ const InstanceAuditLogPage = observer(function InstanceAuditLogPage(_props: Rout
           Previous
         </Button>
         <Button
-          variant="neutral-primary"
+          variant="secondary"
           size="sm"
           disabled={!data?.next_page_results || !data?.next_cursor}
           onClick={() => setCursor(data?.next_cursor)}

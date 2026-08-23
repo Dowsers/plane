@@ -11,6 +11,7 @@ import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { PageHead } from "@/components/core/page-title";
 import { ProjectDetailsForm } from "@/components/project/form";
 import { ProjectDetailsFormLoader } from "@/components/project/form-loader";
+import { ProjectOwnerSection } from "@/components/project/settings/owner-section";
 import { ProjectUpdateSettingsSection } from "@/components/project-updates/settings-section";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 // hooks
@@ -50,6 +51,16 @@ function ProjectSettingsPage({ params }: Route.ComponentProps) {
           <div className="mt-6">
             <ProjectUpdateSettingsSection />
           </div>
+        )}
+        {/* Category 11 (docs/feature-specs/11-admin-security-sso.md in
+            plane-selfhost), feature 5 - "Project Owner" section (exigence
+            8-10). Rendered alongside this page's other Admin-gated
+            sections; the component itself further restricts the
+            interactive assign/revoke controls to the workspace Owner or a
+            workspace Admin, since that's the real backend permission on
+            `ProjectOwnerEndpoint`, not plain project Admin. */}
+        {isAdmin && currentProjectDetails && (
+          <ProjectOwnerSection workspaceSlug={workspaceSlug} projectId={projectId} />
         )}
         {isAdmin && <GeneralProjectSettingsControlSection projectId={projectId} />}
       </div>
