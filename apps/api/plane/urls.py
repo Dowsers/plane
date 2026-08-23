@@ -15,6 +15,15 @@ from drf_spectacular.views import (
 handler404 = "plane.app.views.error_404.custom_404_view"
 
 urlpatterns = [
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 2 "SCIM 2.0 natif" - listed BEFORE "api/"
+    # below so `/api/scim/v2/...` resolves here directly rather than first
+    # failing to match inside plane.app.urls (Django's resolver would fall
+    # through to this entry either way, since a Resolver404 raised inside
+    # an included urlconf makes the outer resolver continue trying the
+    # next top-level pattern - but listing it first avoids that wasted
+    # attempt on every single SCIM request).
+    path("api/scim/v2/", include("plane.scim.urls")),
     path("api/", include("plane.app.urls")),
     path("api/public/", include("plane.space.urls")),
     path("api/instances/", include("plane.license.urls")),

@@ -90,6 +90,13 @@ WORKSPACE_SECURITY_EVENTS = {
     # `plane.app.views.workspace.security` for the dispatch call sites.
     "security_policy",
     "verified_domain",
+    # Category 11 feature 2 ("SCIM 2.0 natif") - same reuse, same
+    # translation pattern as feature 6 above. The spec's own two named
+    # event strings (`member.scim_provisioned`/`member.scim_deprovisioned`)
+    # become event="scim_provisioning", verb="provisioned"/"deprovisioned"
+    # (also "provisioned" again on a PATCH/PUT active:true reactivation -
+    # see `plane.scim.provisioning` for the dispatch call sites).
+    "scim_provisioning",
 }
 
 MODEL_MAPPER = {
