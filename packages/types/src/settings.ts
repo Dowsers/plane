@@ -22,7 +22,8 @@ export type TWorkspaceSettingsTabs =
   | "api"
   | "api-explorer"
   | "ai"
-  | "wiki";
+  | "wiki"
+  | "security";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;

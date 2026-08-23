@@ -13,6 +13,7 @@ import {
   Compass,
   CreditCard,
   LayoutTemplate,
+  ShieldCheck,
   Sparkles,
   Timer,
   Users,
@@ -36,4 +37,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   "api-explorer": Compass,
   ai: Bot,
   wiki: WikiIcon,
+  security: ShieldCheck,
 };

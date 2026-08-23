@@ -139,6 +139,13 @@ export interface IWorkspaceMember {
   display_name?: string;
   last_login_medium?: TLoginMediums;
   is_active?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - computed (`SerializerMethodField`, NOT a
+  // persisted field) comparison against `Workspace.owner_id`, exposed by
+  // `WorkSpaceMemberSerializer`/`WorkspaceMemberAdminSerializer`
+  // (apps/api/plane/app/serializers/workspace.py). At most one member of a
+  // workspace has this `true` at a time.
+  is_owner?: boolean;
 }
 
 export interface IWorkspaceMemberMe {
@@ -154,6 +161,12 @@ export interface IWorkspaceMemberMe {
   view_props: IWorkspaceViewProps;
   workspace: string;
   draft_issue_count: number;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - see `IWorkspaceMember.is_owner`'s own
+  // comment above; exposed here too via `WorkspaceMemberMeSerializer`, the
+  // cheapest way for the frontend to know "is the CURRENT user the real
+  // Owner of this workspace" without cross-referencing the members list.
+  is_owner?: boolean;
 }
 
 export interface ILastActiveWorkspaceDetails {

@@ -117,6 +117,14 @@ export interface IProjectMemberLite {
 export type TProjectMembership = {
   member: string;
   role: TUserPermissions | EUserProjectRoles;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - persisted (unlike the workspace-level
+  // `IWorkspaceMember.is_owner`, a computed property) flag exposed by
+  // `ProjectMemberAdminSerializer`/`ProjectMemberRoleSerializer`
+  // (apps/api/plane/app/serializers/project.py). Read-only on every
+  // serializer that exposes it - only ever changes via the dedicated
+  // `POST/DELETE .../projects/<id>/owner/` endpoint.
+  is_owner?: boolean;
 } & (
   | {
       id: string;

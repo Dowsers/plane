@@ -13,6 +13,8 @@ import type {
   IInstanceConfiguration,
   IInstanceInfo,
   TPage,
+  TPaginatedResponse,
+  TWorkspaceAuditLogDetail,
 } from "@plane/types";
 // api service
 import { APIService } from "../api.service";
@@ -136,6 +138,29 @@ export class InstanceService extends APIService {
    */
   async disableEmail(): Promise<void> {
     return this.delete("/api/instances/configurations/disable-email-feature/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), features 3+5 merged, exigence 10 - god-mode-only
+   * instance-scoped audit log (`InstanceAuditLogEndpoint`,
+   * apps/api/plane/license/api/views/audit_log.py). Never returns a
+   * workspace-scoped entry - today this is effectively just
+   * `OAUTH_CONFIG_UPDATED` events (`workspace=null`).
+   * @param {{ cursor?: string; per_page?: number; event_type?: string }} params
+   * @returns {Promise<TPaginatedResponse<TWorkspaceAuditLogDetail[]>>}
+   * @throws {Error} If the API request fails
+   */
+  async auditLogs(params?: {
+    cursor?: string;
+    per_page?: number;
+    event_type?: string;
+  }): Promise<TPaginatedResponse<TWorkspaceAuditLogDetail[]>> {
+    return this.get("/api/instances/audit-logs/", { params })
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

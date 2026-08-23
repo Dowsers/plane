@@ -6,6 +6,7 @@
 
 export * from "./ai";
 export * from "./analytics";
+export * from "./audit";
 export * from "./auth";
 export * from "./chart";
 export * from "./cycle";

@@ -132,6 +132,22 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/wiki/`,
   },
+  security: {
+    key: "security",
+    i18n_label: "workspace_settings.settings.security.title",
+    href: `/settings/security`,
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), features 3+5 merged, exigence 6/15 - the tab itself
+    // is only ever hidden from Member/Guest at this nav-level Admin gate
+    // (mirrors `ai`/`sla-policies` above); the STRICTER real-Owner-only
+    // restriction (an Admin who isn't the Owner never sees the audit log
+    // or the OAuth-adjacent settings this tab hosts) is enforced inside
+    // the page itself via `is_owner`, not here - the backend's own
+    // `IsWorkspaceOwner` permission is real ownership, not a role, so it
+    // can't be expressed in this role-only `access` array.
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/security/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -147,6 +163,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["project-templates"],
     WORKSPACE_SETTINGS["sla-policies"],
     WORKSPACE_SETTINGS["ai"],
+    WORKSPACE_SETTINGS["security"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"], WORKSPACE_SETTINGS["wiki"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [

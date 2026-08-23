@@ -28,6 +28,10 @@ export interface IWorkspaceMembership {
   member: string;
   role: EUserPermissions;
   is_active?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - see `IWorkspaceMember.is_owner`'s own
+  // comment (packages/types/src/workspace.ts).
+  is_owner?: boolean;
 }
 
 export interface IWorkspaceMemberStore {
@@ -53,6 +57,9 @@ export interface IWorkspaceMemberStore {
   // crud actions
   updateMember: (workspaceSlug: string, userId: string, data: { role: EUserPermissions }) => Promise<void>;
   removeMemberFromWorkspace: (workspaceSlug: string, userId: string) => Promise<void>;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - transfer real Workspace Owner status.
+  transferOwnership: (workspaceSlug: string, newOwnerId: string) => Promise<void>;
   // invite actions
   inviteMembersToWorkspace: (workspaceSlug: string, data: IWorkspaceBulkInviteFormData) => Promise<void>;
   updateMemberInvitation: (
@@ -92,6 +99,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       fetchWorkspaceMembers: action,
       updateMember: action,
       removeMemberFromWorkspace: action,
+      transferOwnership: action,
       fetchWorkspaceMemberInvitations: action,
       updateMemberInvitation: action,
       deleteMemberInvitation: action,
@@ -225,6 +233,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       role: workspaceMember.role,
       member: this.memberRoot?.memberMap?.[workspaceMember.member],
       is_active: workspaceMember.is_active,
+      is_owner: workspaceMember.is_owner,
     };
     return memberDetails;
   });
@@ -258,6 +267,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
             member: member.member.id,
             role: member.role,
             is_active: member.is_active,
+            is_owner: member.is_owner,
           });
         });
       });
@@ -303,6 +313,22 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       });
       return;
     });
+  };
+
+  /**
+   * @description transfer real workspace ownership to another Admin
+   * (category 11, docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost, feature 5). `is_owner` is a computed field (compared
+   * against `Workspace.owner_id` server-side), so the only reliable way to
+   * refresh it client-side for every member row (both the previous and the
+   * new owner) is to refetch the member list after the transfer succeeds -
+   * there is no single-member field to patch optimistically here.
+   * @param workspaceSlug
+   * @param newOwnerId
+   */
+  transferOwnership = async (workspaceSlug: string, newOwnerId: string) => {
+    await this.workspaceService.transferWorkspaceOwnership(workspaceSlug, newOwnerId);
+    await this.fetchWorkspaceMembers(workspaceSlug);
   };
 
   /**

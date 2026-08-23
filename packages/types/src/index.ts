@@ -12,6 +12,7 @@ export * from "./ai-triage-config";
 export * from "./analytics";
 export * from "./api-explorer";
 export * from "./api_token";
+export * from "./audit";
 export * from "./auth";
 export * from "./calendar";
 export * from "./charts";

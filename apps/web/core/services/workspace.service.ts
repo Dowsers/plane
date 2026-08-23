@@ -161,6 +161,25 @@ export class WorkspaceService extends APIService {
       });
   }
 
+  /**
+   * Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), feature 5 - transfers the real `Workspace.owner` to
+   * another member who already holds the Admin role. Restricted server-side
+   * to the CURRENT owner (`IsWorkspaceOwner`) - see
+   * `WorkspaceOwnerTransferEndpoint` (apps/api/plane/app/views/workspace/
+   * owner.py). Does not demote the previous owner (they stay Admin).
+   */
+  async transferWorkspaceOwnership(
+    workspaceSlug: string,
+    newOwnerId: string
+  ): Promise<{ workspace: string; owner_id: string }> {
+    return this.post(`/api/workspaces/${workspaceSlug}/owner/transfer/`, { new_owner_id: newOwnerId })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async workspaceInvitations(workspaceSlug: string): Promise<IWorkspaceMemberInvitation[]> {
     return this.get(`/api/workspaces/${workspaceSlug}/invitations/`)
       .then((response) => response?.data)

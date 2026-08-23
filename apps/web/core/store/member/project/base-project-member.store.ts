@@ -19,7 +19,7 @@ import type {
 // plane web imports
 import type { RootStore } from "@/plane-web/store/root.store";
 // services
-import { ProjectMemberService, ProjectService } from "@/services/project";
+import { ProjectMemberService, ProjectOwnerService, ProjectService } from "@/services/project";
 // store
 import type { IProjectStore } from "@/store/project/project.store";
 import type { IRouterStore } from "@/store/router.store";
@@ -30,6 +30,11 @@ import { sortProjectMembers } from "../utils";
 import type { IProjectMemberFiltersStore } from "./project-member-filters.store";
 import { ProjectMemberFiltersStore } from "./project-member-filters.store";
 
+// `is_owner` (category 11, docs/feature-specs/11-admin-security-sso.md in
+// plane-selfhost, feature 5) is already carried through via
+// `TProjectMembership` below - see the two computed methods further down
+// that build an `IProjectMemberDetails` by hand (NOT a spread) and so must
+// each explicitly forward it.
 export interface IProjectMemberDetails extends Omit<TProjectMembership, "member"> {
   member: IUserLite;
 }
@@ -82,6 +87,10 @@ export interface IBaseProjectMemberStore {
     role: EUserProjectRoles
   ) => Promise<TProjectMembership>;
   removeMemberFromProject: (workspaceSlug: string, projectId: string, userId: string) => Promise<void>;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 5 - Project Owner assign/revoke.
+  assignProjectOwner: (workspaceSlug: string, projectId: string, userId: string) => Promise<TProjectMembership>;
+  revokeProjectOwner: (workspaceSlug: string, projectId: string) => Promise<void>;
 }
 
 export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore {
@@ -106,6 +115,7 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
   // services
   projectMemberService;
   projectService;
+  projectOwnerService;
 
   constructor(_memberRoot: IMemberRootStore, _rootStore: RootStore) {
     makeObservable(this, {
@@ -121,6 +131,8 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
       bulkAddMembersToProject: action,
       updateMemberRole: action,
       removeMemberFromProject: action,
+      assignProjectOwner: action,
+      revokeProjectOwner: action,
     });
     // root store
     this.rootStore = _rootStore;
@@ -132,6 +144,7 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
     // services
     this.projectMemberService = new ProjectMemberService();
     this.projectService = new ProjectService();
+    this.projectOwnerService = new ProjectOwnerService();
   }
 
   /**
@@ -224,6 +237,7 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
         joining_date: projectMember.created_at ?? undefined,
       },
       created_at: projectMember.created_at,
+      is_owner: projectMember.is_owner,
     };
     return memberDetails;
   });
@@ -277,6 +291,7 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
         joining_date: projectMember.created_at ?? undefined,
       },
       created_at: projectMember.created_at,
+      is_owner: projectMember.is_owner,
     };
     return memberDetails;
   });
@@ -436,7 +451,41 @@ export abstract class BaseProjectMemberStore implements IBaseProjectMemberStore 
       runInAction(() => {
         this.processMemberRemoval(projectId, userId);
       });
+      return;
     });
+  };
+
+  /**
+   * @description assign the Project Owner status to a project member who
+   * already holds project role Admin (category 11, docs/feature-specs/
+   * 11-admin-security-sso.md in plane-selfhost, feature 5). At most one
+   * active Project Owner per project - assigning a new one server-side
+   * silently revokes any previous one (`ProjectOwnerEndpoint.post`,
+   * apps/api/plane/app/views/project/owner.py), so this refetches the full
+   * member list rather than patching a single member in place, to pick up
+   * that side effect on the previous owner's row too.
+   * @param workspaceSlug
+   * @param projectId
+   * @param userId
+   */
+  assignProjectOwner = async (workspaceSlug: string, projectId: string, userId: string) => {
+    const memberDetails = this.getProjectMemberDetails(userId, projectId);
+    if (!memberDetails) throw new Error("Member not found");
+    const response = await this.projectOwnerService.assign(workspaceSlug, projectId, userId);
+    await this.fetchProjectMembers(workspaceSlug, projectId, true);
+    return response;
+  };
+
+  /**
+   * @description revoke the active Project Owner status for a project, if
+   * any (category 11, docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost, feature 5).
+   * @param workspaceSlug
+   * @param projectId
+   */
+  revokeProjectOwner = async (workspaceSlug: string, projectId: string) => {
+    await this.projectOwnerService.revoke(workspaceSlug, projectId);
+    await this.fetchProjectMembers(workspaceSlug, projectId, true);
   };
 
   /**
