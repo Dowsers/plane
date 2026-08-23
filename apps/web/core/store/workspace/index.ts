@@ -243,17 +243,27 @@ export abstract class BaseWorkspaceRootStore implements IWorkspaceRootStore {
    * @param workspaceSlug
    */
   deleteWorkspace = async (workspaceSlug: string) => {
-    try {
-      await this.workspaceService.deleteWorkspace(workspaceSlug);
-      const updatedWorkspacesList = this.workspaces;
-      const workspaceId = this.getWorkspaceBySlug(workspaceSlug)?.id;
-      delete updatedWorkspacesList[`${workspaceId}`];
-      runInAction(() => {
-        this.workspaces = updatedWorkspacesList;
-      });
-    } catch (error) {
-      console.error("Failed to delete workspace:", error);
-    }
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 6 ("Politiques de securite configurables"),
+    // exigence 8 - deliberately no try/catch-and-swallow here (unlike this
+    // method's own previous version) - `WorkSpaceViewSet.destroy()` may
+    // now reject with `REAUTH_REQUIRED` (`plane.utils.reauth.
+    // guard_sensitive_action`) when `force_reauth_for_sensitive_actions`
+    // is enabled, and `DeleteWorkspaceForm`'s own `useSensitiveActionGuard`
+    // needs that rejection to actually reach its `catch` to open the
+    // reauth modal. Matches the sibling `transferOwnership` action's own
+    // convention (no swallow) rather than the "log and continue" this
+    // action used to have, which would have silently no-opped on any
+    // failure (permission error, network error, or this new reauth gate
+    // alike) while the caller's UI stayed stuck believing the request was
+    // still in flight.
+    await this.workspaceService.deleteWorkspace(workspaceSlug);
+    const updatedWorkspacesList = this.workspaces;
+    const workspaceId = this.getWorkspaceBySlug(workspaceSlug)?.id;
+    delete updatedWorkspacesList[`${workspaceId}`];
+    runInAction(() => {
+      this.workspaces = updatedWorkspacesList;
+    });
   };
 
   fetchSidebarNavigationPreferences = async (workspaceSlug: string) => {

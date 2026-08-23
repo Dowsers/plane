@@ -14,10 +14,15 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspace } from "@plane/types";
 import { Input } from "@plane/ui";
 import { cn } from "@plane/utils";
+// components
+import { ReauthModal } from "@/components/workspace/settings/security/reauth-modal";
+// helpers
+import { isReauthRequiredError } from "@/helpers/reauth.helper";
 // hooks
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUserSettings } from "@/hooks/store/user";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useSensitiveActionGuard } from "@/hooks/use-sensitive-action-guard";
 
 type Props = {
   data: IWorkspace | null;
@@ -38,6 +43,11 @@ export const DeleteWorkspaceForm = observer(function DeleteWorkspaceForm(props: 
   const { t } = useTranslation();
   const { getWorkspaceRedirectionUrl } = useWorkspace();
   const { fetchCurrentUserSettings } = useUserSettings();
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 6, exigence 8 - workspace deletion is one of
+  // the 4 sensitive actions `force_reauth_for_sensitive_actions` gates
+  // (`WorkSpaceViewSet.destroy()`).
+  const { runGuarded, isReauthModalOpen, onReauthSuccess, onReauthClose } = useSensitiveActionGuard(data?.slug ?? "");
   // form info
   const {
     control,
@@ -62,7 +72,7 @@ export const DeleteWorkspaceForm = observer(function DeleteWorkspaceForm(props: 
     if (!data || !canDelete) return;
 
     try {
-      await deleteWorkspace(data.slug);
+      await runGuarded(() => deleteWorkspace(data.slug));
       await fetchCurrentUserSettings();
       handleClose();
       router.push(getWorkspaceRedirectionUrl());
@@ -71,7 +81,11 @@ export const DeleteWorkspaceForm = observer(function DeleteWorkspaceForm(props: 
         title: t("workspace_settings.settings.general.delete_modal.success_title"),
         message: t("workspace_settings.settings.general.delete_modal.success_message"),
       });
-    } catch (_error) {
+    } catch (error: unknown) {
+      // A cancelled re-auth challenge is a deliberate no-op, not a
+      // failure - the modal already closed itself, nothing else to do.
+      if (isReauthRequiredError(error)) return;
+
       setToast({
         type: TOAST_TYPE.ERROR,
         title: t("workspace_settings.settings.general.delete_modal.error_title"),
@@ -158,6 +172,15 @@ export const DeleteWorkspaceForm = observer(function DeleteWorkspaceForm(props: 
           {isSubmitting ? t("deleting") : t("confirm")}
         </Button>
       </div>
+
+      {data?.slug && (
+        <ReauthModal
+          workspaceSlug={data.slug}
+          isOpen={isReauthModalOpen}
+          onClose={onReauthClose}
+          onSuccess={onReauthSuccess}
+        />
+      )}
     </form>
   );
 });

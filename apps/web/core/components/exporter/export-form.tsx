@@ -24,8 +24,12 @@ import type { TWorkItemFilterExpression } from "@plane/types";
 import { CustomSearchSelect, CustomSelect } from "@plane/ui";
 // import { WorkspaceLevelWorkItemFiltersHOC } from "@/components/work-item-filters/filters-hoc/workspace-level";
 // import { WorkItemFiltersRow } from "@/components/work-item-filters/filters-row";
+import { ReauthModal } from "@/components/workspace/settings/security/reauth-modal";
+// helpers
+import { isReauthRequiredError } from "@/helpers/reauth.helper";
 import { useProject } from "@/hooks/store/use-project";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
+import { useSensitiveActionGuard } from "@/hooks/use-sensitive-action-guard";
 import { ProjectExportService } from "@/services/project/project-export.service";
 // local imports
 import { SettingsBoxedControlItem } from "../settings/boxed-control-item";
@@ -59,6 +63,12 @@ export const ExportForm = observer(function ExportForm(props: Props) {
   const { workspaceSlug, mutateServices } = props;
   // states
   const [exportLoading, setExportLoading] = useState(false);
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 6, exigence 8 - "full data export" is one of
+  // the 4 sensitive actions `force_reauth_for_sensitive_actions` gates
+  // (`ExportIssuesEndpoint.post`, the real endpoint this form's own
+  // `csvExport` call hits).
+  const { runGuarded, isReauthModalOpen, onReauthSuccess, onReauthClose } = useSensitiveActionGuard(workspaceSlug);
 
   // store hooks
   const { allowPermissions } = useUserPermissions();
@@ -107,7 +117,7 @@ export const ExportForm = observer(function ExportForm(props: Props) {
         rich_filters: formData.filters,
       };
       try {
-        await projectExportService.csvExport(workspaceSlug, payload);
+        await runGuarded(() => projectExportService.csvExport(workspaceSlug, payload));
         mutateServices();
         setExportLoading(false);
         setToast({
@@ -124,8 +134,11 @@ export const ExportForm = observer(function ExportForm(props: Props) {
                     : "",
           }),
         });
-      } catch (_error) {
+      } catch (error: unknown) {
         setExportLoading(false);
+        // A cancelled re-auth challenge is a deliberate no-op, not a
+        // failure - the modal already closed itself, nothing else to do.
+        if (isReauthRequiredError(error)) return;
         setToast({
           type: TOAST_TYPE.ERROR,
           title: t("error"),
@@ -256,6 +269,12 @@ export const ExportForm = observer(function ExportForm(props: Props) {
           )}
         />
       </div> */}
+      <ReauthModal
+        workspaceSlug={workspaceSlug}
+        isOpen={isReauthModalOpen}
+        onClose={onReauthClose}
+        onSuccess={onReauthSuccess}
+      />
     </form>
   );
 });

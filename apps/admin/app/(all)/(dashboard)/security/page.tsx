@@ -4,16 +4,20 @@
  * See the LICENSE file for details.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import useSWR from "swr";
 // plane imports
 import { InstanceService } from "@plane/services";
 import { Button } from "@plane/propel/button";
-import { Loader } from "@plane/ui";
+import { setPromiseToast } from "@plane/propel/toast";
+import type { TInstanceConfigurationKeys } from "@plane/types";
+import { Input, Loader } from "@plane/ui";
 import { renderFormattedDate, renderFormattedTime } from "@plane/utils";
 // components
 import { PageWrapper } from "@/components/common/page-wrapper";
+// hooks
+import { useInstance } from "@/hooks/store";
 // types
 import type { Route } from "./+types/page";
 
@@ -22,23 +26,60 @@ const PER_PAGE = 20;
 
 /**
  * Category 11 (docs/feature-specs/11-admin-security-sso.md in
- * plane-selfhost), features 3+5 merged, exigence 10 - god-mode-only view
- * of the instance-scoped audit log (`InstanceAuditLogEndpoint`,
- * apps/api/plane/license/api/views/audit_log.py). Deliberately minimal
- * relative to the workspace-level Security > Audit log tab in the main
- * app - today this endpoint only ever surfaces `OAUTH_CONFIG_UPDATED`
- * events (`workspace=null`), so there is no event-type filter here, and
- * `old_value`/`new_value` are never populated for this event (secrets are
- * never logged - see `InstanceConfigurationEndpoint.patch`) - only
- * `metadata.keys_updated` (which config keys changed) is shown.
+ * plane-selfhost), feature 6 ("Politiques de securite configurables") -
+ * god-mode-only numeric field for `INSTANCE_MAX_SESSION_TIMEOUT_MINUTES`
+ * (`apps/api/plane/utils/instance_config_variables/extended.py`), the
+ * instance-wide ceiling `WorkspaceSecurityPolicy.session_timeout_minutes`
+ * is capped against (`plane.utils.session_activity`). Verified there is no
+ * generic config-schema-driven renderer anywhere in apps/admin - every
+ * category (AI, workspace, authentication providers...) hand-builds its
+ * own form bound to specific `formattedConfig` keys via `useInstance()`
+ * (data-fetching IS generic - `fetchInstanceConfigurations`/
+ * `updateInstanceConfigurations` - only the UI per key is not), so this
+ * follows that exact same pattern (mirrors `WorkspaceManagementPage`'s own
+ * `DISABLE_WORKSPACE_CREATION` field) rather than inventing a new one.
+ * Lives on this god-mode "Security" page since that's this fork's one
+ * existing SECURITY-category god-mode surface, even though the rest of
+ * the page is the (feature 3+5) instance audit log.
  */
+const SESSION_TIMEOUT_CONFIG_KEY: TInstanceConfigurationKeys = "INSTANCE_MAX_SESSION_TIMEOUT_MINUTES";
+
 const InstanceAuditLogPage = observer(function InstanceAuditLogPage(_props: Route.ComponentProps) {
   // state
   const [cursor, setCursor] = useState<string | undefined>(`${PER_PAGE}:0:0`);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [maxSessionTimeout, setMaxSessionTimeout] = useState("");
+  const [hasInitializedMaxSessionTimeout, setHasInitializedMaxSessionTimeout] = useState(false);
+  // store
+  const { formattedConfig, fetchInstanceConfigurations, updateInstanceConfigurations } = useInstance();
+
+  useSWR("INSTANCE_CONFIGURATIONS", () => fetchInstanceConfigurations());
+
+  // Sync the editable draft from the fetched config exactly once - so a
+  // later re-fetch (e.g. after saving) never clobbers what's mid-edit.
+  useEffect(() => {
+    const fetchedValue = formattedConfig?.[SESSION_TIMEOUT_CONFIG_KEY];
+    if (!hasInitializedMaxSessionTimeout && fetchedValue !== undefined) {
+      setMaxSessionTimeout(fetchedValue);
+      setHasInitializedMaxSessionTimeout(true);
+    }
+  }, [formattedConfig, hasInitializedMaxSessionTimeout]);
 
   const { data, isLoading } = useSWR(["INSTANCE_AUDIT_LOGS", cursor], () =>
     instanceService.auditLogs({ cursor, per_page: PER_PAGE })
   );
+
+  const handleSaveMaxSessionTimeout = async () => {
+    setIsSubmitting(true);
+    const updatePromise = updateInstanceConfigurations({ [SESSION_TIMEOUT_CONFIG_KEY]: maxSessionTimeout });
+    setPromiseToast(updatePromise, {
+      loading: "Saving configuration",
+      success: { title: "Success", message: () => "Configuration saved successfully" },
+      error: { title: "Error", message: () => "Failed to save configuration" },
+    });
+    await updatePromise.catch((err) => console.error(err));
+    setIsSubmitting(false);
+  };
 
   return (
     <PageWrapper
@@ -47,6 +88,35 @@ const InstanceAuditLogPage = observer(function InstanceAuditLogPage(_props: Rout
         description: "Instance-level configuration changes, such as OAuth/SSO credential updates in god-mode.",
       }}
     >
+      <div className="mb-8 flex flex-col gap-3 border-b border-subtle pb-8">
+        <div>
+          <div className="text-16 font-medium">Session idle-timeout ceiling</div>
+          <div className="text-11 leading-5 font-regular text-tertiary">
+            The maximum idle-timeout, in minutes, any workspace Owner may configure for their own workspace. A workspace
+            with no timeout of its own, or one above this ceiling, falls back to this value.
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Input
+            type="number"
+            min={5}
+            max={43200}
+            value={maxSessionTimeout}
+            onChange={(e) => setMaxSessionTimeout(e.target.value)}
+            disabled={!formattedConfig}
+            inputSize="sm"
+            className="w-40"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSaveMaxSessionTimeout}
+            disabled={!formattedConfig || isSubmitting}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-13">
           <thead>
