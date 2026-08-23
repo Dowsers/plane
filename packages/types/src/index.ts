@@ -60,6 +60,7 @@ export * from "./recurring-issue-template";
 export * from "./intake";
 export * from "./rich-filters";
 export * from "./roadmap";
+export * from "./saml";
 export * from "./search";
 export * from "./security-policy";
 export * from "./settings";

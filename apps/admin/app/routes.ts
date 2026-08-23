@@ -19,6 +19,13 @@ export default [
     route("authentication/gitlab", "./(all)/(dashboard)/authentication/gitlab/page.tsx"),
     route("authentication/google", "./(all)/(dashboard)/authentication/google/page.tsx"),
     route("authentication/gitea", "./(all)/(dashboard)/authentication/gitea/page.tsx"),
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 1 "SSO SAML 2.0 natif" - god-mode SAML SSO
+    // configuration list/create/edit, nested under Authentication like
+    // every other provider above.
+    route("authentication/saml", "./(all)/(dashboard)/authentication/saml/page.tsx"),
+    route("authentication/saml/create", "./(all)/(dashboard)/authentication/saml/create/page.tsx"),
+    route("authentication/saml/:configId", "./(all)/(dashboard)/authentication/saml/[configId]/page.tsx"),
     route("ai", "./(all)/(dashboard)/ai/page.tsx"),
     route("image", "./(all)/(dashboard)/image/page.tsx"),
     route("security", "./(all)/(dashboard)/security/page.tsx"),

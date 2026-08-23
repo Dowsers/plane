@@ -140,6 +140,15 @@ export interface IWorkspaceMember {
   last_login_medium?: TLoginMediums;
   is_active?: boolean;
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 1 - computed (`SerializerMethodField`, NOT a
+  // persisted field) on `UserAdminLiteSerializer`
+  // (apps/api/plane/app/serializers/user.py): whether this user has at
+  // least one linked `Account(provider="saml")` row, i.e. has ever signed
+  // in via a SAML IdP (JIT-created or an existing password/OAuth account
+  // later linked - exigence 9/10). Unlike `last_login_medium` this is a
+  // durable "has a SAML identity" fact, not the most recent login method.
+  is_sso_provisioned?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 5 - computed (`SerializerMethodField`, NOT a
   // persisted field) comparison against `Workspace.owner_id`, exposed by
   // `WorkSpaceMemberSerializer`/`WorkspaceMemberAdminSerializer`

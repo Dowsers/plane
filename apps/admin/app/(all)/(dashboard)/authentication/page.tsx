@@ -6,9 +6,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import { observer } from "mobx-react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import useSWR from "swr";
+import { ShieldCheck } from "lucide-react";
 // plane internal packages
+import { InstanceService } from "@plane/services";
 import { setPromiseToast, setToast, TOAST_TYPE } from "@plane/propel/toast";
 import type { TInstanceConfigurationKeys, TInstanceAuthenticationModes } from "@plane/types";
 import { Loader, ToggleSwitch } from "@plane/ui";
@@ -18,11 +21,14 @@ import { PageWrapper } from "@/components/common/page-wrapper";
 import { AuthenticationMethodCard } from "@/components/authentication/authentication-method-card";
 // helpers
 import { canDisableAuthMethod } from "@/helpers/authentication";
+import { getSamlConfigStatus } from "@/helpers/saml-config-status";
 // hooks
 import { useAuthenticationModes } from "@/hooks/oauth";
 import { useInstance } from "@/hooks/store";
 // types
 import type { Route } from "./+types/page";
+
+const instanceService = new InstanceService();
 
 const InstanceAuthenticationPage = observer(function InstanceAuthenticationPage(_props: Route.ComponentProps) {
   // theme
@@ -108,6 +114,23 @@ const InstanceAuthenticationPage = observer(function InstanceAuthenticationPage(
   // Update ref with latest authentication modes
   authenticationModesRef.current = authenticationModes;
 
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 1 - "le
+  // god-mode expose une nouvelle section 'SSO SAML' dans les paramètres
+  // d'authentification, au même niveau que les toggles Google/GitHub
+  // existants." SAML doesn't fit the single on/off `AuthenticationMethodCard`
+  // shape above (a config is a whole CRUD list, not one toggle key), so it
+  // gets its own summary card below instead, linking through to the
+  // dedicated list/create/edit pages.
+  const { data: samlConfigs } = useSWR("INSTANCE_SAML_CONFIGURATIONS", () => instanceService.samlConfigurations());
+  const activeSamlCount = samlConfigs?.filter((config) => getSamlConfigStatus(config) === "active").length ?? 0;
+  const samlSummary =
+    samlConfigs === undefined
+      ? "Loading..."
+      : samlConfigs.length === 0
+        ? "No configuration yet."
+        : `${samlConfigs.length} configuration${samlConfigs.length > 1 ? "s" : ""}, ${activeSamlCount} active.`;
+
   return (
     <PageWrapper
       header={{
@@ -155,6 +178,20 @@ const InstanceAuthenticationPage = observer(function InstanceAuthenticationPage(
               unavailable={method.unavailable}
             />
           ))}
+
+          <div className="text-lg pt-6 font-medium">SAML SSO</div>
+          <Link href="/authentication/saml" className="block">
+            <AuthenticationMethodCard
+              name="SAML SSO"
+              description={samlSummary}
+              icon={<ShieldCheck className="h-6 w-6 p-0.5 text-tertiary" />}
+              config={
+                <span className="text-11 font-medium text-accent-primary">
+                  {samlConfigs && samlConfigs.length > 0 ? "Manage" : "Configure"}
+                </span>
+              }
+            />
+          </Link>
         </div>
       ) : (
         <Loader className="space-y-10">

@@ -12,8 +12,15 @@ import type {
   IInstanceAdmin,
   IInstanceConfiguration,
   IInstanceInfo,
+  TInstanceSAMLConfiguration,
+  TInstanceSAMLConfigurationCreatePayload,
+  TInstanceSAMLConfigurationUpdatePayload,
   TPage,
   TPaginatedResponse,
+  TSAMLTestConnectionResponse,
+  TSAMLVerifiedDomain,
+  TSAMLVerifiedDomainCreatePayload,
+  TSAMLVerifiedDomainVerifyResponse,
   TWorkspaceAuditLogDetail,
 } from "@plane/types";
 // api service
@@ -161,6 +168,92 @@ export class InstanceService extends APIService {
     event_type?: string;
   }): Promise<TPaginatedResponse<TWorkspaceAuditLogDetail[]>> {
     return this.get("/api/instances/audit-logs/", { params })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), feature 1 ("SSO SAML 2.0 natif") - instance-admin
+   * (god-mode) CRUD + domain verification + test-connection for
+   * `InstanceSAMLConfiguration`
+   * (apps/api/plane/license/api/views/saml.py). Folded onto this same
+   * `InstanceService` rather than a new sibling class, matching this
+   * class's own `auditLogs()` precedent (both are god-mode-only,
+   * instance-scoped, same category) rather than feature 6's separate
+   * `WorkspaceSecurityService` (a workspace-scoped, Admin/Owner-split
+   * surface - a different shape of precedent).
+   */
+  async samlConfigurations(): Promise<TInstanceSAMLConfiguration[]> {
+    return this.get("/api/instances/admin/saml-configurations/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getSamlConfiguration(configId: string): Promise<TInstanceSAMLConfiguration> {
+    return this.get(`/api/instances/admin/saml-configurations/${configId}/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createSamlConfiguration(data: TInstanceSAMLConfigurationCreatePayload): Promise<TInstanceSAMLConfiguration> {
+    return this.post("/api/instances/admin/saml-configurations/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateSamlConfiguration(
+    configId: string,
+    data: TInstanceSAMLConfigurationUpdatePayload
+  ): Promise<TInstanceSAMLConfiguration> {
+    return this.patch(`/api/instances/admin/saml-configurations/${configId}/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteSamlConfiguration(configId: string): Promise<void> {
+    return this.delete(`/api/instances/admin/saml-configurations/${configId}/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Creates a domain + generates its `verification_token`, does NOT verify. */
+  async addSamlDomain(configId: string, data: TSAMLVerifiedDomainCreatePayload): Promise<TSAMLVerifiedDomain> {
+    return this.post(`/api/instances/admin/saml-configurations/${configId}/domains/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** SYNCHRONOUS (DNS TXT only, bounded ~5s) - no polling needed, just a
+   * loading state, matching feature 6's own verified-domain "verify now"
+   * UX. */
+  async verifySamlDomain(configId: string, domainId: string): Promise<TSAMLVerifiedDomainVerifyResponse> {
+    return this.post(`/api/instances/admin/saml-configurations/${configId}/domains/${domainId}/verify/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Exigence 13 - `redirect_url` is a REAL browser navigation target
+   * (the start of a genuine SAML round-trip against the IdP), never
+   * something to `fetch()`. */
+  async testSamlConnection(configId: string): Promise<TSAMLTestConnectionResponse> {
+    return this.post(`/api/instances/admin/saml-configurations/${configId}/test-connection/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
