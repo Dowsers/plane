@@ -6,7 +6,7 @@
 
 import { API_BASE_URL } from "@plane/constants";
 // types
-import type { IEmailCheckData, IEmailCheckResponse } from "@plane/types";
+import type { IEmailCheckData, IEmailCheckResponse, TSAMLDiscoverResponse } from "@plane/types";
 // services
 import { APIService } from "../api.service";
 
@@ -33,6 +33,27 @@ export class SitesAuthService extends APIService {
    */
   async emailCheck(data: IEmailCheckData): Promise<IEmailCheckResponse> {
     return this.post("/auth/spaces/email-check/", data, { headers: {} })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Category 11 (docs/feature-specs/11-admin-security-sso.md in
+   * plane-selfhost), feature 1 ("SSO SAML 2.0 natif") - public/
+   * unauthenticated SAML discovery, called by the Plane space sign-in
+   * screen right after email entry (exigence 6, spec's own "web + space"
+   * wording). Same instance-wide `/auth/saml/discover/` endpoint the web
+   * app calls - SAML routing has no "app vs space" distinction, unlike
+   * `/auth/spaces/email-check/` above which is a genuinely separate
+   * space-scoped endpoint.
+   * @param {string} email
+   * @returns {Promise<TSAMLDiscoverResponse>}
+   * @throws {Error} If the API request fails
+   */
+  async discoverSAML(email: string): Promise<TSAMLDiscoverResponse> {
+    return this.post("/auth/saml/discover/", { email }, { headers: {} })
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

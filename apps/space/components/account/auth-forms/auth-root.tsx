@@ -9,7 +9,7 @@ import { observer } from "mobx-react";
 import { useSearchParams } from "next/navigation";
 // plane imports
 import { SitesAuthService } from "@plane/services";
-import type { IEmailCheckData } from "@plane/types";
+import type { IEmailCheckData, TSAMLDiscoverResponse } from "@plane/types";
 import { OAuthOptions } from "@plane/ui";
 // helpers
 import type { TAuthErrorInfo } from "@/helpers/authentication.helper";
@@ -25,6 +25,7 @@ import { AuthBanner } from "./auth-banner";
 import { AuthHeader } from "./auth-header";
 import { AuthEmailForm } from "./email";
 import { AuthPasswordForm } from "./password";
+import { SAMLContinueForm } from "./saml-continue";
 import { AuthUniqueCodeForm } from "./unique-code";
 
 const authService = new SitesAuthService();
@@ -41,6 +42,15 @@ export const AuthRoot = observer(function AuthRoot() {
   const [email, setEmail] = useState(emailParam ? emailParam.toString() : "");
   const [errorInfo, setErrorInfo] = useState<TAuthErrorInfo | undefined>(undefined);
   const [isPasswordAutoset, setIsPasswordAutoset] = useState(true);
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 6 - result
+  // of `POST /auth/saml/discover/` for the currently entered email. While
+  // `sso_applies` is true, OAuth options and the normal email/password/OTP
+  // form are both hidden in favor of `SAMLContinueForm` below - `authStep`
+  // itself is deliberately left at `EAuthSteps.EMAIL` throughout (discovery
+  // short-circuits before any `setAuthStep` call), so clearing this state
+  // alone is enough to fall back to the normal email step.
+  const [ssoDiscovery, setSsoDiscovery] = useState<TSAMLDiscoverResponse | null>(null);
   // hooks
   const { config } = useInstance();
 
@@ -91,6 +101,20 @@ export const AuthRoot = observer(function AuthRoot() {
   const handleEmailVerification = async (data: IEmailCheckData) => {
     setEmail(data.email);
 
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 1 ("SSO SAML 2.0 natif"), exigence 6 - check
+    // SAML routing BEFORE the normal email-check flow, same as apps/web's
+    // AuthFormRoot. Fails open on a network/server hiccup on this check
+    // alone - SSO discovery is a UX nicety here, not the real enforcement.
+    try {
+      const ssoInfo = await authService.discoverSAML(data.email);
+      setSsoDiscovery(ssoInfo.sso_applies ? ssoInfo : null);
+      if (ssoInfo.sso_applies) return;
+    } catch (error) {
+      console.error(error);
+      setSsoDiscovery(null);
+    }
+
     await authService
       .emailCheck(data)
       .then(async (response) => {
@@ -134,8 +158,8 @@ export const AuthRoot = observer(function AuthRoot() {
   };
 
   // generating the unique code
-  const generateEmailUniqueCode = async (email: string): Promise<{ code: string } | undefined> => {
-    const payload = { email: email };
+  const generateEmailUniqueCode = async (targetEmail: string): Promise<{ code: string } | undefined> => {
+    const payload = { email: targetEmail };
     return await authService
       .generateUniqueCode(payload)
       .then(() => ({ code: "" }))
@@ -153,39 +177,58 @@ export const AuthRoot = observer(function AuthRoot() {
           <AuthBanner bannerData={errorInfo} handleBannerData={(value) => setErrorInfo(value)} />
         )}
         <AuthHeader authMode={authMode} />
-        {isOAuthEnabled && <OAuthOptions options={oAuthOptions} compact={authStep === EAuthSteps.PASSWORD} />}
 
-        {authStep === EAuthSteps.EMAIL && <AuthEmailForm defaultEmail={email} onSubmit={handleEmailVerification} />}
-        {authStep === EAuthSteps.UNIQUE_CODE && (
-          <AuthUniqueCodeForm
-            mode={authMode}
+        {ssoDiscovery?.sso_applies ? (
+          // Exigence 6 - a domain covered by an active SAML configuration
+          // shows ONLY the "Continue with {IdP}" button: no OAuth options,
+          // no password/OTP form.
+          <SAMLContinueForm
             email={email}
+            name={ssoDiscovery.name}
+            loginUrl={ssoDiscovery.login_url}
             nextPath={nextPath}
             handleEmailClear={() => {
+              setSsoDiscovery(null);
               setEmail("");
-              setAuthStep(EAuthSteps.EMAIL);
-            }}
-            generateEmailUniqueCode={generateEmailUniqueCode}
-          />
-        )}
-        {authStep === EAuthSteps.PASSWORD && (
-          <AuthPasswordForm
-            mode={authMode}
-            isPasswordAutoset={isPasswordAutoset}
-            isSMTPConfigured={isSMTPConfigured}
-            email={email}
-            nextPath={nextPath}
-            handleEmailClear={() => {
-              setEmail("");
-              setAuthStep(EAuthSteps.EMAIL);
-            }}
-            handleAuthStep={(step: EAuthSteps) => {
-              if (step === EAuthSteps.UNIQUE_CODE) generateEmailUniqueCode(email);
-              setAuthStep(step);
             }}
           />
+        ) : (
+          <>
+            {isOAuthEnabled && <OAuthOptions options={oAuthOptions} compact={authStep === EAuthSteps.PASSWORD} />}
+
+            {authStep === EAuthSteps.EMAIL && <AuthEmailForm defaultEmail={email} onSubmit={handleEmailVerification} />}
+            {authStep === EAuthSteps.UNIQUE_CODE && (
+              <AuthUniqueCodeForm
+                mode={authMode}
+                email={email}
+                nextPath={nextPath}
+                handleEmailClear={() => {
+                  setEmail("");
+                  setAuthStep(EAuthSteps.EMAIL);
+                }}
+                generateEmailUniqueCode={generateEmailUniqueCode}
+              />
+            )}
+            {authStep === EAuthSteps.PASSWORD && (
+              <AuthPasswordForm
+                mode={authMode}
+                isPasswordAutoset={isPasswordAutoset}
+                isSMTPConfigured={isSMTPConfigured}
+                email={email}
+                nextPath={nextPath}
+                handleEmailClear={() => {
+                  setEmail("");
+                  setAuthStep(EAuthSteps.EMAIL);
+                }}
+                handleAuthStep={(step: EAuthSteps) => {
+                  if (step === EAuthSteps.UNIQUE_CODE) generateEmailUniqueCode(email);
+                  setAuthStep(step);
+                }}
+              />
+            )}
+          </>
         )}
-        <TermsAndConditions isSignUp={authMode === EAuthModes.SIGN_UP ? true : false} />
+        <TermsAndConditions isSignUp={authMode === EAuthModes.SIGN_UP} />
       </div>
     </div>
   );
