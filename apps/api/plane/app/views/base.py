@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # Third part imports
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, NotAuthenticated
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,6 +29,7 @@ from plane.authentication.session import BaseSessionAuthentication
 from plane.utils.exception_logger import log_exception
 from plane.utils.paginator import BasePaginator
 from plane.utils.core.mixins import ReadReplicaControlMixin
+from plane.utils.session_activity import enforce_workspace_session_timeout
 
 
 class TimezoneMixin:
@@ -41,6 +42,35 @@ class TimezoneMixin:
         super().initial(request, *args, **kwargs)
         if request.user.is_authenticated:
             timezone.activate(zoneinfo.ZoneInfo(request.user.user_timezone))
+            # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+            # plane-selfhost), feature 6, exigence 7 - per-workspace idle
+            # session timeout. This is the one `initial()` choke point
+            # every `BaseViewSet`/`BaseAPIView` subclass already routes
+            # through, so every workspace-scoped app/ endpoint is covered
+            # by construction - see `plane.utils.session_activity`'s own
+            # module docstring for the full design and its documented
+            # limits (it does NOT invalidate the underlying Django session
+            # cookie, only this specific workspace's API access).
+            workspace_slug = kwargs.get("slug")
+            if workspace_slug:
+                error = enforce_workspace_session_timeout(request, workspace_slug)
+                if error:
+                    # `NotAuthenticated`, not `AuthenticationFailed` -
+                    # DRF's own `APIView.handle_exception` downgrades
+                    # `AuthenticationFailed` to a plain 403 whenever the
+                    # active authenticator's `authenticate_header()` is
+                    # falsy (`SessionAuthentication`'s always is), and this
+                    # fork's own `plane.authentication.adapter.exception.
+                    # auth_exception_handler` only special-cases
+                    # `NotAuthenticated` back to a real 401 - matching that
+                    # existing convention rather than fighting it.
+                    raise NotAuthenticated(
+                        detail={
+                            "error_code": "WORKSPACE_SESSION_EXPIRED",
+                            "error_message": "WORKSPACE_SESSION_EXPIRED",
+                            "detail": error,
+                        }
+                    )
         else:
             timezone.deactivate()
 

@@ -88,6 +88,12 @@ from .workspace.quick_link import QuickLinkViewSet
 from .workspace.sticky import WorkspaceStickyViewSet
 from .workspace.owner import WorkspaceOwnerTransferEndpoint
 from .workspace.audit_log import WorkspaceAuditLogViewSet, WorkspaceAuditLogExportEndpoint
+from .workspace.security import (
+    WorkspaceSecurityPolicyEndpoint,
+    WorkspaceVerifiedDomainEndpoint,
+    WorkspaceVerifiedDomainVerifyEndpoint,
+    WorkspaceReauthChallengeEndpoint,
+)
 
 from .state.base import StateViewSet, IntakeStateEndpoint
 from .view.base import (

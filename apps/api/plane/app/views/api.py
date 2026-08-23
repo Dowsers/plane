@@ -16,6 +16,7 @@ from .base import BaseAPIView
 from plane.db.models import APIToken, AuditEventType
 from plane.app.serializers import APITokenSerializer, APITokenReadSerializer
 from plane.utils.audit_log import log_audit_event
+from plane.utils.reauth import guard_sensitive_action
 
 
 class ApiTokenEndpoint(BaseAPIView):
@@ -68,6 +69,25 @@ class ApiTokenEndpoint(BaseAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, pk: str) -> Response:
+        # Category 11 feature 6 (docs/feature-specs/11-admin-security-sso.md
+        # in plane-selfhost), exigence 8 - "regeneration/revocation en
+        # masse des API tokens du workspace" is one of the 4 listed
+        # sensitive actions. DOCUMENTED DEVIATION from the spec's literal
+        # wording: `APIToken` in this fork is a personal, per-user token
+        # with NO workspace scope and no bulk regen/revoke mechanism at
+        # all (confirmed by reading this whole file - `get`/`post`/`patch`/
+        # `delete` are all single-token, unscoped to any workspace). There
+        # is no real "workspace API tokens" concept to gate literally, so
+        # this gates the closest existing approximation - any single
+        # personal-token revocation - using
+        # `any_owned_workspace_force_reauth_enabled` (any workspace this
+        # user owns with the policy enabled), since only a real Owner can
+        # ever turn that policy on in the first place. See
+        # `plane.utils.reauth`'s own docstring for the full reasoning.
+        blocked = guard_sensitive_action(request.user, any_owned_workspace=True)
+        if blocked:
+            return blocked
+
         api_token = APIToken.objects.get(user=request.user, pk=pk, is_service=False)
         log_audit_event(
             AuditEventType.API_TOKEN_REVOKED,

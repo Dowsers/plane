@@ -59,6 +59,15 @@ class AuditEventType(models.TextChoices):
     PROJECT_OWNER_REVOKED = "PROJECT_OWNER_REVOKED"
     OWNERSHIP_TRANSFERRED = "OWNERSHIP_TRANSFERRED"
     WORKSPACE_DELETED = "WORKSPACE_DELETED"
+    # Category 11 feature 6 ("Politiques de securite configurables",
+    # docs/feature-specs/11-admin-security-sso.md in plane-selfhost),
+    # exigence 9 - satisfied as a side effect of this already-shipped
+    # audit log rather than a separate activity mechanism (this
+    # initiative's own pre-build decision #2 for this feature).
+    SECURITY_POLICY_UPDATED = "SECURITY_POLICY_UPDATED"
+    VERIFIED_DOMAIN_ADDED = "VERIFIED_DOMAIN_ADDED"
+    DOMAIN_VERIFICATION_STATUS_CHANGED = "DOMAIN_VERIFICATION_STATUS_CHANGED"
+    VERIFIED_DOMAIN_REMOVED = "VERIFIED_DOMAIN_REMOVED"
 
 
 class WorkspaceAuditLog(BaseModel):

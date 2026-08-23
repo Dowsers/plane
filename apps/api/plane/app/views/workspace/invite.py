@@ -32,6 +32,7 @@ from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import invalidate_cache, invalidate_cache_directly
 from plane.utils.host import base_host
 from plane.utils.analytics_events import USER_JOINED_WORKSPACE, USER_INVITED_TO_WORKSPACE
+from plane.utils.security_policy import check_member_invite_allowed
 from .. import BaseViewSet
 
 
@@ -68,7 +69,24 @@ class WorkspaceInvitationsViewset(BaseViewSet):
             )
 
         # Get the workspace object
-        workspace = Workspace.objects.get(slug=slug)
+        workspace = Workspace.objects.select_related("security_policy").get(slug=slug)
+
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 6 ("Politiques de securite
+        # configurables"), exigence 5 - application-level check on top of
+        # the pre-existing `WorkSpaceAdminPermission` (Admin-or-Member) at
+        # the class level, crossing `member_invite_restriction` against the
+        # caller's REAL role and real Owner status. Note this actually
+        # TIGHTENS the default (`ADMINS_AND_ABOVE`) behavior for every
+        # workspace that has never touched this setting: the pre-existing
+        # `WorkSpaceAdminPermission` alone already let any active Member
+        # reach this method (it checks role in [Admin, Member], not just
+        # Admin) - a latent gap this feature's own default value closes.
+        if not check_member_invite_allowed(request.user, workspace):
+            return Response(
+                {"error": "Your workspace's security policy does not allow you to invite members."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Check if user is already a member of workspace
         workspace_members = WorkspaceMember.objects.filter(

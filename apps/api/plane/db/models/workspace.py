@@ -8,6 +8,7 @@ from typing import Optional, Any
 
 # Django imports
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -406,6 +407,21 @@ class WorkspaceMember(BaseModel):
     getting_started_checklist = models.JSONField(default=dict)
     tips = models.JSONField(default=dict)
     explored_features = models.JSONField(default=dict)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 6 ("Politiques de securite configurables"),
+    # exigence 7 - idle-timeout tracking for `WorkspaceSecurityPolicy.
+    # session_timeout_minutes`. See `plane.utils.session_activity`'s own
+    # module docstring for the full design/limits - short version: Plane's
+    # Django session cookie is issued once per browser/app-context, NOT
+    # per-workspace, so it cannot itself express "different idle timeout
+    # per workspace" for a user who belongs to several. This field (one row
+    # already exists per (workspace, member) pair) is bumped on every
+    # authenticated request scoped to `/api/workspaces/<slug>/...` and
+    # compared against that workspace's own effective timeout - it never
+    # touches the underlying Django session, so exceeding it blocks THIS
+    # workspace's API calls only, not other workspaces the same browser
+    # session might still be looking at.
+    last_workspace_activity_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ["workspace", "member", "deleted_at"]
@@ -648,3 +664,150 @@ class WorkspaceUserPreference(BaseModel):
         verbose_name_plural = "Workspace User Preferences"
         db_table = "workspace_user_preferences"
         ordering = ("-created_at",)
+
+
+# Category 11 (docs/feature-specs/11-admin-security-sso.md in
+# plane-selfhost), feature 6 - "Politiques de securite configurables".
+# Builds on the already-shipped Owner mechanics from features 3+5
+# (`Workspace.owner`, `IsWorkspaceOwner`, `WorkspaceAuditLog`) rather than
+# introducing a parallel notion of ownership.
+
+
+class MemberInviteRestriction(models.TextChoices):
+    """Exigence 5 - who may create a `WorkspaceMemberInvite`."""
+
+    OWNER_ONLY = "OWNER_ONLY", "Owner only"
+    ADMINS_AND_ABOVE = "ADMINS_AND_ABOVE", "Admins and above"
+    ADMINS_AND_MEMBERS = "ADMINS_AND_MEMBERS", "Admins and Members"
+
+
+class AllowedAuthMethod(models.TextChoices):
+    """The 4 login methods this fork supports (exigence 2's own model
+    description) - a subset of these, cross-validated at write time
+    (application-level only, per the spec's own wording) against the
+    instance-level god-mode flags (`ENABLE_EMAIL_PASSWORD`,
+    `ENABLE_MAGIC_LINK_LOGIN`, `IS_GOOGLE_ENABLED`, `IS_GITHUB_ENABLED`),
+    is what a workspace Owner may offer their own members."""
+
+    EMAIL_PASSWORD = "EMAIL_PASSWORD", "Email / Password"
+    MAGIC_LINK = "MAGIC_LINK", "Magic Link / OTP"
+    GOOGLE = "GOOGLE", "Google OAuth"
+    GITHUB = "GITHUB", "GitHub OAuth"
+
+
+def get_default_allowed_auth_methods():
+    return [choice.value for choice in AllowedAuthMethod]
+
+
+class WorkspaceSecurityPolicy(BaseModel):
+    """One row per workspace, created lazily (via the security-policy
+    endpoint's own get-or-create, see
+    `plane.app.views.workspace.security.WorkspaceSecurityPolicyEndpoint`) -
+    a workspace with no row yet behaves exactly as if every field were at
+    its model default below (no enforcement of any kind).
+
+    NOTE on `updated_by`: the spec's own "Implications sur le modele de
+    donnees" section asks for an explicit `updated_by` FK "en plus des
+    champs d'audit standards" - but `BaseModel` (via `AuditModel`, see
+    `plane.db.mixins`) already provides exactly that: `updated_by` is set
+    automatically at save time from `crum.get_current_user()` (the
+    request-bound current user), matching every other model in this
+    codebase. Adding a second, separately-named FK with the identical
+    purpose would just be two sources of truth that could drift - this
+    intentionally reuses the mixin's own field rather than shadowing it.
+    """
+
+    workspace = models.OneToOneField(
+        "db.Workspace", on_delete=models.CASCADE, related_name="security_policy"
+    )
+    # Exigence 3/4/10.
+    enforce_sso_only = models.BooleanField(default=False)
+    # Exigence 5.
+    member_invite_restriction = models.CharField(
+        max_length=32,
+        choices=MemberInviteRestriction.choices,
+        default=MemberInviteRestriction.ADMINS_AND_ABOVE,
+    )
+    # Exigence 2's own model description - subset of the instance-enabled
+    # methods this workspace's members may use. Defaults to "all 4", i.e.
+    # no additional restriction beyond whatever the instance itself allows,
+    # until an Owner deliberately narrows it.
+    allowed_auth_methods = ArrayField(
+        models.CharField(max_length=32, choices=AllowedAuthMethod.choices),
+        default=get_default_allowed_auth_methods,
+        blank=True,
+    )
+    # Exigence 7 - null means "use the instance default/ceiling", see
+    # `plane.utils.session_activity`.
+    session_timeout_minutes = models.PositiveIntegerField(null=True, blank=True)
+    # Exigence 8.
+    force_reauth_for_sensitive_actions = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Workspace Security Policy"
+        verbose_name_plural = "Workspace Security Policies"
+        db_table = "workspace_security_policies"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Security Policy <{self.workspace_id}>"
+
+
+class DomainVerificationMethod(models.TextChoices):
+    """Exigence 2 - proof mechanism for a claimed domain. Shared, per
+    decision #3, with the future SAML feature's own `SAMLVerifiedDomain` via
+    `plane.utils.domain_verification`, which is written model-agnostic on
+    purpose so it never has to know about this specific enum - callers pass
+    the plain string value through."""
+
+    DNS_TXT = "DNS_TXT", "DNS TXT record"
+    HTML_FILE = "HTML_FILE", "HTML file upload"
+
+
+class WorkspaceVerifiedDomain(BaseModel):
+    """A workspace's claim over an email domain, proven (or not yet proven)
+    via `plane.utils.domain_verification`. Deliberately NOT globally unique
+    on `domain` alone - confirmed by this initiative's own pre-build
+    research that two different workspaces on the same self-hosted instance
+    may legitimately, independently verify the same domain string (e.g. two
+    unrelated teams both self-hosting under one instance while sharing a
+    corporate email domain in test/staging data) - only
+    `unique_together(workspace, domain)` is enforced. Consumers that key
+    security decisions off "is this domain verified" (the SSO-enforcement
+    check in `plane.authentication.provider.credentials`) MUST always scope
+    by `workspace` too, never treat a bare verified `domain` string as
+    globally authoritative - see that module's own docstring for the
+    non-leakage guarantee this implies.
+    """
+
+    workspace = models.ForeignKey(
+        "db.Workspace", on_delete=models.CASCADE, related_name="verified_domains"
+    )
+    domain = models.CharField(max_length=255, db_index=True)
+    verification_method = models.CharField(max_length=16, choices=DomainVerificationMethod.choices)
+    verification_token = models.CharField(max_length=64)
+    is_verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ["workspace", "domain", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "domain"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="workspace_verified_domain_unique_workspace_domain_when_deleted_at_null",
+            )
+        ]
+        indexes = [models.Index(fields=["workspace"])]
+        verbose_name = "Workspace Verified Domain"
+        verbose_name_plural = "Workspace Verified Domains"
+        db_table = "workspace_verified_domains"
+        ordering = ("-created_at",)
+
+    def save(self, *args, **kwargs):
+        if self.domain:
+            self.domain = self.domain.strip().lower()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.domain} <{self.workspace_id}> verified={self.is_verified}"

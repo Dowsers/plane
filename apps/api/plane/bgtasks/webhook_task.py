@@ -77,7 +77,20 @@ SERIALIZER_MAPPER = {
 # reuses this exact column for its own future events, only ever needs to
 # add its event name(s) to this one set - never a new column, never a new
 # dispatch branch.
-WORKSPACE_SECURITY_EVENTS = {"audit_log", "workspace_ownership", "project_owner"}
+WORKSPACE_SECURITY_EVENTS = {
+    "audit_log",
+    "workspace_ownership",
+    "project_owner",
+    # Category 11 feature 6 ("Politiques de securite configurables") - adds
+    # its own event names to this SAME set exactly as the comment above
+    # anticipated: `workspace_security_policy.updated` (event=
+    # "security_policy", verb="updated") and `workspace_verified_domain.
+    # created`/`.verified`/`.deleted` (event="verified_domain", verb=
+    # "created"/"verified"/"deleted") - see
+    # `plane.app.views.workspace.security` for the dispatch call sites.
+    "security_policy",
+    "verified_domain",
+}
 
 MODEL_MAPPER = {
     "project": Project,

@@ -49,6 +49,10 @@ from plane.app.views import (
     WorkspaceAuditLogViewSet,
     WorkspaceAuditLogExportEndpoint,
     WorkspaceUserPreferenceViewSet,
+    WorkspaceSecurityPolicyEndpoint,
+    WorkspaceVerifiedDomainEndpoint,
+    WorkspaceVerifiedDomainVerifyEndpoint,
+    WorkspaceReauthChallengeEndpoint,
 )
 
 
@@ -341,5 +345,32 @@ urlpatterns = [
         "workspaces/<str:slug>/audit-logs/export/",
         WorkspaceAuditLogExportEndpoint.as_view(),
         name="workspace-audit-logs-export",
+    ),
+    # Category 11 feature 6 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost) - "Politiques de securite configurables".
+    path(
+        "workspaces/<str:slug>/security-policy/",
+        WorkspaceSecurityPolicyEndpoint.as_view(),
+        name="workspace-security-policy",
+    ),
+    path(
+        "workspaces/<str:slug>/verified-domains/",
+        WorkspaceVerifiedDomainEndpoint.as_view(),
+        name="workspace-verified-domains",
+    ),
+    path(
+        "workspaces/<str:slug>/verified-domains/<uuid:pk>/",
+        WorkspaceVerifiedDomainEndpoint.as_view(),
+        name="workspace-verified-domains",
+    ),
+    path(
+        "workspaces/<str:slug>/verified-domains/<uuid:pk>/verify/",
+        WorkspaceVerifiedDomainVerifyEndpoint.as_view(),
+        name="workspace-verified-domain-verify",
+    ),
+    path(
+        "workspaces/<str:slug>/reauth/",
+        WorkspaceReauthChallengeEndpoint.as_view(),
+        name="workspace-reauth-challenge",
     ),
 ]

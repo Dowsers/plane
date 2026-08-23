@@ -5,9 +5,10 @@
 # Django imports
 from django.contrib.auth import login
 from django.conf import settings
+from django.utils import timezone
 
 # Module imports
-from plane.db.models import AuditEventType
+from plane.db.models import AuditEventType, User
 from plane.utils.audit_log import log_audit_event
 from plane.utils.host import base_host
 from plane.utils.ip_address import get_client_ip
@@ -37,6 +38,16 @@ def user_login(request, user, is_app=False, is_admin=False, is_space=False):
     }
     request.session["device_info"] = device_info
     request.session.save()
+
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 6, exigence 8 - stamps the SAME "last real
+    # authentication" moment `plane.utils.reauth.is_reauth_stale` gates
+    # sensitive actions against. `.update()` at the queryset level, NOT
+    # `user.save()` - see `User.last_authenticated_at`'s own field
+    # docstring for why: `user.save()` would go through this model's
+    # pre-existing `token_updated_at`-coupled override, which is unrelated
+    # to this field and irrelevant here.
+    User.objects.filter(pk=user.pk).update(last_authenticated_at=timezone.now())
 
     # See `plane.bgtasks.audit_log_task.create_audit_log_entry`'s own
     # docstring for why this fans out across the user's active workspace

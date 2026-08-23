@@ -150,6 +150,29 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_login_medium = models.CharField(max_length=20, default="email")
     last_login_uagent = models.TextField(blank=True)
     token_updated_at = models.DateTimeField(null=True)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 6 ("Politiques de securite configurables"),
+    # exigence 8 - "moment of last REAL authentication", read by
+    # `plane.utils.reauth.is_reauth_stale`. Deliberately a NEW, separate
+    # field rather than reusing `token_updated_at` above - empirically
+    # confirmed (a throwaway pytest probe, since deleted) that
+    # `token_updated_at` is silently bumped to `now()` by this model's own
+    # `save()` override on ANY save where it is already non-null in
+    # memory, not only at real login - e.g. a routine `PATCH /api/users/me/`
+    # profile edit (`UserEndpoint.partial_update`, a plain `ModelViewSet`
+    # `serializer.save()`) goes through this exact `save()` override too,
+    # so `token_updated_at` does NOT reliably mean "last real
+    # authentication" - reusing it as-is for a security re-auth gate would
+    # have been dishonest (the 15-minute staleness window would almost
+    # never actually trigger for an active user touching any of their own
+    # settings). This field is written ONLY via `.update()` at the
+    # queryset level (bypassing `save()` entirely, never sending
+    # `post_save`) at the two real call sites that constitute "the user
+    # just proved who they are": `plane.authentication.utils.login.
+    # user_login()` (every real login, all providers) and
+    # `plane.utils.reauth.mark_reauthenticated()` (the re-auth challenge
+    # endpoint) - nothing else in this codebase ever touches it.
+    last_authenticated_at = models.DateTimeField(null=True, blank=True)
     # my_issues_prop = models.JSONField(null=True)
 
     is_bot = models.BooleanField(default=False)

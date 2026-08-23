@@ -10,6 +10,7 @@ from plane.app.permissions import allow_permission, ROLE
 from plane.app.serializers import ExporterHistorySerializer
 from plane.bgtasks.export_task import issue_export_task
 from plane.db.models import ExporterHistory, Project, Workspace
+from plane.utils.reauth import guard_sensitive_action
 
 # Module imports
 from .. import BaseAPIView
@@ -22,7 +23,16 @@ class ExportIssuesEndpoint(BaseAPIView):
     @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
     def post(self, request, slug):
         # Get the workspace
-        workspace = Workspace.objects.get(slug=slug)
+        workspace = Workspace.objects.select_related("security_policy").get(slug=slug)
+
+        # Category 11 feature 6 (docs/feature-specs/11-admin-security-sso.md
+        # in plane-selfhost), exigence 8 - "export complet des donnees" is
+        # one of the 4 listed sensitive actions. This endpoint (issue
+        # export across the whole workspace, optionally all projects) is
+        # the closest real match in this codebase to that wording.
+        blocked = guard_sensitive_action(request.user, workspace=workspace)
+        if blocked:
+            return blocked
 
         provider = request.data.get("provider", False)
         multiple = request.data.get("multiple", False)

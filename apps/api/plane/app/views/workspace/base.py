@@ -54,6 +54,7 @@ from plane.utils.analytics_events import WORKSPACE_CREATED, WORKSPACE_DELETED
 from plane.utils.csv_utils import sanitize_csv_row
 from plane.utils.agent_actor import member_visibility_q
 from plane.utils.audit_log import log_audit_event
+from plane.utils.reauth import guard_sensitive_action
 
 
 class WorkSpaceViewSet(BaseViewSet):
@@ -203,6 +204,14 @@ class WorkSpaceViewSet(BaseViewSet):
                 {"error": "Only the workspace owner can perform this action."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        # Category 11 feature 6 (docs/feature-specs/11-admin-security-sso.md
+        # in plane-selfhost), exigence 8 - workspace deletion is one of the
+        # 4 listed sensitive actions, gated by this workspace's own
+        # `force_reauth_for_sensitive_actions`.
+        blocked = guard_sensitive_action(request.user, workspace=workspace)
+        if blocked:
+            return blocked
 
         self.remove_last_workspace_ids_from_user_settings(workspace.id)
         log_audit_event(

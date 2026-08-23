@@ -126,6 +126,11 @@ from .workspace import (
     WorkspaceUserPreference,
     WorkspaceAIUpdateDataScope,
     DuplicateDetectionScope,
+    WorkspaceSecurityPolicy,
+    MemberInviteRestriction,
+    AllowedAuthMethod,
+    WorkspaceVerifiedDomain,
+    DomainVerificationMethod,
 )
 
 from .favorite import UserFavorite

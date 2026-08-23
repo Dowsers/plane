@@ -73,6 +73,24 @@ AUTHENTICATION_ERROR_CODES = {
     # GitHub/GitLab/Slack/... integration bot shouldn't be able to log in
     # via password/OAuth either.
     "BOT_AUTHENTICATION_NOT_ALLOWED": 5195,
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 6 ("Politiques de securite configurables") -
+    # exigence 3/6. Raised by the email/password and magic-link credential
+    # providers (`plane.authentication.provider.credentials.*`, via the
+    # shared `CredentialAdapter.authenticate()` choke point) when the
+    # login email's domain is covered by a verified
+    # `WorkspaceVerifiedDomain` whose workspace has
+    # `WorkspaceSecurityPolicy.enforce_sso_only=True` - never raised for
+    # OAuth providers, which are exactly what this error tells the user to
+    # use instead (`payload["allowed_methods"]`).
+    "SSO_ENFORCED_FOR_DOMAIN": 5200,
+    # Exigence 8 - re-authentication challenge. Raised by
+    # `plane.utils.reauth.require_recent_authentication` when
+    # `WorkspaceSecurityPolicy.force_reauth_for_sensitive_actions=True` and
+    # the user's last real authentication (`User.token_updated_at`) is
+    # older than the 15-minute window - see that module's own docstring.
+    "REAUTH_REQUIRED": 5205,
+    "REAUTH_FAILED": 5210,
     # Rate limit
     "RATE_LIMIT_EXCEEDED": 5900,
     # Unknown
