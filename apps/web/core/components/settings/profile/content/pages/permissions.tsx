@@ -78,7 +78,7 @@ export const PermissionsProfileSettings = observer(function PermissionsProfileSe
     <div className="size-full">
       <ProfileSettingsHeading
         title="My permissions"
-        description="What your role in the selected workspace lets you do today, across the 5 areas this builder covers (Work items, Cycles, Modules, Pages, Views). Everything else (billing, integrations, exports...) still follows your plain workspace role."
+        description="Your workspace-level baseline across the 5 areas this builder covers (Work items, Cycles, Modules, Pages, Views). Your actual permissions can be higher or lower on a specific project if your role there differs from your workspace role - this summary doesn't reflect per-project overrides. Everything else (billing, integrations, exports...) still follows your plain workspace role."
       />
 
       {workspaceList.length > 1 && selectedSlug && (
