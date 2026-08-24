@@ -20,6 +20,7 @@ from plane.license.api.permissions import InstanceAdminPermission
 from plane.license.api.serializers import InstanceSerializer
 from plane.license.models import Instance
 from plane.license.utils.instance_value import get_configuration_value
+from plane.scim.authentication import is_scim_enabled
 from plane.utils.cache import cache_response, invalidate_cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
@@ -135,6 +136,25 @@ class InstanceEndpoint(BaseAPIView):
         data["is_gitea_enabled"] = IS_GITEA_ENABLED == "1"
         data["is_magic_login_enabled"] = ENABLE_MAGIC_LINK_LOGIN == "1"
         data["is_email_password_enabled"] = ENABLE_EMAIL_PASSWORD == "1"
+
+        # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+        # plane-selfhost), feature 2 ("SCIM 2.0 natif") - small, deliberate
+        # backend addition (this feature's own frontend checkpoint): this
+        # endpoint (AllowAny, cached, hit by every app on load - see
+        # apps/web/core/lib/wrappers/instance-wrapper.tsx) is the ONLY
+        # instance-config surface apps/web/apps/space ever read from; the
+        # privileged `GET /api/instances/configurations/` (every raw
+        # `InstanceConfiguration` row) is god-mode/apps-admin-only
+        # (`InstanceAdminPermission`). Without this, Workspace Settings >
+        # Security's own "SCIM Provisioning" tab (this feature's UI, gated
+        # per the spec on "ENABLE_SCIM active AU NIVEAU INSTANCE") would have
+        # no way to know the instance-wide flag's state at all. Reuses
+        # `plane.scim.authentication.is_scim_enabled()` (the SAME helper the
+        # protocol layer and the admin token endpoints already re-check live
+        # on every request) rather than re-reading `get_configuration_value`
+        # a second time here, so there is exactly one source of truth for
+        # what "SCIM enabled" means.
+        data["is_scim_enabled"] = is_scim_enabled()
 
         # Github app name
         data["github_app_name"] = str(GITHUB_APP_NAME)

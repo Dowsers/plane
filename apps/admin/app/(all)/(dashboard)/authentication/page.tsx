@@ -42,6 +42,16 @@ const InstanceAuthenticationPage = observer(function InstanceAuthenticationPage(
   const { fetchInstanceConfigurations, formattedConfig, updateInstanceConfigurations } = useInstance();
   // derived values
   const enableSignUpConfig = formattedConfig?.ENABLE_SIGNUP ?? "";
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 2 ("SCIM 2.0 natif"), exigence 3 - instance-
+  // wide `ENABLE_SCIM` kill switch, defaulted off. A simple boolean toggle
+  // (unlike SAML SSO above - SCIM has no per-configuration CRUD list, just
+  // this one flag), following the exact same pattern as
+  // `WorkspaceManagementPage`'s own `DISABLE_WORKSPACE_CREATION` toggle
+  // (apps/admin/app/(all)/(dashboard)/workspace/page.tsx) - this app has no
+  // generic config-schema-driven renderer, every god-mode surface hand-
+  // builds its own toggle bound to a specific `formattedConfig` key.
+  const enableScimConfig = formattedConfig?.ENABLE_SCIM ?? "";
 
   useSWR("INSTANCE_CONFIGURATIONS", () => fetchInstanceConfigurations());
 
@@ -192,6 +202,42 @@ const InstanceAuthenticationPage = observer(function InstanceAuthenticationPage(
               }
             />
           </Link>
+
+          {/* Category 11, feature 2 ("SCIM 2.0 natif"), exigence 3 -
+              instance-wide toggle, next to the SAML SSO / OAuth surfaces
+              above. A workspace Owner/Admin still has to generate their own
+              SCIM token from Workspace Settings > Security once this is on -
+              this flag alone provisions nothing by itself. */}
+          <div className="text-lg pt-6 font-medium">SCIM provisioning</div>
+          <div className={cn("flex w-full items-center gap-14 rounded-sm")}>
+            <div className="flex grow items-center gap-4">
+              <div className="grow">
+                <div className="pb-1 text-16 font-medium">Allow workspaces to provision members via SCIM</div>
+                <div className={cn("text-11 leading-5 font-regular text-tertiary")}>
+                  Lets a workspace Owner or Admin generate a SCIM 2.0 token and connect an identity provider (Okta,
+                  Azure AD, Google Workspace) to automatically create, update, and deactivate members. Enabling this
+                  instance-wide does not turn SCIM on for any workspace by itself - each workspace Owner/Admin still has
+                  to generate their own token from Workspace Settings &gt; Security.
+                </div>
+              </div>
+            </div>
+            <div className={`shrink-0 pr-4 ${isSubmitting && "opacity-70"}`}>
+              <div className="flex items-center gap-4">
+                <ToggleSwitch
+                  value={Boolean(parseInt(enableScimConfig))}
+                  onChange={() => {
+                    if (Boolean(parseInt(enableScimConfig)) === true) {
+                      updateConfig("ENABLE_SCIM", "0");
+                    } else {
+                      updateConfig("ENABLE_SCIM", "1");
+                    }
+                  }}
+                  size="sm"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <Loader className="space-y-10">

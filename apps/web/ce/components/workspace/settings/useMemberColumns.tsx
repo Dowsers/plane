@@ -137,6 +137,24 @@ export const useMemberColumns = () => {
                 </span>
               </Tooltip>
             )}
+            {/* Category 11 (docs/feature-specs/11-admin-security-sso.md in
+                plane-selfhost), feature 2 ("SCIM 2.0 natif") - "Geré par
+                SCIM" badge: unlike `is_sso_provisioned` above (a `User`-level
+                fact nested under `.member`), `scim_managed` is a
+                `WorkspaceMember`-level field, so it lives at the TOP level
+                of `rowData` (see `RowData.scim_managed`'s own comment,
+                member-columns.tsx). Marks a membership whose role/removal is
+                driven by the connected IdP - the manual-edit warnings live
+                in `AccountTypeColumn`/`ConfirmWorkspaceMemberRemove`. */}
+            {rowData.scim_managed && (
+              <Tooltip tooltipContent="This member's role and workspace membership are managed by your SCIM identity provider.">
+                <span>
+                  <Pill variant={EPillVariant.PRIMARY} size={EPillSize.SM}>
+                    Managed by SCIM
+                  </Pill>
+                </span>
+              </Tooltip>
+            )}
           </div>
         );
       },

@@ -38,7 +38,31 @@ export const AUDIT_EVENT_TYPE_LABELS: Record<TAuditEventType, string> = {
   VERIFIED_DOMAIN_ADDED: "Verified domain added",
   DOMAIN_VERIFICATION_STATUS_CHANGED: "Domain verification status changed",
   VERIFIED_DOMAIN_REMOVED: "Verified domain removed",
+  // Category 11, feature 2 ("SCIM 2.0 natif") - labels for the 4 SCIM
+  // provisioning event types, used by both this shared filter/label map
+  // AND the dedicated SCIM Provisioning log table (Workspace Settings >
+  // Security), which filters `AUDIT_EVENT_TYPE_OPTIONS` down to just these
+  // 4 rather than duplicating a second label map.
+  SCIM_USER_CREATED: "SCIM user created",
+  SCIM_USER_UPDATED: "SCIM user updated",
+  SCIM_USER_DEACTIVATED: "SCIM user deactivated",
+  SCIM_SYNC_ERROR: "SCIM sync error",
 };
+
+/**
+ * Category 11, feature 2 ("SCIM 2.0 natif") - the 4 event types the SCIM
+ * Provisioning log (Workspace Settings > Security) is scoped to, matching
+ * `SCIM_EVENT_TYPES` (apps/api/plane/app/views/workspace/scim_admin.py)
+ * exactly. Kept here (not re-derived from `AUDIT_EVENT_TYPE_LABELS`'s own
+ * key order) so this list can never silently drift if the general audit
+ * log ever reorders its own catalogue.
+ */
+export const SCIM_AUDIT_EVENT_TYPES: TAuditEventType[] = [
+  "SCIM_USER_CREATED",
+  "SCIM_USER_UPDATED",
+  "SCIM_USER_DEACTIVATED",
+  "SCIM_SYNC_ERROR",
+];
 
 export const AUDIT_EVENT_TYPE_OPTIONS: { value: TAuditEventType; label: string }[] = (
   Object.keys(AUDIT_EVENT_TYPE_LABELS) as TAuditEventType[]

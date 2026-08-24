@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plane.app.permissions import ROLE, allow_permission
-from plane.app.serializers.audit import WorkspaceAuditLogListSerializer
+from plane.app.serializers.audit import WorkspaceAuditLogListSerializer, WorkspaceAuditLogSerializer
 from plane.app.serializers.scim import SCIMTokenReadSerializer, SCIMTokenWriteSerializer
 from plane.app.views.base import BaseAPIView
 from plane.db.models import AuditEventType, SCIMToken, Workspace, WorkspaceAuditLog
@@ -143,7 +143,8 @@ class WorkspaceSCIMTokenEndpoint(BaseAPIView):
 
 class WorkspaceSCIMProvisioningLogEndpoint(BaseAPIView):
     """
-    GET /api/workspaces/<slug>/scim/provisioning-log/
+    GET /api/workspaces/<slug>/scim/provisioning-log/       - paginated list.
+    GET /api/workspaces/<slug>/scim/provisioning-log/<pk>/  - full detail.
 
     A filtered view over the already-shipped `WorkspaceAuditLog` (decision
     #3) - NOT a new model/endpoint family. Reuses the exact same filter
@@ -152,10 +153,33 @@ class WorkspaceSCIMProvisioningLogEndpoint(BaseAPIView):
     a workspace's past provisioning history remains visible even if an
     instance admin later disables SCIM globally (only NEW token
     management is blocked, see `WorkspaceSCIMTokenEndpoint` above).
+
+    The `<pk>/` detail route is a small, deliberate addition on top of the
+    original checkpoint (786253ab0), landing alongside this feature's own
+    frontend: the general `WorkspaceAuditLogViewSet`'s own detail route
+    (`GET /api/workspaces/<slug>/audit-logs/<pk>/`) is `IsWorkspaceOwner`
+    -only (features 3+5's own stricter, uniformly-Owner-only policy) - a
+    plain workspace Admin who can already see THIS feature's own list (this
+    class is `ROLE.ADMIN`, exigence 3/10's own "Owner ou Admin" wording)
+    would get a 403 reusing that endpoint for "detail on click", even
+    though they were never blocked from the list itself. Scoped to the
+    exact same `SCIM_EVENT_TYPES` + workspace filter as the list above, so
+    a SCIM-log detail id can never leak a non-SCIM or another workspace's
+    audit entry through this route.
     """
 
     @allow_permission([ROLE.ADMIN], level="WORKSPACE")
-    def get(self, request, slug):
+    def get(self, request, slug, pk=None):
+        if pk is not None:
+            audit_log = (
+                WorkspaceAuditLog.objects.filter(workspace__slug=slug, event_type__in=SCIM_EVENT_TYPES, pk=pk)
+                .select_related("actor", "target_user")
+                .first()
+            )
+            if audit_log is None:
+                return Response({"error": "Provisioning log entry not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(WorkspaceAuditLogSerializer(audit_log).data, status=status.HTTP_200_OK)
+
         queryset = apply_audit_log_filters(
             WorkspaceAuditLog.objects.filter(workspace__slug=slug, event_type__in=SCIM_EVENT_TYPES).select_related(
                 "actor", "target_user"

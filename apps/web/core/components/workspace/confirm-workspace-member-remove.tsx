@@ -21,6 +21,13 @@ export type Props = {
   userDetails: {
     id: string;
     display_name: string;
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 2 ("SCIM 2.0 natif") - the spec's own UX
+    // note (warn before a manual removal of a `scim_managed=True` member).
+    // Soft warning only, matches the role-change warning in
+    // `AccountTypeColumn` (member-columns.tsx) - the backend never blocks
+    // this.
+    scim_managed?: boolean;
   };
 };
 
@@ -68,6 +75,12 @@ export const ConfirmWorkspaceMemberRemove = observer(function ConfirmWorkspaceMe
                   ? They will no longer have access to this workspace. This action cannot be undone.
                 </p>
               )}
+              {userDetails.scim_managed && currentUser?.id !== userDetails.id && (
+                <p className="mt-2 text-body-xs-regular text-warning-primary">
+                  This member is managed by your SCIM identity provider. Removing them here only affects Plane - your
+                  IdP is not aware of this change and may re-provision them on the next sync.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -76,7 +89,7 @@ export const ConfirmWorkspaceMemberRemove = observer(function ConfirmWorkspaceMe
         <Button variant="secondary" size="lg" onClick={handleClose}>
           {t("cancel")}
         </Button>
-        <Button variant="error-fill" size="lg" tabIndex={1} onClick={handleDeletion} loading={isRemoving}>
+        <Button variant="error-fill" size="lg" onClick={handleDeletion} loading={isRemoving}>
           {currentUser?.id === userDetails.id
             ? isRemoving
               ? t("leaving")

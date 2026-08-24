@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { X } from "lucide-react";
 // plane imports
 import { AUDIT_EVENT_TYPE_LABELS } from "@plane/constants";
+import type { TWorkspaceAuditLogDetail } from "@plane/types";
 import { EModalPosition, EModalWidth, Loader, ModalCore } from "@plane/ui";
 import { renderFormattedDate, renderFormattedTime } from "@plane/utils";
 // services
@@ -17,6 +18,20 @@ type Props = {
   workspaceSlug: string;
   auditLogId: string | null;
   onClose: () => void;
+  // Category 11, feature 2 ("SCIM 2.0 natif") - the SCIM Provisioning
+  // log (Workspace Settings > Security) reuses this SAME modal for its own
+  // "detail on click" requirement, but can't reuse
+  // `workspaceAuditLogService.retrieve` (Owner-only,
+  // `WorkspaceAuditLogViewSet`) since that surface is Admin-readable, not
+  // Owner-exclusive (exigence 3/10) - a plain Admin would get a 403.
+  // Defaults to the general audit log's own fetch so every existing caller
+  // keeps working unchanged.
+  fetchDetail?: (workspaceSlug: string, auditLogId: string) => Promise<TWorkspaceAuditLogDetail>;
+  // Distinct SWR cache key prefix per caller, so this shared modal's cache
+  // entries for a general audit-log id can never collide with a SCIM
+  // provisioning-log id (both are `WorkspaceAuditLog` rows, so ids share
+  // the same namespace).
+  queryKeyPrefix?: string;
 };
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -51,11 +66,17 @@ function JsonBlock({ value }: { value: unknown }) {
  * sliding panel.
  */
 export function AuditLogDetailModal(props: Props) {
-  const { workspaceSlug, auditLogId, onClose } = props;
+  const {
+    workspaceSlug,
+    auditLogId,
+    onClose,
+    fetchDetail = (slug, id) => workspaceAuditLogService.retrieve(slug, id),
+    queryKeyPrefix = "WORKSPACE_AUDIT_LOG_DETAIL",
+  } = props;
 
   const { data, isLoading } = useSWR(
-    auditLogId ? ["WORKSPACE_AUDIT_LOG_DETAIL", workspaceSlug, auditLogId] : null,
-    auditLogId ? () => workspaceAuditLogService.retrieve(workspaceSlug, auditLogId) : null
+    auditLogId ? [queryKeyPrefix, workspaceSlug, auditLogId] : null,
+    auditLogId ? () => fetchDetail(workspaceSlug, auditLogId) : null
   );
 
   return (

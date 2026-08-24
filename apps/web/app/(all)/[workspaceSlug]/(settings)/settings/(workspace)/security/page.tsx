@@ -14,9 +14,11 @@ import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import { SettingsHeading } from "@/components/settings/heading";
 import { RestrictedToOwnerView } from "@/components/workspace/settings/security/restricted-view";
 import { WorkspaceSecurityAuditLog } from "@/components/workspace/settings/security/audit-log-root";
+import { SCIMProvisioningPanel } from "@/components/workspace/settings/security/scim-provisioning-panel";
 import { SecurityPolicyPanel } from "@/components/workspace/settings/security/security-policy-panel";
 import { VerifiedDomainsPanel } from "@/components/workspace/settings/security/verified-domains-panel";
 // hooks
+import { useInstance } from "@/hooks/store/use-instance";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUserPermissions } from "@/hooks/store/user";
 // local imports
@@ -41,6 +43,15 @@ import { SecurityWorkspaceSettingsHeader } from "./header";
  *     non-Owner Admin sees the `RestrictedToOwnerView` empty state there
  *     instead, mirroring the backend's own `IsWorkspaceOwner`-gated
  *     `WorkspaceAuditLogViewSet` (403 for any non-Owner, including Admin).
+ *
+ * Feature 2 ("SCIM 2.0 natif")'s own "SCIM Provisioning" sub-section below
+ * has a THIRD, orthogonal gate on top of the page-level Admin check above:
+ * the instance-wide `ENABLE_SCIM` god-mode flag (exigence 3's own "visible
+ * uniquement si ENABLE_SCIM est active cote instance"). Unlike the audit
+ * log section, it needs no Owner-only inner gate - `WorkspaceSCIMTokenEndpoint`/
+ * `WorkspaceSCIMProvisioningLogEndpoint` are both `ROLE.ADMIN` (Owner-and-
+ * Admin-both), matching the page's own top-level check exactly, so nothing
+ * further needs to be hidden/disabled once a workspace Admin gets this far.
  */
 function SecuritySettingsPage({ params }: Route.ComponentProps) {
   // router
@@ -48,11 +59,13 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
   // store hooks
   const { workspaceUserInfo, allowPermissions, workspaceInfoBySlug } = useUserPermissions();
   const { currentWorkspace } = useWorkspace();
+  const { config } = useInstance();
 
   // derived values
   const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
   const isOwner = Boolean(workspaceInfoBySlug(workspaceSlug)?.is_owner);
   const pageTitle = currentWorkspace?.name ? `${currentWorkspace.name} - Security` : undefined;
+  const isScimEnabled = Boolean(config?.is_scim_enabled);
 
   if (workspaceUserInfo && !isWorkspaceAdmin) {
     return <NotAuthorizedView section="settings" className="h-auto" />;
@@ -89,6 +102,16 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
           />
           {isOwner ? <WorkspaceSecurityAuditLog workspaceSlug={workspaceSlug} /> : <RestrictedToOwnerView />}
         </div>
+
+        {isScimEnabled && (
+          <div className="flex flex-col gap-y-4">
+            <SettingsHeading
+              title="SCIM Provisioning"
+              description="Connect an identity provider to automatically create, update, and deactivate members."
+            />
+            <SCIMProvisioningPanel workspaceSlug={workspaceSlug} />
+          </div>
+        )}
       </div>
     </SettingsContentWrapper>
   );

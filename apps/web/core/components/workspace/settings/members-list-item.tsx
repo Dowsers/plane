@@ -107,6 +107,7 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
           userDetails={{
             id: removeMemberModal.member.id,
             display_name: removeMemberModal.member.display_name || "",
+            scim_managed: removeMemberModal.scim_managed,
           }}
           onSubmit={() => handleRemove(removeMemberModal.member.id)}
         />

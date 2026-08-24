@@ -44,7 +44,21 @@ export type TAuditEventType =
   | "SECURITY_POLICY_UPDATED"
   | "VERIFIED_DOMAIN_ADDED"
   | "DOMAIN_VERIFICATION_STATUS_CHANGED"
-  | "VERIFIED_DOMAIN_REMOVED";
+  | "VERIFIED_DOMAIN_REMOVED"
+  // Feature 2's 4 SCIM provisioning event types (exigence 10) - routed
+  // into this SAME unified audit log rather than a separate model (see
+  // `AuditEventType`, apps/api/plane/db/models/audit.py). Filtered down to
+  // exactly these 4 by `WorkspaceSCIMProvisioningLogEndpoint`
+  // (apps/api/plane/app/views/workspace/scim_admin.py) - the "Provisioning
+  // log" sub-panel (Workspace Settings > Security > SCIM Provisioning)
+  // never shows any other event type. Reactivation (PATCH active:true) and
+  // other mutable-attribute PATCH/PUT updates both use SCIM_USER_UPDATED -
+  // no separate "reactivated" event type, the direction is carried in
+  // old_value/new_value (only visible on the detail payload).
+  | "SCIM_USER_CREATED"
+  | "SCIM_USER_UPDATED"
+  | "SCIM_USER_DEACTIVATED"
+  | "SCIM_SYNC_ERROR";
 
 /**
  * Matches `AUDIT_LOG_LIST_FIELDS`/`WorkspaceAuditLogListSerializer`

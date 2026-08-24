@@ -155,6 +155,20 @@ export interface IWorkspaceMember {
   // (apps/api/plane/app/serializers/workspace.py). At most one member of a
   // workspace has this `true` at a time.
   is_owner?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 2 ("SCIM 2.0 natif") - persisted fields on
+  // `WorkspaceMember` itself (apps/api/plane/db/models/workspace.py, NOT a
+  // computed `SerializerMethodField` like `is_owner`/`is_sso_provisioned`
+  // above), already returned by `WorkSpaceMemberSerializer`/
+  // `WorkspaceMemberAdminSerializer` (`Meta.fields = "__all__"` - no
+  // backend change was needed to expose these two, unlike
+  // `is_sso_provisioned` in feature 1). `scim_managed` marks a membership
+  // whose lifecycle (role, active/removed) is SCIM-driven - the "Managed by
+  // SCIM" badge (Workspace Settings > Members) and the manual-edit warning
+  // both key off this. `scim_external_id` is the IdP's own `externalId` for
+  // this membership, shown for support/debugging only.
+  scim_managed?: boolean;
+  scim_external_id?: string | null;
 }
 
 export interface IWorkspaceMemberMe {

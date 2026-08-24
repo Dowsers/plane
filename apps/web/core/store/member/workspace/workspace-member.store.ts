@@ -32,6 +32,13 @@ export interface IWorkspaceMembership {
   // plane-selfhost), feature 5 - see `IWorkspaceMember.is_owner`'s own
   // comment (packages/types/src/workspace.ts).
   is_owner?: boolean;
+  // Category 11, feature 2 ("SCIM 2.0 natif") - see
+  // `IWorkspaceMember.scim_managed`'s own comment (packages/types/src/
+  // workspace.ts). Whitelisted through here the same way `is_owner` is
+  // above - the raw API response is NOT re-exposed as-is, every field this
+  // store's `memberDetails`/`getWorkspaceMemberDetails` computed value
+  // exposes has to be picked up explicitly here first.
+  scim_managed?: boolean;
 }
 
 export interface IWorkspaceMemberStore {
@@ -234,6 +241,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       member: this.memberRoot?.memberMap?.[workspaceMember.member],
       is_active: workspaceMember.is_active,
       is_owner: workspaceMember.is_owner,
+      scim_managed: workspaceMember.scim_managed,
     };
     return memberDetails;
   });
@@ -268,6 +276,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
             role: member.role,
             is_active: member.is_active,
             is_owner: member.is_owner,
+            scim_managed: member.scim_managed,
           });
         });
       });

@@ -67,6 +67,18 @@ export interface IInstanceConfig {
   admin_base_url: string | undefined;
   is_self_managed: boolean;
   instance_changelog_url?: string;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 2 ("SCIM 2.0 natif") - the instance-wide
+  // `ENABLE_SCIM` god-mode flag (`InstanceConfiguration`, category
+  // SECURITY), mirrored onto this PUBLIC config payload (small backend
+  // addition alongside this same frontend checkpoint,
+  // `plane.license.api.views.instance.InstanceEndpoint.get`) so Workspace
+  // Settings > Security's own "SCIM Provisioning" tab can gate its own
+  // visibility on it per the spec ("visible uniquement si ENABLE_SCIM est
+  // active cote instance") - apps/web has no access to the privileged
+  // `GET /api/instances/configurations/` surface apps/admin's own god-mode
+  // toggle reads/writes.
+  is_scim_enabled: boolean;
 }
 
 export interface IInstanceAdmin {

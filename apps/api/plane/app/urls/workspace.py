@@ -389,6 +389,15 @@ urlpatterns = [
         WorkspaceSCIMProvisioningLogEndpoint.as_view(),
         name="workspace-scim-provisioning-log",
     ),
+    # Detail route - small addition alongside this feature's own frontend
+    # checkpoint, see WorkspaceSCIMProvisioningLogEndpoint's own docstring
+    # (apps/api/plane/app/views/workspace/scim_admin.py) for why this
+    # can't just reuse the general workspace-audit-logs detail route.
+    path(
+        "workspaces/<str:slug>/scim/provisioning-log/<uuid:pk>/",
+        WorkspaceSCIMProvisioningLogEndpoint.as_view(),
+        name="workspace-scim-provisioning-log",
+    ),
     path(
         "workspaces/<str:slug>/reauth/",
         WorkspaceReauthChallengeEndpoint.as_view(),
