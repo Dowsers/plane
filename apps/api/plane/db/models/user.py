@@ -11,7 +11,10 @@ import pytz
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 
 # Django imports
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
+from django.db.models import Value
+from django.db.models.functions import Coalesce, Lower
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -20,6 +23,7 @@ from django.utils import timezone
 from plane.db.models import FileAsset
 from ..mixins import TimeAuditModel
 from plane.utils.color import get_random_color
+from .functions import ImmutableConcat, ImmutableUnaccent
 
 
 def get_default_onboarding():
@@ -198,6 +202,37 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = "Users"
         db_table = "users"
         ordering = ("-created_at",)
+        indexes = [
+            # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md
+            # in plane-selfhost), feature 6 ("Recherche approfondie dans la
+            # Command Palette") - case/accent-insensitive trigram search
+            # across name + email, backing
+            # `plane.app.views.search.base.GlobalSearchEndpoint.filter_members`.
+            # This expression (built on the direct `User` columns) must stay
+            # byte-identical to the one that view builds via the
+            # `member__`-prefixed fields on `WorkspaceMember` - see
+            # `plane.db.models.functions.ImmutableUnaccent`'s docstring for
+            # why Postgres requires that structural match to use this index.
+            GinIndex(
+                OpClass(
+                    ImmutableUnaccent(
+                        Lower(
+                            ImmutableConcat(
+                                Coalesce("first_name", Value("")),
+                                Value(" "),
+                                Coalesce("last_name", Value("")),
+                                Value(" "),
+                                Coalesce("display_name", Value("")),
+                                Value(" "),
+                                Coalesce("email", Value("")),
+                            )
+                        )
+                    ),
+                    name="gin_trgm_ops",
+                ),
+                name="user_search_trgm_gin_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.username} <{self.email}>"

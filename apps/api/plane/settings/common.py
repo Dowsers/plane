@@ -81,6 +81,22 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 6 ("Recherche approfondie dans la Command
+    # Palette") needs this registered - `django.contrib.postgres.fields`/
+    # `.aggregates` (ArrayField/ArrayAgg) were already used elsewhere in
+    # this codebase without it, which happened to work because those
+    # don't hit the code path this bug affects. `GinIndex(OpClass(...))`
+    # on an expression does hit it: without this app's `AppConfig.ready()`
+    # (which registers `IndexExpression`'s wrapper classes), Django emits
+    # an extra, invalid pair of parentheses around `<expression>
+    # <opclass>` in the generated `CREATE INDEX` SQL - e.g.
+    # `USING gin ((immutable_unaccent(lower(name)) gin_trgm_ops))`
+    # instead of the valid `USING gin (immutable_unaccent(lower(name))
+    # gin_trgm_ops)` - a Postgres syntax error, empirically reproduced
+    # against the real Postgres 15.7 instance this fork's dev/test
+    # workflow runs against, and a match for Django ticket #33021/#32770.
+    "django.contrib.postgres",
     # Inhouse apps
     "plane.analytics",
     "plane.app",

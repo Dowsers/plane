@@ -8,9 +8,11 @@ from uuid import uuid4
 # Django imports
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction, connection
+from django.db.models.functions import Lower
 from django.utils import timezone
 from django.db.models import Q
 from django import apps
@@ -25,6 +27,7 @@ from plane.utils.uuid import convert_uuid_to_integer
 from .description import Description
 from plane.db.mixins import ChangeTrackerMixin
 from .state import StateGroup
+from .functions import ImmutableUnaccent
 
 
 def get_default_properties():
@@ -215,6 +218,27 @@ class Issue(ProjectBaseModel):
         verbose_name_plural = "Issues"
         db_table = "issues"
         ordering = ("-created_at",)
+        indexes = [
+            # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md
+            # in plane-selfhost), feature 6 ("Recherche approfondie dans la
+            # Command Palette") - case/accent-insensitive trigram search on
+            # title and (stripped, plaintext) description, backing
+            # `plane.app.views.search.base.GlobalSearchEndpoint.filter_issues`.
+            # The expression MUST be built via `ImmutableUnaccent(Lower(...))`
+            # (see that module's docstring) for Postgres to actually use
+            # these indexes - see migration
+            # `0174_category12_search_trigram_extensions` for the
+            # `pg_trgm`/`unaccent` extensions and the `immutable_unaccent`
+            # SQL wrapper function this expression depends on.
+            GinIndex(
+                OpClass(ImmutableUnaccent(Lower("name")), name="gin_trgm_ops"),
+                name="issue_name_trgm_gin_idx",
+            ),
+            GinIndex(
+                OpClass(ImmutableUnaccent(Lower("description_stripped")), name="gin_trgm_ops"),
+                name="issue_desc_trgm_gin_idx",
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if self.state is None:
@@ -634,6 +658,15 @@ class IssueComment(ChangeTrackerMixin, ProjectBaseModel):
         verbose_name_plural = "Issue Comments"
         db_table = "issue_comments"
         ordering = ("-created_at",)
+        indexes = [
+            # Category 12, feature 6 - see the identical note on
+            # `Issue.Meta.indexes` above; backs
+            # `GlobalSearchEndpoint.filter_issue_comments`.
+            GinIndex(
+                OpClass(ImmutableUnaccent(Lower("comment_stripped")), name="gin_trgm_ops"),
+                name="issue_comment_trgm_gin_idx",
+            ),
+        ]
 
     def __str__(self):
         """Return issue of the comment"""
