@@ -60,6 +60,7 @@ from plane.app.views import (
     WorkspaceRoleViewSet,
     RoleSchemesAttachEndpoint,
     RoleMembersEndpoint,
+    MyEffectivePermissionsEndpoint,
 )
 
 
@@ -439,6 +440,15 @@ urlpatterns = [
         "workspaces/<str:slug>/roles/<uuid:role_id>/members/",
         RoleMembersEndpoint.as_view(),
         name="workspace-role-members",
+    ),
+    # Self-service counterpart added during the frontend pass (category 11
+    # feature 4 frontend) - gated by plain workspace membership, not
+    # `workspace.manage_roles`, see `MyEffectivePermissionsEndpoint`'s own
+    # docstring for why this is safe.
+    path(
+        "workspaces/<str:slug>/my-permissions/",
+        MyEffectivePermissionsEndpoint.as_view(),
+        name="workspace-my-permissions",
     ),
     path(
         "workspaces/<str:slug>/reauth/",

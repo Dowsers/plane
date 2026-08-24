@@ -101,6 +101,7 @@ from .workspace.rbac import (
     WorkspaceRoleViewSet,
     RoleSchemesAttachEndpoint,
     RoleMembersEndpoint,
+    MyEffectivePermissionsEndpoint,
 )
 
 from .state.base import StateViewSet, IntakeStateEndpoint

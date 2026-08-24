@@ -28,7 +28,7 @@ from django.db.models import Q
 from rest_framework import status
 from rest_framework.response import Response
 
-from plane.app.permissions import WorkspaceManageRolesPermission
+from plane.app.permissions import WorkspaceManageRolesPermission, WorkspaceViewerPermission
 from plane.app.serializers import (
     PermissionSchemeItemInputSerializer,
     PermissionSchemeSerializer,
@@ -51,7 +51,9 @@ from plane.db.models import (
 from plane.utils.audit_log import log_audit_event
 from plane.utils.rbac import (
     cascade_legacy_role_value_change,
+    get_role_permissions,
     invalidate_role_permissions_cache,
+    resolve_effective_role,
 )
 
 
@@ -453,3 +455,68 @@ class RoleMembersEndpoint(BaseAPIView):
         )
         serializer = WorkSpaceMemberSerializer(members, fields=("id", "member", "role"), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MyEffectivePermissionsEndpoint(BaseAPIView):
+    """GET /api/workspaces/<slug>/my-permissions/ - the requesting user's
+    OWN resolved effective permissions in this workspace (spec's own user
+    story 5 - "Mes permissions" in personal settings).
+
+    Deliberately gated by the plain `WorkspaceViewerPermission` (any
+    active member of this workspace, any role) rather than
+    `WorkspaceManageRolesPermission` - every other endpoint in this module
+    is a management surface reserved to `workspace.manage_roles`/Owner
+    (see this module's own docstring), but this one is explicitly a
+    self-service, read-your-own-data surface: it can only ever return the
+    CALLING user's own permissions (there is no `member_id` parameter to
+    read someone else's), so it carries none of that management-surface
+    risk. The backend build for this feature (commit 8da6214f0)
+    deliberately deferred this exact endpoint to the frontend pass ("a
+    future, separate personal 'my effective permissions' summary endpoint
+    ... would need its own, more permissive, read-only surface, not a
+    relaxation of this one") - added here, now, because the frontend
+    "My permissions" panel (category 11 feature 4 frontend) cannot
+    function for a plain Member/Guest without it.
+    """
+
+    permission_classes = [WorkspaceViewerPermission]
+
+    def get(self, request, slug):
+        member = WorkspaceMember.objects.filter(
+            workspace__slug=slug, member=request.user, is_active=True
+        ).select_related("custom_role").first()
+        if member is None:
+            return Response({"error": "Not a member of this workspace."}, status=status.HTTP_403_FORBIDDEN)
+
+        role = resolve_effective_role(member)
+        if role is None:
+            return Response(
+                {"role": None, "permissions": []},
+                status=status.HTTP_200_OK,
+            )
+
+        permission_conditions = get_role_permissions(role.id)
+        catalogue_by_key = {
+            permission.key: permission
+            for permission in Permission.objects.filter(key__in=permission_conditions.keys())
+        }
+
+        permissions = [
+            {
+                "key": key,
+                "category": catalogue_by_key[key].category,
+                "label": catalogue_by_key[key].label,
+                "description": catalogue_by_key[key].description,
+                "conditions": conditions,
+            }
+            for key, conditions in sorted(permission_conditions.items())
+            if key in catalogue_by_key
+        ]
+
+        return Response(
+            {
+                "role": {"id": str(role.id), "name": role.name, "is_system": role.is_system},
+                "permissions": permissions,
+            },
+            status=status.HTTP_200_OK,
+        )
