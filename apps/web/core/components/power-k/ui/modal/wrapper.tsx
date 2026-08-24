@@ -16,6 +16,19 @@ import type { TPowerKCommandsListProps } from "./commands-list";
 import { PowerKModalFooter } from "./footer";
 import { PowerKModalHeader } from "./header";
 
+// Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+// plane-selfhost), feature 6 ("Recherche approfondie dans la Command
+// Palette"), exigence 9 - the search endpoint now matches case/accent-
+// insensitively (`ImmutableUnaccent(Lower(...))`, apps/api/plane/app/views/
+// search/base.py), so a legitimately-returned accented match (e.g. title
+// "Reunion" matching a plain-ASCII typed query "reunion", or vice versa)
+// must not get hidden again client-side by this modal's own custom `filter`
+// below, which runs on EVERY `Command.Item` whenever `shouldFilter` is on
+// (i.e. as soon as there's any search term - see `shouldFilter` on the
+// `Command` element). Mirrors the backend's own diacritics-stripping
+// (`_normalize_for_match`) on the frontend side of the same comparison.
+const stripDiacritics = (value: string) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+
 type Props = {
   commandsListComponent: React.FC<TPowerKCommandsListProps>;
   context: TPowerKContext;
@@ -147,7 +160,18 @@ export const ProjectsAppPowerKModalWrapper = observer(function ProjectsAppPowerK
                 <Command
                   filter={(i18nValue: string, search: string) => {
                     if (i18nValue === "no-results") return 1;
-                    if (i18nValue.toLowerCase().includes(search.toLowerCase())) return 1;
+                    // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md
+                    // in plane-selfhost), feature 6, exigence 3 - the
+                    // "View all results" item's own `value` (`<category>-
+                    // view-all`, see search-results.tsx) never contains the
+                    // typed search term, so it needs the same "always
+                    // shown regardless of filter text" sentinel treatment
+                    // as "no-results" above, or it would get hidden by
+                    // this very filter the instant there's any search term
+                    // (which is exactly when it's rendered at all).
+                    if (i18nValue.endsWith("-view-all")) return 1;
+                    if (stripDiacritics(i18nValue.toLowerCase()).includes(stripDiacritics(search.toLowerCase())))
+                      return 1;
                     return 0;
                   }}
                   shouldFilter={searchTerm.length > 0}

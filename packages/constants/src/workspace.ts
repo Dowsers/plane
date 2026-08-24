@@ -287,12 +287,24 @@ export const WORKSPACE_DEFAULT_SEARCH_RESULT: IWorkspaceSearchResults = {
     workspace: [],
     project: [],
     issue: [],
+    issue_comment: [],
+    member: [],
     cycle: [],
     module: [],
     issue_view: [],
     page: [],
   },
 };
+
+// Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+// plane-selfhost), feature 6 ("Recherche approfondie dans la Command
+// Palette", exigence 3) - mirrors `GlobalSearchEndpoint.DEFAULT_SEARCH_LIMIT`
+// / `MAX_SEARCH_LIMIT` (apps/api/plane/app/views/search/base.py). A
+// category returning exactly `POWER_K_SEARCH_RESULTS_PAGE_SIZE` items is
+// the frontend's signal that there may be more ("Voir tous les resultats"),
+// per that endpoint's own pagination contract.
+export const POWER_K_SEARCH_RESULTS_PAGE_SIZE = 5;
+export const POWER_K_SEARCH_RESULTS_EXPANDED_PAGE_SIZE = 50;
 
 export const USE_CASES = [
   "Plan and track product roadmaps",

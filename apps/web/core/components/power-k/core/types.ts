@@ -137,6 +137,14 @@ export type TPowerKSearchResultsKeys =
   | "workspace"
   | "project"
   | "issue"
+  // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+  // plane-selfhost), feature 6 ("Recherche approfondie dans la Command
+  // Palette") - "Comments"/"Members" are core, edition-independent
+  // categories (exigence 13: identical between Cloud and self-hosted
+  // Community), so they belong in this base union, not
+  // `TPowerKSearchResultsKeysExtended` (the CE enterprise-injection slot).
+  | "issue_comment"
+  | "member"
   | "cycle"
   | "module"
   | "issue_view"

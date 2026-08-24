@@ -25,6 +25,9 @@ type TCommentCard = {
   enableReplies: boolean;
   disabled?: boolean;
   projectId?: string;
+  // Category 12, feature 6 (exigence 5) - see `CommentBlock`'s own prop of
+  // the same name (apps/web/ce/components/comments/comment-block.tsx).
+  highlighted?: boolean;
 };
 
 export const CommentCard = observer(function CommentCard(props: TCommentCard) {
@@ -38,6 +41,7 @@ export const CommentCard = observer(function CommentCard(props: TCommentCard) {
     showCopyLinkOption,
     disabled = false,
     projectId,
+    highlighted = false,
   } = props;
   // states
   const [isEditing, setIsEditing] = useState(false);
@@ -49,7 +53,7 @@ export const CommentCard = observer(function CommentCard(props: TCommentCard) {
   if (!comment || !workspaceId) return null;
 
   return (
-    <CommentBlock comment={comment} ends={ends}>
+    <CommentBlock comment={comment} ends={ends} highlighted={highlighted}>
       <CommentCardDisplay
         activityOperations={activityOperations}
         entityId={entityId}

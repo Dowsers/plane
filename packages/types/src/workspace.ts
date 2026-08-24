@@ -224,6 +224,22 @@ export interface IWorkspaceSearchResult {
   slug: string;
 }
 
+// Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+// plane-selfhost), feature 6 ("Recherche approfondie dans la Command
+// Palette") - shared shape of the `snippet` field on any search result
+// matched on a body of text rather than its title/name (issue description,
+// issue comment). `highlight_start`/`highlight_end` index into `text`
+// (already a pre-truncated, HTML-free excerpt - see
+// `GlobalSearchEndpoint._build_snippet`, apps/api/plane/app/views/search/base.py)
+// so the frontend never re-scans the full text to find the match; it only
+// ever slices `text` at these two offsets to bold/highlight the matched
+// term, never renders `text` as HTML.
+export interface IWorkspaceSearchSnippet {
+  text: string;
+  highlight_start: number;
+  highlight_end: number;
+}
+
 export interface IWorkspaceIssueSearchResult {
   id: string;
   name: string;
@@ -232,6 +248,36 @@ export interface IWorkspaceIssueSearchResult {
   sequence_id: number;
   workspace__slug: string;
   type_id: string;
+  // Category 12, feature 6 - `matched_in` is always present ("title" is the
+  // pre-existing behaviour); `snippet` is only non-null when `matched_in
+  // === "description"` (exigence 2/4).
+  matched_in: "title" | "description";
+  snippet: IWorkspaceSearchSnippet | null;
+}
+
+// Category 12, feature 6 - new "Comments" result category (exigence 2).
+export interface IWorkspaceIssueCommentSearchResult {
+  comment_id: string;
+  issue_id: string;
+  issue__name: string;
+  issue__sequence_id: number;
+  project_id: string;
+  project__identifier: string;
+  workspace__slug: string;
+  snippet: IWorkspaceSearchSnippet | null;
+  actor: {
+    id: string;
+    display_name: string;
+    avatar_url: string | null;
+  };
+}
+
+// Category 12, feature 6 - new "Members" result category (exigence 3).
+export interface IWorkspaceMemberSearchResult {
+  member_id: string;
+  display_name: string;
+  email: string;
+  avatar_url: string | null;
 }
 
 export interface IWorkspacePageSearchResult {
@@ -254,14 +300,21 @@ export interface IWorkspaceProjectSearchResult {
 }
 
 export interface IWorkspaceSearchResults {
+  // Category 12, feature 6 (exigence 10) - the backend now omits ANY
+  // category with zero matches from `results` entirely instead of
+  // returning it as `[]` (true for the pre-existing categories below too,
+  // not just the two new ones) - every field here is therefore optional,
+  // and consumers must tolerate a missing key.
   results: {
-    workspace: IWorkspaceSearchResult[];
-    project: IWorkspaceProjectSearchResult[];
-    issue: IWorkspaceIssueSearchResult[];
-    cycle: IWorkspaceDefaultSearchResult[];
-    module: IWorkspaceDefaultSearchResult[];
-    issue_view: IWorkspaceDefaultSearchResult[];
-    page: IWorkspacePageSearchResult[];
+    workspace?: IWorkspaceSearchResult[];
+    project?: IWorkspaceProjectSearchResult[];
+    issue?: IWorkspaceIssueSearchResult[];
+    issue_comment?: IWorkspaceIssueCommentSearchResult[];
+    member?: IWorkspaceMemberSearchResult[];
+    cycle?: IWorkspaceDefaultSearchResult[];
+    module?: IWorkspaceDefaultSearchResult[];
+    issue_view?: IWorkspaceDefaultSearchResult[];
+    page?: IWorkspacePageSearchResult[];
   };
 }
 

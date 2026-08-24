@@ -242,6 +242,15 @@ export class WorkspaceService extends APIService {
       // `"page"`. Optional/additive - every existing call site keeps
       // searching every entity type, exactly as before.
       entities?: string;
+      // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+      // plane-selfhost), feature 6 - `types` is the spec's own param name
+      // for the same thing as `entities` (the backend accepts either,
+      // `types` wins if both are given); `limit`/`offset` back the "Voir
+      // tous les resultats" follow-up call used to page a single category
+      // past the default 5-result cap (exigence 3).
+      types?: string;
+      limit?: number;
+      offset?: number;
     }
   ): Promise<IWorkspaceSearchResults> {
     return this.get(`/api/workspaces/${workspaceSlug}/search/`, {
