@@ -169,6 +169,20 @@ export interface IWorkspaceMember {
   // this membership, shown for support/debugging only.
   scim_managed?: boolean;
   scim_external_id?: string | null;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4 ("Constructeur de roles personnalises") -
+  // `WorkspaceMember.custom_role` FK id, already returned by
+  // `WorkSpaceMemberSerializer`/`WorkspaceMemberAdminSerializer`
+  // (`Meta.fields = "__all__"`, no backend change needed to expose this).
+  // `null`/`undefined` means this member has never been assigned a custom
+  // role explicitly - their effective role still resolves correctly via
+  // the backend's own `resolve_effective_role` fallback (the workspace's
+  // system role matching their plain `role` integer), the frontend just
+  // has nothing more specific to show than the legacy `role` label in
+  // that case. Written via `custom_role_id` on PATCH, never `custom_role`
+  // directly (see `TWorkspaceRoleCreatePayload`'s sibling write shapes,
+  // packages/types/src/rbac.ts).
+  custom_role?: string | null;
 }
 
 export interface IWorkspaceMemberMe {

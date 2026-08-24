@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react";
 import Link from "next/link";
-import { Controller, useForm } from "react-hook-form";
+import useSWR from "swr";
 
 import { Disclosure } from "@headlessui/react";
 import { Crown } from "lucide-react";
@@ -25,6 +25,10 @@ import { getFileURL } from "@plane/utils";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
+// services
+import workspaceRBACService from "@/services/workspace-rbac.service";
+// local imports
+import { SystemBadge } from "@/components/workspace/settings/rbac/system-badge";
 
 export interface RowData {
   member: IWorkspaceMember;
@@ -46,6 +50,12 @@ export interface RowData {
   // `is_sso_provisioned`). Drives the "Managed by SCIM" badge and the
   // manual-edit warning below.
   scim_managed?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4 - same reasoning as `is_owner`/
+  // `scim_managed` above: `WorkspaceMember.custom_role` (see
+  // `IWorkspaceMember.custom_role`'s own comment, packages/types/src/
+  // workspace.ts) is a top-level field on the raw membership row.
+  custom_role?: string | null;
 }
 
 type NameProps = {
@@ -153,11 +163,6 @@ export function NameColumn(props: NameProps) {
 
 export const AccountTypeColumn = observer(function AccountTypeColumn(props: AccountTypeProps) {
   const { rowData, workspaceSlug } = props;
-  // form info
-  const {
-    control,
-    formState: { errors },
-  } = useForm();
   // state
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 2 ("SCIM 2.0 natif") - the spec's own UX note
@@ -166,8 +171,9 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
   // never blocks this (`WorkspaceMemberAdminSerializer`'s own PATCH has no
   // such check), so a role change on a SCIM-managed row is held behind one
   // extra confirmation step instead of applying immediately like every
-  // other row.
-  const [pendingRole, setPendingRole] = useState<EUserPermissions | null>(null);
+  // other row. Now holds a `WorkspaceRole` id (feature 4) rather than a
+  // legacy `EUserPermissions` int.
+  const [pendingRoleId, setPendingRoleId] = useState<string | null>(null);
   const [isConfirmingRoleChange, setIsConfirmingRoleChange] = useState(false);
   // store hooks
   const { allowPermissions } = useUserPermissions();
@@ -183,12 +189,28 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
   const isRoleNonEditable = isCurrentUser || !isAdminRole;
   const isSuspended = rowData.is_active === false;
 
-  const applyRoleChange = async (value: EUserPermissions) => {
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4 - the role selector is now driven by
+  // `GET /roles/` instead of the 3 hardcoded legacy values (spec's own UI
+  // section). Only fetched for an Admin (the only caller who can both see
+  // this control AND has `workspace.manage_roles` via the system Admin
+  // role's own baseline scheme, see `WorkspaceManageRolesPermission`) - a
+  // Member/Guest viewing this same list would otherwise get a 403.
+  const { data: roles } = useSWR(
+    isAdminRole && workspaceSlug ? ["RBAC_ROLES", workspaceSlug] : null,
+    () => workspaceRBACService.listRoles(workspaceSlug.toString()),
+    { revalidateOnFocus: false }
+  );
+
+  const resolvedRole =
+    roles?.find((role) => role.id === rowData.custom_role) ??
+    roles?.find((role) => role.is_system && role.legacy_role_value === rowData.role);
+  const displayLabel = resolvedRole?.name ?? ROLE[rowData.role];
+
+  const applyRoleChange = async (roleId: string) => {
     if (!workspaceSlug) return;
     try {
-      await updateMember(workspaceSlug.toString(), rowData.member.id, {
-        role: value as unknown as EUserPermissions,
-      });
+      await updateMember(workspaceSlug.toString(), rowData.member.id, { custom_role_id: roleId });
     } catch (err: unknown) {
       const error = err as { error?: string | string[] };
       const errorString = Array.isArray(error?.error) ? error.error[0] : error?.error;
@@ -201,20 +223,20 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
     }
   };
 
-  const handleRoleChange = async (value: EUserPermissions) => {
+  const handleRoleChange = async (roleId: string) => {
     if (rowData.scim_managed) {
-      setPendingRole(value);
+      setPendingRoleId(roleId);
       return;
     }
-    await applyRoleChange(value);
+    await applyRoleChange(roleId);
   };
 
   const handleConfirmRoleChange = async () => {
-    if (pendingRole === null) return;
+    if (pendingRoleId === null) return;
     setIsConfirmingRoleChange(true);
-    await applyRoleChange(pendingRole);
+    await applyRoleChange(pendingRoleId);
     setIsConfirmingRoleChange(false);
-    setPendingRole(null);
+    setPendingRoleId(null);
   };
 
   return (
@@ -225,42 +247,40 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
             Suspended
           </Pill>
         </div>
-      ) : isRoleNonEditable ? (
-        <div className="flex w-32">
-          <span>{ROLE[rowData.role]}</span>
+      ) : isRoleNonEditable || !roles ? (
+        <div className="flex w-32 items-center gap-1.5">
+          <span>{displayLabel}</span>
+          {resolvedRole?.is_system && <SystemBadge />}
         </div>
       ) : (
-        <Controller
-          name="role"
-          control={control}
-          rules={{ required: "Role is required." }}
-          render={({ field: { value: selectedRole } }) => (
-            <CustomSelect
-              value={selectedRole as EUserPermissions}
-              onChange={(value: EUserPermissions) => {
-                void handleRoleChange(value);
-              }}
-              label={
-                <div className="flex">
-                  <span>{ROLE[rowData.role]}</span>
-                </div>
-              }
-              buttonClassName={`!px-0 !justify-start hover:bg-surface-1 ${errors.role ? "border-danger-strong" : "border-none"}`}
-              className="w-32 rounded-md p-0"
-              input
-            >
-              {Object.keys(ROLE).map((item) => (
-                <CustomSelect.Option key={item} value={item as unknown as EUserPermissions}>
-                  {ROLE[item as unknown as keyof typeof ROLE]}
-                </CustomSelect.Option>
-              ))}
-            </CustomSelect>
-          )}
-        />
+        <CustomSelect
+          value={resolvedRole?.id}
+          onChange={(value: string) => {
+            void handleRoleChange(value);
+          }}
+          label={
+            <div className="flex items-center gap-1.5">
+              <span>{displayLabel}</span>
+              {resolvedRole?.is_system && <SystemBadge />}
+            </div>
+          }
+          buttonClassName="!px-0 !justify-start hover:bg-surface-1 border-none"
+          className="w-40 rounded-md p-0"
+          input
+        >
+          {roles.map((role) => (
+            <CustomSelect.Option key={role.id} value={role.id}>
+              <span className="flex items-center gap-1.5">
+                {role.name}
+                {role.is_system && <SystemBadge />}
+              </span>
+            </CustomSelect.Option>
+          ))}
+        </CustomSelect>
       )}
       <AlertModalCore
-        isOpen={pendingRole !== null}
-        handleClose={() => setPendingRole(null)}
+        isOpen={pendingRoleId !== null}
+        handleClose={() => setPendingRoleId(null)}
         handleSubmit={handleConfirmRoleChange}
         isSubmitting={isConfirmingRoleChange}
         variant="primary"

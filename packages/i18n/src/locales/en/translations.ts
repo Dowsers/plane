@@ -1830,6 +1830,7 @@ export default {
       preferences: "Preferences",
       notifications: "Notifications",
       "api-tokens": "Personal Access Tokens",
+      permissions: "My permissions",
     },
     tabs: {
       summary: "Summary",
@@ -2204,6 +2205,14 @@ export default {
     empty_state: {
       title: "No project templates yet",
       description: "Save an existing, well-organized project as a template to standardize how new projects start.",
+    },
+  },
+  permission_bundles: {
+    label: "Permission bundles",
+    settings: {
+      title: "Permission Bundles",
+      description:
+        "Reusable, named sets of atomic permissions - attach one or more bundles to a role to compose its effective access.",
     },
   },
   sla_policies: {

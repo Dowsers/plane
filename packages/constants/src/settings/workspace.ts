@@ -148,6 +148,22 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/security/`,
   },
+  "permission-bundles": {
+    key: "permission-bundles",
+    i18n_label: "permission_bundles.settings.title",
+    href: `/settings/permission-bundles`,
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 4 - nav-level gate mirrors `security` above
+    // (Admin visibility; the backend's own default seed grants
+    // `workspace.manage_roles` unconditionally to the system Admin role's
+    // own baseline bundle, not just to the real Owner - see
+    // `WorkspaceManageRolesPermission`/`SYSTEM_SCHEME_ITEMS["Admin"]`).
+    // The stricter, REAL enforcement is still the backend's own 403 on
+    // every endpoint under this screen - this array only controls whether
+    // the tab is shown at all, matching every other Admin-only tab here.
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/permission-bundles/`,
+  },
 };
 
 export const WORKSPACE_SETTINGS_ACCESS = Object.fromEntries(
@@ -164,6 +180,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["sla-policies"],
     WORKSPACE_SETTINGS["ai"],
     WORKSPACE_SETTINGS["security"],
+    WORKSPACE_SETTINGS["permission-bundles"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"], WORKSPACE_SETTINGS["wiki"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [

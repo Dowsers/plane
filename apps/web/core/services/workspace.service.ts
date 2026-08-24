@@ -144,7 +144,13 @@ export class WorkspaceService extends APIService {
   async updateWorkspaceMember(
     workspaceSlug: string,
     memberId: string,
-    data: Partial<IWorkspaceMember>
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 4 - `custom_role_id` is a write-only field
+    // accepted by `WorkSpaceMemberViewSet.partial_update` (there is no
+    // `custom_role_id` field on the model/serializer itself, only the
+    // plain `custom_role` FK it derives - see `IWorkspaceMember.
+    // custom_role`'s own comment, packages/types/src/workspace.ts).
+    data: Partial<IWorkspaceMember> & { custom_role_id?: string | null }
   ): Promise<IWorkspaceMember> {
     return this.patch(`/api/workspaces/${workspaceSlug}/members/${memberId}/`, data)
       .then((response) => response?.data)

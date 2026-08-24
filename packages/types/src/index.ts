@@ -55,6 +55,7 @@ export * from "./project";
 export * from "./project-template";
 export * from "./project-update";
 export * from "./publish";
+export * from "./rbac";
 export * from "./reaction";
 export * from "./recurring-issue-template";
 export * from "./intake";

@@ -32,6 +32,10 @@ export const PROFILE_SETTINGS: Record<
     key: "security",
     i18n_label: "profile.actions.security",
   },
+  permissions: {
+    key: "permissions",
+    i18n_label: "profile.actions.permissions",
+  },
   activity: {
     key: "activity",
     i18n_label: "profile.actions.activity",
@@ -62,6 +66,13 @@ export const GROUPED_PROFILE_SETTINGS: Record<
     PROFILE_SETTINGS["notifications"],
     PROFILE_SETTINGS["security"],
     PROFILE_SETTINGS["activity"],
+    // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    // plane-selfhost), feature 4, user story 5 - read-only "my effective
+    // permissions" summary, workspace-scoped (see the tab's own root
+    // component for why this needs an explicit workspace picker rather
+    // than `useWorkspace().currentWorkspace`, which is null on this
+    // account-level `/settings/profile/...` route).
+    PROFILE_SETTINGS["permissions"],
   ],
   [PROFILE_SETTINGS_CATEGORY.DEVELOPER]: [PROFILE_SETTINGS["api-tokens"]],
 };

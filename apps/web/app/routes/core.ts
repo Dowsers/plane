@@ -383,6 +383,10 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/settings/security",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/security/page.tsx"
           ),
+          route(
+            ":workspaceSlug/settings/permission-bundles",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/permission-bundles/page.tsx"
+          ),
         ]),
 
         // --------------------------------------------------------------------

@@ -12,6 +12,7 @@ import {
   Building,
   Compass,
   CreditCard,
+  KeyRound,
   LayoutTemplate,
   ShieldCheck,
   Sparkles,
@@ -38,4 +39,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   ai: Bot,
   wiki: WikiIcon,
   security: ShieldCheck,
+  "permission-bundles": KeyRound,
 };

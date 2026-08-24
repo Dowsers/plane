@@ -22,6 +22,7 @@ import { CountChip } from "@/components/common/count-chip";
 import { PageHead } from "@/components/core/page-title";
 import { MemberListFiltersDropdown } from "@/components/project/dropdowns/filters/member-list";
 import { WorkspaceMembersList } from "@/components/workspace/settings/members-list";
+import { RolesTabRoot } from "@/components/workspace/settings/rbac/roles-tab-root";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useWorkspace } from "@/hooks/store/use-workspace";
@@ -36,6 +37,11 @@ import { MembersWorkspaceSettingsHeader } from "./header";
 
 const TAB_MEMBERS = "members";
 const TAB_AGENTS = "agents";
+// Category 11 (docs/feature-specs/11-admin-security-sso.md in
+// plane-selfhost), feature 4 - "Roles" tab, same Admin-only gate as
+// "Agents" above (nav-level only; real enforcement is the backend's own
+// 403 on every RBAC endpoint for anyone lacking `workspace.manage_roles`).
+const TAB_ROLES = "roles";
 
 const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsPage({ params }: Route.ComponentProps) {
   // states
@@ -169,6 +175,7 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
           <Tabs.List>
             <Tabs.Trigger value={TAB_MEMBERS}>{t("workspace_settings.settings.members.title")}</Tabs.Trigger>
             <Tabs.Trigger value={TAB_AGENTS}>Agents</Tabs.Trigger>
+            <Tabs.Trigger value={TAB_ROLES}>Roles</Tabs.Trigger>
             <Tabs.Indicator />
           </Tabs.List>
           <Tabs.Content value={TAB_MEMBERS} className="pt-4">
@@ -176,6 +183,9 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
           </Tabs.Content>
           <Tabs.Content value={TAB_AGENTS} className="pt-4">
             <AgentListRoot workspaceSlug={workspaceSlug} />
+          </Tabs.Content>
+          <Tabs.Content value={TAB_ROLES} className="pt-4">
+            <RolesTabRoot workspaceSlug={workspaceSlug} />
           </Tabs.Content>
         </Tabs>
       ) : (

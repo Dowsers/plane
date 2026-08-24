@@ -15,4 +15,5 @@ export const PROFILE_SETTINGS_PAGES_MAP: Record<TProfileSettingsTabs, React.Lazy
   security: lazy(() => import("./security").then((m) => ({ default: m.SecurityProfileSettings }))),
   activity: lazy(() => import("./activity").then((m) => ({ default: m.ActivityProfileSettings }))),
   "api-tokens": lazy(() => import("./api-tokens").then((m) => ({ default: m.APITokensProfileSettings }))),
+  permissions: lazy(() => import("./permissions").then((m) => ({ default: m.PermissionsProfileSettings }))),
 };

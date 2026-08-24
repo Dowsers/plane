@@ -6,7 +6,7 @@
 
 import type React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Activity, Bell, CircleUser, KeyRound, LockIcon, Settings2 } from "lucide-react";
+import { Activity, Bell, CircleUser, KeyRound, LockIcon, Settings2, ShieldCheck } from "lucide-react";
 import { observer } from "mobx-react";
 import { useParams } from "react-router";
 // plane imports
@@ -25,6 +25,10 @@ const ICONS: Record<TProfileSettingsTabs, LucideIcon | React.FC<ISvgIcons>> = {
   preferences: Settings2,
   notifications: Bell,
   "api-tokens": KeyRound,
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4, user story 5 - read-only "my effective
+  // permissions" summary.
+  permissions: ShieldCheck,
 };
 
 type Props = {

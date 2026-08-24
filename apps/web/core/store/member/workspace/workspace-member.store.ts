@@ -39,6 +39,11 @@ export interface IWorkspaceMembership {
   // store's `memberDetails`/`getWorkspaceMemberDetails` computed value
   // exposes has to be picked up explicitly here first.
   scim_managed?: boolean;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4 - see `IWorkspaceMember.custom_role`'s own
+  // comment (packages/types/src/workspace.ts). Whitelisted through here
+  // the same way `is_owner`/`scim_managed` are above.
+  custom_role?: string | null;
 }
 
 export interface IWorkspaceMemberStore {
@@ -62,7 +67,16 @@ export interface IWorkspaceMemberStore {
   fetchWorkspaceMembers: (workspaceSlug: string) => Promise<IWorkspaceMember[]>;
   fetchWorkspaceMemberInvitations: (workspaceSlug: string) => Promise<IWorkspaceMemberInvitation[]>;
   // crud actions
-  updateMember: (workspaceSlug: string, userId: string, data: { role: EUserPermissions }) => Promise<void>;
+  // Category 11 (docs/feature-specs/11-admin-security-sso.md in
+  // plane-selfhost), feature 4 - `custom_role_id` is the new
+  // custom-role-aware write path (`role` alone remains the legacy
+  // dropdown path) - both, or either, may be sent, matching
+  // `WorkSpaceMemberViewSet.partial_update`'s own accepted shapes.
+  updateMember: (
+    workspaceSlug: string,
+    userId: string,
+    data: { role?: EUserPermissions; custom_role_id?: string | null }
+  ) => Promise<void>;
   removeMemberFromWorkspace: (workspaceSlug: string, userId: string) => Promise<void>;
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 5 - transfer real Workspace Owner status.
@@ -242,6 +256,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       is_active: workspaceMember.is_active,
       is_owner: workspaceMember.is_owner,
       scim_managed: workspaceMember.scim_managed,
+      custom_role: workspaceMember.custom_role,
     };
     return memberDetails;
   });
@@ -277,6 +292,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
             is_active: member.is_active,
             is_owner: member.is_owner,
             scim_managed: member.scim_managed,
+            custom_role: member.custom_role,
           });
         });
       });
@@ -289,16 +305,27 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
    * @param userId
    * @param data
    */
-  updateMember = async (workspaceSlug: string, userId: string, data: { role: EUserPermissions }) => {
+  updateMember = async (
+    workspaceSlug: string,
+    userId: string,
+    data: { role?: EUserPermissions; custom_role_id?: string | null }
+  ) => {
     const memberDetails = this.getWorkspaceMemberDetails(userId);
     if (!memberDetails) throw new Error("Member not found");
     // original data to revert back in case of error
     const originalProjectMemberData = { ...this.workspaceMemberMap?.[workspaceSlug]?.[userId] };
     try {
       runInAction(() => {
-        set(this.workspaceMemberMap, [workspaceSlug, userId, "role"], data.role);
+        if (data.role !== undefined) set(this.workspaceMemberMap, [workspaceSlug, userId, "role"], data.role);
       });
-      await this.workspaceService.updateWorkspaceMember(workspaceSlug, memberDetails.id, data);
+      const updated = await this.workspaceService.updateWorkspaceMember(workspaceSlug, memberDetails.id, data);
+      // `role`/`custom_role` are kept in sync server-side (decision #5) -
+      // trust the response rather than guessing the derived legacy `role`
+      // optimistically when only `custom_role_id` was sent.
+      runInAction(() => {
+        set(this.workspaceMemberMap, [workspaceSlug, userId, "role"], updated.role);
+        set(this.workspaceMemberMap, [workspaceSlug, userId, "custom_role"], updated.custom_role ?? null);
+      });
     } catch (error) {
       // revert back to original members in case of error
       runInAction(() => {
