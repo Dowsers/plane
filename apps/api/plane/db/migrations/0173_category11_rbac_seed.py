@@ -351,7 +351,16 @@ SYSTEM_SCHEME_ITEMS = {
         ("issue.change_state", CREATOR_ONLY),
         ("issue.manage_comments", CREATOR_ONLY),
         ("issue.manage_attachments", CREATOR_ONLY),
-        ("issue.manage_relations", NONE),
+        # Category 11 feature 4 security-review fix (Finding 8) -
+        # `issue.manage_relations` was seeded here unconditionally
+        # (a copy/paste slip from the CREATOR_ONLY entries just above),
+        # but the real gate (`IssueRelationViewSet` via
+        # `ProjectEntityPermission`) requires `ProjectMember.role in
+        # [ADMIN, MEMBER]` with zero creator bypass and zero Guest path -
+        # no Guest can ever do this in real code, exactly like the
+        # "Deliberately NO issue.create, issue.manage_labels, cycle.*,
+        # module.*..." comment below already documents for its own
+        # adjacent exclusions. Removed rather than left seeded as NONE.
         ("view.create", NONE),
         ("view.edit", CREATOR_ONLY),
         ("view.delete", CREATOR_ONLY),
@@ -362,11 +371,11 @@ SYSTEM_SCHEME_ITEMS = {
         # a page (ownership transfer, import) manage/delete it.
         ("page.manage", CREATOR_ONLY),
         ("page.delete", CREATOR_ONLY),
-        # Deliberately NO issue.create, issue.manage_labels, cycle.*,
-        # module.*, page.create, workspace.* - Guest cannot do any of
-        # these today, with or without being a "creator" (there is no
-        # role-based OR creator-based path granting them in the real
-        # code).
+        # Deliberately NO issue.create, issue.manage_labels,
+        # issue.manage_relations, cycle.*, module.*, page.create,
+        # workspace.* - Guest cannot do any of these today, with or
+        # without being a "creator" (there is no role-based OR
+        # creator-based path granting them in the real code).
     ],
 }
 

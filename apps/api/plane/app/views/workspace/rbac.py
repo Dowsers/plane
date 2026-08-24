@@ -53,6 +53,7 @@ from plane.utils.rbac import (
     cascade_legacy_role_value_change,
     get_role_permissions,
     invalidate_role_permissions_cache,
+    missing_protected_permissions,
     resolve_effective_role,
 )
 
@@ -140,11 +141,65 @@ class PermissionSchemeViewSet(BaseViewSet):
 
         old_value = PermissionSchemeSerializer(scheme).data
 
-        affected_role_ids = list(
-            WorkspaceRoleScheme.objects.filter(scheme=scheme).values_list("role_id", flat=True)
-        )
-
         with transaction.atomic():
+            # Category 11 feature 4 security-review fix (Finding 5) -
+            # `select_for_update()` locks THIS scheme row for the
+            # duration of the transaction. Postgres implicitly takes a
+            # `FOR KEY SHARE` lock on an FK's target row for every
+            # INSERT/UPDATE that establishes/changes a reference to it
+            # (referential-integrity enforcement); `FOR UPDATE` conflicts
+            # with `FOR KEY SHARE`, so this blocks
+            # `RoleSchemesAttachEndpoint.post`'s own
+            # `WorkspaceRoleScheme.bulk_create(...)` for as long as it
+            # would attach THIS scheme to a role, until we commit. The
+            # `affected_role_ids` snapshot below - used for BOTH the
+            # anti-lockout simulation (Finding 1) and cache invalidation
+            # (the original TOCTOU the review found) - is only taken
+            # after acquiring this lock: a concurrent attach either
+            # already committed before we locked (visible below) or is
+            # blocked until after we commit (and then sees our new items
+            # when IT runs), so it can never land invisibly in between.
+            scheme = PermissionScheme.objects.select_for_update().get(pk=scheme.pk)
+
+            affected_role_ids = list(
+                WorkspaceRoleScheme.objects.filter(scheme=scheme).values_list("role_id", flat=True)
+            )
+
+            if items_provided and affected_role_ids:
+                # Category 11 feature 4 security-review fix (Finding 1) -
+                # the anti-lockout guard (exigence 4) previously only ran
+                # at attach/detach time (`RoleSchemesAttachEndpoint`),
+                # never here: a custom bundle covering the protected
+                # permissions could be attached to an owner-equivalent
+                # role (passing THAT check) and then have its items
+                # silently rewritten to strip them, with nothing to stop
+                # it. Simulate the resulting union for every
+                # owner-equivalent role this edit affects, substituting
+                # this scheme's NOT-YET-COMMITTED `validated_items` for
+                # its real ones - reuses the exact same helper
+                # `RoleSchemesAttachEndpoint` uses for its own guard.
+                owner_equivalent_role_ids = list(
+                    WorkspaceRole.objects.filter(
+                        id__in=affected_role_ids, is_owner_equivalent=True
+                    ).values_list("id", flat=True)
+                )
+                for role_id in owner_equivalent_role_ids:
+                    role_scheme_ids = list(
+                        WorkspaceRoleScheme.objects.filter(role_id=role_id).values_list("scheme_id", flat=True)
+                    )
+                    missing = missing_protected_permissions(
+                        role_scheme_ids, override_scheme_id=scheme.id, override_items=validated_items
+                    )
+                    if missing:
+                        return Response(
+                            {
+                                "error": "This change would strip a protected permission from the "
+                                "Admin-equivalent role (exigence 4) - rejected.",
+                                "missing_permissions": missing,
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
             if "name" in request.data:
                 scheme.name = request.data["name"]
             if "description" in request.data:
@@ -191,17 +246,50 @@ class PermissionSchemeViewSet(BaseViewSet):
                 {"error": "A system permission bundle cannot be deleted."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        affected_role_ids = list(
-            WorkspaceRoleScheme.objects.filter(scheme=scheme).values_list("role_id", flat=True)
-        )
-        if affected_role_ids:
-            return Response(
-                {
-                    "error": "This bundle is attached to one or more roles and cannot be deleted.",
-                    "role_count": len(affected_role_ids),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            # Category 11 feature 4 security-review fix (Finding 3a,
+            # analogous guard) - lock the scheme row for the duration of
+            # the check+delete so a concurrent
+            # `RoleSchemesAttachEndpoint.post` attaching this scheme to a
+            # role can't land between our `affected_role_ids` check and
+            # `scheme.delete()` (same Postgres FK-lock mechanism as
+            # `PermissionSchemeViewSet.partial_update`'s own fix, see its
+            # comment for the full mechanics).
+            scheme = PermissionScheme.objects.select_for_update().get(pk=scheme.pk)
+
+            affected_role_ids = list(
+                WorkspaceRoleScheme.objects.filter(scheme=scheme).values_list("role_id", flat=True)
             )
+            if affected_role_ids:
+                return Response(
+                    {
+                        "error": "This bundle is attached to one or more roles and cannot be deleted.",
+                        "role_count": len(affected_role_ids),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_value = PermissionSchemeSerializer(scheme).data
+
+            # Category 11 feature 4 security-review fix (Finding 6) - the
+            # real delete happens BEFORE the audit-log call (previously
+            # reversed) and both are wrapped in this same
+            # `transaction.atomic()` block, so a `ProtectedError` (or any
+            # other failure) raised by `scheme.delete()` rolls back
+            # before the audit log task is ever enqueued - no more
+            # falsely-persisted "deleted" audit entry for a scheme that
+            # was not actually deleted.
+            scheme.delete()
+
+        # Documentation-accuracy / robustness fix (Finding 6) - this is
+        # the 4th real invalidation call site `invalidate_role_
+        # permissions_cache`'s own docstring always claimed existed but
+        # never actually did (only 3 real calls existed pre-fix). Still
+        # harmless in the non-race path (the guard above already blocks
+        # deletion while any role is attached), but now genuinely
+        # defensive against a future relaxation of that rule.
+        for role_id in affected_role_ids:
+            invalidate_role_permissions_cache(role_id)
 
         log_audit_event(
             AuditEventType.ROLE_DEFINITION_CHANGED,
@@ -210,10 +298,9 @@ class PermissionSchemeViewSet(BaseViewSet):
             actor=request.user,
             target_type="PermissionScheme",
             target_id=str(scheme.id),
-            old_value=PermissionSchemeSerializer(scheme).data,
+            old_value=old_value,
             new_value=None,
         )
-        scheme.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -330,16 +417,40 @@ class WorkspaceRoleViewSet(BaseViewSet):
         if role.is_system:
             return Response({"error": "A system role cannot be deleted."}, status=status.HTTP_400_BAD_REQUEST)
 
-        member_count = WorkspaceMember.objects.filter(custom_role=role).count()
-        if member_count:
-            return Response(
-                {
-                    "error": "This role is held by one or more members and cannot be deleted. "
-                    "Reassign them to a different role first.",
-                    "member_count": member_count,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        with transaction.atomic():
+            # Category 11 feature 4 security-review fix (Finding 3a) -
+            # `select_for_update()` locks this role row for the duration
+            # of the check+delete, closing the app-level TOCTOU the
+            # review found (a plain, non-transactional `member_count`
+            # read followed by a separate `.delete()` call, with a real
+            # window for a member to be assigned to this role in
+            # between). Any concurrent write establishing a NEW
+            # `WorkspaceMember.custom_role` reference to this role (an
+            # UPDATE that, per Postgres FK enforcement, needs a `FOR KEY
+            # SHARE` lock on this row) blocks until we commit or roll
+            # back. This closes the race for THIS specific call site;
+            # see `resolve_effective_role`'s own Finding-3b fallback for
+            # the genuine defense-in-depth (a dangling `custom_role`
+            # reaching this role via any OTHER path, e.g. one already
+            # blocked-and-queued behind this very lock completing right
+            # after we commit, still falls back to the member's legacy
+            # role rather than resolving to zero permissions).
+            role = WorkspaceRole.objects.select_for_update().get(pk=role.pk)
+
+            member_count = WorkspaceMember.objects.filter(custom_role=role).count()
+            if member_count:
+                return Response(
+                    {
+                        "error": "This role is held by one or more members and cannot be deleted. "
+                        "Reassign them to a different role first.",
+                        "member_count": member_count,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_value = WorkspaceRoleSerializer(role).data
+            invalidate_role_permissions_cache(role.id)
+            role.delete()
 
         log_audit_event(
             AuditEventType.ROLE_DEFINITION_CHANGED,
@@ -348,11 +459,9 @@ class WorkspaceRoleViewSet(BaseViewSet):
             actor=request.user,
             target_type="WorkspaceRole",
             target_id=str(role.id),
-            old_value=WorkspaceRoleSerializer(role).data,
+            old_value=old_value,
             new_value=None,
         )
-        invalidate_role_permissions_cache(role.id)
-        role.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -394,7 +503,7 @@ class RoleSchemesAttachEndpoint(BaseAPIView):
             )
 
         if role.is_owner_equivalent:
-            missing = self._missing_protected_permissions(schemes)
+            missing = missing_protected_permissions([scheme.id for scheme in schemes])
             if missing:
                 return Response(
                     {
@@ -427,19 +536,6 @@ class RoleSchemesAttachEndpoint(BaseAPIView):
         )
 
         return Response(WorkspaceRoleSerializer(role).data, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def _missing_protected_permissions(schemes):
-        """Simulates the resulting union (exigence 4) WITHOUT touching
-        the DB/cache - a scheme's items are read directly, not via
-        `get_role_permissions` (which would read the OLD, not-yet-applied
-        attachment)."""
-        granted_unconditionally = set()
-        items = PermissionSchemeItem.objects.filter(scheme__in=schemes).select_related("permission")
-        for item in items:
-            if item.condition == "NONE":
-                granted_unconditionally.add(item.permission.key)
-        return [key for key in WorkspaceRole.PROTECTED_PERMISSION_KEYS if key not in granted_unconditionally]
 
 
 class RoleMembersEndpoint(BaseAPIView):

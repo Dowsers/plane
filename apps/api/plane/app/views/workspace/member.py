@@ -13,7 +13,7 @@ from rest_framework.response import Response
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from plane.app.permissions import WorkspaceEntityPermission, allow_permission, ROLE
+from plane.app.permissions import WorkspaceEntityPermission, allow_permission, is_workspace_owner, ROLE
 
 # Module imports
 from plane.app.serializers import (
@@ -29,6 +29,7 @@ from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import invalidate_cache
 from plane.utils.host import base_host
 from plane.utils.project_owner import emit_project_owner_revoked_events
+from plane.utils.rbac import has_permission as rbac_has_permission
 from plane.utils.rbac import sync_member_role_fields
 from plane.utils.view_subscriptions import deactivate_user_view_subscriptions
 from plane.utils.agent_actor import agent_role_error, is_workspace_agent, member_visibility_q
@@ -103,6 +104,37 @@ class WorkSpaceMemberViewSet(BaseViewSet):
         # the caller used.
         role_in_payload = "role" in request.data
         custom_role_id_in_payload = "custom_role_id" in request.data
+
+        # Category 11 feature 4 security-review fix (Finding 2) - the
+        # `@allow_permission(allowed_roles=[ROLE.ADMIN], ...)` decorator
+        # above only checks the caller's plain legacy `WorkspaceMember.
+        # role` integer - it says nothing about whether the caller
+        # actually holds `workspace.manage_roles` today. By design
+        # (exigence 6), an Owner can compose a custom role that strips
+        # `workspace.manage_roles` from a workspace Admin - without this
+        # check, that demoted Admin could still `PATCH` ANOTHER member's
+        # `custom_role_id` to point at the system Admin role (which
+        # always carries `workspace.manage_roles`), instantly granting it
+        # back - including two demoted Admins colluding to grant it to
+        # each other. Both payload shapes actually change the target
+        # member's effective permissions (the plain `role` field too, for
+        # defense in depth/consistency, since it drives the very
+        # `custom_role` sync below), so both require the caller to
+        # genuinely hold `workspace.manage_roles` (or be the supreme,
+        # independent Owner) - checked here, before ANY parsing/
+        # sync/side-effect logic below runs. The pre-existing
+        # `ROLE.ADMIN` decorator stays in place unchanged (backward
+        # compat for legacy, non-RBAC-aware callers using only the plain
+        # `role` field) - this is an ADDITIONAL check, not a replacement.
+        if role_in_payload or custom_role_id_in_payload:
+            if not (
+                is_workspace_owner(request.user, slug)
+                or rbac_has_permission(request.user, slug, "workspace.manage_roles")
+            ):
+                return Response(
+                    {"error": "You do not have permission to change a member's role."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
         custom_role_id_value = request.data.get("custom_role_id")
         # `{"custom_role_id": null}` explicitly - clear the custom role,
         # falling back to whichever system role matches the member's
