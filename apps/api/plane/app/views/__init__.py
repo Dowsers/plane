@@ -95,6 +95,13 @@ from .workspace.security import (
     WorkspaceReauthChallengeEndpoint,
 )
 from .workspace.scim_admin import WorkspaceSCIMTokenEndpoint, WorkspaceSCIMProvisioningLogEndpoint
+from .workspace.rbac import (
+    PermissionCatalogueEndpoint,
+    PermissionSchemeViewSet,
+    WorkspaceRoleViewSet,
+    RoleSchemesAttachEndpoint,
+    RoleMembersEndpoint,
+)
 
 from .state.base import StateViewSet, IntakeStateEndpoint
 from .view.base import (

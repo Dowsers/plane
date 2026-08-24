@@ -251,3 +251,13 @@ from .page_collection import PageCollection
 from .page_comment import PageComment, PageCommentReaction
 from .page_subscriber import PageSubscriber
 from .page_activity import PageActivity
+
+from .rbac import (
+    Permission,
+    PermissionCategory,
+    PermissionConditionType,
+    PermissionScheme,
+    PermissionSchemeItem,
+    WorkspaceRole,
+    WorkspaceRoleScheme,
+)

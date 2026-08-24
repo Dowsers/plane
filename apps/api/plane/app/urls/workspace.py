@@ -55,6 +55,11 @@ from plane.app.views import (
     WorkspaceReauthChallengeEndpoint,
     WorkspaceSCIMTokenEndpoint,
     WorkspaceSCIMProvisioningLogEndpoint,
+    PermissionCatalogueEndpoint,
+    PermissionSchemeViewSet,
+    WorkspaceRoleViewSet,
+    RoleSchemesAttachEndpoint,
+    RoleMembersEndpoint,
 )
 
 
@@ -397,6 +402,43 @@ urlpatterns = [
         "workspaces/<str:slug>/scim/provisioning-log/<uuid:pk>/",
         WorkspaceSCIMProvisioningLogEndpoint.as_view(),
         name="workspace-scim-provisioning-log",
+    ),
+    # Category 11 feature 4 (docs/feature-specs/11-admin-security-sso.md
+    # in plane-selfhost) - "Constructeur de roles personnalises".
+    path(
+        "workspaces/<str:slug>/permissions/",
+        PermissionCatalogueEndpoint.as_view(),
+        name="workspace-permissions-catalogue",
+    ),
+    path(
+        "workspaces/<str:slug>/permission-schemes/",
+        PermissionSchemeViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-permission-schemes",
+    ),
+    path(
+        "workspaces/<str:slug>/permission-schemes/<uuid:pk>/",
+        PermissionSchemeViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-permission-schemes",
+    ),
+    path(
+        "workspaces/<str:slug>/roles/",
+        WorkspaceRoleViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-roles",
+    ),
+    path(
+        "workspaces/<str:slug>/roles/<uuid:pk>/",
+        WorkspaceRoleViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-roles",
+    ),
+    path(
+        "workspaces/<str:slug>/roles/<uuid:role_id>/schemes/",
+        RoleSchemesAttachEndpoint.as_view(),
+        name="workspace-role-schemes-attach",
+    ),
+    path(
+        "workspaces/<str:slug>/roles/<uuid:role_id>/members/",
+        RoleMembersEndpoint.as_view(),
+        name="workspace-role-members",
     ),
     path(
         "workspaces/<str:slug>/reauth/",

@@ -97,6 +97,16 @@ WORKSPACE_SECURITY_EVENTS = {
     # (also "provisioned" again on a PATCH/PUT active:true reactivation -
     # see `plane.scim.provisioning` for the dispatch call sites).
     "scim_provisioning",
+    # Category 11 feature 4 ("Constructeur de roles personnalises") -
+    # same reuse. The spec's own named event
+    # (`workspace_member.role_changed`) becomes event="workspace_member",
+    # verb="role_changed" - see
+    # `plane.app.views.workspace.member.WorkSpaceMemberViewSet.
+    # partial_update` for the dispatch call site. Fires whenever EITHER
+    # the legacy `role` integer OR `custom_role` actually changes (not
+    # just the legacy field), since two different custom roles can share
+    # the same legacy value.
+    "workspace_member",
 }
 
 MODEL_MAPPER = {

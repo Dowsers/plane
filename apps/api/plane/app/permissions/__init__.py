@@ -20,6 +20,7 @@ from .project import (
     ProjectAdminPermission,
 )
 from .base import allow_permission, ROLE
+from .rbac import WorkspaceManageRolesPermission
 from .page import (
     ProjectPagePermission,
     PageReactionPermission,

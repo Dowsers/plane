@@ -79,6 +79,15 @@ class AuditEventType(models.TextChoices):
     SCIM_USER_UPDATED = "SCIM_USER_UPDATED"
     SCIM_USER_DEACTIVATED = "SCIM_USER_DEACTIVATED"
     SCIM_SYNC_ERROR = "SCIM_SYNC_ERROR"
+    # Category 11 feature 4 ("Constructeur de roles personnalises") -
+    # decision #3: a member's role/bundle ASSIGNMENT changing reuses the
+    # already-shipped MEMBER_ROLE_CHANGED event above (same real-world
+    # event, whether the legacy integer or a custom_role changes). This
+    # ONE new event type is for the ROLE/BUNDLE DEFINITION itself changing
+    # (a bundle's items edited, a role's attached schemes changed) - a
+    # genuinely distinct event (no specific member is "targeted"; the
+    # target is the role/scheme definition, via target_type/target_id).
+    ROLE_DEFINITION_CHANGED = "ROLE_DEFINITION_CHANGED"
 
 
 class WorkspaceAuditLog(BaseModel):

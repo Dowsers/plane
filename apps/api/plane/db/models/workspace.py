@@ -439,6 +439,30 @@ class WorkspaceMember(BaseModel):
     # an Admin before a manual role/removal change on a SCIM-managed row;
     # this backend never itself blocks a manual change based on this flag.
     scim_managed = models.BooleanField(default=False)
+    # Category 11 (docs/feature-specs/11-admin-security-sso.md in
+    # plane-selfhost), feature 4 ("Constructeur de roles personnalises").
+    # `on_delete=PROTECT` per exigence 7 - a `WorkspaceRole` held by >=1
+    # member can never be deleted (the view layer also pre-checks this to
+    # return a friendly 400 with the real member count instead of ever
+    # letting a raw `ProtectedError` surface). `null=True` - out-of-scope
+    # legacy call sites (~25 inline rank comparisons, decision #5) keep
+    # reading the plain `role` integer below regardless of whether this
+    # is set; a null `custom_role` is resolved transparently at read time
+    # by `plane.utils.rbac.resolve_effective_role` as "whichever of this
+    # workspace's 3 system roles matches `role`'s legacy value" - so every
+    # WorkspaceMember creation call site NOT explicitly touched by this
+    # feature (invite-accept, bot creation, SCIM provisioning, god-mode
+    # workspace creation) stays correct with zero write, only the ONE real
+    # role-mutating call site this feature does touch
+    # (`WorkSpaceMemberViewSet.partial_update`) ever needs to keep both
+    # fields in sync explicitly (no Django signal, decision #2).
+    custom_role = models.ForeignKey(
+        "db.WorkspaceRole",
+        related_name="members",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         unique_together = ["workspace", "member", "deleted_at"]

@@ -262,3 +262,11 @@ from .ai_chat import (
     AIConversationCreateSerializer,
     AIConversationMessageCreateSerializer,
 )
+
+from .rbac import (
+    PermissionSerializer,
+    PermissionSchemeSerializer,
+    PermissionSchemeItemSerializer,
+    PermissionSchemeItemInputSerializer,
+    WorkspaceRoleSerializer,
+)
