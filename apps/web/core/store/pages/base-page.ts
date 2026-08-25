@@ -4,11 +4,12 @@
  * See the LICENSE file for details.
  */
 
-import { concat, find, reject, set } from "lodash-es";
+import { concat, find, pick, reject, set } from "lodash-es";
 import { action, computed, makeObservable, observable, reaction, runInAction } from "mobx";
 // plane imports
 import { EPageAccess } from "@plane/constants";
 import type { TChangeHandlerProps } from "@plane/propel/emoji-icon-picker";
+import { isNetworkFailure } from "@plane/sync-engine";
 import type {
   TDocumentPayload,
   TLogoProps,
@@ -18,6 +19,8 @@ import type {
   TPageSubscriber,
   TPageSubscriptionStatus,
 } from "@plane/types";
+// lib
+import { rootStore } from "@/lib/store-context";
 // plane web store
 import { ExtendedBasePage } from "@/plane-web/store/pages/extended-base-page";
 import type { RootStore } from "@/plane-web/store/root.store";
@@ -409,6 +412,26 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
 
       return await this.services.update(currentPage);
     } catch (error) {
+      // Category 12, feature 4 (docs/feature-specs/12-keyboard-mobile-
+      // desktop.md in plane-selfhost) - METADATA fields only (name,
+      // access, ...), never the rich-text body: `updateDescription`
+      // below is untouched by this feature and keeps deferring entirely
+      // to the existing Yjs/Hocuspocus CRDT sync, see this feature's own
+      // `README.md` "Page body vs. LWW" section for why routing Page
+      // saves through this generic last-write-wins path would be a real
+      // bug, not a shortcut. A genuine network failure keeps the
+      // optimistic metadata edit already applied above and durably
+      // queues it, instead of reverting.
+      if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+        rootStore.syncEngine.enqueueUpdatePageMetadata({
+          pageId: this.id,
+          projectId: this.project_ids?.[0],
+          payload: pageData,
+          baseUpdatedAt: currentPage?.updated_at ? new Date(currentPage.updated_at).toISOString() : undefined,
+          baseFieldValues: currentPage ? pick(currentPage, Object.keys(pageData)) : undefined,
+        });
+        return currentPage;
+      }
       runInAction(() => {
         Object.keys(pageData).forEach((key) => {
           const currentPageKey = key as keyof TPage;

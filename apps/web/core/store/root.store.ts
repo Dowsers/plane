@@ -79,6 +79,8 @@ import type { IRouterStore } from "./router.store";
 import { RouterStore } from "./router.store";
 import type { IStickyStore } from "./sticky/sticky.store";
 import { StickyStore } from "./sticky/sticky.store";
+import type { ISyncEngineStore } from "./sync-engine.store";
+import { SyncEngineStore } from "./sync-engine.store";
 import type { IThemeStore } from "./theme.store";
 import { ThemeStore } from "./theme.store";
 import type { IUserStore } from "./user";
@@ -128,6 +130,7 @@ export class CoreRootStore {
   workItemFilters: IWorkItemFilterStore;
   powerK: IPowerKStore;
   viewSubscription: IViewSubscriptionStore;
+  syncEngine: ISyncEngineStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -168,12 +171,18 @@ export class CoreRootStore {
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
     this.viewSubscription = new ViewSubscriptionStore(this);
+    this.syncEngine = new SyncEngineStore();
   }
 
   resetOnSignOut() {
     // handling the system theme when user logged out from the app
     localStorage.setItem("theme", "system");
     localStorage.setItem(LANGUAGE_STORAGE_KEY, FALLBACK_LANGUAGE);
+    // Category 12, feature 4 - exigence 10: purge every cached
+    // workspace's IndexedDB sync-engine data on sign-out (not just the
+    // one currently active), and terminate its Worker, before the rest
+    // of this method builds a fresh set of stores below.
+    void this.syncEngine.purgeOnSignOut();
     this.router = new RouterStore();
     this.commandPalette = new CommandPaletteStore();
     this.instance = new InstanceStore();
@@ -210,5 +219,6 @@ export class CoreRootStore {
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
     this.viewSubscription = new ViewSubscriptionStore(this);
+    this.syncEngine = new SyncEngineStore();
   }
 }

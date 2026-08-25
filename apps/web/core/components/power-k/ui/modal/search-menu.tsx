@@ -5,13 +5,16 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { WifiOff } from "lucide-react";
 import { useParams } from "next/navigation";
 // plane imports
 import { POWER_K_SEARCH_RESULTS_EXPANDED_PAGE_SIZE, WORKSPACE_DEFAULT_SEARCH_RESULT } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import type { IWorkspaceSearchResults } from "@plane/types";
 import { cn } from "@plane/utils";
 // hooks
 import { usePowerK } from "@/hooks/store/use-power-k";
+import { useSyncEngine } from "@/hooks/store/use-sync-engine";
 import useDebounce from "@/hooks/use-debounce";
 // plane web imports
 import { PowerKModalNoSearchResultsCommand } from "@/plane-web/components/command-palette/power-k/search/no-results-command";
@@ -49,11 +52,33 @@ export function PowerKModalSearchMenu(props: Props) {
   const { workspaceSlug, projectId } = useParams();
   // store hooks
   const { togglePowerKModal } = usePowerK();
+  const { t } = useTranslation();
+  // Category 12, feature 4 (docs/feature-specs/12-keyboard-mobile-
+  // desktop.md in plane-selfhost), exigence 13 - "recherche globale
+  // plein-texte cote serveur" is exactly the kind of action this exigence
+  // names as genuinely requiring the server; gated on `isFeatureEnabled`
+  // like every other piece of this feature (fully dormant unless the
+  // workspace's "Mode hors ligne (beta)" toggle is on) so this never
+  // changes behavior for a workspace that hasn't opted in.
+  const { isFeatureEnabled: isOfflineSyncFeatureEnabled, isOnline } = useSyncEngine();
+  const isSearchUnavailableOffline = isOfflineSyncFeatureEnabled && !isOnline;
 
   useEffect(() => {
     if (activePage || !workspaceSlug) return;
-    setIsSearching(true);
     setExpandedCategories(new Set());
+
+    if (isSearchUnavailableOffline) {
+      // Don't even attempt the request - it would just fail after a
+      // round trip. Leave results empty; the dedicated offline message
+      // below (rather than the generic "no results" empty state) is what
+      // actually renders in this case.
+      setResults(WORKSPACE_DEFAULT_SEARCH_RESULT);
+      setResultsCount(0);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
 
     if (debouncedSearchTerm) {
       workspaceService
@@ -80,7 +105,7 @@ export function PowerKModalSearchMenu(props: Props) {
       setResults(WORKSPACE_DEFAULT_SEARCH_RESULT);
       setIsSearching(false);
     }
-  }, [debouncedSearchTerm, isWorkspaceLevel, projectId, workspaceSlug, activePage]);
+  }, [debouncedSearchTerm, isWorkspaceLevel, projectId, workspaceSlug, activePage, isSearchUnavailableOffline]);
 
   // Category 12, feature 6, exigence 3 - re-queries the SAME debounced
   // term, scoped to a single category (`types=<category>`) with a bigger
@@ -88,7 +113,7 @@ export function PowerKModalSearchMenu(props: Props) {
   // place; every other category's already-rendered results are untouched.
   const handleViewAllResults = useCallback(
     (category: TPowerKSearchResultsKeys) => {
-      if (!workspaceSlug || !debouncedSearchTerm) return;
+      if (!workspaceSlug || !debouncedSearchTerm || isSearchUnavailableOffline) return;
       setLoadingCategory(category);
       workspaceService
         .searchWorkspace(workspaceSlug.toString(), {
@@ -113,7 +138,7 @@ export function PowerKModalSearchMenu(props: Props) {
         })
         .finally(() => setLoadingCategory(null));
     },
-    [workspaceSlug, projectId, debouncedSearchTerm, isWorkspaceLevel]
+    [workspaceSlug, projectId, debouncedSearchTerm, isWorkspaceLevel, isSearchUnavailableOffline]
   );
 
   if (activePage) return null;
@@ -143,14 +168,29 @@ export function PowerKModalSearchMenu(props: Props) {
         </div>
       )}
 
-      {/* Show empty state only when not loading and no results */}
-      {!isSearching && resultsCount === 0 && searchTerm.trim() !== "" && debouncedSearchTerm.trim() !== "" && (
-        <PowerKModalNoSearchResultsCommand
-          context={context}
-          searchTerm={searchTerm}
-          updateSearchTerm={updateSearchTerm}
-        />
+      {/* Category 12, feature 4, exigence 13 - distinct from the generic
+          "no results" empty state below: while genuinely offline, there
+          simply IS no result to report either way, so say that plainly
+          instead of implying the search actually ran and found nothing. */}
+      {isSearchUnavailableOffline && searchTerm.trim() !== "" && debouncedSearchTerm.trim() !== "" && (
+        <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+          <WifiOff className="size-5 text-tertiary" />
+          <p className="text-13 text-secondary">{t("offline_sync.requires_connection")}</p>
+        </div>
       )}
+
+      {/* Show empty state only when not loading and no results */}
+      {!isSearchUnavailableOffline &&
+        !isSearching &&
+        resultsCount === 0 &&
+        searchTerm.trim() !== "" &&
+        debouncedSearchTerm.trim() !== "" && (
+          <PowerKModalNoSearchResultsCommand
+            context={context}
+            searchTerm={searchTerm}
+            updateSearchTerm={updateSearchTerm}
+          />
+        )}
 
       {searchTerm.trim() !== "" && (
         <PowerKModalSearchResults

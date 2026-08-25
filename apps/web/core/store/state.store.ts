@@ -57,6 +57,8 @@ export interface IStateStore {
   ) => Promise<void>;
 
   getStatePercentageInGroup: (stateId: string | null | undefined) => number | undefined;
+  // Category 12, feature 4 - see `StateStore.mergeFromSync`'s own docstring.
+  mergeFromSync: (states: Partial<IState>[]) => void;
 }
 
 export class StateStore implements IStateStore {
@@ -89,6 +91,7 @@ export class StateStore implements IStateStore {
       // state actions
       markStateAsDefault: action,
       moveStatePosition: action,
+      mergeFromSync: action,
     });
     this.stateService = new ProjectStateService();
     this.router = _rootStore.router;
@@ -124,13 +127,10 @@ export class StateStore implements IStateStore {
     const groupedStates = groupBy(this.projectStates, "group") as Record<string, IState[]>;
 
     // Ensure all STATE_GROUPS are present
-    const allGroups = Object.keys(STATE_GROUPS).reduce(
-      (acc, group) => ({
-        ...acc,
-        [group]: groupedStates[group] || [],
-      }),
-      {} as Record<string, IState[]>
-    );
+    const allGroups: Record<string, IState[]> = {};
+    for (const group of Object.keys(STATE_GROUPS)) {
+      allGroups[group] = groupedStates[group] || [];
+    }
 
     return allGroups;
   }
@@ -258,6 +258,21 @@ export class StateStore implements IStateStore {
   };
 
   /**
+   * Category 12, feature 4 - merges the offline sync engine's periodic
+   * workspace delta-pull results (`state` is read-only reference data in
+   * that feature's scope, always a full snapshot) into `stateMap` - see
+   * `CycleStore.mergeFromSync`'s own docstring for the fuller writeup.
+   */
+  mergeFromSync = (states: Partial<IState>[]) => {
+    runInAction(() => {
+      states.forEach((state) => {
+        if (!state.id) return;
+        set(this.stateMap, [state.id], { ...this.stateMap[state.id], ...state });
+      });
+    });
+  };
+
+  /**
    * creates a new state in a project and adds it to the store
    * @param workspaceSlug
    * @param projectId
@@ -307,10 +322,9 @@ export class StateStore implements IStateStore {
    */
   deleteState = async (workspaceSlug: string, projectId: string, stateId: string) => {
     if (!this.stateMap?.[stateId]) return;
-    await this.stateService.deleteState(workspaceSlug, projectId, stateId).then(() => {
-      runInAction(() => {
-        delete this.stateMap[stateId];
-      });
+    await this.stateService.deleteState(workspaceSlug, projectId, stateId);
+    runInAction(() => {
+      delete this.stateMap[stateId];
     });
   };
 

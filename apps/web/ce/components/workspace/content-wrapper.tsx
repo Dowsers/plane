@@ -9,6 +9,9 @@ import { observer } from "mobx-react";
 // plane imports
 import { cn } from "@plane/utils";
 import { AppRailRoot } from "@/components/navigation";
+import { ConflictToastBridge } from "@/components/sync-engine/conflict-toast-bridge";
+import { OfflineBanner } from "@/components/sync-engine/offline-banner";
+import { SyncEngineProvider } from "@/components/sync-engine/sync-engine-provider";
 import { useAppRailVisibility } from "@/lib/app-rail";
 // local imports
 import { TopNavigationRoot } from "../navigations";
@@ -23,6 +26,14 @@ export const WorkspaceContentWrapper = observer(function WorkspaceContentWrapper
 
   return (
     <div className="relative flex size-full flex-col overflow-hidden bg-canvas transition-all duration-300 ease-in-out">
+      {/* Category 12, feature 4 - boots the sync engine for the active
+          workspace (side-effect only, renders nothing) and the
+          persistent "Hors ligne" banner (exigence 7), both mounted once
+          here so they cover every page within a workspace regardless of
+          which one is currently open. */}
+      <SyncEngineProvider />
+      <ConflictToastBridge />
+      <OfflineBanner />
       <TopNavigationRoot />
       <div className="relative flex size-full overflow-hidden">
         {/* Conditionally render AppRailRoot based on context */}

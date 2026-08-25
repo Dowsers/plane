@@ -74,6 +74,11 @@ export interface ICycleStore {
   ) => Promise<void>;
   // fetch
   fetchWorkspaceCycles: (workspaceSlug: string) => Promise<ICycle[]>;
+  // Category 12, feature 4 - additive bulk merge fed by the offline sync
+  // engine's delta-pull loop, see `CycleStore.mergeFromSync`'s own
+  // docstring. Never called from anywhere the existing `fetch*` methods
+  // above are called from.
+  mergeFromSync: (cycles: Partial<ICycle>[]) => void;
   fetchAllCycles: (workspaceSlug: string, projectId: string) => Promise<undefined | ICycle[]>;
   fetchActiveCycle: (workspaceSlug: string, projectId: string) => Promise<undefined | ICycle[]>;
   fetchArchivedCycles: (workspaceSlug: string, projectId: string) => Promise<undefined | ICycle[]>;
@@ -153,6 +158,7 @@ export class CycleStore implements ICycleStore {
       fetchCycleProgressPreferences: action,
       updateCycleProgressPreferences: action,
       fetchWorkspaceCycles: action,
+      mergeFromSync: action,
       fetchAllCycles: action,
       fetchActiveCycle: action,
       fetchArchivedCycles: action,
@@ -470,6 +476,28 @@ export class CycleStore implements ICycleStore {
       });
       return response;
     });
+
+  /**
+   * Category 12, feature 4 (docs/feature-specs/12-keyboard-mobile-
+   * desktop.md in plane-selfhost) - merges the offline sync engine's
+   * periodic workspace delta-pull results (`cycle` is read-only
+   * reference data in that feature's scope, always the full currently-
+   * visible snapshot, never a partial delta - see the backend's own
+   * `build_delta_response` docstring) into `cycleMap`, keeping this
+   * store's in-memory state fresh WITHOUT requiring any view to actually
+   * be open and call `fetchWorkspaceCycles`/`fetchAllCycles` itself.
+   * Same per-item merge shape those already use, just fed by a different
+   * caller - `apps/web/core/store/sync-engine.store.ts`'s
+   * `handleWorkerMessage`, on a `"delta-applied"` message, exclusively.
+   */
+  mergeFromSync = (cycles: Partial<ICycle>[]) => {
+    runInAction(() => {
+      cycles.forEach((cycle) => {
+        if (!cycle.id) return;
+        set(this.cycleMap, [cycle.id], { ...this.cycleMap[cycle.id], ...cycle });
+      });
+    });
+  };
 
   /**
    * @description fetches all cycles for a project

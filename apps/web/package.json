@@ -32,6 +32,7 @@
     "@plane/propel": "workspace:*",
     "@plane/services": "workspace:*",
     "@plane/shared-state": "workspace:*",
+    "@plane/sync-engine": "workspace:*",
     "@plane/types": "workspace:*",
     "@plane/ui": "workspace:*",
     "@plane/utils": "workspace:*",

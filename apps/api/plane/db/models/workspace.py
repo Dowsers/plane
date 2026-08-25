@@ -312,6 +312,25 @@ class Workspace(BaseModel):
         default=WIKI_ROOT_CREATION_MEMBER,
     )
 
+    # Settings > Features "Mode hors ligne (beta)" toggle for category 12,
+    # feature 4 ("Moteur de synchronisation local-first/offline pour le
+    # web", docs/feature-specs/12-keyboard-mobile-desktop.md, "Parametre de
+    # rollout" in plane-selfhost). Opt-in (default False), same flat-
+    # boolean-directly-on-Workspace convention as is_initiatives_enabled/
+    # is_roadmap_enabled/is_flexible_query_enabled above - this feature's
+    # own backend half (IdempotencyKey replay + the workspace sync/
+    # accessible-ids endpoints) works unconditionally regardless of this
+    # flag; this is purely the frontend's progressive-rollout gate (the
+    # sync engine, its worker, and its IndexedDB cache are only booted
+    # client-side when this is True for the active workspace) - added
+    # alongside the frontend half of this feature since the spec's own
+    # "Considerations API/UX" section scopes the rollout toggle as a
+    # frontend concern with no dedicated backend model, and this fork's
+    # existing WorkspaceSerializer already exposes/accepts every flat
+    # Workspace field generically (`fields = "__all__"`), so no serializer/
+    # view change is needed beyond this field + its migration.
+    is_offline_sync_enabled = models.BooleanField(default=False)
+
     def __str__(self):
         """Return name of the Workspace"""
         return self.name

@@ -56,6 +56,25 @@ function FeaturesPage() {
     }
   };
 
+  // Category 12, feature 4 - "Mode hors ligne (beta)" progressive rollout
+  // toggle for the local-first/offline sync engine. Purely a frontend gate
+  // (see `Workspace.is_offline_sync_enabled`'s own field comment) - the
+  // sync engine's provider (`SyncEngineProvider`) only boots when this is
+  // true for the active workspace.
+  const handleToggleOfflineSync = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    try {
+      await updateWorkspace(workspaceSlug.toString(), { is_offline_sync_enabled: value });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: value ? t("offline_sync.toast.enabled") : t("offline_sync.toast.disabled"),
+      });
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("offline_sync.toast.error") });
+    }
+  };
+
   if (workspaceUserInfo && !canPerformWorkspaceMemberActions) {
     return <NotAuthorizedView section="settings" className="h-auto" />;
   }
@@ -84,6 +103,17 @@ function FeaturesPage() {
           <ToggleSwitch
             value={!!currentWorkspace?.is_roadmap_enabled}
             onChange={(value) => handleToggleRoadmap(value)}
+            disabled={!isWorkspaceAdmin}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-md border-[0.5px] border-subtle p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-14 font-medium">{t("offline_sync.settings.toggle_label")}</span>
+            <span className="text-13 text-secondary">{t("offline_sync.settings.description")}</span>
+          </div>
+          <ToggleSwitch
+            value={!!currentWorkspace?.is_offline_sync_enabled}
+            onChange={(value) => handleToggleOfflineSync(value)}
             disabled={!isWorkspaceAdmin}
           />
         </div>

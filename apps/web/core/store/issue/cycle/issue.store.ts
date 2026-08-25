@@ -9,6 +9,7 @@ import { action, observable, makeObservable, runInAction } from "mobx";
 import { computedFn } from "mobx-utils";
 // plane imports
 import { ALL_ISSUES } from "@plane/constants";
+import { isNetworkFailure } from "@plane/sync-engine";
 import type {
   TIssue,
   TLoader,
@@ -209,6 +210,15 @@ export class CycleIssues extends BaseIssuesStore implements ICycleIssues {
       this.onfetchIssues(response, options, workspaceSlug, projectId, cycleId, !isExistingPaginationOptions);
       return response;
     } catch (error) {
+      // Category 12, feature 4 - exigence 7's "Cycle board stays readable
+      // from the IndexedDB cache while offline", see
+      // `BaseIssuesStore.applyCachedIssuesFallback`'s own docstring.
+      if (
+        isNetworkFailure(error) &&
+        (await this.applyCachedIssuesFallback(workspaceSlug, projectId, options, cycleId, !isExistingPaginationOptions))
+      ) {
+        return undefined;
+      }
       // set loader to undefined once errored out
       this.setLoader(undefined);
       throw error;

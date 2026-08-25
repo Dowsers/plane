@@ -4,11 +4,12 @@
  * See the LICENSE file for details.
  */
 
-import { isEqual, concat, get, indexOf, isEmpty, orderBy, pull, set, uniq, update, clone } from "lodash-es";
+import { isEqual, concat, get, indexOf, isEmpty, orderBy, pull, set, uniq, update, clone, pick } from "lodash-es";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { computedFn } from "mobx-utils";
 // plane constants
 import { ALL_ISSUES, ISSUE_PRIORITIES } from "@plane/constants";
+import { isNetworkFailure } from "@plane/sync-engine";
 // types
 import type {
   TIssue,
@@ -29,6 +30,8 @@ import type {
 import { EIssueServiceType, EIssueLayoutTypes } from "@plane/types";
 // helpers
 import { convertToISODateString } from "@plane/utils";
+// lib
+import { rootStore } from "@/lib/store-context";
 // plane web imports
 import { workItemSortWithOrderByExtended } from "@/plane-web/store/issue/helpers/base-issue.store";
 // services
@@ -224,6 +227,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
       onfetchIssues: action.bound,
       onfetchNexIssues: action.bound,
+      applyCachedIssuesFallback: action.bound,
       clear: action.bound,
       setLoader: action.bound,
       addIssue: action.bound,
@@ -329,10 +333,10 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
   // The Issue Property corresponding to the order by value
   get orderByKey() {
-    const orderBy = this.orderBy;
-    if (!orderBy) return;
+    const currentOrderBy = this.orderBy;
+    if (!currentOrderBy) return;
 
-    return ISSUE_ORDERBY_KEY[orderBy];
+    return ISSUE_ORDERBY_KEY[currentOrderBy];
   }
 
   // The Issue Property corresponding to the group by value
@@ -515,6 +519,72 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   }
 
   /**
+   * Category 12, feature 4 (docs/feature-specs/12-keyboard-mobile-
+   * desktop.md in plane-selfhost) - exigence 7's "les vues deja
+   * chargees... restent consultables... depuis le cache IndexedDB quand
+   * le reseau est indisponible", the initial-fetch half: called from a
+   * subclass's `fetchIssues` `catch` block on a genuine network failure,
+   * this reads whatever this project's issues the offline sync engine
+   * already has cached (from the periodic delta-pull, or from this
+   * browser's own past successful fetches - the cache is write-through,
+   * see `@plane/sync-engine`'s `cache.ts`) and feeds them through the
+   * EXACT SAME `onfetchIssues`/`processIssueResponse`/
+   * `updateGroupedIssueIds` pipeline a real server response would use, so
+   * there is no second, parallel rendering path to keep in sync with the
+   * real one.
+   *
+   * Deliberate, disclosed limitation: the cache stores a FLAT list of
+   * issues, not the server's filtered/grouped/sorted pagination shape, so
+   * this always renders as a single ungrouped `ALL_ISSUES` bucket
+   * (`processIssueResponse`'s own "if is an array then it's an ungrouped
+   * response" branch) REGARDLESS of the view's actual group-by/filter/
+   * sort configuration - a degraded but real and honest "here is
+   * everything cached for this project" fallback, not a faithful replay
+   * of the user's exact view. Wired into `ProjectIssues`/`CycleIssues`/
+   * `ModuleIssues` (`fetchIssues`) - the 3 stores exigence 7's own
+   * wording names ("liste/Kanban d'issues... board d'un Cycle"). Not
+   * wired into the workspace/profile/project-views/archived issue stores
+   * or `fetchNextIssues` pagination (a cache-backed "next page" has no
+   * well-defined meaning here) - see this feature's own `README.md`
+   * "Known scope limits" section.
+   *
+   * Returns `true` (caller should swallow the error, not re-throw) only
+   * when the fallback actually had something to show; `false` (caller
+   * falls back to its normal throw) when offline sync is off, the app is
+   * actually online (a real transient error should surface normally, not
+   * be masked by stale data), or the cache is empty for this project.
+   */
+  async applyCachedIssuesFallback(
+    workspaceSlug: string,
+    projectId: string | undefined,
+    options: IssuePaginationOptions,
+    id: string | undefined,
+    shouldClearPaginationOptions: boolean
+  ): Promise<boolean> {
+    if (!projectId) return false;
+    if (!rootStore.syncEngine.isFeatureEnabled || rootStore.syncEngine.isOnline) return false;
+
+    const cachedIssues = await rootStore.syncEngine.getCachedEntitiesByProject("issue", projectId);
+    if (cachedIssues.length === 0) return false;
+
+    const syntheticResponse: TIssuesResponse = {
+      grouped_by: "",
+      next_cursor: "",
+      prev_cursor: "",
+      next_page_results: false,
+      prev_page_results: false,
+      total_count: cachedIssues.length,
+      count: cachedIssues.length,
+      total_pages: 1,
+      extra_stats: null,
+      results: cachedIssues as never,
+      total_results: cachedIssues.length,
+    };
+    this.onfetchIssues(syntheticResponse, options, workspaceSlug, projectId, id, shouldClearPaginationOptions);
+    return true;
+  }
+
+  /**
    * Method to create Issue. This method updates the store and calls the API to create an issue
    * @param workspaceSlug
    * @param projectId
@@ -530,14 +600,41 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     id?: string,
     shouldUpdateList = true
   ) {
-    // perform an API call
-    const response = await this.issueService.createIssue(workspaceSlug, projectId, data);
+    let response: TIssue;
+    try {
+      // perform an API call
+      response = await this.issueService.createIssue(workspaceSlug, projectId, data);
+    } catch (error) {
+      // Category 12, feature 4 - a genuine network-level failure creates
+      // the issue LOCALLY (a client-generated id, per
+      // `buildCreateMutation`'s own "the id IS the Idempotency-Key"
+      // convention) and durably queues it, rather than failing the whole
+      // create outright. The optimistic record is added to the store
+      // exactly like the real response would be below, so every existing
+      // caller of `createIssue` (quick-add, the "New work item" modal,
+      // ...) keeps working with a real, usable (if temporary) issue id
+      // until the sync engine's worker reconciles it to the server's real
+      // id (see `id-map.ts`) - see `README.md`'s "Where the pieces run"
+      // section for why this is a catch-and-fall-back rather than an
+      // up-front `isOnline` check.
+      if (!isNetworkFailure(error) || !rootStore.syncEngine.isFeatureEnabled) throw error;
+      const entry = rootStore.syncEngine.enqueueCreateIssue({ projectId, payload: data });
+      if (!entry) throw error;
+      const now = new Date().toISOString();
+      response = {
+        ...data,
+        id: entry.entityId,
+        project_id: projectId,
+        created_at: now,
+        updated_at: now,
+      } as TIssue;
+    }
 
     // add Issue to Store
     this.addIssue(response, shouldUpdateList);
 
     // If shouldUpdateList is true, call fetchParentStats
-    shouldUpdateList && (await this.fetchParentStats(workspaceSlug, projectId));
+    if (shouldUpdateList) await this.fetchParentStats(workspaceSlug, projectId);
 
     return response;
   }
@@ -604,6 +701,35 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
       // call fetch Parent Stats
       this.fetchParentStats(workspaceSlug, projectId);
     } catch (error) {
+      // Category 12, feature 4 (docs/feature-specs/12-keyboard-mobile-
+      // desktop.md in plane-selfhost) - a genuine NETWORK-level failure
+      // (offline, VPN drop, backend temporarily unreachable) is handled
+      // differently from every other error here: the optimistic update
+      // above is kept exactly as applied (never reverted) and durably
+      // queued for the sync engine's worker to replay once back online,
+      // instead of throwing. A real validation failure (the request
+      // reached the server and it said no) still reverts and throws
+      // exactly as before - this branch changes nothing about that path.
+      if (isNetworkFailure(error) && rootStore.syncEngine.isFeatureEnabled) {
+        // `issueId` may itself still be a not-yet-synced client-generated
+        // id (this same issue was created offline, earlier in the same
+        // session, and hasn't been flushed yet) - without
+        // `dependsOnClientId` the worker would send this PATCH straight
+        // to `.../issues/<clientId>/`, an id the server has never heard
+        // of, which 404s and permanently fails the entry. Same
+        // `isPendingClientId` check `comment.store.ts`'s `createComment`
+        // already uses for exactly this reason.
+        const dependsOnClientId = rootStore.syncEngine.isPendingClientId("issue", issueId) ? issueId : undefined;
+        rootStore.syncEngine.enqueueUpdateIssue({
+          projectId,
+          issueId,
+          payload: data,
+          baseUpdatedAt: issueBeforeUpdate?.updated_at,
+          baseFieldValues: issueBeforeUpdate ? pick(issueBeforeUpdate, Object.keys(data)) : undefined,
+          dependsOnClientId,
+        });
+        return;
+      }
       // If errored out update store again to revert the change
       this.rootIssueStore.issues.updateIssue(issueId, issueBeforeUpdate ?? {});
       this.updateIssueList(issueBeforeUpdate, { ...issueBeforeUpdate, ...data } as TIssue);
@@ -813,34 +939,34 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     try {
       const getIssueById = this.rootIssueStore.issues.getIssueById;
       runInAction(() => {
-        for (const update of updates) {
+        for (const dateUpdate of updates) {
           const dates: Partial<TIssue> = {};
-          if (update.start_date) dates.start_date = update.start_date;
-          if (update.target_date) dates.target_date = update.target_date;
+          if (dateUpdate.start_date) dates.start_date = dateUpdate.start_date;
+          if (dateUpdate.target_date) dates.target_date = dateUpdate.target_date;
 
-          const currIssue = getIssueById(update.id);
+          const currIssue = getIssueById(dateUpdate.id);
 
           if (currIssue) {
             issueDatesBeforeChange.push({
-              id: update.id,
+              id: dateUpdate.id,
               start_date: currIssue.start_date ?? undefined,
               target_date: currIssue.target_date ?? undefined,
             });
           }
 
-          this.issueUpdate(workspaceSlug, projectId, update.id, dates, false);
+          this.issueUpdate(workspaceSlug, projectId, dateUpdate.id, dates, false);
         }
       });
 
       await this.issueService.updateIssueDates(workspaceSlug, projectId, updates);
     } catch (e) {
       runInAction(() => {
-        for (const update of issueDatesBeforeChange) {
+        for (const dateUpdate of issueDatesBeforeChange) {
           const dates: Partial<TIssue> = {};
-          if (update.start_date) dates.start_date = update.start_date;
-          if (update.target_date) dates.target_date = update.target_date;
+          if (dateUpdate.start_date) dates.start_date = dateUpdate.start_date;
+          if (dateUpdate.target_date) dates.target_date = dateUpdate.target_date;
 
-          this.issueUpdate(workspaceSlug, projectId, update.id, dates, false);
+          this.issueUpdate(workspaceSlug, projectId, dateUpdate.id, dates, false);
         }
       });
       console.error("error while updating Timeline dependencies");
@@ -909,7 +1035,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
     runInAction(() => {
       // If cycle Id is the current cycle Id, then, remove issue from list of issueIds
-      this.cycleId === cycleId && this.removeIssueFromList(issueId);
+      if (this.cycleId === cycleId) this.removeIssueFromList(issueId);
     });
 
     // update Issue cycle Id to null by calling current store's update Issue, without making an API call
@@ -1039,7 +1165,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
     runInAction(() => {
       // if module Id is the current Module Id, then, add issue to list of issueIds
-      this.moduleId === moduleId && issueIds.forEach((issueId) => this.addIssueToList(issueId));
+      if (this.moduleId === moduleId) issueIds.forEach((issueId) => this.addIssueToList(issueId));
     });
 
     // For Each issue update module Ids by calling current store's update Issue, without making an API call
@@ -1067,7 +1193,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
     runInAction(() => {
       // if module Id is the current Module Id, then remove issue from list of issueIds
-      this.moduleId === moduleId && issueIds.forEach((issueId) => this.removeIssueFromList(issueId));
+      if (this.moduleId === moduleId) issueIds.forEach((issueId) => this.removeIssueFromList(issueId));
     });
 
     // For Each issue update module Ids by calling current store's update Issue, without making an API call
@@ -1140,7 +1266,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
         // remove the new issue id to the module issues
         removeModuleIds.forEach((moduleId) => {
           // If module Id is equal to current module Id, them remove Issue from List
-          this.moduleId === moduleId && this.removeIssueFromList(issueId);
+          if (this.moduleId === moduleId) this.removeIssueFromList(issueId);
           currentModuleIds = pull(currentModuleIds, moduleId);
         });
 
@@ -1247,7 +1373,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   updateIssueList(
     issue?: TIssue,
     issueBeforeUpdate?: TIssue,
-    action?: EIssueGroupedAction.ADD | EIssueGroupedAction.DELETE
+    forcedAction?: EIssueGroupedAction.ADD | EIssueGroupedAction.DELETE
   ) {
     if (!issue && !issueBeforeUpdate) return;
 
@@ -1260,7 +1386,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
 
     // get issueUpdates from another method by passing down the three arguments
     // issueUpdates is nothing but an array of objects that contain the path of the issueId list that need updating and also the action that needs to be performed at the path
-    const issueUpdates = this.getUpdateDetails(issue, issueBeforeUpdate, action);
+    const issueUpdates = this.getUpdateDetails(issue, issueBeforeUpdate, forcedAction);
     const accumulatedUpdatesForCount = {};
     runInAction(() => {
       // The issueUpdates
@@ -1430,27 +1556,27 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     set(this.groupedIssueCount, [ALL_ISSUES], groupedIssueCount[ALL_ISSUES]);
 
     // loop through the groups of groupedIssues.
-    for (const groupId in groupedIssues) {
-      const issueGroup = groupedIssues[groupId];
-      const issueGroupCount = groupedIssueCount[groupId];
+    for (const iterGroupId in groupedIssues) {
+      const issueGroup = groupedIssues[iterGroupId];
+      const issueGroupCount = groupedIssueCount[iterGroupId];
 
       // update the groupId's issue count
-      set(this.groupedIssueCount, [groupId], issueGroupCount);
+      set(this.groupedIssueCount, [iterGroupId], issueGroupCount);
 
       // This updates the group issue list in the store, if the issueGroup is a string
-      const storeUpdated = this.updateIssueGroup(issueGroup, [groupId]);
+      const storeUpdated = this.updateIssueGroup(issueGroup, [iterGroupId]);
       // if issueGroup is indeed a string, continue
       if (storeUpdated) continue;
 
       // if issueGroup is not a string, loop through the sub group Issues
-      for (const subGroupId in issueGroup) {
-        const issueSubGroup = (issueGroup as TGroupedIssues)[subGroupId];
-        const issueSubGroupCount = groupedIssueCount[getGroupKey(groupId, subGroupId)];
+      for (const iterSubGroupId in issueGroup) {
+        const issueSubGroup = (issueGroup as TGroupedIssues)[iterSubGroupId];
+        const issueSubGroupCount = groupedIssueCount[getGroupKey(iterGroupId, iterSubGroupId)];
 
         // update the subGroupId's issue count
-        set(this.groupedIssueCount, [getGroupKey(groupId, subGroupId)], issueSubGroupCount);
+        set(this.groupedIssueCount, [getGroupKey(iterGroupId, iterSubGroupId)], issueSubGroupCount);
         // This updates the subgroup issue list in the store
-        this.updateIssueGroup(issueSubGroup, [groupId, subGroupId]);
+        this.updateIssueGroup(issueSubGroup, [iterGroupId, iterSubGroupId]);
       }
     }
   }
@@ -1487,27 +1613,27 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   accumulateIssueUpdates(
     accumulator: { [key: string]: EIssueGroupedAction },
     path: string[],
-    action: EIssueGroupedAction
+    groupedAction: EIssueGroupedAction
   ) {
     const [groupId, subGroupId] = path;
 
-    if (action !== EIssueGroupedAction.ADD && action !== EIssueGroupedAction.DELETE) return;
+    if (groupedAction !== EIssueGroupedAction.ADD && groupedAction !== EIssueGroupedAction.DELETE) return;
 
     // if both groupId && subGroupId exists update the subgroup key
     if (subGroupId && groupId) {
       const groupKey = getGroupKey(groupId, subGroupId);
-      this.updateUpdateAccumulator(accumulator, groupKey, action);
+      this.updateUpdateAccumulator(accumulator, groupKey, groupedAction);
     }
 
     // after above, if groupId exists update the group key
     if (groupId) {
-      this.updateUpdateAccumulator(accumulator, groupId, action);
+      this.updateUpdateAccumulator(accumulator, groupId, groupedAction);
     }
 
     // if groupId is not ALL_ISSUES then update the  All_ISSUES key
     // (if groupId is equal to ALL_ISSUES, it would have updated in the previous condition)
     if (groupId !== ALL_ISSUES) {
-      this.updateUpdateAccumulator(accumulator, ALL_ISSUES, action);
+      this.updateUpdateAccumulator(accumulator, ALL_ISSUES, groupedAction);
     }
   }
 
@@ -1521,18 +1647,18 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   updateUpdateAccumulator(
     accumulator: { [key: string]: EIssueGroupedAction },
     key: string,
-    action: EIssueGroupedAction
+    groupedAction: EIssueGroupedAction
   ) {
     // if the key for accumulator is undefined, they update it with the action
     if (!accumulator[key]) {
-      accumulator[key] = action;
+      accumulator[key] = groupedAction;
       return;
     }
 
     // if the key for accumulator is not the current action,
     // Meaning if the key already has an action ADD and the current one is REMOVE,
     // The key is deleted as both the actions cancel each other out
-    if (accumulator[key] !== action) {
+    if (accumulator[key] !== groupedAction) {
       delete accumulator[key];
     }
   }
@@ -1545,10 +1671,10 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   updateIssueCount(accumulatedUpdatesForCount: { [key: string]: EIssueGroupedAction }) {
     const updateKeys = Object.keys(accumulatedUpdatesForCount);
     for (const updateKey of updateKeys) {
-      const update = accumulatedUpdatesForCount[updateKey];
-      if (!update) continue;
+      const countUpdate = accumulatedUpdatesForCount[updateKey];
+      if (!countUpdate) continue;
 
-      const increment = update === EIssueGroupedAction.ADD ? 1 : -1;
+      const increment = countUpdate === EIssueGroupedAction.ADD ? 1 : -1;
       // get current count at the key
       const issueCount = get(this.groupedIssueCount, updateKey) ?? 0;
       // update the count at the key
@@ -1566,12 +1692,13 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   getUpdateDetails = (
     issue?: Partial<TIssue>,
     issueBeforeUpdate?: Partial<TIssue>,
-    action?: EIssueGroupedAction.ADD | EIssueGroupedAction.DELETE
+    forcedAction?: EIssueGroupedAction.ADD | EIssueGroupedAction.DELETE
   ): { path: string[]; action: EIssueGroupedAction }[] => {
     // check the before and after states to return if there needs to be a re-sorting of issueId list if the issue property that orderBy  depends on has changed
     const orderByUpdates = this.getOrderByUpdateDetails(issue, issueBeforeUpdate);
     // if unGrouped, then return the path as ALL_ISSUES along with orderByUpdates
-    if (!this.issueGroupKey) return action ? [{ path: [ALL_ISSUES], action }, ...orderByUpdates] : orderByUpdates;
+    if (!this.issueGroupKey)
+      return forcedAction ? [{ path: [ALL_ISSUES], action: forcedAction }, ...orderByUpdates] : orderByUpdates;
 
     const issueGroupKeyValue = issue?.[this.issueGroupKey] as string | string[] | null | undefined;
     const issueBeforeUpdateGroupKey = issueBeforeUpdate?.[this.issueGroupKey] as string | string[] | null | undefined;
@@ -1579,7 +1706,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     const groupActionsArray = getDifference(
       this.getArrayStringArray(issue, issueGroupKeyValue, this.groupBy),
       this.getArrayStringArray(issueBeforeUpdate, issueBeforeUpdateGroupKey, this.groupBy),
-      action
+      forcedAction
     );
 
     // if not subGrouped, then use the differences to construct an updateDetails Array
@@ -1602,7 +1729,7 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     const subGroupActionsArray = getDifference(
       this.getArrayStringArray(issue, issueSubGroupKey, this.subGroupBy),
       this.getArrayStringArray(issueBeforeUpdate, issueBeforeUpdateSubGroupKey, this.subGroupBy),
-      action
+      forcedAction
     );
 
     // Use the differences to construct an updateDetails Array

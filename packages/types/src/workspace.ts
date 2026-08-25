@@ -76,6 +76,12 @@ export interface IWorkspace {
   // never gated by this - see `Workspace.wiki_root_creation_role`
   // (apps/api/plane/db/models/workspace.py).
   wiki_root_creation_role?: "ADMIN" | "MEMBER";
+  // Category 12, feature 4 - "Mode hors ligne (beta)" Settings > Features
+  // rollout toggle for the local-first/offline sync engine. See
+  // `Workspace.is_offline_sync_enabled`'s own field comment
+  // (apps/api/plane/db/models/workspace.py) - purely a frontend gate, the
+  // backend's idempotency/delta-sync endpoints work unconditionally.
+  is_offline_sync_enabled?: boolean;
 }
 
 /** `Workspace.ai_update_data_scope` choices - see `WorkspaceAIUpdateDataScope`

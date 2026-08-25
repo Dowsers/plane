@@ -3656,4 +3656,46 @@ export default {
   enter_number_of_projects: "Enter number of projects",
   pin: "Pin",
   unpin: "Unpin",
+  // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+  // plane-selfhost), feature 4 - "Moteur de synchronisation local-first/
+  // offline pour le web".
+  offline_sync: {
+    settings: {
+      title: "Offline mode",
+      description:
+        "Let members keep creating and editing work items, comments, and pages while offline - changes are queued locally and synced automatically once back online. Beta: enable progressively, avoid on shared/public computers.",
+      toggle_label: "Enable offline mode (beta)",
+    },
+    toast: {
+      enabled: "Offline mode enabled for this workspace",
+      disabled: "Offline mode disabled for this workspace",
+      error: "Couldn't update the offline mode setting",
+    },
+    banner: {
+      offline: "You're offline. Changes you make will be saved locally and synced automatically once you're back.",
+      reconnecting: "Connection lost. Retrying...",
+    },
+    indicator: {
+      syncing: "{count, plural, one{Syncing (#)} other{Syncing (#)}}",
+      all_synced: "All changes synced",
+      offline: "Offline",
+      has_failed: "Some changes failed to sync",
+      panel_title: "Sync status",
+      panel_empty: "Nothing pending - everything is synced.",
+      retry: "Retry",
+      retry_all_failed: "Retry all failed",
+      status_pending: "Pending",
+      status_in_flight: "Syncing",
+      status_failed: "Failed",
+      failed_reason: "The server rejected this change: {reason}",
+    },
+    conflict: {
+      toast_title: "A change was overwritten",
+      toast_description:
+        'Your offline change to "{field}" on {entity} was overwritten by a newer change made elsewhere.',
+      panel_entry: "Overwritten by a newer server change: {field}",
+    },
+    requires_connection: "Requires an internet connection",
+    unload_warning: "You have changes that haven't finished syncing yet. Leaving now may lose them.",
+  },
 } as const;

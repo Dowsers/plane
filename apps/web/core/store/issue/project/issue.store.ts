@@ -5,6 +5,8 @@
  */
 
 import { action, makeObservable, runInAction } from "mobx";
+// plane imports
+import { isNetworkFailure } from "@plane/sync-engine";
 // types
 import type {
   TIssue,
@@ -83,7 +85,7 @@ export class ProjectIssues extends BaseIssuesStore implements IProjectIssues {
    * @param projectId
    */
   fetchParentStats = async (workspaceSlug: string, projectId?: string) => {
-    projectId && this.rootIssueStore.rootStore.projectRoot.project.fetchProjectDetails(workspaceSlug, projectId);
+    if (projectId) this.rootIssueStore.rootStore.projectRoot.project.fetchProjectDetails(workspaceSlug, projectId);
   };
 
   /** */
@@ -122,6 +124,22 @@ export class ProjectIssues extends BaseIssuesStore implements IProjectIssues {
       this.onfetchIssues(response, options, workspaceSlug, projectId, undefined, !isExistingPaginationOptions);
       return response;
     } catch (error) {
+      // Category 12, feature 4 - exigence 7's "issue list/Kanban stays
+      // readable from the IndexedDB cache while offline", see
+      // `BaseIssuesStore.applyCachedIssuesFallback`'s own docstring for
+      // the full mechanism and its disclosed limitations.
+      if (
+        isNetworkFailure(error) &&
+        (await this.applyCachedIssuesFallback(
+          workspaceSlug,
+          projectId,
+          options,
+          undefined,
+          !isExistingPaginationOptions
+        ))
+      ) {
+        return undefined;
+      }
       // set loader to undefined if errored out
       this.setLoader(undefined);
       throw error;

@@ -259,8 +259,8 @@ export abstract class IssueDetail implements IIssueDetail {
     this.openWidgets = state;
     if (this.lastWidgetAction) this.lastWidgetAction = null;
   };
-  setLastWidgetAction = (action: TWorkItemWidgets) => {
-    this.openWidgets = [action];
+  setLastWidgetAction = (widgetAction: TWorkItemWidgets) => {
+    this.openWidgets = [widgetAction];
   };
   toggleOpenWidget = (state: TWorkItemWidgets) => {
     if (this.openWidgets && this.openWidgets.includes(state))
@@ -402,6 +402,11 @@ export abstract class IssueDetail implements IIssueDetail {
   ) => this.comment.updateComment(workspaceSlug, projectId, issueId, commentId, data);
   removeComment = async (workspaceSlug: string, projectId: string, issueId: string, commentId: string) =>
     this.comment.removeComment(workspaceSlug, projectId, issueId, commentId);
+  // Category 12, feature 4 - `IIssueDetail` extends `IIssueCommentStoreActions`
+  // (see that interface's own docstring), which now requires `mergeFromSync`
+  // directly - delegates to the same `IssueCommentStore` instance every
+  // other comment action above already delegates to.
+  mergeFromSync = (comments: Partial<TIssueComment>[]) => this.comment.mergeFromSync(comments);
 
   // comment reaction
   fetchCommentReactions = async (workspaceSlug: string, projectId: string, commentId: string) =>

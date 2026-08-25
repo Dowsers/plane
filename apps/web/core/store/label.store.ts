@@ -51,6 +51,8 @@ export interface ILabelStore {
     dropAtEndOfList: boolean
   ) => Promise<void>;
   deleteLabel: (workspaceSlug: string, projectId: string, labelId: string) => Promise<void>;
+  // Category 12, feature 4 - see `LabelStore.mergeFromSync`'s own docstring.
+  mergeFromSync: (labels: Partial<IIssueLabel>[]) => void;
 }
 
 export class LabelStore implements ILabelStore {
@@ -76,6 +78,7 @@ export class LabelStore implements ILabelStore {
       updateLabel: action,
       updateLabelPosition: action,
       deleteLabel: action,
+      mergeFromSync: action,
     });
 
     // root store
@@ -189,6 +192,21 @@ export class LabelStore implements ILabelStore {
     });
 
   /**
+   * Category 12, feature 4 - merges the offline sync engine's periodic
+   * workspace delta-pull results (`label` is read-only reference data in
+   * that feature's scope, always a full snapshot) into `labelMap` - see
+   * `CycleStore.mergeFromSync`'s own docstring for the fuller writeup.
+   */
+  mergeFromSync = (labels: Partial<IIssueLabel>[]) => {
+    runInAction(() => {
+      labels.forEach((label) => {
+        if (!label.id) return;
+        set(this.labelMap, [label.id], { ...this.labelMap[label.id], ...label });
+      });
+    });
+  };
+
+  /**
    * Creates a new label for a specific project and add it to the store
    * @param workspaceSlug
    * @param projectId
@@ -300,10 +318,9 @@ export class LabelStore implements ILabelStore {
    */
   deleteLabel = async (workspaceSlug: string, projectId: string, labelId: string) => {
     if (!this.labelMap[labelId]) return;
-    await this.issueLabelService.deleteIssueLabel(workspaceSlug, projectId, labelId).then(() => {
-      runInAction(() => {
-        delete this.labelMap[labelId];
-      });
+    await this.issueLabelService.deleteIssueLabel(workspaceSlug, projectId, labelId);
+    runInAction(() => {
+      delete this.labelMap[labelId];
     });
   };
 }
