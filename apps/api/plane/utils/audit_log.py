@@ -39,9 +39,10 @@ def log_audit_event(
             events with no request (e.g. an auto-revoke side effect
             triggered from within another bgtask).
         workspace: a `Workspace` instance, or `None` for a genuinely
-            instance-scoped event (only `OAUTH_CONFIG_UPDATED` today) or
-            when `fan_out_actor_workspaces=True` (in which case the actor's
-            own active workspace memberships supply the scoping instead).
+            instance-scoped event (`OAUTH_CONFIG_UPDATED`,
+            `PUSH_CONFIG_UPDATED`) or when `fan_out_actor_workspaces=True`
+            (in which case the actor's own active workspace memberships
+            supply the scoping instead).
         actor: the `User` who performed the action, or `None` for a
             system-initiated event.
         target_user: the `User` this action targeted, when the target

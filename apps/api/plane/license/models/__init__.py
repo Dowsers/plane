@@ -4,6 +4,8 @@
 
 from .instance import Instance, InstanceAdmin, InstanceConfiguration, InstanceEdition
 
+from .push_notification import PushNotificationConfig
+
 from .saml import (
     InstanceSAMLConfiguration,
     SAMLAssertionReplay,

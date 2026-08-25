@@ -76,6 +76,15 @@ pytz==2024.1
 python-dateutil==2.9.0
 # jwt
 PyJWT==2.12.0
+# Web Push (category 12, feature 3 - "Notifications push en self-hosted").
+# Pinned to 1.14.1 (not the latest 2.x) deliberately - 2.x requires
+# cryptography>=47.0.0, which would force an upgrade past this fork's own
+# pinned cryptography==46.0.7 (relied on elsewhere, e.g. category 11's SAML
+# signature verification); 1.14.1 only requires cryptography>=2.6.1 and is
+# otherwise functionally equivalent for the synchronous `webpush()`/
+# `WebPushException` API this fork actually uses. Pulls in `py-vapid`/
+# `http-ece`/`six` as its own transitive dependencies.
+pywebpush==1.14.1
 # OpenTelemetry
 opentelemetry-api==1.28.1
 opentelemetry-sdk==1.28.1

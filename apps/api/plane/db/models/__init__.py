@@ -97,6 +97,7 @@ from .issue import (
 from .module import Module, ModuleIssue, ModuleLink, ModuleMember, ModuleUserProperties
 from .notification import EmailNotificationLog, Notification, UserNotificationPreference
 from .page import Page, PageLabel, PageLog, ProjectPage, PageVersion
+from .push_notification import PushNotificationSubscription
 from .project import (
     Project,
     ProjectBaseModel,

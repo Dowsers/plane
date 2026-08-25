@@ -177,6 +177,8 @@ from .analytic import AnalyticViewSerializer
 
 from .notification import NotificationSerializer, UserNotificationPreferenceSerializer
 
+from .push_notification import PushNotificationSubscriptionSerializer
+
 from .exporter import ExporterHistorySerializer
 
 from .webhook import WebhookSerializer, WebhookLogSerializer

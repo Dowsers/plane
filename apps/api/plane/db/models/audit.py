@@ -88,6 +88,18 @@ class AuditEventType(models.TextChoices):
     # genuinely distinct event (no specific member is "targeted"; the
     # target is the role/scheme definition, via target_type/target_id).
     ROLE_DEFINITION_CHANGED = "ROLE_DEFINITION_CHANGED"
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 3 ("Notifications push en self-hosted"),
+    # exigence 8 - fires when `PushNotificationConfigEndpoint.patch`
+    # (`plane.license.api.views.push_notification`) touches any of the
+    # genuinely secret fields on `PushNotificationConfig`
+    # (`vapid_private_key`/`fcm_service_account_json`/`apns_auth_key`) or
+    # when `GenerateVapidKeysEndpoint` mints a new VAPID keypair -
+    # instance-scoped (`workspace=None`), same convention as
+    # `OAUTH_CONFIG_UPDATED` above. Never logs the actual secret values in
+    # `old_value`/`new_value` - only which keys were changed, in
+    # `metadata`.
+    PUSH_CONFIG_UPDATED = "PUSH_CONFIG_UPDATED"
 
 
 class WorkspaceAuditLog(BaseModel):
@@ -106,7 +118,7 @@ class WorkspaceAuditLog(BaseModel):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-    )  # null = instance-scoped event (OAUTH_CONFIG_UPDATED) - exigence 10.
+    )  # null = instance-scoped event (OAUTH_CONFIG_UPDATED, PUSH_CONFIG_UPDATED) - exigence 10.
 
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

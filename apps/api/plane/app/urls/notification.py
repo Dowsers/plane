@@ -10,6 +10,8 @@ from plane.app.views import (
     UnreadNotificationEndpoint,
     MarkAllReadNotificationViewSet,
     UserNotificationPreferenceEndpoint,
+    PushNotificationSubscriptionEndpoint,
+    PushNotificationSubscriptionDetailEndpoint,
 )
 
 
@@ -48,5 +50,17 @@ urlpatterns = [
         "users/me/notification-preferences/",
         UserNotificationPreferenceEndpoint.as_view(),
         name="user-notification-preferences",
+    ),
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 3 - "Notifications push en self-hosted".
+    path(
+        "users/me/push-subscriptions/",
+        PushNotificationSubscriptionEndpoint.as_view(),
+        name="user-push-notification-subscriptions",
+    ),
+    path(
+        "users/me/push-subscriptions/<uuid:pk>/",
+        PushNotificationSubscriptionDetailEndpoint.as_view(),
+        name="user-push-notification-subscription-detail",
     ),
 ]

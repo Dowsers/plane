@@ -343,6 +343,10 @@ from .notification.base import (
     UnreadNotificationEndpoint,
     UserNotificationPreferenceEndpoint,
 )
+from .notification.push_subscription import (
+    PushNotificationSubscriptionEndpoint,
+    PushNotificationSubscriptionDetailEndpoint,
+)
 
 from .exporter.base import ExportIssuesEndpoint
 

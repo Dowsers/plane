@@ -37,3 +37,9 @@ from .saml import (
     InstanceSAMLDomainVerifyEndpoint,
     InstanceSAMLTestConnectionEndpoint,
 )
+
+from .push_notification import (
+    GenerateVapidKeysEndpoint,
+    PushNotificationConfigEndpoint,
+    PushNotificationTestEndpoint,
+)

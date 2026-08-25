@@ -9,6 +9,8 @@ from uuid import UUID
 
 
 # Module imports
+from plane.bgtasks import push_notification_task
+from plane.bgtasks.push_notification_task import resolve_push_event_types
 from plane.db.models import (
     IssueMention,
     IssueSubscriber,
@@ -404,6 +406,28 @@ def notifications(
                             },
                         )
                     )
+                    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md
+                    # in plane-selfhost), feature 3 - "Notifications push
+                    # en self-hosted". Fired unconditionally (independent
+                    # of `send_email` above, per exigence 3) right where
+                    # the in-app `Notification` itself was just queued -
+                    # ALL actual gating (kill switch, per-user
+                    # `push_enabled` + per-event-type preference, quiet
+                    # hours, send-time membership) lives inside
+                    # `send_push_notification` itself, never here. See
+                    # that task's own module docstring.
+                    push_notification_task.send_push_notification.delay(
+                        receiver_id=str(subscriber),
+                        project_id=str(project_id),
+                        event_types=resolve_push_event_types(
+                            issue_activity.get("field"),
+                            project_id,
+                            issue_activity.get("new_identifier"),
+                        ),
+                        title=f"{project.identifier}-{issue.sequence_id} {issue.name}",
+                        body=str(issue_activity.get("comment") or ""),
+                        url=f"/{project.workspace.slug}/projects/{project_id}/issues/{issue_id}/",
+                    )
                     # Create email notification
                     if send_email:
                         bulk_email_logs.append(
@@ -518,6 +542,18 @@ def notifications(
                                 )
                             )
                         bulk_notifications.append(notification)
+                        # Category 12 feature 3 - mentions are always
+                        # classified as `["mention"]`, independent of the
+                        # `preference.mention` (EMAIL) check just above -
+                        # see `send_push_notification`'s own docstring.
+                        push_notification_task.send_push_notification.delay(
+                            receiver_id=str(mention_id),
+                            project_id=str(project_id),
+                            event_types=["mention"],
+                            title=f"{project.identifier}-{issue.sequence_id} {issue.name}",
+                            body=notification.message or "",
+                            url=f"/{project.workspace.slug}/projects/{project_id}/issues/{issue_id}/",
+                        )
 
             for mention_id in new_mentions:
                 if mention_id != actor_id:
@@ -607,6 +643,16 @@ def notifications(
                                     },
                                 )
                             )
+                        # Category 12 feature 3 - see the identical hook
+                        # above the `comment_mentions` loop for rationale.
+                        push_notification_task.send_push_notification.delay(
+                            receiver_id=str(mention_id),
+                            project_id=str(project_id),
+                            event_types=["mention"],
+                            title=f"{project.identifier}-{issue.sequence_id} {issue.name}",
+                            body=f"You have been mentioned in the issue {issue.name}",
+                            url=f"/{project.workspace.slug}/projects/{project_id}/issues/{issue_id}/",
+                        )
                     else:
                         for issue_activity in issue_activities_created:
                             notification = create_mention_notification(
@@ -657,6 +703,17 @@ def notifications(
                                     )
                                 )
                             bulk_notifications.append(notification)
+                            # Category 12 feature 3 - see the identical
+                            # hook above the `comment_mentions` loop for
+                            # rationale.
+                            push_notification_task.send_push_notification.delay(
+                                receiver_id=str(mention_id),
+                                project_id=str(project_id),
+                                event_types=["mention"],
+                                title=f"{project.identifier}-{issue.sequence_id} {issue.name}",
+                                body=notification.message or "",
+                                url=f"/{project.workspace.slug}/projects/{project_id}/issues/{issue_id}/",
+                            )
 
             # save new mentions for the particular issue and remove the mentions that has been deleted from the description # noqa: E501
             update_mentions_for_issue(

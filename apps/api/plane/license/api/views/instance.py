@@ -64,6 +64,8 @@ class InstanceEndpoint(BaseAPIView):
             POSTHOG_HOST,
             UNSPLASH_ACCESS_KEY,
             LLM_API_KEY,
+            PUSH_NOTIFICATIONS_ENABLED,
+            VAPID_PUBLIC_KEY,
         ) = get_configuration_value(
             [
                 {
@@ -123,6 +125,14 @@ class InstanceEndpoint(BaseAPIView):
                     "key": "LLM_API_KEY",
                     "default": os.environ.get("LLM_API_KEY", ""),
                 },
+                {
+                    "key": "PUSH_NOTIFICATIONS_ENABLED",
+                    "default": os.environ.get("PUSH_NOTIFICATIONS_ENABLED", "0"),
+                },
+                {
+                    "key": "VAPID_PUBLIC_KEY",
+                    "default": os.environ.get("VAPID_PUBLIC_KEY", ""),
+                },
             ]
         )
 
@@ -177,6 +187,21 @@ class InstanceEndpoint(BaseAPIView):
 
         # is smtp configured
         data["is_smtp_configured"] = bool(EMAIL_HOST)
+
+        # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+        # plane-selfhost), feature 3 ("Notifications push en self-hosted") -
+        # both genuinely need to be readable by any authenticated (or even
+        # signed-out, matching this endpoint's own `AllowAny`) caller's
+        # browser, not just an instance admin: `is_push_notifications_enabled`
+        # so the frontend knows whether to even offer the "enable push"
+        # toggle, and `vapid_public_key` verbatim so it can call
+        # `pushManager.subscribe({applicationServerKey: vapid_public_key})`.
+        # Neither is a secret - see
+        # `plane.license.models.push_notification.PushNotificationConfig`'s
+        # module docstring for what IS kept off this public endpoint
+        # (`vapid_private_key`/FCM/APNs credentials, all god-mode-only).
+        data["is_push_notifications_enabled"] = PUSH_NOTIFICATIONS_ENABLED == "1"
+        data["vapid_public_key"] = VAPID_PUBLIC_KEY
 
         # Base URL
         data["admin_base_url"] = settings.ADMIN_BASE_URL

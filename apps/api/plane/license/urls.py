@@ -24,6 +24,9 @@ from plane.license.api.views import (
     InstanceSAMLDomainEndpoint,
     InstanceSAMLDomainVerifyEndpoint,
     InstanceSAMLTestConnectionEndpoint,
+    GenerateVapidKeysEndpoint,
+    PushNotificationConfigEndpoint,
+    PushNotificationTestEndpoint,
 )
 
 urlpatterns = [
@@ -122,5 +125,25 @@ urlpatterns = [
         "admin/saml-configurations/<uuid:pk>/test-connection/",
         InstanceSAMLTestConnectionEndpoint.as_view(),
         name="instance-saml-configuration-test-connection",
+    ),
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 3 "Notifications push en self-hosted" -
+    # god-mode endpoints, namespaced under `configurations/push/` per the
+    # spec's own "Endpoints admin instance" section. Instance-admin-only
+    # via `BaseAPIView`'s own default `InstanceAdminPermission`.
+    path(
+        "configurations/push/",
+        PushNotificationConfigEndpoint.as_view(),
+        name="instance-push-notification-configuration",
+    ),
+    path(
+        "configurations/push/generate-vapid-keys/",
+        GenerateVapidKeysEndpoint.as_view(),
+        name="instance-push-notification-generate-vapid-keys",
+    ),
+    path(
+        "configurations/push/test/",
+        PushNotificationTestEndpoint.as_view(),
+        name="instance-push-notification-test",
     ),
 ]

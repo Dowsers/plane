@@ -117,6 +117,43 @@ class UserNotificationPreference(BaseModel):
     page_mentions = models.BooleanField(default=True)
     page_comments = models.BooleanField(default=True)
 
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 3 - "Notifications push en self-hosted".
+    # `push_enabled` is the per-user master switch (default False - a user
+    # must explicitly opt in from Profile > Notifications after granting
+    # browser permission; this is NOT the instance-wide kill switch, see
+    # `InstanceConfiguration.PUSH_NOTIFICATIONS_ENABLED` for that). The 5
+    # `push_*` event-type toggles mirror `property_change`/`state_change`/
+    # `comment`/`mention`/`issue_completed` above field-for-field but are a
+    # SEPARATE channel (exigence 3 - "independantes des preferences email
+    # existantes") - `plane.bgtasks.push_notification_task.
+    # send_push_notification` reads these, never the email fields, and
+    # vice versa for `plane.bgtasks.notification_task.notifications`'s own
+    # `EmailNotificationLog` gating. Default True (opt-out per event type,
+    # once the master switch itself is on) matching the email fields'
+    # own default.
+    push_enabled = models.BooleanField(default=False)
+    push_property_change = models.BooleanField(default=True)
+    push_state_change = models.BooleanField(default=True)
+    push_comment = models.BooleanField(default=True)
+    push_mention = models.BooleanField(default=True)
+    push_issue_completed = models.BooleanField(default=True)
+
+    # Quiet hours (exigence 2/4) - while enabled and "now" (converted to
+    # `user.user_timezone`, see `plane.db.models.user.User.user_timezone`
+    # - deliberately NOT a new field here, reusing the one that already
+    # exists rather than adding a redundant duplicate) falls within
+    # [quiet_hours_start, quiet_hours_end) (wrapping past midnight when
+    # start > end, e.g. 20:00->08:00), push sending is skipped entirely -
+    # the in-app `Notification` row is still created completely normally
+    # (exigence 4 - no change to that path), only the push fan-out is
+    # suppressed. No catch-up/digest of what was suppressed (exigence 5,
+    # explicitly out of scope) - the bell is the only place a user finds
+    # them afterwards.
+    quiet_hours_enabled = models.BooleanField(default=False)
+    quiet_hours_start = models.TimeField(null=True, blank=True)
+    quiet_hours_end = models.TimeField(null=True, blank=True)
+
     class Meta:
         verbose_name = "UserNotificationPreference"
         verbose_name_plural = "UserNotificationPreferences"

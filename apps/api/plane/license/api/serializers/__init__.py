@@ -11,3 +11,5 @@ from .workspace import WorkspaceSerializer
 from .rate_limit import RateLimitTierSerializer
 
 from .saml import InstanceSAMLConfigurationSerializer, SAMLVerifiedDomainSerializer
+
+from .push_notification import PushNotificationConfigSerializer

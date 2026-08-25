@@ -76,4 +76,42 @@ extended_config_variables = [
         "category": "SECURITY",
         "is_encrypted": False,
     },
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 3 ("Notifications push en self-hosted"),
+    # exigence 10 - instance-wide kill switch. Defaults OFF ("pas
+    # d'activation surprise" - the spec's own explicit requirement for an
+    # existing instance being upgraded). `plane.bgtasks.
+    # push_notification_task.send_push_notification` re-checks this live
+    # on every single push attempt (not just at subscribe time), same
+    # "protocol layer re-checks the flag live" convention `ENABLE_SCIM`
+    # already established above. Also surfaced on the PUBLIC
+    # `GET /api/instances/` (`InstanceEndpoint`) - see that view - so a
+    # user's browser can decide whether to even offer the "enable push"
+    # toggle without needing admin access. Editable via the existing
+    # generic god-mode PATCH endpoint like every other row in this table -
+    # no new view code needed for the toggle itself. VAPID/FCM/APNs
+    # SECRETS are deliberately NOT here - see
+    # `plane.license.models.push_notification.PushNotificationConfig`'s
+    # own docstring for why those live on a dedicated model instead (the
+    # false "write-only" precedent this exact table has today for
+    # `EMAIL_HOST_PASSWORD`/`LLM_API_KEY`).
+    {
+        "key": "PUSH_NOTIFICATIONS_ENABLED",
+        "value": os.environ.get("PUSH_NOTIFICATIONS_ENABLED", "0"),
+        "category": "PUSH_NOTIFICATIONS",
+        "is_encrypted": False,
+    },
+    # Not a secret - handed to every subscribing browser as the Web Push
+    # `applicationServerKey`. Written by
+    # `plane.license.api.views.push_notification.
+    # GenerateVapidKeysEndpoint` (or an admin pasting an externally-
+    # generated key pair via the ordinary god-mode PATCH endpoint), read
+    # back by the same public `GET /api/instances/` as the kill switch
+    # above.
+    {
+        "key": "VAPID_PUBLIC_KEY",
+        "value": os.environ.get("VAPID_PUBLIC_KEY", ""),
+        "category": "PUSH_NOTIFICATIONS",
+        "is_encrypted": False,
+    },
 ]
