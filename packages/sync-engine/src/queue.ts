@@ -94,6 +94,63 @@ export async function retryAllFailed(db: TPlaneOfflineSyncDB): Promise<void> {
   await Promise.all(all.map((entry) => retryEntry(db, entry.id)));
 }
 
+/**
+ * Category 12, feature 4 data-integrity review fix - drops any queued,
+ * NOT-yet-synced mutation that targets an entity the accessible-ids
+ * reconciliation (`delta.ts`'s `pullAccessibleIds`) just discovered the
+ * user can no longer see, so it doesn't sit `failed` forever after the
+ * inevitable 403 the very next flush attempt would get (see this
+ * finding's own repro: a mutation queued against an entity in project P
+ * right before the user is removed from P). Only ever matches on
+ * `entityId` for the SAME `entityType` as a server-reported removed id -
+ * a `create` entry's `entityId` is still a purely local, client-
+ * generated id the server has never heard of, so it can never appear in
+ * a server-reported removed-ids list and is safely left alone (correct:
+ * a create genuinely doesn't need this, there's nothing server-side yet
+ * to have lost access to).
+ */
+export async function discardMutationsForInaccessibleEntities(
+  db: TPlaneOfflineSyncDB,
+  entityType: TMutableSyncEntity,
+  removedIds: string[]
+): Promise<string[]> {
+  if (removedIds.length === 0) return [];
+  const removed = new Set(removedIds);
+  const all = await listQueueEntries(db);
+  const toDiscard = all.filter(
+    (entry) => entry.entityType === entityType && entry.status !== "synced" && removed.has(entry.entityId)
+  );
+  await Promise.all(toDiscard.map((entry) => deleteQueueEntry(db, entry.id)));
+  return toDiscard.map((entry) => entry.id);
+}
+
+/**
+ * Category 12, feature 4 data-integrity review fix - heals any entry
+ * left stuck at `in_flight` from a PREVIOUS worker lifetime (a tab
+ * crash, or `leaveWorkspace()`'s `worker.terminate()` killing a flush
+ * mid-`fetch`, per the review's own repro - see `core.ts`'s `init()` for
+ * the call site and the full reasoning). `in_flight` is invisible to
+ * `listSendableEntries` (it only ever selects `pending`), so without
+ * this an entry stranded here is never automatically retried, and the
+ * "Syncing" panel's manual Retry button only renders for `failed` - a
+ * stuck `in_flight` entry had no recovery path at all, for any tab,
+ * forever.
+ *
+ * Safe to call unconditionally on every `init()`: this runs BEFORE the
+ * new worker instance attempts any flush of its own, and every request
+ * this queue ever sends carries `Idempotency-Key: entry.id` (see
+ * `core.ts`'s `sendEntry`), so even in the (rare) case the original
+ * request actually reached the server and the worker was killed only
+ * before it could record that locally, resending it is safe - the
+ * server-side replay protection (`plane.utils.idempotency`) returns the
+ * original response rather than repeating the mutation.
+ */
+export async function resetStrandedInFlightEntries(db: TPlaneOfflineSyncDB): Promise<number> {
+  const stuck = await db.getAllFromIndex("mutation_queue", "by-status", "in_flight");
+  await Promise.all(stuck.map((entry) => setStatus(db, entry.id, "pending", { nextAttemptAt: 0 })));
+  return stuck.length;
+}
+
 /** The next entry (in FIFO/`createdAt` order) for a given entity type
  * that is actually eligible to be sent right now: `pending` (not
  * `failed`, not already `in_flight`, not `synced`) and past its backoff

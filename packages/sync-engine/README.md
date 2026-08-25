@@ -179,10 +179,46 @@ only**.
 **Page rich-text body content must NEVER go through this path** - it
 defers entirely to the existing Yjs/Hocuspocus CRDT merge (category 10's
 already-real infrastructure). This feature only ever queues Page
-METADATA updates (`enqueueUpdatePageMetadata` - name, access, lock,
-parent, sort order, ...); `base-page.ts`'s `updateDescription()` method
-(the rich-text save path) is completely untouched by this feature and is
-never called from anywhere this package's code runs. This boundary is
+METADATA updates via `enqueueUpdatePageMetadata`; `base-page.ts`'s
+`updateDescription()` method (the rich-text save path) is completely
+untouched by this feature and is never called from anywhere this
+package's code runs.
+
+Post-review correction (data-integrity review, category 12 feature 4):
+an earlier version of this README claimed `enqueueUpdatePageMetadata`
+covered "name, access, lock, parent, sort order" - at the time, it was
+in fact wired to exactly ONE method, `BasePage.update()`, which had NO
+real caller anywhere in the app, making Page offline support and
+conflict notification entirely dead code for every actual mutation. This
+has been fixed: the five real Page metadata mutation call sites in
+`base-page.ts` (the title-rename `reaction`, `makePublic`, `makePrivate`,
+`lock`, `updatePageLogo`) now each queue directly on a genuine network
+failure, mirroring `update()`'s own catch-block semantics. The accurate
+field list today is **name, access, is_locked (lock direction only),
+logo_props**. Two fields from the original claim are explicitly NOT
+covered, for real, distinct reasons:
+
+- **`is_locked` unlock direction** - `unlock()` deliberately still has
+  no offline path. The backend's generic PATCH
+  (`PageViewSet.partial_update`, the only endpoint shape the `page`
+  "update" operation can replay against - see `request.ts`'s
+  `buildRequest`) unconditionally 400s with `"Page is locked"` whenever
+  `page.is_locked` is currently `True`, no matter what the PATCH body
+  contains. An offline-queued unlock can, by definition, only ever be
+  flushed while the page is still locked - so it would fail every single
+  time, including every manual retry, with no path to ever succeed.
+  Fixing this properly needs the mutation queue to be able to target the
+  dedicated `/unlock/` action route instead of the generic detail PATCH
+  (a new operation/URL shape in `TMutationQueueEntry`/`buildRequest`),
+  which is out of this pass's scope - see `unlock()`'s own comment in
+  `base-page.ts`.
+- **`parent`/`sort order`** - no real mutation call site for reparenting
+  or reordering a Page exists anywhere in `base-page.ts` (or elsewhere in
+  `apps/web`) today, wired or not - the original claim was aspirational,
+  not a description of dead-but-present code. Nothing to fix here yet;
+  corrected instead of left to overstate coverage.
+
+This boundary is
 enforced structurally (there is no `enqueueUpdatePageDescription`
 function anywhere in this package) rather than by a runtime check, which
 is deliberately the stronger guarantee - there's no field to accidentally
@@ -214,7 +250,15 @@ support (every tab reacts to a `queue-changed` broadcast by attempting
 its own flush) - that fallback path is explicitly best-effort, NOT a real
 double-send guarantee, since IndexedDB reads/writes across two truly
 concurrent flush attempts on such a browser could theoretically race.
-This is disclosed, not silently assumed to be safe.
+This is disclosed, not silently assumed to be safe. What DOES actually
+back it up server-side is `plane.utils.idempotency` - see that module's
+own docstring for a real TOCTOU this data-integrity review found and
+fixed there (the previous check-then-act implementation could itself let
+two near-simultaneous requests bearing the same key both create a real
+row before either had recorded anything, which is exactly the scenario
+this fallback path relies on the backend to prevent). It is now an
+atomic reservation keyed on the same `(workspace, key)` unique
+constraint, not an unlocked read.
 
 **What this session could NOT verify**: there is no real browser
 available in this sandbox, so the Web Locks mutual exclusion was
@@ -244,6 +288,45 @@ this frontend-scoped task). `pullDelta`'s return value reports which
 entities hit this ceiling (`incompleteEntities`) so a future caller could
 surface it; nothing in this feature's own 13 build points currently
 consumes that field (not user-facing today).
+
+## Idempotency-Key scope (backend) - correction
+
+`core.ts`'s `sendEntry` sends `Idempotency-Key: entry.id` on EVERY queued
+request, `create` and `update` alike (line ~295). An earlier version of
+this README (and the frontend build report it was based on) stated this
+as an unqualified invariant - "the `Idempotency-Key` header is the
+client UUID on every mutation request" - implying the backend treats it
+uniformly. It does not, and this was a real, verified gap found by this
+feature's own data-integrity review, not just an inference: `grep -rn
+check_idempotency_key apps/api/plane/app/views/` only ever matches
+inside the four `create()` methods (`IssueViewSet`,
+`IssueCommentViewSet`, `PageViewSet`, `WorkspacePageViewSet`) - none of
+the corresponding `partial_update` (PATCH) methods call
+`check_idempotency_key`/`store_idempotent_response` at all. A replayed
+PATCH with a duplicate `Idempotency-Key` is silently accepted and
+re-executed normally by the server; no `IdempotencyKey` row is ever
+created for it.
+
+This is currently harmless in practice, not just asserted to be: every
+offline-queued UPDATE in this feature's declared scope (Issue/
+IssueComment field edits) sends the client's full absolute desired-state
+per field (`resolveFieldLevelConflicts` in `conflict.ts`), never a
+delta/increment, so a byte-identical PATCH replay is naturally a no-op
+regardless of any server-side idempotency bookkeeping - re-applying
+`{"priority": "high"}` twice has the same end state as applying it once.
+It was deliberately left this way (rather than also wiring the
+create-endpoint pattern into every `partial_update`) because that method
+has several early-return exit paths of its own (the governed-workflow
+gate from `docs/feature-specs/06-automation-workflow-sla.md`, in
+particular) that a mechanical copy-paste of the create-endpoint pattern
+risks getting subtly wrong without a live browser/integration
+environment to verify against - a correctness-neutral documentation fix
+was judged the lower-risk option over touching that method's control
+flow for a currently-inert gap. If a future offline-queued mutation type
+ever stops being a simple absolute-value PATCH (e.g. a numeric
+increment, or a partial list append), this gap becomes live and
+`check_idempotency_key`/`store_idempotent_response` should be wired into
+the relevant `partial_update` at that point, not before.
 
 ## Known scope limits (MobX hydration)
 

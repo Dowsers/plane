@@ -3684,6 +3684,13 @@ export default {
       panel_empty: "Nothing pending - everything is synced.",
       retry: "Retry",
       retry_all_failed: "Retry all failed",
+      // Category 12, feature 4 data-integrity review fix - a failed
+      // entry previously had no way to be cleared short of a full
+      // workspace/logout purge (e.g. a mutation queued against an
+      // entity the user has since lost access to, which will never
+      // succeed on retry - see the sync engine's own data-integrity
+      // review report).
+      discard: "Discard",
       status_pending: "Pending",
       status_in_flight: "Syncing",
       status_failed: "Failed",

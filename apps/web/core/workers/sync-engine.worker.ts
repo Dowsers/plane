@@ -70,8 +70,21 @@ self.addEventListener("message", (event: MessageEvent<TMainToWorkerMessage>) => 
     case "touch-project":
       void core.touchProject(message.projectId);
       break;
+    case "discard-entry":
+      void core.discardEntry(message.id);
+      break;
     case "destroy":
-      core.destroy();
+      // Category 12, feature 4 data-integrity review fix - bounded grace
+      // period (see `SyncEngineCore.destroy`'s own docstring) instead of
+      // tearing this worker's `db`/timers down the instant "destroy" is
+      // received, then acks so `SyncEngineStore.leaveWorkspace` knows it
+      // can safely `terminate()` this worker now rather than only after
+      // its OWN separate timeout.
+      void core.destroy(1_500).then(() => {
+        // eslint-disable-next-line unicorn/require-post-message-target-origin -- see the identical justification on the `onMessage` callback above
+        self.postMessage({ type: "destroyed" } satisfies TWorkerToMainMessage);
+        return undefined;
+      });
       break;
     default:
       break;

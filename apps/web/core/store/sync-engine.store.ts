@@ -108,6 +108,7 @@ export interface ISyncEngineStore {
 
   retryEntry: (id: string) => void;
   retryAllFailed: () => void;
+  discardEntry: (id: string) => void;
   touchProject: (projectId: string) => void;
 
   /** Is `id` a client-generated id from a `create` mutation of this
@@ -137,6 +138,25 @@ export class SyncEngineStore implements ISyncEngineStore {
 
   private worker: Worker | undefined;
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+  /** The listener currently wired to `this.worker` via
+   * `attachPrimaryListener` - tracked so `detachCurrentWorker` can
+   * remove exactly it (see that method's own docstring for why this is
+   * load-bearing, not cosmetic). */
+  private currentWorkerListener: ((event: MessageEvent<TWorkerToMainMessage>) => void) | undefined;
+  /** Category 12, feature 4 data-integrity review fix (critical finding)
+   * - a PREVIOUS workspace's worker that still had non-synced
+   * `mutation_queue` entries when the user switched away, kept alive
+   * and still draining in the background (its own timers keep running
+   * unchanged) instead of being terminated with its IndexedDB deleted
+   * out from under it - see `retireWorker`'s own docstring. */
+  private backgroundWorkers = new Map<
+    string,
+    { worker: Worker; listener: (event: MessageEvent<TWorkerToMainMessage>) => void }
+  >();
+  /** Bounded grace period given to a worker's own in-flight flush to
+   * finish normally before it's force-`terminate()`d - see
+   * `gracefullyTerminate`. */
+  private static readonly DESTROY_GRACE_MS = 2_000;
 
   constructor() {
     makeObservable(this, {
@@ -170,13 +190,25 @@ export class SyncEngineStore implements ISyncEngineStore {
   bootForWorkspace(workspace: { id: string; slug: string }, isFeatureEnabled: boolean): void {
     if (this.currentWorkspaceId === workspace.id && this.isFeatureEnabled === isFeatureEnabled && this.worker) return;
 
-    // Switching workspace (exigence 10) - purge the PREVIOUS workspace's
-    // cache before booting the new one, never leave two workspaces'
-    // caches alive in the same tab.
     const previousWorkspaceId = this.currentWorkspaceId;
-    this.leaveWorkspace();
-    if (previousWorkspaceId && previousWorkspaceId !== workspace.id) {
-      void deleteWorkspaceDb(previousWorkspaceId);
+    const previousWorker = this.detachCurrentWorker();
+
+    if (previousWorker && previousWorkspaceId) {
+      if (previousWorkspaceId !== workspace.id) {
+        // Category 12, feature 4 data-integrity review fix (critical
+        // finding) - previously this ALWAYS ran `deleteWorkspaceDb`
+        // (mutation_queue included) for the workspace being left,
+        // regardless of whether it still had non-synced offline work,
+        // with zero warning - an ordinary workspace switch (sidebar
+        // switcher, no confirmation dialog) silently discarded every
+        // queued-but-unsynced edit. `retireWorker` now checks first.
+        void this.retireWorker(previousWorkspaceId, previousWorker);
+      } else {
+        // Same workspace id (only `isFeatureEnabled` flipped, or a
+        // stale `this.worker` needed a fresh boot) - nothing to
+        // preserve across a re-boot of the SAME workspace.
+        this.gracefullyTerminate(previousWorker);
+      }
     }
 
     this.currentWorkspaceId = workspace.id;
@@ -185,10 +217,30 @@ export class SyncEngineStore implements ISyncEngineStore {
 
     if (!isFeatureEnabled) return; // rollout toggle off - stay dormant, no worker, no IndexedDB writes
 
+    // Category 12, feature 4 data-integrity review fix - the user
+    // switched back to a workspace that's still background-draining
+    // (see `retireWorker`) before it finished: adopt the SAME worker
+    // instance rather than spawning a second one on top of it (`init()`
+    // is not idempotent - a second call would set up duplicate timers).
+    const adopted = this.backgroundWorkers.get(workspace.id);
+    if (adopted) {
+      this.backgroundWorkers.delete(workspace.id);
+      adopted.worker.removeEventListener("message", adopted.listener);
+      this.worker = adopted.worker;
+      this.attachPrimaryListener(this.worker);
+      this.isBooted = true; // already `ready` from its original init - that message won't be resent
+      this.postToWorker({ type: "network-status", isOnline: this.isOnline });
+      // Forces a fresh `queue-snapshot` promptly (`drainQueue` always
+      // emits one unconditionally at the end, see `core.ts`) rather than
+      // waiting for the next periodic flush tick to refresh this tab's
+      // UI with this workspace's actual current queue state.
+      this.postToWorker({ type: "flush-now" });
+      this.startHeartbeat();
+      return;
+    }
+
     this.worker = new Worker(new URL("../workers/sync-engine.worker.ts", import.meta.url), { type: "module" });
-    this.worker.addEventListener("message", (event: MessageEvent<TWorkerToMainMessage>) =>
-      this.handleWorkerMessage(event.data)
-    );
+    this.attachPrimaryListener(this.worker);
     this.postToWorker({
       type: "init",
       config: { workspaceId: workspace.id, workspaceSlug: workspace.slug, apiBaseUrl: API_BASE_URL },
@@ -198,8 +250,48 @@ export class SyncEngineStore implements ISyncEngineStore {
   }
 
   leaveWorkspace(): void {
-    this.postToWorker({ type: "destroy" });
-    this.worker?.terminate();
+    const worker = this.detachCurrentWorker();
+    if (worker) this.gracefullyTerminate(worker);
+  }
+
+  /**
+   * Category 12, feature 4 data-integrity review fix - a bug found while
+   * fixing the critical "workspace switch discards unsynced work"
+   * finding above: the ORIGINAL code attached this listener as an
+   * inline anonymous function with no stored reference, which was safe
+   * ONLY because `leaveWorkspace` always `terminate()`d the worker
+   * immediately afterward (a terminated worker can never fire another
+   * `message` event, so a stale listener was harmless). `retireWorker`'s
+   * new background-drain path deliberately does NOT terminate the
+   * worker when it's detached - it keeps running and CAN keep firing
+   * `message` events (including its own periodic `queue-snapshot`s).
+   * Without tracking and explicitly removing this specific listener on
+   * detach, THIS store instance would keep receiving - and
+   * `handleWorkerMessage` would keep applying - a now-backgrounded
+   * PREVIOUS workspace's messages on top of the actually-active
+   * workspace's observable state (`queueEntries`, `conflicts`, MobX
+   * store hydration, ...), silently corrupting the UI for the workspace
+   * the user actually switched TO. */
+  private attachPrimaryListener(worker: Worker): void {
+    const listener = (event: MessageEvent<TWorkerToMainMessage>) => this.handleWorkerMessage(event.data);
+    worker.addEventListener("message", listener);
+    this.currentWorkerListener = listener;
+  }
+
+  /** Clears this tab's OWN observable state and its reference to the
+   * current worker, WITHOUT deciding what happens to that worker -
+   * callers (`leaveWorkspace`/`bootForWorkspace`) each apply their own
+   * policy (immediate graceful termination vs. `retireWorker`'s
+   * background-drain-then-terminate) to the worker this returns. Always
+   * detaches `attachPrimaryListener`'s listener first (see that
+   * method's own docstring for why this is required, not optional, once
+   * a detached worker can keep running in the background). */
+  private detachCurrentWorker(): Worker | undefined {
+    const worker = this.worker;
+    if (worker && this.currentWorkerListener) {
+      worker.removeEventListener("message", this.currentWorkerListener);
+    }
+    this.currentWorkerListener = undefined;
     this.worker = undefined;
     this.stopHeartbeat();
     runInAction(() => {
@@ -208,14 +300,120 @@ export class SyncEngineStore implements ISyncEngineStore {
       this.conflicts = [];
       this.recentlyRemappedIds = {};
     });
+    return worker;
+  }
+
+  /**
+   * Category 12, feature 4 data-integrity review fix (critical finding:
+   * "Switching workspace... unconditionally deletes the entire previous
+   * workspace's IndexedDB, discarding ALL not-yet-synced mutations").
+   *
+   * Checks the OUTGOING workspace's actual `mutation_queue` state
+   * directly from IndexedDB (authoritative and durable - not this
+   * store's own `queueEntries`, which `detachCurrentWorker` already
+   * cleared to `[]` by the time this runs) before deciding what happens
+   * to its worker:
+   *   - nothing non-synced left -> safe to tear down and purge now,
+   *     exactly like before this fix.
+   *   - still has pending/failed/in_flight work -> the worker is kept
+   *     ALIVE, still running its own flush/delta timers completely
+   *     unchanged, just no longer wired to this tab's UI. Once a later
+   *     `queue-snapshot` message reports everything `synced`, it's torn
+   *     down and its db purged for real. If the user switches back to
+   *     this workspace before that happens, `bootForWorkspace` adopts
+   *     this SAME worker instead of losing track of it.
+   */
+  private async retireWorker(workspaceId: string, worker: Worker): Promise<void> {
+    const hasPendingWork = await this.workspaceHasPendingWork(workspaceId);
+    if (!hasPendingWork) {
+      this.gracefullyTerminate(worker);
+      void deleteWorkspaceDb(workspaceId);
+      return;
+    }
+
+    const listener = (event: MessageEvent<TWorkerToMainMessage>): void => {
+      if (event.data.type !== "queue-snapshot") return;
+      const stillPending = event.data.entries.some((entry) => entry.status !== "synced");
+      if (stillPending) return;
+      const entry = this.backgroundWorkers.get(workspaceId);
+      if (!entry || entry.worker !== worker) return; // already adopted/retired by something else
+      this.backgroundWorkers.delete(workspaceId);
+      worker.removeEventListener("message", listener);
+      this.gracefullyTerminate(worker);
+      void deleteWorkspaceDb(workspaceId);
+    };
+    worker.addEventListener("message", listener);
+    this.backgroundWorkers.set(workspaceId, { worker, listener });
+  }
+
+  private async workspaceHasPendingWork(workspaceId: string): Promise<boolean> {
+    try {
+      const { openWorkspaceDb, listNonSyncedEntries } = await import("@plane/sync-engine");
+      const db = await openWorkspaceDb(workspaceId);
+      const nonSynced = await listNonSyncedEntries(db);
+      db.close();
+      return nonSynced.length > 0;
+    } catch {
+      // Can't tell for sure (e.g. this browser has no IndexedDB support
+      // at all) - fail toward NOT preserving indefinitely rather than
+      // leaking a worker/db forever; matches this store's pre-existing
+      // "IndexedDB unsupported" fallback posture elsewhere in this file.
+      return false;
+    }
+  }
+
+  /**
+   * Category 12, feature 4 data-integrity review fix - gives a worker's
+   * own in-flight flush a bounded chance (`DESTROY_GRACE_MS`) to finish
+   * normally (so `sendEntry` gets to record its real success/failure)
+   * before force-`terminate()`ing it, instead of an unconditional,
+   * synchronous `terminate()` the instant a leave/switch/sign-out is
+   * requested - `terminate()` aborts a worker's JS execution immediately
+   * per spec, silently killing any pending `fetch` and its handlers.
+   * Bounded even if the worker never acks (a wedged worker must not hang
+   * this store forever).
+   */
+  private gracefullyTerminate(worker: Worker): void {
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      worker.removeEventListener("message", handleAck);
+      worker.terminate();
+    };
+    const handleAck = (event: MessageEvent<TWorkerToMainMessage>) => {
+      if (event.data?.type === "destroyed") finish();
+    };
+    worker.addEventListener("message", handleAck);
+    timeoutId = setTimeout(finish, SyncEngineStore.DESTROY_GRACE_MS);
+    // `Worker.prototype.postMessage` takes `(message, transfer?)` - unlike
+    // `Window.postMessage`, a dedicated Worker's message channel has no
+    // `targetOrigin` parameter to provide (same justification as the
+    // worker's own `self.postMessage` in `sync-engine.worker.ts`).
+    // eslint-disable-next-line unicorn/require-post-message-target-origin
+    worker.postMessage({ type: "destroy" } satisfies TMainToWorkerMessage);
   }
 
   /** Exigence 10 - full purge on logout/session-expiry, across every
    * workspace this browser profile has ever cached, not just the
-   * currently active one. */
+   * currently active one. Deliberately does NOT apply `retireWorker`'s
+   * "preserve unsynced work" policy - exigence 10's shared-machine
+   * privacy guarantee overrides it here: a sign-out must not leave
+   * content behind, full stop, even at the cost of losing queued work. */
   async purgeOnSignOut(): Promise<void> {
     const workspaceIds = await listCachedWorkspaceIds();
     this.leaveWorkspace();
+    // Also tear down every workspace still background-draining (see
+    // `retireWorker`) BEFORE deleting its db below - `deleteWorkspaceDb`
+    // blocks until every open connection to that database closes, and a
+    // background worker still holds one open until terminated.
+    for (const entry of this.backgroundWorkers.values()) {
+      entry.worker.removeEventListener("message", entry.listener);
+      this.gracefullyTerminate(entry.worker);
+    }
+    this.backgroundWorkers.clear();
     await Promise.all(workspaceIds.map((id) => deleteWorkspaceDb(id)));
     runInAction(() => {
       this.currentWorkspaceId = undefined;
@@ -345,6 +543,16 @@ export class SyncEngineStore implements ISyncEngineStore {
 
   retryAllFailed(): void {
     this.postToWorker({ type: "retry-all-failed" });
+  }
+
+  /** Category 12, feature 4 data-integrity review fix - lets the UI
+   * clear a queue entry that can never succeed (most commonly: it
+   * targets an entity the user has since lost access to - see
+   * `SyncEngineCore.pullAccessibleIdsAndReport`'s own automatic version
+   * of this for the common case) instead of leaving it stuck forever
+   * with only a Retry button that will just fail again. */
+  discardEntry(id: string): void {
+    this.postToWorker({ type: "discard-entry", id });
   }
 
   touchProject(projectId: string): void {

@@ -23,8 +23,16 @@ import { useSyncEngine } from "@/hooks/store/use-sync-engine";
  */
 export const SyncIndicator = observer(function SyncIndicator() {
   const { t } = useTranslation();
-  const { isFeatureEnabled, pendingCount, failedEntries, queueEntries, conflicts, retryEntry, retryAllFailed } =
-    useSyncEngine();
+  const {
+    isFeatureEnabled,
+    pendingCount,
+    failedEntries,
+    queueEntries,
+    conflicts,
+    retryEntry,
+    retryAllFailed,
+    discardEntry,
+  } = useSyncEngine();
 
   if (!isFeatureEnabled) return null;
 
@@ -92,13 +100,27 @@ export const SyncIndicator = observer(function SyncIndicator() {
                     </span>
                   </div>
                   {entry.status === "failed" && (
-                    <button
-                      type="button"
-                      className="flex-shrink-0 text-12 font-medium text-accent-primary hover:underline"
-                      onClick={() => retryEntry(entry.id)}
-                    >
-                      {t("offline_sync.indicator.retry")}
-                    </button>
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        className="text-12 font-medium text-accent-primary hover:underline"
+                        onClick={() => retryEntry(entry.id)}
+                      >
+                        {t("offline_sync.indicator.retry")}
+                      </button>
+                      {/* Category 12, feature 4 data-integrity review fix
+                          - a failed entry (e.g. one targeting an entity
+                          the user has since lost access to) previously
+                          had no way to be cleared short of a full
+                          workspace/logout purge. */}
+                      <button
+                        type="button"
+                        className="text-12 font-medium text-tertiary hover:underline"
+                        onClick={() => discardEntry(entry.id)}
+                      >
+                        {t("offline_sync.indicator.discard")}
+                      </button>
+                    </div>
                   )}
                 </li>
               ))}

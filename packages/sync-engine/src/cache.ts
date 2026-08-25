@@ -115,6 +115,17 @@ export async function touchProjectViewed(db: TPlaneOfflineSyncDB, projectId: str
   await db.put("project_lru", { projectId, lastViewedAt: Date.now() });
 }
 
+/** Category 12, feature 4 data-integrity review fix - a direct, live
+ * re-check (queries `mutation_queue` itself, not a Set snapshot taken
+ * before the whole eviction pass started) used immediately before
+ * `evictLeastRecentlyViewedProjects` actually deletes a candidate
+ * project's cache below. See that function's own comment for why a
+ * once-before-the-loop `protectedProjectIds` Set alone isn't enough. */
+async function isProjectStillProtected(db: TPlaneOfflineSyncDB, projectId: string): Promise<boolean> {
+  const entries = await db.getAll("mutation_queue");
+  return entries.some((entry) => entry.status !== "synced" && entry.route.projectId === projectId);
+}
+
 /** Rough, cheap-enough size estimate - `JSON.stringify` length (UTF-16
  * code units, so *2 approximates bytes) summed across every mutable +
  * reference entity store. Not byte-exact (IndexedDB's own on-disk
@@ -169,7 +180,22 @@ export async function evictLeastRecentlyViewedProjects(
 
     // eslint-disable-next-line no-await-in-loop -- depends on evictions applied by prior iterations
     const candidates = await db.getAllFromIndex("project_lru", "by-last-viewed");
-    const nextCandidate = candidates.find((candidate) => !options.protectedProjectIds.has(candidate.projectId));
+    let nextCandidate: (typeof candidates)[number] | undefined;
+    for (const candidate of candidates) {
+      if (options.protectedProjectIds.has(candidate.projectId)) continue;
+      // Category 12, feature 4 data-integrity review fix - `enqueue`
+      // worker messages are dispatched with `void` (see
+      // `sync-engine.worker.ts`), so a NEW mutation for this exact
+      // project can commit to `mutation_queue` while this multi-await
+      // loop is already running, after the `protectedProjectIds` Set
+      // above was captured. Re-checking live, right before the delete
+      // below, closes that window instead of only ever consulting the
+      // stale snapshot.
+      // eslint-disable-next-line no-await-in-loop -- must verify the exact candidate about to be deleted, not the whole list up front
+      if (await isProjectStillProtected(db, candidate.projectId)) continue;
+      nextCandidate = candidate;
+      break;
+    }
     if (!nextCandidate) break; // nothing left that's safe to evict
 
     // eslint-disable-next-line no-await-in-loop -- one eviction step must fully land before the next iteration re-measures

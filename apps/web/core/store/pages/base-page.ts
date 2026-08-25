@@ -324,15 +324,50 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       () => this.name,
       (name) => {
         this.isSubmitting = "submitting";
+        // Captured BEFORE the service call, not read back out of `this`
+        // inside the `catch` below - by the time this reaction fires,
+        // `this.name`/`this.updated_at` already reflect the NEW value
+        // (the rename already happened optimistically in `updateTitle`),
+        // so these are the only place left to get the true pre-edit
+        // baseline `baseFieldValues`/`baseUpdatedAt` need (see
+        // `resolveFieldLevelConflicts`'s own docstring for why that
+        // baseline has to be the value from BEFORE this edit, not after).
+        const baseName = this.oldName;
+        const baseUpdatedAt = this.updated_at;
         this.services
           .update({
             name,
           })
-          .catch(() =>
+          .catch((error) => {
+            // Category 12, feature 4 data-integrity review fix - this
+            // reaction (like `makePublic`/`makePrivate`/`lock`/
+            // `updatePageLogo` below) previously always reverted on ANY
+            // error, including a plain offline network failure, and
+            // never queued anything - `update()` above is the only
+            // method actually wired to `enqueueUpdatePageMetadata`, but
+            // nothing in the app calls `update()` itself, so Page
+            // metadata offline support and exigence 9's conflict
+            // notification were unreachable dead code for every real
+            // mutation. Mirrors `update()`'s own catch-block semantics
+            // instead of routing through `update()` directly, since
+            // `update()`'s own body sends the PRE-mutation `asJSON`
+            // snapshot as the PATCH body (a separate, pre-existing
+            // upstream quirk unrelated to this fix) - reusing it here
+            // would regress the ONLINE rename path too.
+            if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+              rootStore.syncEngine.enqueueUpdatePageMetadata({
+                pageId: this.id,
+                projectId: this.project_ids?.[0],
+                payload: { name },
+                baseUpdatedAt: baseUpdatedAt ? new Date(baseUpdatedAt).toISOString() : undefined,
+                baseFieldValues: { name: baseName },
+              });
+              return;
+            }
             runInAction(() => {
               this.name = this.oldName;
-            })
-          )
+            });
+          })
           .finally(() =>
             runInAction(() => {
               this.isSubmitting = "submitted";
@@ -476,6 +511,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
    */
   makePublic = async ({ shouldSync = true }) => {
     const pageAccess = this.access;
+    const baseUpdatedAt = this.updated_at;
     runInAction(() => {
       this.access = EPageAccess.PUBLIC;
     });
@@ -486,6 +522,24 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
           access: EPageAccess.PUBLIC,
         });
       } catch (error) {
+        // Category 12, feature 4 data-integrity review fix - see the
+        // title-rename `reaction`'s own comment above for why this is
+        // wired directly here instead of through `update()`. Safe to
+        // queue via the generic page-metadata PATCH: `PageDetailSerializer`
+        // accepts `access` on a plain PATCH too (see
+        // `apps/api/plane/app/views/page/base.py`'s `partial_update`),
+        // subject to the same owner-only check the dedicated `/access/`
+        // action endpoint also enforces.
+        if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+          rootStore.syncEngine.enqueueUpdatePageMetadata({
+            pageId: this.id,
+            projectId: this.project_ids?.[0],
+            payload: { access: EPageAccess.PUBLIC },
+            baseUpdatedAt: baseUpdatedAt ? new Date(baseUpdatedAt).toISOString() : undefined,
+            baseFieldValues: { access: pageAccess },
+          });
+          return;
+        }
         runInAction(() => {
           this.access = pageAccess;
         });
@@ -499,6 +553,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
    */
   makePrivate = async ({ shouldSync = true }) => {
     const pageAccess = this.access;
+    const baseUpdatedAt = this.updated_at;
     runInAction(() => {
       this.access = EPageAccess.PRIVATE;
     });
@@ -509,6 +564,18 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
           access: EPageAccess.PRIVATE,
         });
       } catch (error) {
+        // Category 12, feature 4 data-integrity review fix - see
+        // `makePublic`'s own comment above.
+        if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+          rootStore.syncEngine.enqueueUpdatePageMetadata({
+            pageId: this.id,
+            projectId: this.project_ids?.[0],
+            payload: { access: EPageAccess.PRIVATE },
+            baseUpdatedAt: baseUpdatedAt ? new Date(baseUpdatedAt).toISOString() : undefined,
+            baseFieldValues: { access: pageAccess },
+          });
+          return;
+        }
         runInAction(() => {
           this.access = pageAccess;
         });
@@ -522,10 +589,31 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
    */
   lock = async ({ shouldSync = true }) => {
     const pageIsLocked = this.is_locked;
+    const baseUpdatedAt = this.updated_at;
     runInAction(() => (this.is_locked = true));
 
     if (shouldSync) {
       await this.services.lock().catch((error) => {
+        // Category 12, feature 4 data-integrity review fix - see the
+        // title-rename `reaction`'s own comment for the general "wired
+        // directly here, not through `update()`" rationale. Safe to
+        // queue via the generic page-metadata PATCH (`is_locked: true`)
+        // specifically because the backend's `partial_update` guard
+        // (`apps/api/plane/app/views/page/base.py`) only rejects a PATCH
+        // when the page is ALREADY locked - locking a currently-unlocked
+        // page is unaffected by that guard. `unlock()` below is NOT
+        // given the same treatment - see its own comment for why that
+        // direction cannot go through this same mechanism.
+        if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+          rootStore.syncEngine.enqueueUpdatePageMetadata({
+            pageId: this.id,
+            projectId: this.project_ids?.[0],
+            payload: { is_locked: true },
+            baseUpdatedAt: baseUpdatedAt ? new Date(baseUpdatedAt).toISOString() : undefined,
+            baseFieldValues: { is_locked: pageIsLocked },
+          });
+          return;
+        }
         runInAction(() => {
           this.is_locked = pageIsLocked;
         });
@@ -536,6 +624,30 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
 
   /**
    * @description unlock the page
+   *
+   * Category 12, feature 4 data-integrity review - deliberately NOT
+   * wired to `enqueueUpdatePageMetadata` (unlike `lock` above and the
+   * other metadata mutations in this file). The backend's generic PATCH
+   * (`PageViewSet.partial_update`, which is what the offline queue's
+   * `page` "update" operation always replays against - see
+   * `packages/sync-engine/src/request.ts`'s `buildRequest`)
+   * unconditionally rejects the request with `400 "Page is locked"`
+   * whenever `page.is_locked` is currently `True`, regardless of what
+   * fields the body actually contains. An offline-queued `{is_locked:
+   * false}` mutation can, BY DEFINITION, only ever be flushed while the
+   * page is still locked server-side - so it would 400 every single
+   * time it's sent, including every manual "Retry", with no path to ever
+   * actually succeed. Queuing it anyway would be worse than today's
+   * behavior: the user would see the optimistic unlock "stick" locally
+   * (per this queue's normal "keep the optimistic edit on a network
+   * failure" contract) while the real unlock silently, permanently never
+   * happens server-side. A correct fix needs the mutation queue to be
+   * able to target the dedicated `/unlock/` action route instead of the
+   * generic detail PATCH (a new operation/URL shape in
+   * `TMutationQueueEntry`/`buildRequest`), which is a real, separately-
+   * reviewable structural change, not a one-line wiring fix like the
+   * other five call sites in this file - see this package's own
+   * `README.md` "Known scope limits" section.
    */
   unlock = async ({ shouldSync = true }) => {
     const pageIsLocked = this.is_locked;
@@ -603,6 +715,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
 
   updatePageLogo = async (value: TChangeHandlerProps) => {
     const originalLogoProps = { ...this.logo_props };
+    const baseUpdatedAt = this.updated_at;
     try {
       let logoValue = {};
       if (value?.type === "emoji")
@@ -624,6 +737,21 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
         logo_props: logoProps,
       });
     } catch (error) {
+      // Category 12, feature 4 data-integrity review fix - see the
+      // title-rename `reaction`'s own comment above. Note this call site
+      // already sends only the changed field (`{logo_props}`), not
+      // `update()`'s own buggy pre-mutation `asJSON` snapshot, so the
+      // queued payload below is correct as-is.
+      if (isNetworkFailure(error) && this.id && rootStore.syncEngine.isFeatureEnabled) {
+        rootStore.syncEngine.enqueueUpdatePageMetadata({
+          pageId: this.id,
+          projectId: this.project_ids?.[0],
+          payload: { logo_props: this.logo_props },
+          baseUpdatedAt: baseUpdatedAt ? new Date(baseUpdatedAt).toISOString() : undefined,
+          baseFieldValues: { logo_props: originalLogoProps },
+        });
+        return;
+      }
       console.error("Error in updating page logo", error);
       runInAction(() => {
         this.logo_props = originalLogoProps as TLogoProps;

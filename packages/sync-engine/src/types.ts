@@ -118,9 +118,27 @@ export type TCachedEntity = Record<string, unknown> & {
    * tracked per-PROJECT in the `project_lru` store instead, see
    * exigence 13's own "least-recently-viewed PROJECT" wording). */
   _cachedAt: number;
-  /** Best-effort project scoping for LRU eviction bucketing - `undefined`
-   * for `page` records that are workspace-global (`is_global: true`),
-   * which are never evicted by the per-project LRU pass. */
+  /** Best-effort project scoping for LRU eviction bucketing.
+   *
+   * Category 12, feature 4 data-integrity review correction: this is
+   * `undefined` for every `page` record, project-scoped or not - NOT
+   * just for workspace-global (`is_global: true`) ones as an earlier
+   * version of this docstring claimed. `stampRecord` (`cache.ts`)
+   * derives this purely from a `project_id` field on the raw record, and
+   * the backend's page delta/create payloads never include one (`Page`
+   * has no scalar `project_id` column at all - it's linked to projects
+   * via a `projects` many-to-many, see `apps/api/plane/utils/
+   * offline_sync.py`'s `PAGE_FIELDS`/`get_accessible_page_queryset`), so
+   * no page record - regardless of which project(s) it actually belongs
+   * to - can ever be selected by `evictLeastRecentlyViewedProjects`'s
+   * by-project index lookup. Net effect: `page` records are simply never
+   * LRU-evicted today (fails toward "keep", not toward data loss, but
+   * does mean quota enforcement doesn't cover whatever share of the
+   * cache pages occupy). Fixing this for real would mean annotating a
+   * resolvable project id onto the page delta/create payload server-side
+   * (a Page can belong to more than one project, so even that would only
+   * ever be "a" project, not a canonical one) - a real, separately-
+   * reviewable backend change, not a client-side fix. */
   _projectId?: string;
 };
 
@@ -180,6 +198,11 @@ export type TMainToWorkerMessage =
   | { type: "flush-now" }
   | { type: "retry-entry"; id: string }
   | { type: "retry-all-failed" }
+  // Category 12, feature 4 data-integrity review fix - lets the "Syncing"
+  // panel clear a `failed` entry that can never succeed (e.g. it targets
+  // an entity the user has since lost access to) instead of leaving it
+  // stuck forever with only a Retry button that will just fail again.
+  | { type: "discard-entry"; id: string }
   | { type: "pull-delta-now" }
   | { type: "pull-accessible-ids-now" }
   | { type: "touch-project"; projectId: string }
@@ -196,7 +219,14 @@ export type TWorkerToMainMessage =
       deletedIds: Partial<Record<TMutableSyncEntity, string[]>>;
     }
   | { type: "accessible-ids-purged"; entityType: TSyncEntity; removedIds: string[] }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  // Category 12, feature 4 data-integrity review fix - acks a "destroy"
+  // request once any flush that was already in flight has actually
+  // finished (bounded by a grace timeout, see `SyncEngineCore.destroy`),
+  // so `SyncEngineStore.leaveWorkspace` can give a mid-`fetch` flush a
+  // real chance to complete normally instead of always killing it via an
+  // unconditional, immediate `worker.terminate()`.
+  | { type: "destroyed" };
 
 /** Bus name for cross-tab coordination (leader election notifications +
  * queue-changed signals) - exigence 12. One channel per workspace so two

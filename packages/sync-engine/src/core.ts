@@ -21,8 +21,10 @@ import { withFlushLock } from "./locks";
 import {
   deleteQueueEntry,
   computeBackoffMs,
+  discardMutationsForInaccessibleEntities,
   listQueueEntries,
   listSendableEntries,
+  resetStrandedInFlightEntries,
   retryAllFailed as retryAllFailedEntries,
   retryEntry as retryQueueEntry,
   setStatus,
@@ -70,6 +72,7 @@ export class SyncEngineCore {
   private deltaTimer: ReturnType<typeof setInterval> | undefined;
   private accessibleIdsTimer: ReturnType<typeof setInterval> | undefined;
   private flushInProgress = false;
+  private currentFlushPromise: Promise<void> | undefined;
 
   constructor(private readonly onMessage: (message: TWorkerToMainMessage) => void) {}
 
@@ -81,6 +84,14 @@ export class SyncEngineCore {
       void this.handleBroadcast(event.data);
     });
 
+    // Category 12, feature 4 data-integrity review fix - heal any entry
+    // this (or another tab's) worker left stranded at `in_flight` from a
+    // previous, interrupted lifetime BEFORE anything else runs, so it's
+    // eligible for the very first `flush()` below rather than being
+    // invisible forever - see `resetStrandedInFlightEntries`'s own
+    // docstring.
+    await resetStrandedInFlightEntries(this.db);
+
     this.flushTimer = setInterval(() => void this.flush(), FLUSH_INTERVAL_MS);
     this.deltaTimer = setInterval(() => void this.pullDeltaAndReport(), DELTA_POLL_INTERVAL_MS);
     this.accessibleIdsTimer = setInterval(
@@ -90,15 +101,42 @@ export class SyncEngineCore {
 
     this.onMessage({ type: "ready" });
     await this.emitQueueSnapshot();
-    void this.pullDeltaAndReport();
     void this.pullAccessibleIdsAndReport();
+    // Category 12, feature 4 data-integrity review fix - the delta pull
+    // is explicitly AWAITED before the first flush is even attempted
+    // (was previously `void`, fired concurrently with `flush()`). See
+    // `reconnectAndFlush`'s own docstring for the full race this closes;
+    // the same ordering applies on cold boot too, not just a genuine
+    // online-transition reconnect, since a fresh `init()` has no
+    // fresher-than-last-session local cache either.
+    await this.pullDeltaAndReport();
     void this.flush();
   }
 
-  destroy(): void {
+  /**
+   * Category 12, feature 4 data-integrity review fix - `graceMs` (0 by
+   * default, preserving the previous synchronous-teardown behavior for
+   * any other caller) lets `SyncEngineStore.leaveWorkspace` give a flush
+   * that's already mid-`fetch` a bounded chance to actually finish (and
+   * correctly record its own result via `sendEntry`'s normal
+   * success/failure handling) before this worker's `db`/`channel` get
+   * torn out from under it, instead of the timers being cleared but the
+   * in-flight request itself being abandoned at the exact moment the
+   * page/tab kills the worker. Even without this, a request interrupted
+   * mid-flight is no longer stranded forever either way - see
+   * `resetStrandedInFlightEntries` (`queue.ts`), called on every future
+   * `init()` for this workspace, in ANY tab.
+   */
+  async destroy(graceMs = 0): Promise<void> {
     if (this.flushTimer) clearInterval(this.flushTimer);
     if (this.deltaTimer) clearInterval(this.deltaTimer);
     if (this.accessibleIdsTimer) clearInterval(this.accessibleIdsTimer);
+    this.flushTimer = undefined;
+    this.deltaTimer = undefined;
+    this.accessibleIdsTimer = undefined;
+    if (graceMs > 0 && this.currentFlushPromise) {
+      await Promise.race([this.currentFlushPromise, new Promise<void>((resolve) => setTimeout(resolve, graceMs))]);
+    }
     this.channel?.close();
     this.db?.close();
   }
@@ -117,10 +155,44 @@ export class SyncEngineCore {
     if (isOnline && wasOffline) {
       // Exigence 6 - immediate flush attempt + accessible-ids re-check on
       // the reconnect transition, not just the next periodic tick.
-      void this.pullDeltaAndReport();
       void this.pullAccessibleIdsAndReport();
-      void this.flush();
+      void this.reconnectAndFlush();
     }
+  }
+
+  /**
+   * Category 12, feature 4 data-integrity review fix - the reconnect
+   * transition previously fired `pullDeltaAndReport()` and `flush()`
+   * concurrently (both `void`, neither awaited). `sendEntry`'s conflict
+   * check (`resolveFieldLevelConflicts`, in `conflict.ts`) compares
+   * against the LOCAL IndexedDB entity cache (`getEntity`), which only
+   * `pullDelta` ever refreshes with another user's remote edits - it has
+   * no freshness guarantee of its own relative to an in-flight `flush`.
+   * Concretely: user A edits Issue X's priority while offline at t1; user
+   * B edits the SAME field online at t2 (t2 > t1), a change A's client
+   * never learns about while offline. A reconnects at t3. If `flush`'s
+   * PATCH reaches the server before `pullDelta`'s (much larger, up-to-
+   * 7-entity-types) GET response has been applied to the local cache,
+   * `sendEntry` reads a stale pre-offline snapshot (`updated_at = t0 <
+   * t1`), `conflict.ts`'s `serverUpdatedAt <= entry.baseUpdatedAt` guard
+   * is satisfied on that stale read, NO conflict is detected, and A's
+   * stale value silently clobbers B's genuinely newer edit - with no
+   * toast, no sync-panel entry, nothing (the backend does no
+   * server-side timestamp check of its own - see this feature's own
+   * `updated_at`-based LWW design, not OCC). Awaiting the delta pull
+   * before starting the flush narrows this window a lot for the exact
+   * "just reconnected" transition this method exists for (and for cold
+   * boot too, see `init()`) - it does NOT fully close it (a remote edit
+   * could still land in the gap between the delta response and the
+   * PATCH, or `pullDelta` could itself race a concurrent write) - a
+   * fully airtight fix needs either a server-side conditional check or a
+   * live per-entity freshness re-fetch immediately before each
+   * conflict-checked PATCH, which is out of this pass's scope; see the
+   * data-integrity review report for the full writeup.
+   */
+  private async reconnectAndFlush(): Promise<void> {
+    await this.pullDeltaAndReport();
+    void this.flush();
   }
 
   async retryEntry(id: string): Promise<void> {
@@ -135,6 +207,22 @@ export class SyncEngineCore {
     await retryAllFailedEntries(this.db);
     await this.emitQueueSnapshot();
     void this.flush();
+  }
+
+  /** Category 12, feature 4 data-integrity review fix - manual escape
+   * hatch for a `failed` entry that can never succeed on retry (most
+   * commonly: it targets an entity the user has since lost access to -
+   * see `pullAccessibleIdsAndReport`'s own automatic version of this for
+   * the common case, and this finding's own repro for why a manual
+   * fallback is still worth having for everything else). Deliberately
+   * unconditional on `status` - discarding a `pending`/`in_flight` entry
+   * the user has simply decided to abandon is a legitimate use of the
+   * same action, not just for `failed` ones. */
+  async discardEntry(id: string): Promise<void> {
+    if (!this.db) return;
+    await deleteQueueEntry(this.db, id);
+    postBroadcast(this.channel, { type: "queue-changed" });
+    await this.emitQueueSnapshot();
   }
 
   /** On-demand equivalent of the periodic delta timer - exposed for a
@@ -200,11 +288,31 @@ export class SyncEngineCore {
     if (!this.db || !this.config || !this.isOnline) return;
     try {
       const purged = await pullAccessibleIds(this.db, this.config, ALL_ENTITIES);
+      let discardedAnyMutation = false;
       for (const [entityType, removedIds] of Object.entries(purged)) {
-        if (removedIds && removedIds.length > 0) {
-          this.onMessage({ type: "accessible-ids-purged", entityType: entityType as TSyncEntity, removedIds });
+        if (!removedIds || removedIds.length === 0) continue;
+        this.onMessage({ type: "accessible-ids-purged", entityType: entityType as TSyncEntity, removedIds });
+        // Category 12, feature 4 data-integrity review fix - a mutation
+        // queued against one of these now-inaccessible entities can
+        // never succeed (the next flush attempt would just get a 403
+        // and land permanently `failed`, per exigence 4 - see this
+        // finding's own repro): discard it here too, not just the
+        // read-cache row `pullAccessibleIds` already purged above.
+        // `db` is narrowed non-undefined by the outer guard; captured
+        // into a local so the closure below doesn't need a repeated
+        // non-null assertion.
+        if (MUTABLE_ENTITY_PROCESSING_ORDER.includes(entityType as TMutableSyncEntity)) {
+          const db = this.db;
+          // eslint-disable-next-line no-await-in-loop -- bounded to at most 3 mutable entity types per poll, sequential is fine
+          const discardedIds = await discardMutationsForInaccessibleEntities(
+            db,
+            entityType as TMutableSyncEntity,
+            removedIds
+          );
+          if (discardedIds.length > 0) discardedAnyMutation = true;
         }
       }
+      if (discardedAnyMutation) await this.emitQueueSnapshot();
     } catch (error) {
       this.onMessage({ type: "error", message: `accessible-ids pull failed: ${String(error)}` });
     }
@@ -213,10 +321,23 @@ export class SyncEngineCore {
   async flush(): Promise<void> {
     if (!this.db || !this.config || !this.isOnline || this.flushInProgress) return;
     this.flushInProgress = true;
+    const flushPromise = (async () => {
+      try {
+        await withFlushLock(this.config!.workspaceId, () => this.drainQueue());
+      } finally {
+        this.flushInProgress = false;
+      }
+    })();
+    // Category 12, feature 4 data-integrity review fix - tracked so
+    // `destroy(graceMs)` can wait for a flush that's already mid-`fetch`
+    // to actually finish before this worker's `db`/`channel` are torn
+    // down, instead of always abandoning it immediately - see
+    // `destroy`'s own docstring.
+    this.currentFlushPromise = flushPromise;
     try {
-      await withFlushLock(this.config.workspaceId, () => this.drainQueue());
+      await flushPromise;
     } finally {
-      this.flushInProgress = false;
+      if (this.currentFlushPromise === flushPromise) this.currentFlushPromise = undefined;
     }
   }
 
