@@ -249,6 +249,11 @@ class ModuleSerializer(DynamicBaseSerializer):
             "backlog_issues",
             "created_at",
             "updated_at",
+            # Category 12, feature 4 ("Moteur de synchronisation
+            # local-first/offline pour le web") - `updated_at` was already
+            # exposed above; `updated_by` was missing, needed alongside it
+            # for the offline sync client's last-write-wins comparison.
+            "updated_by",
             "archived_at",
         ]
         read_only_fields = fields

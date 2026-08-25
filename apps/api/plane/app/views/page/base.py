@@ -48,6 +48,7 @@ from plane.db.models import (
     UserRecentVisit,
 )
 from plane.utils.error_codes import ERROR_CODES
+from plane.utils.idempotency import check_idempotency_key, store_idempotent_response
 
 # Local imports
 from ..base import BaseAPIView, BaseViewSet
@@ -146,6 +147,14 @@ class PageViewSet(BaseViewSet):
         )
 
     def create(self, request, slug, project_id):
+        # Category 12, feature 4 ("Moteur de synchronisation local-first/
+        # offline pour le web") - see the identical comment in
+        # `IssueViewSet.create` (plane/app/views/issue/base.py).
+        workspace_id = Project.objects.only("id", "workspace_id").get(pk=project_id).workspace_id
+        idempotent_response = check_idempotency_key(request, workspace_id=workspace_id, endpoint="page.create")
+        if idempotent_response is not None:
+            return idempotent_response
+
         serializer = PageSerializer(
             data=request.data,
             context={
@@ -167,7 +176,9 @@ class PageViewSet(BaseViewSet):
             )
             page = self.get_queryset().get(pk=serializer.data["id"])
             serializer = PageDetailSerializer(page)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+            store_idempotent_response(request, workspace_id=workspace_id, endpoint="page.create", response=response)
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self, request, slug, project_id, page_id):

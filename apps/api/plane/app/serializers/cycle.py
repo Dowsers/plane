@@ -78,6 +78,13 @@ class CycleSerializer(BaseSerializer):
             "external_id",
             "progress_snapshot",
             "logo_props",
+            # Category 12, feature 4 ("Moteur de synchronisation
+            # local-first/offline pour le web") - exposed so the offline
+            # sync client can do last-write-wins comparison against its
+            # locally-cached copy of this (read-only, reference-data-only
+            # in this feature's scope) entity.
+            "updated_at",
+            "updated_by",
             # meta fields
             "is_favorite",
             "total_issues",

@@ -374,8 +374,15 @@ class LabelSerializer(BaseSerializer):
             "project_id",
             "workspace_id",
             "sort_order",
+            # Category 12, feature 4 ("Moteur de synchronisation
+            # local-first/offline pour le web") - exposed so the offline
+            # sync client can do last-write-wins comparison against its
+            # locally-cached copy of this (read-only, reference-data-only
+            # in this feature's scope) entity.
+            "updated_at",
+            "updated_by",
         ]
-        read_only_fields = ["workspace", "project"]
+        read_only_fields = ["workspace", "project", "updated_at", "updated_by"]
 
     def validate_name(self, value):
         project_id = self.context.get("project_id")

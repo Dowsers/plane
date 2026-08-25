@@ -72,6 +72,7 @@ from plane.db.models import (
     WorkspaceMember,
 )
 from plane.utils.error_codes import ERROR_CODES
+from plane.utils.idempotency import check_idempotency_key, store_idempotent_response
 from plane.utils.page_collection import collection_descendant_ids, validate_collection_depth
 
 from ..base import BaseAPIView, BaseViewSet
@@ -213,6 +214,16 @@ class WorkspacePageViewSet(BaseViewSet):
 
     def create(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
+
+        # Category 12, feature 4 ("Moteur de synchronisation local-first/
+        # offline pour le web") - see the identical comment in
+        # `IssueViewSet.create` (plane/app/views/issue/base.py).
+        idempotent_response = check_idempotency_key(
+            request, workspace_id=workspace.id, endpoint="workspace_page.create"
+        )
+        if idempotent_response is not None:
+            return idempotent_response
+
         collection_id = request.data.get("collection_id") or None
 
         if collection_id:
@@ -259,7 +270,11 @@ class WorkspacePageViewSet(BaseViewSet):
             )
             page = self.get_queryset().get(pk=serializer.data["id"])
             serializer = WorkspacePageDetailSerializer(page)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+            store_idempotent_response(
+                request, workspace_id=workspace.id, endpoint="workspace_page.create", response=response
+            )
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, slug, page_id):

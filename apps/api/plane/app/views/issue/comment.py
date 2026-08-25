@@ -24,6 +24,7 @@ from plane.bgtasks.ai_chat_assistant_task import handle_comment_mention
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.utils.host import base_host
+from plane.utils.idempotency import check_idempotency_key, store_idempotent_response
 from plane.bgtasks.webhook_task import model_activity
 
 
@@ -81,6 +82,16 @@ class IssueCommentViewSet(BaseViewSet):
                 {"error": "You are not allowed to comment on the issue"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Category 12, feature 4 ("Moteur de synchronisation local-first/
+        # offline pour le web") - see the identical comment in
+        # `IssueViewSet.create` (plane/app/views/issue/base.py).
+        idempotent_response = check_idempotency_key(
+            request, workspace_id=project.workspace_id, endpoint="issue_comment.create"
+        )
+        if idempotent_response is not None:
+            return idempotent_response
+
         serializer = IssueCommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(project_id=project_id, issue_id=issue_id, actor=request.user)
@@ -119,7 +130,11 @@ class IssueCommentViewSet(BaseViewSet):
             # this workspace/project. See
             # plane.bgtasks.ai_chat_assistant_task.handle_comment_mention.
             handle_comment_mention.delay(comment_id=str(serializer.data["id"]))
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+            store_idempotent_response(
+                request, workspace_id=project.workspace_id, endpoint="issue_comment.create", response=response
+            )
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @allow_permission(allowed_roles=[ROLE.ADMIN], creator=True, model=IssueComment)

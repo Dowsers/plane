@@ -224,6 +224,8 @@ from .page.workspace import (
 from .search.base import GlobalSearchEndpoint, SearchEndpoint
 from .search.issue import IssueSearchEndpoint
 
+from .sync import WorkspaceSyncEndpoint, WorkspaceSyncAccessibleIdsEndpoint
+
 
 from .external.base import (
     GPTIntegrationEndpoint,

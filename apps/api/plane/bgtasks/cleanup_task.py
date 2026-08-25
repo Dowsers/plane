@@ -22,6 +22,7 @@ from pymongo.operations import InsertOne
 # Module imports
 from plane.db.models import (
     EmailNotificationLog,
+    IdempotencyKey,
     PageVersion,
     APIActivityLog,
     IssueDescriptionVersion,
@@ -661,3 +662,21 @@ def purge_expired_saml_assertion_replays():
     # a genuine reclaim-the-table purge, not a soft delete.
     deleted_count, _ = SAMLAssertionReplay.all_objects.filter(expires_at__lt=timezone.now()).delete()
     logger.info(f"Purged {deleted_count} expired SAML assertion replay entr(y/ies)")
+
+
+@shared_task
+def purge_expired_idempotency_keys():
+    """Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    plane-selfhost), feature 4 - "Moteur de synchronisation local-first/
+    offline pour le web", exigence 8 (Idempotency-Key replay support).
+    Daily sweep of `IdempotencyKey` rows past their own `expires_at` (see
+    `plane.utils.idempotency.IDEMPOTENCY_KEY_TTL_DAYS`) - most rows are
+    actually purged eagerly, inline, the moment a stale one is found not
+    to match on a lookup (see `plane.utils.idempotency.
+    check_idempotency_key`); this daily sweep only catches the remainder
+    - keys nobody ever attempted to replay again after they went stale.
+    `all_objects` (real hard delete), same choice every other purge task
+    in this module makes, for the same reason: this is a genuine
+    reclaim-the-table purge, not a soft delete."""
+    deleted_count, _ = IdempotencyKey.all_objects.filter(expires_at__lt=timezone.now()).delete()
+    logger.info(f"Purged {deleted_count} expired idempotency key(s)")

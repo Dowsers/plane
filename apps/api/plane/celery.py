@@ -160,6 +160,16 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.cleanup_task.purge_expired_saml_assertion_replays",
         "schedule": crontab(hour=4, minute=45),  # UTC 04:45, after the other daily cleanup tasks
     },
+    # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    # plane-selfhost), feature 4 "Moteur de synchronisation local-first/
+    # offline pour le web" - `IdempotencyKey` retention (most rows are
+    # actually purged eagerly on next-lookup, see
+    # `plane.utils.idempotency.check_idempotency_key`; this is the
+    # backstop for keys nobody ever replayed again).
+    "check-every-day-to-purge-expired-idempotency-keys": {
+        "task": "plane.bgtasks.cleanup_task.purge_expired_idempotency_keys",
+        "schedule": crontab(hour=5, minute=0),  # UTC 05:00, after the other daily cleanup tasks
+    },
 }
 
 

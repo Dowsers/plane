@@ -80,6 +80,7 @@ from plane.utils.grouper import (
     issue_queryset_grouper,
 )
 from plane.utils.host import base_host
+from plane.utils.idempotency import check_idempotency_key, store_idempotent_response
 from plane.utils.issue_filters import issue_filters
 from plane.utils.label_group import enforce_label_group_exclusivity
 from plane.utils.order_queryset import order_issue_queryset
@@ -435,6 +436,18 @@ class IssueViewSet(BaseViewSet):
     def create(self, request, slug, project_id):
         project = Project.objects.get(pk=project_id)
 
+        # Category 12, feature 4 ("Moteur de synchronisation local-first/
+        # offline pour le web") - short-circuits and returns the original
+        # response verbatim if this exact creation was already processed
+        # under this `Idempotency-Key` (offline sync worker replaying a
+        # queued mutation after a reconnect). No-op if the header is
+        # absent. See `plane.utils.idempotency` module docstring.
+        idempotent_response = check_idempotency_key(
+            request, workspace_id=project.workspace_id, endpoint="issue.create"
+        )
+        if idempotent_response is not None:
+            return idempotent_response
+
         serializer = IssueCreateSerializer(
             data=request.data,
             context={
@@ -560,7 +573,11 @@ class IssueViewSet(BaseViewSet):
                 user_id=request.user.id,
                 is_creating=True,
             )
-            return Response(issue, status=status.HTTP_201_CREATED)
+            response = Response(issue, status=status.HTTP_201_CREATED)
+            store_idempotent_response(
+                request, workspace_id=project.workspace_id, endpoint="issue.create", response=response
+            )
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], creator=True, model=Issue)
