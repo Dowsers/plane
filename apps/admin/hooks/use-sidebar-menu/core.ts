@@ -4,13 +4,21 @@
  * See the LICENSE file for details.
  */
 
-import { Image, BrainCog, Cog, Mail, ShieldCheck } from "lucide-react";
+import { Bell, Image, BrainCog, Cog, Mail, ShieldCheck } from "lucide-react";
 // plane imports
 import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
 import type { TSidebarMenuItem } from "./types";
 
-export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image" | "security";
+export type TCoreSidebarMenuKey =
+  | "general"
+  | "email"
+  | "workspace"
+  | "authentication"
+  | "ai"
+  | "image"
+  | "security"
+  | "notifications";
 
 export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem> = {
   general: {
@@ -56,5 +64,13 @@ export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem>
     name: "Security audit log",
     description: "Review instance-level configuration changes.",
     href: `/security/`,
+  },
+  // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+  // plane-selfhost), feature 3 ("Notifications push en self-hosted").
+  notifications: {
+    Icon: Bell,
+    name: "Notifications",
+    description: "Configure Web Push (VAPID) for this instance.",
+    href: `/notifications/`,
   },
 };

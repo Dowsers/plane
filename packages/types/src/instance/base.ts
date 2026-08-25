@@ -10,6 +10,7 @@ import type {
   TInstanceEmailConfigurationKeys,
   TInstanceImageConfigurationKeys,
   TInstanceAuthenticationKeys,
+  TInstancePushNotificationConfigurationKeys,
   TInstanceSecurityConfigurationKeys,
   TInstanceWorkspaceConfigurationKeys,
   TCoreLoginMediums,
@@ -79,6 +80,18 @@ export interface IInstanceConfig {
   // `GET /api/instances/configurations/` surface apps/admin's own god-mode
   // toggle reads/writes.
   is_scim_enabled: boolean;
+  // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+  // plane-selfhost), feature 3 ("Notifications push en self-hosted") -
+  // both surfaced on this PUBLIC/`AllowAny` payload (not just god-mode)
+  // because a signed-in user's own browser needs them to decide whether
+  // to even offer the "enable push" toggle (Profile > Notifications) and,
+  // if so, to call `pushManager.subscribe({applicationServerKey:
+  // vapid_public_key})` - see `plane.license.api.views.instance.
+  // InstanceEndpoint.get`. Neither is a secret; `vapid_private_key` and
+  // the FCM/APNs credentials are god-mode-only
+  // (`GET /api/instances/configurations/push/`, TPushNotificationConfig).
+  is_push_notifications_enabled: boolean;
+  vapid_public_key: string | undefined;
 }
 
 export interface IInstanceAdmin {
@@ -98,6 +111,7 @@ export type TInstanceConfigurationKeys =
   | TInstanceEmailConfigurationKeys
   | TInstanceImageConfigurationKeys
   | TInstanceAuthenticationKeys
+  | TInstancePushNotificationConfigurationKeys
   | TInstanceSecurityConfigurationKeys
   | TInstanceWorkspaceConfigurationKeys;
 

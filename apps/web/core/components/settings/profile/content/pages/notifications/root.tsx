@@ -16,6 +16,7 @@ import { UserService } from "@/services/user.service";
 // local imports
 import { DigestOverviewCard } from "./digest-overview";
 import { NotificationsProfileSettingsForm } from "./email-notification-form";
+import { PushNotificationSection } from "./push-notification-section";
 
 const userService = new UserService();
 
@@ -39,6 +40,7 @@ export const NotificationsProfileSettings = observer(function NotificationsProfi
       <div className="mt-7">
         <NotificationsProfileSettingsForm data={data} />
       </div>
+      <PushNotificationSection data={data} />
       <DigestOverviewCard />
     </div>
   );

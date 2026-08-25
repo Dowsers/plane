@@ -209,6 +209,28 @@ export interface IUserEmailNotificationSettings {
   page_edits: boolean;
   page_mentions: boolean;
   page_comments: boolean;
+  // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+  // plane-selfhost), feature 3 ("Notifications push en self-hosted") -
+  // mirrors `UserNotificationPreference.push_*`/`quiet_hours_*`
+  // (apps/api/plane/db/models/notification.py). `push_enabled` is the
+  // master switch (default `false`, opt-in); the 5 `push_*` event toggles
+  // are a channel fully independent from the email fields above (exigence
+  // 3), default `true` once the master switch itself is on. Same
+  // `PATCH /api/users/me/notification-preferences/` endpoint as every
+  // other field on this interface.
+  push_enabled: boolean;
+  push_property_change: boolean;
+  push_state_change: boolean;
+  push_comment: boolean;
+  push_mention: boolean;
+  push_issue_completed: boolean;
+  // Quiet hours - `quiet_hours_start`/`quiet_hours_end` are `"HH:MM:SS"`
+  // strings (DRF `TimeField`, ISO 8601), both required together when
+  // `quiet_hours_enabled` is `true` (server-validated). Uses the user's
+  // existing `user_timezone` (see `IUser`) rather than a separate field.
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string | null;
+  quiet_hours_end: string | null;
 }
 
 export type TProfileViews = "assigned" | "created" | "subscribed";

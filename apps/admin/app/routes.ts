@@ -29,6 +29,10 @@ export default [
     route("ai", "./(all)/(dashboard)/ai/page.tsx"),
     route("image", "./(all)/(dashboard)/image/page.tsx"),
     route("security", "./(all)/(dashboard)/security/page.tsx"),
+    // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+    // plane-selfhost), feature 3 ("Notifications push en self-hosted") -
+    // god-mode Web Push (VAPID) configuration.
+    route("notifications", "./(all)/(dashboard)/notifications/page.tsx"),
   ]),
   // Catch-all route for 404 handling - must be last
   route("*", "./components/404.tsx"),

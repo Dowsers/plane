@@ -17,5 +17,6 @@ export function useSidebarMenu(): TSidebarMenuItem[] {
     coreSidebarMenuLinks.ai,
     coreSidebarMenuLinks.image,
     coreSidebarMenuLinks.security,
+    coreSidebarMenuLinks.notifications,
   ];
 }

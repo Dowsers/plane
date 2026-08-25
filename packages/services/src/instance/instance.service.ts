@@ -12,11 +12,15 @@ import type {
   IInstanceAdmin,
   IInstanceConfiguration,
   IInstanceInfo,
+  TGenerateVapidKeysResponse,
   TInstanceSAMLConfiguration,
   TInstanceSAMLConfigurationCreatePayload,
   TInstanceSAMLConfigurationUpdatePayload,
   TPage,
   TPaginatedResponse,
+  TPushNotificationConfig,
+  TPushNotificationConfigUpdatePayload,
+  TPushNotificationTestResult,
   TSAMLTestConnectionResponse,
   TSAMLVerifiedDomain,
   TSAMLVerifiedDomainCreatePayload,
@@ -254,6 +258,67 @@ export class InstanceService extends APIService {
    * something to `fetch()`. */
   async testSamlConnection(configId: string): Promise<TSAMLTestConnectionResponse> {
     return this.post(`/api/instances/admin/saml-configurations/${configId}/test-connection/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
+   * plane-selfhost), feature 3 ("Notifications push en self-hosted") -
+   * god-mode admin config for VAPID/FCM/APNs credentials
+   * (`plane.license.api.views.push_notification`). Folded onto this same
+   * `InstanceService` rather than a new sibling class, matching the SAML
+   * methods' own precedent above (god-mode-only, instance-scoped, no
+   * mobx store needed - see this fork's own `authentication/saml/page.tsx`
+   * for the equivalent local-`useSWR` frontend pattern).
+   *
+   * Never returns `vapid_private_key`/`fcm_service_account_json`/
+   * `apns_auth_key` - see `TPushNotificationConfig`'s own doc comment.
+   */
+  async getPushNotificationConfig(): Promise<TPushNotificationConfig> {
+    return this.get("/api/instances/configurations/push/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Only send a secret key here when the admin actually typed a new
+   * value - see `TPushNotificationConfigUpdatePayload`'s own doc comment
+   * for why an omitted secret is NOT the same as an empty one. */
+  async updatePushNotificationConfig(data: TPushNotificationConfigUpdatePayload): Promise<TPushNotificationConfig> {
+    return this.patch("/api/instances/configurations/push/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Generates+stores a fresh VAPID keypair server-side (exigence 9) -
+   * overwrites any previously configured VAPID keys, which silently
+   * breaks push for every already-subscribed browser until it
+   * re-subscribes (see `GenerateVapidKeysEndpoint`'s own docstring) - a
+   * confirmation prompt before calling this is this method's caller's
+   * responsibility. */
+  async generateVapidKeys(): Promise<TGenerateVapidKeysResponse> {
+    return this.post("/api/instances/configurations/push/generate-vapid-keys/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Sends a REAL test push, synchronously, to the calling admin's own
+   * active Web Push subscriptions (exigence 9's "envoyer un test"). A
+   * non-2xx response still carries the same `{success, results}` shape
+   * (`PushNotificationTestEndpoint` returns 400 when every subscription
+   * failed, or when there is no VAPID key/no active subscription at all)
+   * - callers should read `error?.response?.data` (or catch and inspect
+   * the thrown payload) rather than only trusting a resolved promise. */
+  async sendTestPushNotification(): Promise<TPushNotificationTestResult> {
+    return this.post("/api/instances/configurations/push/test/")
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
