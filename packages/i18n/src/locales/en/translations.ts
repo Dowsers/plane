@@ -2191,6 +2191,29 @@ export default {
       toggle_label: "Enable Initiatives",
     },
   },
+  teams: {
+    label: "Teams",
+    create_team: "Create team",
+    update_team: "Update team",
+    name: "Name",
+    description: "Description",
+    members: "Members",
+    projects: "Projects",
+    delete_confirm: {
+      title: "Delete team",
+      description: "Are you sure you want to delete this team? This action cannot be undone.",
+    },
+    toast: {
+      create_success: "Team created successfully",
+      update_success: "Team updated successfully",
+      delete_success: "Team deleted successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    empty_state: {
+      title: "No teams yet",
+      description: "Create a team to group members and projects together.",
+    },
+  },
   roadmap: {
     label: "Roadmap",
     empty_state: {

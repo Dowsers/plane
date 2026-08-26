@@ -78,6 +78,11 @@ export const coreRoutes: RouteConfigEntry[] = [
           ),
         ]),
 
+        // Teams
+        layout("./(all)/[workspaceSlug]/(projects)/teams/layout.tsx", [
+          route(":workspaceSlug/teams", "./(all)/[workspaceSlug]/(projects)/teams/page.tsx"),
+        ]),
+
         // Wiki (category 10, feature 4 - "Wiki workspace en GA") - a
         // top-level workspace-scoped section, sibling to Initiatives/
         // Projects, matching the `/${workspaceSlug}/wiki/${pageId}` URL

@@ -6,7 +6,7 @@
 
 import React from "react";
 import { observer } from "mobx-react";
-import { Map, Target } from "lucide-react";
+import { Map, Target, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
@@ -54,6 +54,13 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
       href: `/${workspaceSlug}/active-cycles/`,
       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
       Icon: CycleIcon,
+    },
+    {
+      key: "teams",
+      labelTranslationKey: "sidebar.teams",
+      href: `/${workspaceSlug}/teams/`,
+      access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+      Icon: Users,
     },
     // Opt-in nav item - hidden unless the workspace admin has turned on
     // Initiatives under Settings > Features (default off, see
