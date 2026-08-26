@@ -104,6 +104,15 @@ services:
       args:
         DOCKER_BUILDKIT: 1
     restart: always
+    env_file:
+      - ./apps/api/.env
+    environment:
+      API_BASE_URL: http://api:8000
+      WEB_BASE_URL: ${WEB_URL:-http://plane}
+      LIVE_BASE_URL: ${WEB_URL:-http://plane}
+      LIVE_BASE_PATH: /live
+    depends_on:
+      - plane-redis
 
   plane-db:
     container_name: plane-db
@@ -142,7 +151,7 @@ services:
 
   plane-minio:
     container_name: plane-minio
-    image: minio/minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
     restart: always
     command: server /export --console-address ":9090"
     volumes:
@@ -161,6 +170,8 @@ services:
     ports:
       - ${LISTEN_HTTP_PORT}:80
       - ${LISTEN_HTTPS_PORT}:443
+    env_file:
+      - .env
     environment:
       FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
       BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
