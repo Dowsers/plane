@@ -65,3 +65,10 @@ from .invite import WorkspaceInviteSerializer
 from .member import ProjectMemberSerializer
 from .sticky import StickySerializer
 from .figma import FigmaFileLinkSerializer, FigmaFileLinkCreateSerializer
+from .team import (
+    TeamSerializer,
+    TeamDetailSerializer,
+    TeamLiteSerializer,
+    TeamMemberSerializer,
+    TeamProjectSerializer,
+)

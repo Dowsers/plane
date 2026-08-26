@@ -565,6 +565,69 @@ class Team(BaseModel):
         ordering = ("-created_at",)
 
 
+class TeamMember(BaseModel):
+    """Team member model - links users to teams"""
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name="team_members"
+    )
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_teams"
+    )
+    role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, default=15)
+
+    class Meta:
+        unique_together = ["team", "member", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "member"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="team_member_unique_team_member_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "Team Member"
+        verbose_name_plural = "Team Members"
+        db_table = "team_members"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.member.email} <{self.team.name}>"
+
+
+class TeamProject(BaseModel):
+    """Links teams to projects"""
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name="team_projects"
+    )
+    project = models.ForeignKey(
+        "db.Project",
+        on_delete=models.CASCADE,
+        related_name="project_teams"
+    )
+
+    class Meta:
+        unique_together = ["team", "project", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "project"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="team_project_unique_team_project_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "Team Project"
+        verbose_name_plural = "Team Projects"
+        db_table = "team_projects"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.project.name} <{self.team.name}>"
+
+
 class WorkspaceTheme(BaseModel):
     workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="themes")
     name = models.CharField(max_length=300)

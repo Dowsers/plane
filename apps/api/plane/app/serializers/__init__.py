@@ -272,3 +272,10 @@ from .rbac import (
     PermissionSchemeItemInputSerializer,
     WorkspaceRoleSerializer,
 )
+
+from .team import (
+    TeamSerializer,
+    TeamDetailSerializer,
+    TeamMemberSerializer,
+    TeamProjectSerializer,
+)
