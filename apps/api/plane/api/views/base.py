@@ -158,6 +158,7 @@ class BaseAPIView(TimezoneMixin, GenericAPIView, ReadReplicaControlMixin, BasePa
             return response
         except Exception as e:
             if isinstance(e, IntegrityError):
+                log_exception(e)
                 return Response(
                     {"error": "The payload is not valid"},
                     status=status.HTTP_400_BAD_REQUEST,
