@@ -83,6 +83,8 @@ import type { ISyncEngineStore } from "./sync-engine.store";
 import { SyncEngineStore } from "./sync-engine.store";
 import type { ITeamStore } from "./team.store";
 import { TeamStore } from "./team.store";
+import type { ITeamspaceStore } from "./teamspace.store";
+import { TeamspaceStore } from "./teamspace.store";
 import type { IThemeStore } from "./theme.store";
 import { ThemeStore } from "./theme.store";
 import type { IUserStore } from "./user";
@@ -101,6 +103,7 @@ export class CoreRootStore {
   cycleFilter: ICycleFilterStore;
   initiative: IInitiativeStore;
   team: ITeamStore;
+  teamspace: ITeamspaceStore;
   milestone: IMilestoneStore;
   roadmap: IRoadmapStore;
   module: IModuleStore;
@@ -148,6 +151,7 @@ export class CoreRootStore {
     this.cycleFilter = new CycleFilterStore(this);
     this.initiative = new InitiativeStore(this);
     this.team = new TeamStore(this);
+    this.teamspace = new TeamspaceStore(this);
     this.milestone = new MilestoneStore(this);
     this.roadmap = new RoadmapStore(this);
     this.module = new ModulesStore(this);
@@ -198,6 +202,7 @@ export class CoreRootStore {
     this.cycleFilter = new CycleFilterStore(this);
     this.initiative = new InitiativeStore(this);
     this.team = new TeamStore(this);
+    this.teamspace = new TeamspaceStore(this);
     this.milestone = new MilestoneStore(this);
     this.roadmap = new RoadmapStore(this);
     this.module = new ModulesStore(this);

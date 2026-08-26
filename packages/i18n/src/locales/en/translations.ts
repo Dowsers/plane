@@ -2214,6 +2214,29 @@ export default {
       description: "Create a team to group members and projects together.",
     },
   },
+  teamspaces: {
+    label: "Teamspaces",
+    create_teamspace: "Create teamspace",
+    update_teamspace: "Update teamspace",
+    name: "Name",
+    description: "Description",
+    members: "Members",
+    projects: "Projects",
+    delete_confirm: {
+      title: "Delete teamspace",
+      description: "Are you sure you want to delete this teamspace? This action cannot be undone.",
+    },
+    toast: {
+      create_success: "Teamspace created successfully",
+      update_success: "Teamspace updated successfully",
+      delete_success: "Teamspace deleted successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    empty_state: {
+      title: "No teamspaces yet",
+      description: "Create a teamspace to group members and projects together.",
+    },
+  },
   roadmap: {
     label: "Roadmap",
     empty_state: {

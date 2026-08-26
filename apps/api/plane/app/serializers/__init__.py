@@ -279,3 +279,12 @@ from .team import (
     TeamMemberSerializer,
     TeamProjectSerializer,
 )
+
+from .teamspace import (
+    TeamspaceSerializer,
+    TeamspaceDetailSerializer,
+    TeamspaceMemberSerializer,
+    TeamspaceProjectSerializer,
+    TeamspacePageSerializer,
+    TeamspaceViewSerializer,
+)

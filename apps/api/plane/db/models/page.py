@@ -73,6 +73,22 @@ class Page(BaseModel):
         related_name="pages",
     )
 
+    # Category 13 (docs/feature-specs/13-teamspaces.md in plane-selfhost),
+    # feature 3, exigence 3 - optional rattachement to a Teamspace,
+    # mutually exclusive with the `projects` M2M above (enforced at the
+    # serializer layer, see `TeamspacePageSerializer.validate` in
+    # `plane.app.serializers.teamspace` - not a DB constraint, matching
+    # the spec's explicit "validee en serializer, pas necessairement en
+    # contrainte SQL" note). A Page with neither `project` nor `teamspace`
+    # set remains a valid personal/workspace page, unchanged from today.
+    teamspace = models.ForeignKey(
+        "db.Teamspace",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="teamspace_pages",
+    )
+
     class Meta:
         verbose_name = "Page"
         verbose_name_plural = "Pages"

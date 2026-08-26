@@ -62,6 +62,17 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
       Icon: Users,
     },
+    // Category 13 (docs/feature-specs/13-teamspaces.md in plane-selfhost),
+    // feature 1, exigence 9 - deliberately separate/parallel nav entry
+    // from "teams" above (Teamspace is a distinct, parallel object to the
+    // pre-existing Team feature, not a replacement for it).
+    {
+      key: "teamspaces",
+      labelTranslationKey: "sidebar.teamspaces",
+      href: `/${workspaceSlug}/teamspaces/`,
+      access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+      Icon: Users,
+    },
     // Opt-in nav item - hidden unless the workspace admin has turned on
     // Initiatives under Settings > Features (default off, see
     // docs/feature-specs/03-projects-roadmaps-initiatives.md in

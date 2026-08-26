@@ -114,7 +114,7 @@ from .session import Session
 from .social_connection import SocialLoginConnection
 from .state import State, StateGroup, DEFAULT_STATES
 from .user import Account, Profile, User, BotTypeEnum
-from .view import IssueView, ViewSubscription
+from .view import IssueView, ViewSubscription, TeamspaceView
 from .webhook import Webhook, WebhookLog
 from .workspace import (
     Workspace,
@@ -123,6 +123,12 @@ from .workspace import (
     Team,
     TeamMember,
     TeamProject,
+    Teamspace,
+    TeamspaceMember,
+    TeamspaceProject,
+    TEAMSPACE_LEAD,
+    TEAMSPACE_MEMBER,
+    TEAMSPACE_ROLE_CHOICES,
     WorkspaceMemberInvite,
     WorkspaceTheme,
     WorkspaceUserProperties,

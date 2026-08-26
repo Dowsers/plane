@@ -23,6 +23,7 @@ from .search import urlpatterns as search_urls
 from .state import urlpatterns as state_urls
 from .sync import urlpatterns as sync_urls
 from .team import urlpatterns as team_urls
+from .teamspace import urlpatterns as teamspace_urls
 from .user import urlpatterns as user_urls
 from .views import urlpatterns as view_urls
 from .webhook import urlpatterns as webhook_urls
@@ -67,6 +68,7 @@ urlpatterns = [
     *state_urls,
     *sync_urls,
     *team_urls,
+    *teamspace_urls,
     *user_urls,
     *view_urls,
     *workspace_urls,

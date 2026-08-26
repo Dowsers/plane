@@ -628,6 +628,135 @@ class TeamProject(BaseModel):
         return f"{self.project.name} <{self.team.name}>"
 
 
+
+# Category 13 (docs/feature-specs/13-teamspaces.md in plane-selfhost),
+# feature 1 - role scale for TeamspaceMember. Deliberately a SEPARATE scale
+# from the pre-existing `ROLE_CHOICES` (Admin=20/Member=15/Guest=5) used by
+# Team/TeamMember above: a Teamspace only ever has two roles (Lead/Member),
+# and reusing the exact numeric values 20/15 here is intentional so the
+# "highest role wins" comparison idiom used elsewhere in this codebase
+# (`role__in=[Admin, Member]`, `role=20`) still reads naturally, but the two
+# scales are NOT interchangeable - a TeamspaceMember role is never compared
+# against workspace/project Admin/Member/Guest constants, and vice versa.
+TEAMSPACE_LEAD = 20
+TEAMSPACE_MEMBER = 15
+TEAMSPACE_ROLE_CHOICES = ((TEAMSPACE_LEAD, "Lead"), (TEAMSPACE_MEMBER, "Member"))
+
+
+class Teamspace(BaseModel):
+    """Category 13 (docs/feature-specs/13-teamspaces.md in
+    plane-selfhost), feature 1 - a cross-project grouping of members,
+    deliberately a separate/parallel object to the pre-existing `Team`
+    model above (not a merge, not a rename - see the spec's framing note).
+    """
+
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, related_name="workspace_teamspaces"
+    )
+    name = models.CharField(max_length=255, verbose_name="Teamspace Name")
+    description = models.TextField(verbose_name="Teamspace Description", blank=True)
+    logo_props = models.JSONField(default=dict)
+
+    def __str__(self):
+        """Return name of the teamspace"""
+        return f"{self.name} <{self.workspace.name}>"
+
+    class Meta:
+        unique_together = ["workspace", "name", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="teamspace_unique_workspace_name_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "Teamspace"
+        verbose_name_plural = "Teamspaces"
+        db_table = "teamspaces"
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["workspace"], name="teamspace_workspace_idx"),
+        ]
+
+
+class TeamspaceMember(BaseModel):
+    """Links users to teamspaces - role scale is `TEAMSPACE_ROLE_CHOICES`
+    (Lead/Member), not the workspace/project `ROLE_CHOICES` used by
+    `TeamMember` above."""
+
+    teamspace = models.ForeignKey(
+        Teamspace,
+        on_delete=models.CASCADE,
+        related_name="teamspace_members",
+    )
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_teamspaces",
+    )
+    role = models.PositiveSmallIntegerField(
+        choices=TEAMSPACE_ROLE_CHOICES, default=TEAMSPACE_MEMBER
+    )
+
+    class Meta:
+        unique_together = ["teamspace", "member", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["teamspace", "member"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="teamspace_member_unique_teamspace_member_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "Teamspace Member"
+        verbose_name_plural = "Teamspace Members"
+        db_table = "teamspace_members"
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["teamspace"], name="teamspace_member_teamspace_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.member.email} <{self.teamspace.name}>"
+
+
+class TeamspaceProject(BaseModel):
+    """Links teamspaces to projects (pivot table) - a project may be
+    attached to several Teamspaces at once, and attachment never implies
+    any change to `ProjectMember`-based project access (see spec exigence
+    3)."""
+
+    teamspace = models.ForeignKey(
+        Teamspace,
+        on_delete=models.CASCADE,
+        related_name="teamspace_projects",
+    )
+    project = models.ForeignKey(
+        "db.Project",
+        on_delete=models.CASCADE,
+        related_name="project_teamspaces",
+    )
+
+    class Meta:
+        unique_together = ["teamspace", "project", "deleted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["teamspace", "project"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="teamspace_project_unique_teamspace_project_when_deleted_at_null",
+            )
+        ]
+        verbose_name = "Teamspace Project"
+        verbose_name_plural = "Teamspace Projects"
+        db_table = "teamspace_projects"
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["teamspace"], name="teamspace_proj_teamspace_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.project.name} <{self.teamspace.name}>"
+
+
 class WorkspaceTheme(BaseModel):
     workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="themes")
     name = models.CharField(max_length=300)

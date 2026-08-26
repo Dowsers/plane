@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import models
 
 # Module import
+from .base import BaseModel
 from .workspace import WorkspaceBaseModel
 from plane.utils.issue_filters import issue_filters
 
@@ -148,3 +149,61 @@ class ViewSubscription(WorkspaceBaseModel):
 
     def __str__(self):
         return f"{self.subscriber} -> {self.issue_view}"
+
+
+class TeamspaceView(BaseModel):
+    """Category 13 (docs/feature-specs/13-teamspaces.md in
+    plane-selfhost), feature 3, question ouverte 1 - a dedicated
+    Teamspace-scoped view model, on the same schema as `IssueView` above
+    (same `query`/`filters`/`display_filters`/`display_properties` shape,
+    maximal reuse of the existing serialization/validation logic already
+    written for `IssueView`), but with a `teamspace` FK instead of
+    `project`/`workspace` - a Teamspace view's query applies to the union
+    of issues of all projects attached to the Teamspace via
+    `TeamspaceProject` (same scope as the section 2 dashboard), so it has
+    no single `project`/`workspace` of its own to inherit from
+    `WorkspaceBaseModel`.
+    """
+
+    teamspace = models.ForeignKey(
+        "db.Teamspace",
+        on_delete=models.CASCADE,
+        related_name="teamspace_views",
+    )
+    name = models.CharField(max_length=255, verbose_name="View Name")
+    description = models.TextField(verbose_name="View Description", blank=True)
+    query = models.JSONField(verbose_name="View Query", default=dict)
+    filters = models.JSONField(default=dict)
+    display_filters = models.JSONField(default=get_default_display_filters)
+    display_properties = models.JSONField(default=get_default_display_properties)
+    access = models.PositiveSmallIntegerField(default=1, choices=((0, "Private"), (1, "Public")))
+    sort_order = models.FloatField(default=65535)
+    logo_props = models.JSONField(default=dict)
+    owned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="teamspace_views"
+    )
+    is_locked = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True)
+
+    class Meta:
+        verbose_name = "Teamspace View"
+        verbose_name_plural = "Teamspace Views"
+        db_table = "teamspace_views"
+        ordering = ("-created_at",)
+
+    def save(self, *args, **kwargs):
+        query_params = self.filters
+        self.query = issue_filters(query_params, "POST") if query_params else {}
+
+        if self._state.adding:
+            largest_sort_order = TeamspaceView.objects.filter(teamspace=self.teamspace).aggregate(
+                largest=models.Max("sort_order")
+            )["largest"]
+            if largest_sort_order is not None:
+                self.sort_order = largest_sort_order + 10000
+
+        super(TeamspaceView, self).save(*args, **kwargs)
+
+    def __str__(self):
+        """Return name of the Teamspace View"""
+        return f"{self.name} <{self.teamspace.name}>"

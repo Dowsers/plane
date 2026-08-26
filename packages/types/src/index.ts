@@ -71,6 +71,7 @@ export * from "./sla";
 export * from "./state";
 export * from "./stickies";
 export * from "./team";
+export * from "./teamspace";
 export * from "./timezone";
 export * from "./users";
 export * from "./utils";
