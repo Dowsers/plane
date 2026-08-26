@@ -16,6 +16,7 @@ from django.utils import timezone
 # Module imports
 from plane.license.models import Instance, InstanceEdition
 from plane.license.bgtasks.tracer import instance_traces
+from plane.utils.telemetry import telemetry_disabled_by_env
 
 
 class Command(BaseCommand):
@@ -72,6 +73,7 @@ class Command(BaseCommand):
                 last_checked_at=timezone.now(),
                 is_test=os.environ.get("IS_TEST", "0") == "1",
                 edition=InstanceEdition.PLANE_COMMUNITY.value,
+                is_telemetry_enabled=not telemetry_disabled_by_env(),
             )
 
             self.stdout.write(self.style.SUCCESS("Instance registered"))
@@ -84,9 +86,12 @@ class Command(BaseCommand):
             instance.latest_version = latest_version
             instance.is_test = os.environ.get("IS_TEST", "0") == "1"
             instance.edition = InstanceEdition.PLANE_COMMUNITY.value
+            if telemetry_disabled_by_env():
+                instance.is_telemetry_enabled = False
             instance.save()
 
         # Call the instance traces task
-        instance_traces.delay()
+        if not telemetry_disabled_by_env():
+            instance_traces.delay()
 
         return

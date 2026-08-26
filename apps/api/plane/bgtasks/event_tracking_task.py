@@ -21,7 +21,19 @@ from plane.utils.analytics_events import USER_INVITED_TO_WORKSPACE, WORKSPACE_DE
 logger = logging.getLogger("plane.worker")
 
 
+def _analytics_disabled_by_env():
+    """DISABLE_ANALYTICS (docs/AIR_GAPPED_DEPLOYMENT.md in plane-selfhost)
+    is an env-only kill switch, checked ahead of get_configuration_value's
+    own DB-backed InstanceConfiguration lookup below - so a PostHog key an
+    admin has stored in the instance settings UI still can't reactivate
+    analytics on a deployment where this is set."""
+    return os.environ.get("DISABLE_ANALYTICS", "0").lower() in ("1", "true", "yes")
+
+
 def posthogConfiguration():
+    if _analytics_disabled_by_env():
+        return None, None
+
     POSTHOG_API_KEY, POSTHOG_HOST = get_configuration_value(
         [
             {

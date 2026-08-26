@@ -172,9 +172,18 @@ class InstanceEndpoint(BaseAPIView):
         # Slack client
         data["slack_client_id"] = SLACK_CLIENT_ID
 
-        # Posthog
-        data["posthog_api_key"] = POSTHOG_API_KEY
-        data["posthog_host"] = POSTHOG_HOST
+        # Posthog - DISABLE_ANALYTICS (docs/AIR_GAPPED_DEPLOYMENT.md in
+        # plane-selfhost) is an env-only kill switch, checked ahead of any
+        # admin-configured InstanceConfiguration value above. This endpoint
+        # is the ONLY way apps/web/apps/space learn these keys (they use
+        # them to init the client-side PostHog SDK, which would otherwise
+        # send events directly from the browser, bypassing the backend's
+        # own DISABLE_ANALYTICS guard in plane.bgtasks.event_tracking_task)
+        # so this is the one place that has to withhold them, not just
+        # skip sending server-side events.
+        analytics_disabled = os.environ.get("DISABLE_ANALYTICS", "0").lower() in ("1", "true", "yes")
+        data["posthog_api_key"] = None if analytics_disabled else POSTHOG_API_KEY
+        data["posthog_host"] = None if analytics_disabled else POSTHOG_HOST
 
         # Unsplash
         data["has_unsplash_configured"] = bool(UNSPLASH_ACCESS_KEY)

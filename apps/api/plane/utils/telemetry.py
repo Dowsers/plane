@@ -18,9 +18,23 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 _TRACER_PROVIDER = None
 
 
+def telemetry_disabled_by_env():
+    """DISABLE_TELEMETRY (docs/AIR_GAPPED_DEPLOYMENT.md in plane-selfhost)
+    is an env-only kill switch for the OpenTelemetry traces this fork
+    otherwise sends to telemetry.plane.so. Checked ahead of (and
+    independently from) Instance.is_telemetry_enabled, which is only
+    admin-panel-configurable and has no env var backing it - this is what
+    makes the env var actually take effect without someone having to log
+    in and flip that toggle by hand after every deploy."""
+    return os.environ.get("DISABLE_TELEMETRY", "0").lower() in ("1", "true", "yes")
+
+
 def init_tracer():
     """Initialize OpenTelemetry with proper shutdown handling"""
     global _TRACER_PROVIDER
+
+    if telemetry_disabled_by_env():
+        return None
 
     # If already initialized, return existing provider
     if _TRACER_PROVIDER is not None:

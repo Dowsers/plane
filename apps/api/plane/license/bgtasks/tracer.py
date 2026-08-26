@@ -20,11 +20,14 @@ from plane.db.models import (
     Page,
     WorkspaceMember,
 )
-from plane.utils.telemetry import init_tracer, shutdown_tracer
+from plane.utils.telemetry import init_tracer, shutdown_tracer, telemetry_disabled_by_env
 
 
 @shared_task
 def instance_traces():
+    if telemetry_disabled_by_env():
+        return
+
     try:
         init_tracer()
         # Check if the instance is registered
