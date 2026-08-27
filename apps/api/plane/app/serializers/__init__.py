@@ -172,6 +172,14 @@ from .project_template import (
     ProjectTemplateListSerializer,
     ProjectTemplateSerializer,
 )
+from .customer import (
+    CustomerSerializer,
+    CustomerListSerializer,
+    CustomerRequestSerializer,
+    CustomerRequestDetailSerializer,
+    CustomerRequestIssueSerializer,
+    IssueCustomerRequestSerializer,
+)
 
 from .analytic import AnalyticViewSerializer
 

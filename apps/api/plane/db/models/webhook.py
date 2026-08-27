@@ -128,6 +128,16 @@ class Webhook(BaseModel):
     # itself is carried in the payload's own `action` field.
     issue_worklog = models.BooleanField(default=False)
     timesheet_period = models.BooleanField(default=False)
+    # docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers")
+    # in plane-selfhost. Same "one column per activity stream" rationale as
+    # `issue_worklog`/`timesheet_period` above: `customer` covers
+    # created/updated/deleted on `Customer` itself, `customer_request`
+    # covers created/updated/deleted on `CustomerRequest` plus the
+    # added/removed sub-events on its `CustomerRequestIssue` links - the
+    # sub-event is carried in the payload's own `action` field, not by
+    # which column let it through the filter.
+    customer = models.BooleanField(default=False)
+    customer_request = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
     # Populated only by a test-send (never by a real event delivery via

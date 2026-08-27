@@ -34,6 +34,7 @@ from .project_template import (
     ProjectTemplateMember,
     ProjectTemplateIssue,
 )
+from .customer import Customer, CustomerRequest, CustomerRequestIssue
 from .intake_channel import (
     IntakeChannel,
     InboundEmailAlias,

@@ -322,6 +322,13 @@ from .project_template.base import (
     ProjectTemplateCreateProjectEndpoint,
 )
 
+from .customer.base import CustomerViewSet
+from .customer.request import (
+    CustomerRequestViewSet,
+    CustomerRequestIssueViewSet,
+    IssueCustomerRequestsEndpoint,
+)
+
 from .analytic.base import (
     AnalyticsEndpoint,
     AnalyticViewViewset,
