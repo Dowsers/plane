@@ -10,6 +10,7 @@ import { Ellipsis } from "lucide-react";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
 import {
+  WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS,
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS,
   WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS,
   WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS_LINKS,
@@ -22,6 +23,7 @@ import { cn } from "@plane/utils";
 import { SidebarNavItem } from "@/components/sidebar/sidebar-navigation";
 // store hooks
 import { useAppTheme } from "@/hooks/store/use-app-theme";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 import useLocalStorage from "@/hooks/use-local-storage";
 import {
   usePersonalNavigationPreferences,
@@ -39,6 +41,7 @@ export const SidebarMenuItems = observer(function SidebarMenuItems() {
 
   // store hooks
   const { isExtendedSidebarOpened, toggleExtendedSidebar } = useAppTheme();
+  const { currentWorkspace } = useWorkspace();
   // hooks
   const { preferences: personalPreferences } = usePersonalNavigationPreferences();
   const { preferences: workspacePreferences } = useWorkspaceNavigationPreferences();
@@ -82,23 +85,28 @@ export const SidebarMenuItems = observer(function SidebarMenuItems() {
     return [...items, ...personalItems];
   }, [personalPreferences]);
 
-  const sortedNavigationItems = useMemo(
-    () =>
-      WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS.map((item) => {
+  const sortedNavigationItems = useMemo(() => {
+    // Initiatives is opt-in (docs/feature-specs/03-projects-roadmaps-initiatives.md
+    // in plane-selfhost, Settings > Features toggle, default off) - not part
+    // of the static _LINKS array since IWorkspaceSidebarNavigationItem has no
+    // per-item conditional-render hook beyond role-based `access`.
+    const items = currentWorkspace?.is_initiatives_enabled
+      ? [...WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS, WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["initiatives"]]
+      : WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS;
+
+    return items
+      .map((item) => {
         const preference = workspacePreferences.items[item.key];
-        return {
-          ...item,
-          sort_order: preference ? preference.sort_order : 0,
-        };
-      }).sort((a, b) => a.sort_order - b.sort_order),
-    [workspacePreferences]
-  );
+        return Object.assign({}, item, { sort_order: preference ? preference.sort_order : 0 });
+      })
+      .toSorted((a, b) => a.sort_order - b.sort_order);
+  }, [workspacePreferences, currentWorkspace?.is_initiatives_enabled]);
 
   return (
     <>
       <div className="flex flex-col gap-0.5">
-        {filteredStaticNavigationItems.map((item, _index) => (
-          <SidebarItem key={`static_${_index}`} item={item} />
+        {filteredStaticNavigationItems.map((item) => (
+          <SidebarItem key={item.key} item={item} />
         ))}
       </div>
       <Disclosure as="div" className="flex flex-col" defaultOpen={!!isWorkspaceMenuOpen}>
@@ -148,11 +156,11 @@ export const SidebarMenuItems = observer(function SidebarMenuItems() {
           {isWorkspaceMenuOpen && (
             <Disclosure.Panel as="div" className="flex flex-col gap-0.5" static>
               <>
-                {WORKSPACE_SIDEBAR_STATIC_PINNED_NAVIGATION_ITEMS_LINKS.map((item, _index) => (
-                  <SidebarItem key={`static_${_index}`} item={item} />
+                {WORKSPACE_SIDEBAR_STATIC_PINNED_NAVIGATION_ITEMS_LINKS.map((item) => (
+                  <SidebarItem key={item.key} item={item} />
                 ))}
-                {sortedNavigationItems.map((item, _index) => (
-                  <SidebarItem key={`dynamic_${_index}`} item={item} />
+                {sortedNavigationItems.map((item) => (
+                  <SidebarItem key={item.key} item={item} />
                 ))}
                 <SidebarNavItem>
                   <button

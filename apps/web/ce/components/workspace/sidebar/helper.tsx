@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { Clock } from "lucide-react";
+import { Building2, Clock, Target, Users } from "lucide-react";
 import {
   AnalyticsIcon,
   ArchiveIcon,
@@ -43,5 +43,11 @@ export const getSidebarNavigationItemIcon = (key: string, className: string = ""
       return <MultipleStickyIcon className={cn("size-4 flex-shrink-0", className)} />;
     case "timesheets":
       return <Clock className={cn("size-4 flex-shrink-0", className)} />;
+    case "teamspaces":
+      return <Users className={cn("size-4 flex-shrink-0", className)} />;
+    case "customers":
+      return <Building2 className={cn("size-4 flex-shrink-0", className)} />;
+    case "initiatives":
+      return <Target className={cn("size-4 flex-shrink-0", className)} />;
   }
 };

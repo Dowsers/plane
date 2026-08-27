@@ -232,6 +232,40 @@ export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS: Record<string, IWorkspa
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
     highlight: (pathname: string, url: string) => pathname.includes(url),
   },
+  // docs/feature-specs/13-teamspaces.md in plane-selfhost, feature 1,
+  // exigence 9 - was previously only wired into the dead
+  // SidebarWorkspaceMenu component (never mounted), leaving this nav
+  // entry unreachable despite the feature being fully built.
+  teamspaces: {
+    key: "teamspaces",
+    labelTranslationKey: "teamspaces.label",
+    href: `/teamspaces/`,
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+    highlight: (pathname: string, url: string) => pathname.includes(url),
+  },
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
+  // feature 3, exigence 1) in plane-selfhost - same unreachable-nav-entry
+  // bug as teamspaces above.
+  customers: {
+    key: "customers",
+    labelTranslationKey: "customers.label",
+    href: `/customers/`,
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+    highlight: (pathname: string, url: string) => pathname.includes(url),
+  },
+  // docs/feature-specs/03-projects-roadmaps-initiatives.md in
+  // plane-selfhost - opt-in, hidden unless the workspace admin has
+  // turned on Initiatives under Settings > Features (default off).
+  // SidebarMenuItems filters this entry out when
+  // currentWorkspace.is_initiatives_enabled is falsy, since this type
+  // has no per-item conditional-render hook beyond role-based `access`.
+  initiatives: {
+    key: "initiatives",
+    labelTranslationKey: "initiatives.label",
+    href: `/initiatives/`,
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+    highlight: (pathname: string, url: string) => pathname.includes(url),
+  },
 };
 
 export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS: IWorkspaceSidebarNavigationItem[] = [
@@ -239,6 +273,8 @@ export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS: IWorkspaceSidebar
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["analytics"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["archives"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["timesheets"],
+  WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["teamspaces"],
+  WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["customers"],
 ];
 
 export const WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS: Record<string, IWorkspaceSidebarNavigationItem> = {
