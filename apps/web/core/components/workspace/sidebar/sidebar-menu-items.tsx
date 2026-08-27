@@ -94,12 +94,12 @@ export const SidebarMenuItems = observer(function SidebarMenuItems() {
       ? [...WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS, WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["initiatives"]]
       : WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS;
 
-    return items
-      .map((item) => {
-        const preference = workspacePreferences.items[item.key];
-        return Object.assign({}, item, { sort_order: preference ? preference.sort_order : 0 });
-      })
-      .toSorted((a, b) => a.sort_order - b.sort_order);
+    const mapped = items.map((item) => {
+      const preference = workspacePreferences.items[item.key];
+      return Object.assign({}, item, { sort_order: preference ? preference.sort_order : 0 });
+    });
+    // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array, no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
+    return mapped.sort((a, b) => a.sort_order - b.sort_order);
   }, [workspacePreferences, currentWorkspace?.is_initiatives_enabled]);
 
   return (
