@@ -69,6 +69,8 @@ import type { IProjectPageStore } from "./pages/project-page.store";
 import { ProjectPageStore } from "./pages/project-page.store";
 import type { IWorkspacePageStore } from "./pages/workspace-page.store";
 import { WorkspacePageStore } from "./pages/workspace-page.store";
+import type { IPageTemplateStore } from "./page-template.store";
+import { PageTemplateStore } from "./page-template.store";
 import type { IProjectRootStore } from "./project";
 import { ProjectRootStore } from "./project";
 import type { IProjectTemplateStore } from "./project-template.store";
@@ -111,6 +113,7 @@ export class CoreRootStore {
   roadmap: IRoadmapStore;
   module: IModuleStore;
   projectTemplate: IProjectTemplateStore;
+  pageTemplate: IPageTemplateStore;
   projectUpdate: IProjectUpdateStore;
   moduleFilter: IModuleFilterStore;
   projectView: IProjectViewStore;
@@ -162,6 +165,7 @@ export class CoreRootStore {
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
     this.projectTemplate = new ProjectTemplateStore(this);
+    this.pageTemplate = new PageTemplateStore(this);
     this.projectUpdate = new ProjectUpdateStore(this);
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);
@@ -214,6 +218,7 @@ export class CoreRootStore {
     this.moduleFilter = new ModuleFilterStore(this);
     this.projectView = new ProjectViewStore(this);
     this.projectTemplate = new ProjectTemplateStore(this);
+    this.pageTemplate = new PageTemplateStore(this);
     this.projectUpdate = new ProjectUpdateStore(this);
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);

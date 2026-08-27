@@ -33,6 +33,7 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   webhooks: Webhook,
   features: Sparkles,
   "project-templates": LayoutTemplate,
+  "page-templates": LayoutTemplate,
   "sla-policies": Timer,
   api: Braces,
   "api-explorer": Compass,

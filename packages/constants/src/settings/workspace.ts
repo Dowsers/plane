@@ -70,6 +70,13 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/project-templates/`,
   },
+  "page-templates": {
+    key: "page-templates",
+    i18n_label: "page_templates.settings.title",
+    href: `/settings/page-templates`,
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/page-templates/`,
+  },
   "sla-policies": {
     key: "sla-policies",
     i18n_label: "sla_policies.settings.title",
@@ -177,6 +184,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["billing-and-plans"],
     WORKSPACE_SETTINGS["export"],
     WORKSPACE_SETTINGS["project-templates"],
+    WORKSPACE_SETTINGS["page-templates"],
     WORKSPACE_SETTINGS["sla-policies"],
     WORKSPACE_SETTINGS["ai"],
     WORKSPACE_SETTINGS["security"],

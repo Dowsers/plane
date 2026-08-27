@@ -49,6 +49,7 @@ export * from "./milestone";
 export * from "./module";
 export * from "./nl-filter-assistant";
 export * from "./page";
+export * from "./page-template";
 export * from "./payment";
 export * from "./pragmatic";
 export * from "./project";

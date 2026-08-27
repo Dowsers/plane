@@ -160,6 +160,7 @@ export const PageNode = observer(function PageNode(props: Props) {
             "copy-link",
             "toggle-lock",
             "toggle-access",
+            "save-as-template",
             "move-to-project",
             "archive-restore",
             "delete",

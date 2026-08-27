@@ -25,6 +25,7 @@ export type TWorkspaceSettingsTabs =
   | "webhooks"
   | "features"
   | "project-templates"
+  | "page-templates"
   | "sla-policies"
   | "api"
   | "api-explorer"

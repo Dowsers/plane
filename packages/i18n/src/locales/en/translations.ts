@@ -2358,6 +2358,39 @@ export default {
       description: "Save an existing, well-organized project as a template to standardize how new projects start.",
     },
   },
+  page_templates: {
+    label: "Page templates",
+    save_as_template: "Save as template",
+    use_template: "Use template",
+    start_from_scratch: "Blank page",
+    start_from_template: "Start from a template",
+    name: "Template name",
+    usage_count: "Used {count} times",
+    save_modal: {
+      title: "Save as template",
+      description: "Give this template a name so your team can find and reuse it later.",
+      submit: "Save",
+    },
+    delete_confirm: {
+      title: "Delete page template",
+      description:
+        "Are you sure you want to delete this page template? Pages already created from it are not affected.",
+    },
+    toast: {
+      save_success: "Page template saved successfully",
+      duplicate_success: "Page template duplicated successfully",
+      delete_success: "Page template deleted successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    settings: {
+      title: "Page templates",
+      description: "Reusable blueprints (title, content, icon) for new Pages.",
+    },
+    empty_state: {
+      title: "No page templates yet",
+      description: "Save an existing, well-structured Page as a template to reuse it across projects and teamspaces.",
+    },
+  },
   permission_bundles: {
     label: "Permission bundles",
     settings: {

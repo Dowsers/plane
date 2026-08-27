@@ -7,9 +7,10 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
-import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen } from "lucide-react";
+import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen, LayoutTemplate } from "lucide-react";
 // constants
-import { EPageAccess } from "@plane/constants";
+import { EPageAccess, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 // plane editor
 import { LinkIcon, CopyIcon, LockIcon, NewTabIcon, ArchiveIcon, TrashIcon, GlobeIcon } from "@plane/propel/icons";
 // plane ui
@@ -18,7 +19,9 @@ import { ContextMenu, CustomMenu } from "@plane/ui";
 // components
 import { cn } from "@plane/utils";
 import { DeletePageModal } from "@/components/pages/modals/delete-page-modal";
+import { SaveAsTemplateModal } from "@/components/pages/modals/save-as-template-modal";
 // hooks
+import { useUserPermissions } from "@/hooks/store/user";
 import { usePageOperations } from "@/hooks/use-page-operations";
 // plane web components
 import { MovePageModal } from "@/plane-web/components/pages";
@@ -37,6 +40,7 @@ export type TPageActions =
   | "open-in-new-tab"
   | "copy-link"
   | "make-a-copy"
+  | "save-as-template"
   | "archive-restore"
   | "delete"
   | "version-history"
@@ -60,8 +64,17 @@ export const PageActions = observer(function PageActions(props: Props) {
   // states
   const [deletePageModal, setDeletePageModal] = useState(false);
   const [movePageModal, setMovePageModal] = useState(false);
+  const [saveAsTemplateModal, setSaveAsTemplateModal] = useState(false);
   // params
   const { workspaceSlug } = useParams();
+  // i18n
+  const { t } = useTranslation();
+  // permissions - Category 14, feature 14c, question ouverte 1 (section 1):
+  // "Save as template" is gated the same as PageTemplate creation itself
+  // (workspace Admin), independently of the page-level role required to
+  // edit/view the page (exigence 7, section 2).
+  const { allowPermissions } = useUserPermissions();
+  const canCurrentUserSaveAsTemplate = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
   // page flag
   const { isMovePageEnabled } = usePageFlag({
     workspaceSlug: workspaceSlug?.toString() ?? "",
@@ -128,6 +141,15 @@ export const PageActions = observer(function PageActions(props: Props) {
           shouldRender: canCurrentUserDuplicatePage,
         },
         {
+          key: "save-as-template",
+          action: () => {
+            setSaveAsTemplateModal(true);
+          },
+          title: t("page_templates.save_as_template"),
+          icon: LayoutTemplate,
+          shouldRender: canCurrentUserSaveAsTemplate,
+        },
+        {
           key: "archive-restore",
           action: () => {
             pageOperations.toggleArchive();
@@ -166,11 +188,13 @@ export const PageActions = observer(function PageActions(props: Props) {
       canCurrentUserChangeAccess,
       archived_at,
       canCurrentUserDuplicatePage,
+      canCurrentUserSaveAsTemplate,
       canCurrentUserArchivePage,
       canCurrentUserDeletePage,
       canCurrentUserMovePage,
       isMovePageEnabled,
       pageOperations,
+      t,
     ]
   );
   // arrange options
@@ -191,6 +215,7 @@ export const PageActions = observer(function PageActions(props: Props) {
         page={page}
         storeType={storeType}
       />
+      <SaveAsTemplateModal isOpen={saveAsTemplateModal} onClose={() => setSaveAsTemplateModal(false)} page={page} />
       {parentRef && <ContextMenu parentRef={parentRef} items={arrangedOptions} />}
       <CustomMenu placement="bottom-end" optionsClassName="max-h-[90vh]" ellipsis closeOnSelect>
         {arrangedOptions.map((item) => {
