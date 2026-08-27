@@ -87,6 +87,7 @@ from .base import BaseAPIView
 from plane.utils.host import base_host
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.bgtasks.webhook_task import model_activity
+from plane.bgtasks.intake_email_task import send_issue_comment_email_reply
 from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.app.permissions import ROLE
 from plane.utils.workflow_transition_engine import (
@@ -1597,6 +1598,10 @@ class IssueCommentListCreateAPIEndpoint(BaseAPIView):
             # the anti-loop/no-op reasoning; this is the public/token-
             # authenticated equivalent creation path.
             sync_issue_comment_to_slack.delay(comment_id=str(issue_comment.id))
+            # 14d ("Intake Email and Slack", levee du squelette, section 1,
+            # exigence 10) - see the identical call site in
+            # app/views/issue/comment.py::IssueCommentViewSet.create.
+            send_issue_comment_email_reply.delay(comment_id=str(issue_comment.id))
 
             serializer = IssueCommentSerializer(issue_comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

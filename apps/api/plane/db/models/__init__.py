@@ -44,6 +44,7 @@ from .intake_channel import (
     SlackIssueThread,
     SlackNotificationLog,
     IntakeMessageLog,
+    EmailIssueThread,
 )
 from .figma import FigmaWorkspaceConnection, FigmaFileLink, FigmaSyncLog
 from .triage_rule import TriageRule, TriageRuleCondition, TriageRuleAction

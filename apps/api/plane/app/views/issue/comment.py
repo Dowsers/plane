@@ -21,6 +21,7 @@ from plane.app.serializers import IssueCommentSerializer, CommentReactionSeriali
 from plane.app.permissions import allow_permission, ROLE
 from plane.db.models import IssueComment, ProjectMember, CommentReaction, Project, Issue
 from plane.bgtasks.ai_chat_assistant_task import handle_comment_mention
+from plane.bgtasks.intake_email_task import send_issue_comment_email_reply
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
 from plane.utils.host import base_host
@@ -123,6 +124,14 @@ class IssueCommentViewSet(BaseViewSet):
             # comment that itself came FROM Slack (anti-loop) - see
             # sync_issue_comment_to_slack's own docstring.
             sync_issue_comment_to_slack.delay(comment_id=str(serializer.data["id"]))
+            # 14d ("Intake Email and Slack", levee du squelette, section 1,
+            # exigence 10) - forwards this comment by email to the
+            # original external sender, if this issue was created from an
+            # inbound email. No-ops internally (issue has no
+            # EmailIssueThread / wasn't created from email, or the
+            # comment itself came FROM an email reply - anti-loop) - see
+            # send_issue_comment_email_reply's own docstring.
+            send_issue_comment_email_reply.delay(comment_id=str(serializer.data["id"]))
             # Category 9 feature 3 (docs/feature-specs/09-ai-features.md
             # "3. Assistant de chat IA in-app" in plane-selfhost) -
             # best-effort, no-ops internally if the AI Assistant bot

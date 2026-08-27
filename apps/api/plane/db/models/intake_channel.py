@@ -23,6 +23,18 @@ def get_email_alias_local_part():
     return f"intake-{secrets.token_hex(8)}"
 
 
+# 14d ("Intake Email and Slack", levee du squelette, exigence 6/9) - the
+# Issue.external_source value used to mark an issue as created by the
+# email intake channel; Issue.external_id is set to the sender's address
+# on that same issue so the outbound reply-notification task
+# (plane.bgtasks.intake_email_task) knows who to email back. Not a DB
+# choice constraint - Issue.external_source is a free-form CharField
+# shared across every integration (see plane/db/models/issue.py) - just a
+# documented constant so the string literal isn't duplicated across the
+# view and the task.
+EMAIL_INTAKE_EXTERNAL_SOURCE = "EMAIL_INTAKE"
+
+
 class IntakeChannel(ProjectBaseModel):
     """
     Omnichannel intake (email/Slack) configuration - see
@@ -310,6 +322,49 @@ class SlackIssueThread(ProjectBaseModel):
 
     def __str__(self):
         return f"{self.issue_id} <-> {self.slack_channel_id}:{self.slack_message_ts}"
+
+
+class EmailIssueThread(ProjectBaseModel):
+    """
+    14d ("Intake Email and Slack", levee du squelette, exigence 9) -
+    bidirectional threading anchor for the email channel, symmetric with
+    SlackIssueThread above. One row per outbound Plane notification email
+    that could plausibly receive a reply: `outbound_message_id` is the
+    Message-ID Plane put on that outbound email, and an inbound email
+    whose `In-Reply-To`/`References` header matches it is treated as a
+    reply on `issue` (a new IssueComment) rather than a new issue.
+
+    Unlike SlackIssueThread (keyed on a Slack (channel, ts) pair that
+    Slack itself gives us), there is no equivalent "receive this event
+    only if it belongs to a known thread" webhook shape for email - any
+    inbound email carries whatever In-Reply-To header the sending mail
+    client chose to set, so `outbound_message_id` is looked up directly
+    against that header value.
+    """
+
+    SOURCE_CHOICES = (("created_from_email", "Created from email"), ("linked_manually", "Linked manually"))
+
+    issue = models.ForeignKey("db.Issue", on_delete=models.CASCADE, related_name="email_threads")
+    intake_channel = models.ForeignKey(IntakeChannel, on_delete=models.CASCADE, related_name="email_threads")
+    outbound_message_id = models.CharField(max_length=255, db_index=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="created_from_email")
+
+    class Meta:
+        verbose_name = "Email Issue Thread"
+        verbose_name_plural = "Email Issue Threads"
+        db_table = "email_issue_threads"
+        ordering = ("-created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["outbound_message_id"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_outbound_message_id",
+            )
+        ]
+        indexes = [models.Index(fields=["intake_channel"])]
+
+    def __str__(self):
+        return f"{self.issue_id} <-> {self.outbound_message_id}"
 
 
 class SlackNotificationLog(WorkspaceBaseModel):

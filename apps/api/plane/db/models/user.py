@@ -61,6 +61,11 @@ class BotTypeEnum(models.TextChoices):
     GITHUB_BOT = "GITHUB_BOT", "GitHub Bot"
     GITLAB_BOT = "GITLAB_BOT", "GitLab Bot"
     SLACK_BOT = "SLACK_BOT", "Slack Bot"
+    # 14d ("Intake Email and Slack", levee du squelette, exigence 6) - the
+    # system actor issues created from an inbound email are attributed to,
+    # symmetric with SLACK_BOT. Created/fetched via the same
+    # get_or_create_integration_bot factory - no new bot-creation mechanism.
+    EMAIL_BOT = "EMAIL_BOT", "Email Bot"
     FIGMA_BOT = "FIGMA_BOT", "Figma Bot"
     SENTRY_BOT = "SENTRY_BOT", "Sentry Bot"
     SUPPORT_BOT = "SUPPORT_BOT", "Support Bot"

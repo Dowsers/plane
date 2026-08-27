@@ -44,6 +44,8 @@ DEFAULT_BOT_DISPLAY_NAMES = {
     BotTypeEnum.GITHUB_BOT: "GitHub Bot",
     BotTypeEnum.GITLAB_BOT: "GitLab Bot",
     BotTypeEnum.SLACK_BOT: "Slack Bot",
+    # 14d ("Intake Email and Slack", levee du squelette, exigence 6).
+    BotTypeEnum.EMAIL_BOT: "Email Bot",
     BotTypeEnum.FIGMA_BOT: "Figma Bot",
     BotTypeEnum.SENTRY_BOT: "Sentry Bot",
     BotTypeEnum.SUPPORT_BOT: "Support Bot",
