@@ -172,6 +172,11 @@ from .project_template import (
     ProjectTemplateListSerializer,
     ProjectTemplateSerializer,
 )
+from .page_template import (
+    PageTemplateWriteSerializer,
+    PageTemplateListSerializer,
+    PageTemplateSerializer,
+)
 from .customer import (
     CustomerSerializer,
     CustomerListSerializer,

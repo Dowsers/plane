@@ -264,6 +264,7 @@ from .page_collection import PageCollection
 from .page_comment import PageComment, PageCommentReaction
 from .page_subscriber import PageSubscriber
 from .page_activity import PageActivity
+from .page_template import PageTemplate
 
 from .rbac import (
     Permission,

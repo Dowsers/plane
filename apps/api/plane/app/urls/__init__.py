@@ -16,6 +16,7 @@ from .issue_worklog import urlpatterns as issue_worklog_urls
 from .milestone import urlpatterns as milestone_urls
 from .module import urlpatterns as module_urls
 from .project_template import urlpatterns as project_template_urls
+from .page_template import urlpatterns as page_template_urls
 from .customer import urlpatterns as customer_urls
 from .project_update import urlpatterns as project_update_urls
 from .notification import urlpatterns as notification_urls
@@ -66,6 +67,7 @@ urlpatterns = [
     *page_urls,
     *project_urls,
     *project_template_urls,
+    *page_template_urls,
     *customer_urls,
     *project_update_urls,
     *search_urls,

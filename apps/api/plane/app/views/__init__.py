@@ -322,6 +322,13 @@ from .project_template.base import (
     ProjectTemplateCreateProjectEndpoint,
 )
 
+from .page_template.base import (
+    PageTemplateViewSet,
+    PageTemplateDuplicateEndpoint,
+    PageSaveAsTemplateEndpoint,
+    PageTemplateCreatePageEndpoint,
+)
+
 from .customer.base import CustomerViewSet
 from .customer.request import (
     CustomerRequestViewSet,
