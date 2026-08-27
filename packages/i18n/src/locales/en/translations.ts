@@ -1619,6 +1619,26 @@ export default {
       heading: "Preferences",
       description: "Customize your app experience the way you work",
     },
+    slack_account_link: {
+      heading: "Slack account",
+      description:
+        "Link your personal Slack identity so work items and comments you create from Slack are attributed to you instead of the generic Slack bot.",
+      no_workspace: "You need to be a member of at least one workspace to link a Slack account.",
+      linked_as: "Linked as {name}",
+      not_linked: "Not linked",
+      unlink: "Unlink",
+      generate_code: "Get a linking code",
+      instructions: "In Slack, send this command to the Plane app:",
+      code_expires: "This code expires in 15 minutes.",
+      verify_label: "Already have a code from Slack?",
+      verify_placeholder: "Enter the 6-digit code",
+      verify_submit: "Verify",
+      toast: {
+        unlink_success: "Slack account unlinked.",
+        verify_success: "Slack account linked successfully.",
+        verify_error: "That code is invalid or has expired.",
+      },
+    },
     notifications: {
       heading: "Email notifications",
       description: "Stay in the loop on Work items you are subscribed to. Enable this to get notified.",
@@ -2397,6 +2417,79 @@ export default {
       title: "Permission Bundles",
       description:
         "Reusable, named sets of atomic permissions - attach one or more bundles to a role to compose its effective access.",
+    },
+  },
+  slack_integration: {
+    label: "Slack",
+    settings: {
+      title: "Slack",
+      description:
+        "Connect a Slack workspace so team members can create and reply to work items without leaving Slack.",
+    },
+    status: {
+      connected: "Connected",
+      not_connected: "Not connected",
+    },
+    connect_form: {
+      title: "Connect via bot token",
+      description:
+        "Create a Slack app at api.slack.com/apps, install it to your workspace, then paste its Bot User OAuth Token and Signing Secret below.",
+      bot_token_label: "Bot User OAuth Token",
+      signing_secret_label: "Signing Secret",
+      submit: "Connect",
+    },
+    oauth_button: "Connect with Slack",
+    disconnect: "Disconnect",
+    disconnect_confirm: {
+      title: "Disconnect Slack",
+      description:
+        "This deactivates the connection and every channel mapping for this workspace. Work items and comments already created from Slack are not affected.",
+    },
+    mappings: {
+      title: "Channel mappings",
+      description:
+        "Map a Slack channel to a project to receive notifications there and let members create work items from it.",
+      add: "Add mapping",
+      channel_id_label: "Slack channel ID",
+      channel_name_label: "Channel name (optional label)",
+      notify_on_label: "Notify on",
+    },
+    toast: {
+      connect_success: "Slack workspace connected successfully.",
+      connect_error: "Unable to connect to Slack.",
+      disconnect_success: "Slack workspace disconnected.",
+      mapping_add_success: "Channel mapping added.",
+      mapping_remove_success: "Channel mapping removed.",
+    },
+  },
+  intake_channels: {
+    label: "Email & Slack channels",
+    settings: {
+      title: "Email & Slack channels",
+      description: "Turn inbound emails and Slack messages into work items in this project.",
+    },
+    email: {
+      add: "Add email channel",
+      copy_address: "Copy address",
+      copy_success: "Address copied to clipboard.",
+      regenerate: "Regenerate address",
+      regenerate_confirm: {
+        title: "Regenerate email address",
+        description: "The previous address stops working immediately. Work items already created are not affected.",
+      },
+      disabled_hint: "Disabled - inbound emails to this address are rejected.",
+    },
+    slack: {
+      add: "Add Slack channel mapping",
+      no_connection: "Connect a Slack workspace first (Workspace Settings > Slack) to map a channel to this project.",
+    },
+    delete_confirm: {
+      title: "Delete channel",
+      description: "Work items already created through this channel are not affected.",
+    },
+    empty_state: {
+      title: "No intake channels yet",
+      description: "Add an email address or map a Slack channel to start turning external messages into work items.",
     },
   },
   sla_policies: {

@@ -14,6 +14,7 @@ import { useUserProfile } from "@/hooks/store/user";
 // local imports
 import { ProfileSettingsDefaultPreferencesList } from "./default-list";
 import { ProfileSettingsLanguageAndTimezonePreferencesList } from "./language-and-timezone-list";
+import { SlackAccountLinkSettings } from "./slack-account-link";
 
 export const PreferencesProfileSettings = observer(function PreferencesProfileSettings() {
   const { t } = useTranslation();
@@ -36,6 +37,7 @@ export const PreferencesProfileSettings = observer(function PreferencesProfileSe
           <div className="text-h6-medium text-primary">{t("language_and_time")}</div>
           <ProfileSettingsLanguageAndTimezonePreferencesList />
         </section>
+        <SlackAccountLinkSettings />
       </div>
     </div>
   );

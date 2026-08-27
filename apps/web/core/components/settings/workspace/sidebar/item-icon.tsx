@@ -15,6 +15,7 @@ import {
   KeyRound,
   LayoutTemplate,
   ShieldCheck,
+  Slack,
   Sparkles,
   Timer,
   Users,
@@ -41,4 +42,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   wiki: WikiIcon,
   security: ShieldCheck,
   "permission-bundles": KeyRound,
+  slack: Slack,
 };

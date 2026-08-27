@@ -94,7 +94,8 @@ export const MyTimesheet = observer(function MyTimesheet(props: Props) {
             .catch(() => [] as TTimesheetPeriod[])
         )
       );
-      return perProject.flat().toSorted((a, b) => (a.period_start < b.period_start ? 1 : -1));
+      // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (perProject.flat() already returns a new array), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
+      return perProject.flat().sort((a, b) => (a.period_start < b.period_start ? 1 : -1));
     }
   );
 

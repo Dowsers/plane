@@ -32,7 +32,8 @@ export type TWorkspaceSettingsTabs =
   | "ai"
   | "wiki"
   | "security"
-  | "permission-bundles";
+  | "permission-bundles"
+  | "slack";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;

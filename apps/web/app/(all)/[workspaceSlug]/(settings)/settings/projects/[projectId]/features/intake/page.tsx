@@ -14,6 +14,7 @@ import { PageHead } from "@/components/core/page-title";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import { SettingsHeading } from "@/components/settings/heading";
 import { ProjectSettingsFeatureControlItem } from "@/components/settings/project/content/feature-control-item";
+import { IntakeChannelsRoot } from "@/components/intake/intake-channels";
 import { IntakeResponsibilitySettings } from "@/components/intake/responsibility-settings";
 import { TriageRulesRoot } from "@/components/intake/triage-rules";
 import { IntakeFormsRoot } from "@/components/intake/intake-forms";
@@ -62,6 +63,7 @@ function FeaturesIntakeSettingsPage({ params }: Route.ComponentProps) {
         <IntakeResponsibilitySettings workspaceSlug={workspaceSlug} projectId={projectId} />
         <TriageRulesRoot workspaceSlug={workspaceSlug} projectId={projectId} />
         <IntakeFormsRoot workspaceSlug={workspaceSlug} projectId={projectId} />
+        <IntakeChannelsRoot workspaceSlug={workspaceSlug} projectId={projectId} />
       </section>
     </SettingsContentWrapper>
   );

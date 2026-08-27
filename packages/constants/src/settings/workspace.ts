@@ -155,6 +155,19 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/security/`,
   },
+  slack: {
+    key: "slack",
+    i18n_label: "slack_integration.settings.title",
+    href: `/settings/slack`,
+    // 14d ("Intake Email and Slack", levee du squelette, section 3,
+    // exigence 10) - the Slack WORKSPACE connection itself (bot token/
+    // signing secret, channel<->project mappings across every project)
+    // is scoped Admin-only, mirroring the backend's own
+    // `@allow_permission([ROLE.ADMIN], level="WORKSPACE")` on
+    // `SlackWorkspaceConnectEndpoint`/`SlackWorkspaceConnectionEndpoint`.
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/slack/`,
+  },
   "permission-bundles": {
     key: "permission-bundles",
     i18n_label: "permission_bundles.settings.title",
@@ -187,6 +200,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["page-templates"],
     WORKSPACE_SETTINGS["sla-policies"],
     WORKSPACE_SETTINGS["ai"],
+    WORKSPACE_SETTINGS["slack"],
     WORKSPACE_SETTINGS["security"],
     WORKSPACE_SETTINGS["permission-bundles"],
   ],
