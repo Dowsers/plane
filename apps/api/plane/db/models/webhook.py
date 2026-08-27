@@ -117,6 +117,17 @@ class Webhook(BaseModel):
     # generic (event-string-keyed, not hardcoded-per-event) dispatch that
     # makes that reuse trivial when it lands.
     workspace_security = models.BooleanField(default=False)
+    # docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+    # and Work Logs") in plane-selfhost. Two separate booleans, matching the
+    # spec's own wording of two distinct event *types* a subscriber opts
+    # into independently ("issue_worklog" for feature 1's
+    # created/updated/deleted entries, "timesheet_period" for feature 3's
+    # submitted/approved/rejected/reopened transitions) - same "one column
+    # per activity stream, not one per verb" rationale as
+    # `workflow_transition`/`issue_triage_suggestion` above; the sub-event
+    # itself is carried in the payload's own `action` field.
+    issue_worklog = models.BooleanField(default=False)
+    timesheet_period = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
     version = models.CharField(default="v1", max_length=50)
     # Populated only by a test-send (never by a real event delivery via

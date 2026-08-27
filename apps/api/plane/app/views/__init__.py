@@ -185,6 +185,21 @@ from .issue.subscriber import IssueSubscriberViewSet
 
 from .issue.version import IssueVersionEndpoint, WorkItemDescriptionVersionEndpoint
 
+from .issue_worklog.base import IssueWorklogViewSet, IssueWorklogTotalEndpoint
+from .issue_worklog.report import (
+    WorkspaceWorklogReportEndpoint,
+    ProjectWorklogReportEndpoint,
+    MyWorklogReportEndpoint,
+)
+from .issue_worklog.export import WorklogExportEndpoint
+from .issue_worklog.timesheet import (
+    TimesheetPeriodViewSet,
+    TimesheetPeriodSubmitEndpoint,
+    TimesheetPeriodApproveEndpoint,
+    TimesheetPeriodRejectEndpoint,
+    TimesheetPeriodWithdrawEndpoint,
+)
+
 from .module.base import (
     ModuleViewSet,
     ModuleLinkViewSet,

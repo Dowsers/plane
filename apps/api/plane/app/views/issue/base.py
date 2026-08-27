@@ -15,10 +15,12 @@ from django.db.models import (
     Exists,
     F,
     Func,
+    IntegerField,
     OuterRef,
     Prefetch,
     Q,
     Subquery,
+    Sum,
     UUIDField,
     Value,
 )
@@ -64,6 +66,7 @@ from plane.db.models import (
     IssueRelation,
     IssueSubscriber,
     IssueTransitionApprovalRequest,
+    IssueWorklog,
     ProjectUserProperty,
     Module,
     ModuleIssue,
@@ -674,6 +677,22 @@ class IssueViewSet(BaseViewSet):
                         issue_id=OuterRef("pk"),
                         subscriber=request.user,
                     )
+                )
+            )
+            .annotate(
+                # docs/feature-specs/14-pricing-gap-remediation.md ("14a.
+                # Time Tracking and Work Logs", feature 1, exigence 8) -
+                # sum of non-deleted IssueWorklog.duration for this issue,
+                # so the sidebar/peek-overview badge doesn't need a
+                # separate request.
+                total_worklog_duration=Coalesce(
+                    Subquery(
+                        IssueWorklog.objects.filter(issue_id=OuterRef("pk"))
+                        .values("issue_id")
+                        .annotate(total=Sum("duration"))
+                        .values("total")
+                    ),
+                    Value(0, output_field=IntegerField()),
                 )
             )
         ).first()

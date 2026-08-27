@@ -954,6 +954,12 @@ class IssueDetailSerializer(IssueSerializer):
     # bloc optionnel sentry_issue... quand un lien existe") in
     # plane-selfhost.
     sentry_issue = serializers.SerializerMethodField()
+    # docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+    # and Work Logs", feature 1, exigence 8) in plane-selfhost - sum of
+    # non-deleted IssueWorklog.duration for this issue, annotated as
+    # `total_worklog_duration` on the queryset in IssueViewSet.retrieve() so
+    # this is a plain read, not an extra query per issue.
+    total_worklog_duration = serializers.SerializerMethodField()
 
     class Meta(IssueSerializer.Meta):
         fields = IssueSerializer.Meta.fields + [
@@ -961,6 +967,7 @@ class IssueDetailSerializer(IssueSerializer):
             "is_subscribed",
             "is_intake",
             "sentry_issue",
+            "total_worklog_duration",
         ]
         read_only_fields = fields
 
@@ -971,6 +978,9 @@ class IssueDetailSerializer(IssueSerializer):
         from .sentry_integration import IssueSentryDetailSerializer
 
         return IssueSentryDetailSerializer(detail).data
+
+    def get_total_worklog_duration(self, obj):
+        return getattr(obj, "total_worklog_duration", None) or 0
 
 
 class IssuePublicSerializer(BaseSerializer):

@@ -34,14 +34,17 @@ from plane.api.serializers import (
     UserLiteSerializer,
     IntakeIssueSerializer,
 )
+from plane.app.serializers.issue_worklog import IssueWorklogSerializer, TimesheetPeriodSerializer
 from plane.db.models import (
     Cycle,
     CycleIssue,
     Issue,
     IssueComment,
+    IssueWorklog,
     Module,
     ModuleIssue,
     Project,
+    TimesheetPeriod,
     User,
     Webhook,
     WebhookLog,
@@ -66,6 +69,8 @@ SERIALIZER_MAPPER = {
     "issue_comment": IssueCommentSerializer,
     "user": UserLiteSerializer,
     "intake_issue": IntakeIssueSerializer,
+    "issue_worklog": IssueWorklogSerializer,
+    "timesheet_period": TimesheetPeriodSerializer,
 }
 
 # Category 11 (docs/feature-specs/11-admin-security-sso.md in
@@ -119,6 +124,8 @@ MODEL_MAPPER = {
     "issue_comment": IssueComment,
     "user": User,
     "intake_issue": IntakeIssue,
+    "issue_worklog": IssueWorklog,
+    "timesheet_period": TimesheetPeriod,
 }
 
 
@@ -533,6 +540,12 @@ def webhook_activity(
 
         if event == "issue_triage_suggestion":
             webhooks = webhooks.filter(issue_triage_suggestion=True)
+
+        if event == "issue_worklog":
+            webhooks = webhooks.filter(issue_worklog=True)
+
+        if event == "timesheet_period":
+            webhooks = webhooks.filter(timesheet_period=True)
 
         if event in WORKSPACE_SECURITY_EVENTS:
             webhooks = webhooks.filter(workspace_security=True)

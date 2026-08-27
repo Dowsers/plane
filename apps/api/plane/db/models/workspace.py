@@ -196,6 +196,24 @@ class Workspace(BaseModel):
     # before a summary can be generated - see
     # plane.app.views.issue_comment_summary.
     is_ai_summary_enabled = models.BooleanField(default=False)
+    # Settings > Time tracking toggle for the timesheet approval workflow -
+    # see docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time
+    # Tracking and Work Logs", feature 3 "Workflow d'approbation de
+    # timesheet", exigence 11) in plane-selfhost. Opt-in (default False),
+    # same reasoning/convention as is_initiatives_enabled above - lets a
+    # workspace use plain worklog entry/aggregation (features 1-2) without
+    # imposing the submit/approve/reject state machine on teams that don't
+    # need it. Distinct from the per-project `Project.is_time_tracking_enabled`
+    # flag, which gates worklog entry itself.
+    timesheet_approval_enabled = models.BooleanField(default=False)
+    # Period granularity used to bucket IssueWorklog entries into
+    # TimesheetPeriod rows when a member submits for approval - see the
+    # same spec section, "Questions ouvertes" #1. Global to the workspace
+    # for this MVP (not configurable per-project/per-team).
+    TIMESHEET_PERIOD_GRANULARITY_CHOICES = (("week", "Week"), ("month", "Month"))
+    timesheet_period_granularity = models.CharField(
+        max_length=10, choices=TIMESHEET_PERIOD_GRANULARITY_CHOICES, default="week"
+    )
     # Settings > AI toggle for AI-assisted status update drafting - see
     # docs/feature-specs/09-ai-features.md ("6. Redaction assistee des
     # mises a jour de statut") in plane-selfhost. PROJECT-ONLY in this fork

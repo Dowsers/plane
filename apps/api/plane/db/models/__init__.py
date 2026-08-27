@@ -95,6 +95,7 @@ from .issue import (
     IssueVersion,
     IssueDescriptionVersion,
 )
+from .issue_worklog import IssueWorklog, TimesheetPeriod
 from .module import Module, ModuleIssue, ModuleLink, ModuleMember, ModuleUserProperties
 from .notification import EmailNotificationLog, Notification, UserNotificationPreference
 from .page import Page, PageLabel, PageLog, ProjectPage, PageVersion

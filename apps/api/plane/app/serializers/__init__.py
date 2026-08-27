@@ -180,6 +180,11 @@ from .notification import NotificationSerializer, UserNotificationPreferenceSeri
 from .push_notification import PushNotificationSubscriptionSerializer
 
 from .exporter import ExporterHistorySerializer
+from .issue_worklog import (
+    IssueWorklogSerializer,
+    IssueWorklogExportSerializer,
+    TimesheetPeriodSerializer,
+)
 
 from .webhook import WebhookSerializer, WebhookLogSerializer
 

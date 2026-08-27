@@ -898,6 +898,109 @@ def delete_comment_activity(
     )
 
 
+def _format_worklog_duration(minutes):
+    """
+    docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+    and Work Logs", feature 1, exigence 3) - human-readable duration for
+    the activity feed message, e.g. 150 -> "2h 30min".
+    """
+    try:
+        minutes = int(minutes)
+    except (TypeError, ValueError):
+        return str(minutes)
+    hours, remainder = divmod(minutes, 60)
+    if hours and remainder:
+        return f"{hours}h {remainder}min"
+    if hours:
+        return f"{hours}h"
+    return f"{remainder}min"
+
+
+def create_worklog_activity(
+    requested_data,
+    current_instance,
+    issue_id,
+    project_id,
+    workspace_id,
+    actor_id,
+    issue_activities,
+    epoch,
+):
+    requested_data = json.loads(requested_data) if requested_data is not None else None
+    issue_activities.append(
+        IssueActivity(
+            issue_id=issue_id,
+            project_id=project_id,
+            workspace_id=workspace_id,
+            comment=f"logged {_format_worklog_duration(requested_data.get('duration'))}",
+            verb="created",
+            actor_id=actor_id,
+            field="worklog",
+            new_value=_format_worklog_duration(requested_data.get("duration")),
+            new_identifier=requested_data.get("id", None),
+            epoch=epoch,
+        )
+    )
+
+
+def update_worklog_activity(
+    requested_data,
+    current_instance,
+    issue_id,
+    project_id,
+    workspace_id,
+    actor_id,
+    issue_activities,
+    epoch,
+):
+    requested_data = json.loads(requested_data) if requested_data is not None else None
+    current_instance = json.loads(current_instance) if current_instance is not None else None
+
+    if current_instance.get("duration") != requested_data.get("duration"):
+        issue_activities.append(
+            IssueActivity(
+                issue_id=issue_id,
+                project_id=project_id,
+                workspace_id=workspace_id,
+                comment="updated a worklog entry",
+                verb="updated",
+                actor_id=actor_id,
+                field="worklog",
+                old_value=_format_worklog_duration(current_instance.get("duration")),
+                old_identifier=current_instance.get("id"),
+                new_value=_format_worklog_duration(requested_data.get("duration")),
+                new_identifier=current_instance.get("id", None),
+                epoch=epoch,
+            )
+        )
+
+
+def delete_worklog_activity(
+    requested_data,
+    current_instance,
+    issue_id,
+    project_id,
+    workspace_id,
+    actor_id,
+    issue_activities,
+    epoch,
+):
+    requested_data = json.loads(requested_data) if requested_data is not None else None
+    issue_activities.append(
+        IssueActivity(
+            issue_id=issue_id,
+            project_id=project_id,
+            workspace_id=workspace_id,
+            comment="deleted a worklog entry",
+            verb="deleted",
+            actor_id=actor_id,
+            field="worklog",
+            old_identifier=requested_data.get("worklog_id", None) if requested_data else None,
+            epoch=epoch,
+        )
+    )
+
+
 def create_cycle_issue_activity(
     requested_data,
     current_instance,
@@ -1707,6 +1810,9 @@ def issue_activity(
             "comment.activity.created": create_comment_activity,
             "comment.activity.updated": update_comment_activity,
             "comment.activity.deleted": delete_comment_activity,
+            "worklog.activity.created": create_worklog_activity,
+            "worklog.activity.updated": update_worklog_activity,
+            "worklog.activity.deleted": delete_worklog_activity,
             "cycle.activity.created": create_cycle_issue_activity,
             "cycle.activity.deleted": delete_cycle_issue_activity,
             "module.activity.created": create_module_issue_activity,

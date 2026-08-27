@@ -12,6 +12,7 @@ from .external import urlpatterns as external_urls
 from .initiative import urlpatterns as initiative_urls
 from .intake import urlpatterns as intake_urls
 from .issue import urlpatterns as issue_urls
+from .issue_worklog import urlpatterns as issue_worklog_urls
 from .milestone import urlpatterns as milestone_urls
 from .module import urlpatterns as module_urls
 from .project_template import urlpatterns as project_template_urls
@@ -57,6 +58,7 @@ urlpatterns = [
     *initiative_urls,
     *intake_urls,
     *issue_urls,
+    *issue_worklog_urls,
     *milestone_urls,
     *module_urls,
     *notification_urls,

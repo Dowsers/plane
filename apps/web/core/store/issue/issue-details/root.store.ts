@@ -14,6 +14,7 @@ import type {
   TIssueLink,
   TIssueReaction,
   TIssueServiceType,
+  TIssueWorklog,
   TWorkItemWidgets,
 } from "@plane/types";
 // plane web store
@@ -43,6 +44,8 @@ import { IssueSubIssuesStore } from "./sub_issues.store";
 import type { IIssueSubIssuesStore, IIssueSubIssuesStoreActions } from "./sub_issues.store";
 import { IssueSubscriptionStore } from "./subscription.store";
 import type { IIssueSubscriptionStore, IIssueSubscriptionStoreActions } from "./subscription.store";
+import { IssueWorklogStore } from "./worklog.store";
+import type { IIssueWorklogStore, IIssueWorklogStoreActions } from "./worklog.store";
 
 export type TPeekIssue = {
   workspaceSlug: string;
@@ -75,7 +78,8 @@ export interface IIssueDetail
     IIssueRelationStoreActions,
     IIssueActivityStoreActions,
     IIssueCommentStoreActions,
-    IIssueCommentReactionStoreActions {
+    IIssueCommentReactionStoreActions,
+    IIssueWorklogStoreActions {
   // observables
   peekIssue: TPeekIssue | undefined;
   relationKey: TIssueRelationTypes | null;
@@ -124,6 +128,7 @@ export interface IIssueDetail
   link: IIssueLinkStore;
   subscription: IIssueSubscriptionStore;
   relation: IIssueRelationStore;
+  worklog: IIssueWorklogStore;
 }
 
 export abstract class IssueDetail implements IIssueDetail {
@@ -167,6 +172,7 @@ export abstract class IssueDetail implements IIssueDetail {
   activity: IIssueActivityStore;
   comment: IIssueCommentStore;
   commentReaction: IIssueCommentReactionStore;
+  worklog: IIssueWorklogStore;
 
   constructor(rootStore: IIssueRootStore, serviceType: TIssueServiceType) {
     makeObservable(this, {
@@ -219,6 +225,7 @@ export abstract class IssueDetail implements IIssueDetail {
     this.link = new IssueLinkStore(this, serviceType);
     this.subscription = new IssueSubscriptionStore(this, serviceType);
     this.relation = new IssueRelationStore(this);
+    this.worklog = new IssueWorklogStore(this);
   }
 
   // computed
@@ -422,4 +429,19 @@ export abstract class IssueDetail implements IIssueDetail {
     reaction: string,
     userId: string
   ) => this.commentReaction.removeCommentReaction(workspaceSlug, projectId, commentId, reaction, userId);
+
+  // worklog
+  fetchWorklogs = async (workspaceSlug: string, projectId: string, issueId: string) =>
+    this.worklog.fetchWorklogs(workspaceSlug, projectId, issueId);
+  createWorklog = async (workspaceSlug: string, projectId: string, issueId: string, data: Partial<TIssueWorklog>) =>
+    this.worklog.createWorklog(workspaceSlug, projectId, issueId, data);
+  updateWorklog = async (
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    worklogId: string,
+    data: Partial<TIssueWorklog>
+  ) => this.worklog.updateWorklog(workspaceSlug, projectId, issueId, worklogId, data);
+  removeWorklog = async (workspaceSlug: string, projectId: string, issueId: string, worklogId: string) =>
+    this.worklog.removeWorklog(workspaceSlug, projectId, issueId, worklogId);
 }

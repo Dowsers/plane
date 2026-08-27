@@ -317,6 +317,9 @@ export enum EActivityFilterType {
   STATE = "STATE",
   ASSIGNEE = "ASSIGNEE",
   DEFAULT = "DEFAULT",
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", feature 1, exigence 7) in plane-selfhost.
+  WORKLOG = "WORKLOG",
 }
 
 export type TActivityFilters = EActivityFilterType;
@@ -336,6 +339,9 @@ export const ACTIVITY_FILTER_TYPE_OPTIONS: Record<TActivityFilterOptionsKey, { l
   [EActivityFilterType.ASSIGNEE]: {
     labelTranslationKey: "common.assignee",
   },
+  [EActivityFilterType.WORKLOG]: {
+    labelTranslationKey: "common.worklogs",
+  },
 };
 
 export type TActivityFilterOption = {
@@ -350,6 +356,7 @@ export const defaultActivityFilters: TActivityFilters[] = [
   EActivityFilterType.COMMENT,
   EActivityFilterType.STATE,
   EActivityFilterType.ASSIGNEE,
+  EActivityFilterType.WORKLOG,
 ];
 
 export const filterActivityOnSelectedFilters = (

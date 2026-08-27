@@ -34,6 +34,11 @@ export interface IPartialProject {
   page_view: boolean;
   inbox_view: boolean;
   guest_view_all_features?: boolean;
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", feature 1, exigence 2) in plane-selfhost - real
+  // activation condition for worklog entry, mirrors
+  // apps/api/plane/db/models/project.py's `Project.is_time_tracking_enabled`.
+  is_time_tracking_enabled?: boolean;
   project_lead?: IUserLite | string | null;
   network?: number;
   health?: TInitiativeHealth | null;
