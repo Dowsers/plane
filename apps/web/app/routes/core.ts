@@ -116,6 +116,13 @@ export const coreRoutes: RouteConfigEntry[] = [
           ),
         ]),
 
+        // Timesheets - docs/feature-specs/14-pricing-gap-remediation.md
+        // ("14a. Time Tracking and Work Logs", features 2 and 3) in
+        // plane-selfhost.
+        layout("./(all)/[workspaceSlug]/(projects)/timesheets/layout.tsx", [
+          route(":workspaceSlug/timesheets", "./(all)/[workspaceSlug]/(projects)/timesheets/page.tsx"),
+        ]),
+
         // Browse
         layout("./(all)/[workspaceSlug]/(projects)/browse/[workItem]/layout.tsx", [
           route(":workspaceSlug/browse/:workItem", "./(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"),

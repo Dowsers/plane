@@ -82,6 +82,14 @@ export interface IWorkspace {
   // (apps/api/plane/db/models/workspace.py) - purely a frontend gate, the
   // backend's idempotency/delta-sync endpoints work unconditionally.
   is_offline_sync_enabled?: boolean;
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", feature 3 "Workflow d'approbation de timesheet",
+  // exigence 11) in plane-selfhost - opt-in switch for the timesheet
+  // submit/approve/reject workflow, distinct from the per-project
+  // `is_time_tracking_enabled` flag which gates worklog entry itself. See
+  // `Workspace.timesheet_approval_enabled`'s own field comment
+  // (apps/api/plane/db/models/workspace.py).
+  timesheet_approval_enabled?: boolean;
 }
 
 /** `Workspace.ai_update_data_scope` choices - see `WorkspaceAIUpdateDataScope`

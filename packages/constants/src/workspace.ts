@@ -220,12 +220,25 @@ export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS: Record<string, IWorkspa
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, url: string) => pathname.includes(url),
   },
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", feature 2 "Timesheets historiques et rapports
+  // agrégés") in plane-selfhost - open to any workspace member (including
+  // Guest) since the "My time" tab is available to everyone; the
+  // workspace-wide report/approvals tabs self-gate inside the page.
+  timesheets: {
+    key: "timesheets",
+    labelTranslationKey: "timesheets.label",
+    href: `/timesheets/`,
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+    highlight: (pathname: string, url: string) => pathname.includes(url),
+  },
 };
 
 export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS: IWorkspaceSidebarNavigationItem[] = [
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["views"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["analytics"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["archives"],
+  WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["timesheets"],
 ];
 
 export const WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS: Record<string, IWorkspaceSidebarNavigationItem> = {

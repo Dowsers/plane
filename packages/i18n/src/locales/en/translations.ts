@@ -2262,6 +2262,16 @@ export default {
       toggle_label: "Enable Roadmap",
     },
   },
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", features 2 and 3) in plane-selfhost.
+  timesheets: {
+    label: "Timesheets",
+    settings: {
+      title: "Timesheet approvals",
+      description:
+        "Require team members to submit their logged time for a period before it counts as final, and let the project lead or a workspace Admin approve or reject it.",
+    },
+  },
   project_templates: {
     label: "Project templates",
     save_as_template: "Save as template",

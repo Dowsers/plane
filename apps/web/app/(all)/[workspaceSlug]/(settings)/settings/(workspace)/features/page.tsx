@@ -75,6 +75,24 @@ function FeaturesPage() {
     }
   };
 
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
+  // and Work Logs", feature 3 "Workflow d'approbation de timesheet",
+  // exigence 11) in plane-selfhost - workspace-wide opt-in for the
+  // submit/approve/reject state machine, distinct from the per-project
+  // `is_time_tracking_enabled` flag which only gates worklog entry itself.
+  const handleToggleTimesheetApproval = async (value: boolean) => {
+    if (!workspaceSlug) return;
+    try {
+      await updateWorkspace(workspaceSlug.toString(), { timesheet_approval_enabled: value });
+    } catch {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: "Something went wrong while updating timesheet approvals. Please try again.",
+      });
+    }
+  };
+
   if (workspaceUserInfo && !canPerformWorkspaceMemberActions) {
     return <NotAuthorizedView section="settings" className="h-auto" />;
   }
@@ -114,6 +132,17 @@ function FeaturesPage() {
           <ToggleSwitch
             value={!!currentWorkspace?.is_offline_sync_enabled}
             onChange={(value) => handleToggleOfflineSync(value)}
+            disabled={!isWorkspaceAdmin}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-md border-[0.5px] border-subtle p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-14 font-medium">{t("timesheets.settings.title")}</span>
+            <span className="text-13 text-secondary">{t("timesheets.settings.description")}</span>
+          </div>
+          <ToggleSwitch
+            value={!!currentWorkspace?.timesheet_approval_enabled}
+            onChange={(value) => handleToggleTimesheetApproval(value)}
             disabled={!isWorkspaceAdmin}
           />
         </div>
