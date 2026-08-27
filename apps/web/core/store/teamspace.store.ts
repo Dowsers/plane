@@ -10,10 +10,21 @@ import { computedFn } from "mobx-utils";
 // types
 import type {
   ITeamspace,
+  ITeamspaceCycles,
   ITeamspaceMember,
+  ITeamspaceOverview,
+  ITeamspacePage,
   ITeamspaceProject,
+  ITeamspaceRelations,
+  ITeamspaceStats,
+  ITeamspaceView,
   TTeamspaceMemberWritePayload,
+  TTeamspaceOverviewGroupBy,
+  TTeamspacePageWritePayload,
   TTeamspaceProjectWritePayload,
+  TTeamspaceRelationDirection,
+  TTeamspaceStatsGroupBy,
+  TTeamspaceViewWritePayload,
   TTeamspaceWritePayload,
 } from "@plane/types";
 // services
@@ -29,16 +40,46 @@ export interface ITeamspaceStore {
   teamspaceMap: Record<string, ITeamspace>;
   teamspaceMembersMap: Record<string, ITeamspaceMember[]>;
   teamspaceProjectsMap: Record<string, ITeamspaceProject[]>;
+  teamspaceOverviewMap: Record<string, ITeamspaceOverview>;
+  teamspaceCyclesMap: Record<string, ITeamspaceCycles>;
+  teamspaceRelationsMap: Record<string, ITeamspaceRelations>;
+  teamspaceStatsMap: Record<string, ITeamspaceStats>;
+  teamspacePagesMap: Record<string, ITeamspacePage[]>;
+  teamspaceViewsMap: Record<string, ITeamspaceView[]>;
 
   // computed actions
   getTeamspaceIds: (workspaceSlug: string) => string[] | null;
   getTeamspaceById: (teamspaceId: string) => ITeamspace | null;
   getTeamspaceMembersById: (teamspaceId: string) => ITeamspaceMember[];
   getTeamspaceProjectsById: (teamspaceId: string) => ITeamspaceProject[];
+  getTeamspaceOverviewById: (teamspaceId: string) => ITeamspaceOverview | null;
+  getTeamspaceCyclesById: (teamspaceId: string) => ITeamspaceCycles | null;
+  getTeamspaceRelationsById: (teamspaceId: string) => ITeamspaceRelations | null;
+  getTeamspaceStatsById: (teamspaceId: string) => ITeamspaceStats | null;
+  getTeamspacePagesById: (teamspaceId: string) => ITeamspacePage[];
+  getTeamspaceViewsById: (teamspaceId: string) => ITeamspaceView[];
 
   // fetch
   fetchTeamspaces: (workspaceSlug: string) => Promise<ITeamspace[]>;
   fetchTeamspaceDetails: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspace>;
+  fetchTeamspaceOverview: (
+    workspaceSlug: string,
+    teamspaceId: string,
+    groupBy?: TTeamspaceOverviewGroupBy
+  ) => Promise<ITeamspaceOverview>;
+  fetchTeamspaceCycles: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspaceCycles>;
+  fetchTeamspaceRelations: (
+    workspaceSlug: string,
+    teamspaceId: string,
+    direction: TTeamspaceRelationDirection
+  ) => Promise<ITeamspaceRelations>;
+  fetchTeamspaceStats: (
+    workspaceSlug: string,
+    teamspaceId: string,
+    groupBy: TTeamspaceStatsGroupBy
+  ) => Promise<ITeamspaceStats>;
+  fetchTeamspacePages: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspacePage[]>;
+  fetchTeamspaceViews: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspaceView[]>;
 
   // crud
   createTeamspace: (workspaceSlug: string, data: TTeamspaceWritePayload) => Promise<ITeamspace>;
@@ -52,6 +93,18 @@ export interface ITeamspaceStore {
     data: TTeamspaceProjectWritePayload
   ) => Promise<void>;
   removeTeamspaceProject: (workspaceSlug: string, teamspaceId: string, projectId: string) => Promise<void>;
+  createTeamspacePage: (
+    workspaceSlug: string,
+    teamspaceId: string,
+    data: TTeamspacePageWritePayload
+  ) => Promise<ITeamspacePage>;
+  deleteTeamspacePage: (workspaceSlug: string, teamspaceId: string, pageId: string) => Promise<void>;
+  createTeamspaceView: (
+    workspaceSlug: string,
+    teamspaceId: string,
+    data: TTeamspaceViewWritePayload
+  ) => Promise<ITeamspaceView>;
+  deleteTeamspaceView: (workspaceSlug: string, teamspaceId: string, viewId: string) => Promise<void>;
 }
 
 export class TeamspaceStore implements ITeamspaceStore {
@@ -61,6 +114,12 @@ export class TeamspaceStore implements ITeamspaceStore {
   teamspaceMap: Record<string, ITeamspace> = {};
   teamspaceMembersMap: Record<string, ITeamspaceMember[]> = {};
   teamspaceProjectsMap: Record<string, ITeamspaceProject[]> = {};
+  teamspaceOverviewMap: Record<string, ITeamspaceOverview> = {};
+  teamspaceCyclesMap: Record<string, ITeamspaceCycles> = {};
+  teamspaceRelationsMap: Record<string, ITeamspaceRelations> = {};
+  teamspaceStatsMap: Record<string, ITeamspaceStats> = {};
+  teamspacePagesMap: Record<string, ITeamspacePage[]> = {};
+  teamspaceViewsMap: Record<string, ITeamspaceView[]> = {};
   // root store
   rootStore;
   // services
@@ -73,9 +132,21 @@ export class TeamspaceStore implements ITeamspaceStore {
       teamspaceMap: observable,
       teamspaceMembersMap: observable,
       teamspaceProjectsMap: observable,
+      teamspaceOverviewMap: observable,
+      teamspaceCyclesMap: observable,
+      teamspaceRelationsMap: observable,
+      teamspaceStatsMap: observable,
+      teamspacePagesMap: observable,
+      teamspaceViewsMap: observable,
 
       fetchTeamspaces: action,
       fetchTeamspaceDetails: action,
+      fetchTeamspaceOverview: action,
+      fetchTeamspaceCycles: action,
+      fetchTeamspaceRelations: action,
+      fetchTeamspaceStats: action,
+      fetchTeamspacePages: action,
+      fetchTeamspaceViews: action,
       createTeamspace: action,
       updateTeamspace: action,
       deleteTeamspace: action,
@@ -83,6 +154,10 @@ export class TeamspaceStore implements ITeamspaceStore {
       removeTeamspaceMember: action,
       addTeamspaceProject: action,
       removeTeamspaceProject: action,
+      createTeamspacePage: action,
+      deleteTeamspacePage: action,
+      createTeamspaceView: action,
+      deleteTeamspaceView: action,
     });
 
     this.rootStore = _rootStore;
@@ -106,6 +181,30 @@ export class TeamspaceStore implements ITeamspaceStore {
 
   getTeamspaceProjectsById = computedFn(
     (teamspaceId: string): ITeamspaceProject[] => this.teamspaceProjectsMap?.[teamspaceId] ?? []
+  );
+
+  getTeamspaceOverviewById = computedFn(
+    (teamspaceId: string): ITeamspaceOverview | null => this.teamspaceOverviewMap?.[teamspaceId] ?? null
+  );
+
+  getTeamspaceCyclesById = computedFn(
+    (teamspaceId: string): ITeamspaceCycles | null => this.teamspaceCyclesMap?.[teamspaceId] ?? null
+  );
+
+  getTeamspaceRelationsById = computedFn(
+    (teamspaceId: string): ITeamspaceRelations | null => this.teamspaceRelationsMap?.[teamspaceId] ?? null
+  );
+
+  getTeamspaceStatsById = computedFn(
+    (teamspaceId: string): ITeamspaceStats | null => this.teamspaceStatsMap?.[teamspaceId] ?? null
+  );
+
+  getTeamspacePagesById = computedFn(
+    (teamspaceId: string): ITeamspacePage[] => this.teamspacePagesMap?.[teamspaceId] ?? []
+  );
+
+  getTeamspaceViewsById = computedFn(
+    (teamspaceId: string): ITeamspaceView[] => this.teamspaceViewsMap?.[teamspaceId] ?? []
   );
 
   fetchTeamspaces = async (workspaceSlug: string) => {
@@ -200,6 +299,96 @@ export class TeamspaceStore implements ITeamspaceStore {
         this.teamspaceProjectsMap,
         [teamspaceId],
         (this.teamspaceProjectsMap[teamspaceId] ?? []).filter((project) => project.id !== projectId)
+      );
+    });
+  };
+
+  fetchTeamspaceOverview = async (workspaceSlug: string, teamspaceId: string, groupBy?: TTeamspaceOverviewGroupBy) => {
+    const response = await this.teamspaceService.getTeamspaceOverview(workspaceSlug, teamspaceId, groupBy);
+    runInAction(() => {
+      set(this.teamspaceOverviewMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspaceCycles = async (workspaceSlug: string, teamspaceId: string) => {
+    const response = await this.teamspaceService.getTeamspaceCycles(workspaceSlug, teamspaceId);
+    runInAction(() => {
+      set(this.teamspaceCyclesMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspaceRelations = async (
+    workspaceSlug: string,
+    teamspaceId: string,
+    direction: TTeamspaceRelationDirection
+  ) => {
+    const response = await this.teamspaceService.getTeamspaceRelations(workspaceSlug, teamspaceId, direction);
+    runInAction(() => {
+      set(this.teamspaceRelationsMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspaceStats = async (workspaceSlug: string, teamspaceId: string, groupBy: TTeamspaceStatsGroupBy) => {
+    const response = await this.teamspaceService.getTeamspaceStats(workspaceSlug, teamspaceId, groupBy);
+    runInAction(() => {
+      set(this.teamspaceStatsMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspacePages = async (workspaceSlug: string, teamspaceId: string) => {
+    const response = await this.teamspaceService.getTeamspacePages(workspaceSlug, teamspaceId);
+    runInAction(() => {
+      set(this.teamspacePagesMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspaceViews = async (workspaceSlug: string, teamspaceId: string) => {
+    const response = await this.teamspaceService.getTeamspaceViews(workspaceSlug, teamspaceId);
+    runInAction(() => {
+      set(this.teamspaceViewsMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  createTeamspacePage = async (workspaceSlug: string, teamspaceId: string, data: TTeamspacePageWritePayload) => {
+    const response = await this.teamspaceService.createTeamspacePage(workspaceSlug, teamspaceId, data);
+    runInAction(() => {
+      set(this.teamspacePagesMap, [teamspaceId], [response, ...(this.teamspacePagesMap[teamspaceId] ?? [])]);
+    });
+    return response;
+  };
+
+  deleteTeamspacePage = async (workspaceSlug: string, teamspaceId: string, pageId: string) => {
+    await this.teamspaceService.deleteTeamspacePage(workspaceSlug, teamspaceId, pageId);
+    runInAction(() => {
+      set(
+        this.teamspacePagesMap,
+        [teamspaceId],
+        (this.teamspacePagesMap[teamspaceId] ?? []).filter((page) => page.id !== pageId)
+      );
+    });
+  };
+
+  createTeamspaceView = async (workspaceSlug: string, teamspaceId: string, data: TTeamspaceViewWritePayload) => {
+    const response = await this.teamspaceService.createTeamspaceView(workspaceSlug, teamspaceId, data);
+    runInAction(() => {
+      set(this.teamspaceViewsMap, [teamspaceId], [response, ...(this.teamspaceViewsMap[teamspaceId] ?? [])]);
+    });
+    return response;
+  };
+
+  deleteTeamspaceView = async (workspaceSlug: string, teamspaceId: string, viewId: string) => {
+    await this.teamspaceService.deleteTeamspaceView(workspaceSlug, teamspaceId, viewId);
+    runInAction(() => {
+      set(
+        this.teamspaceViewsMap,
+        [teamspaceId],
+        (this.teamspaceViewsMap[teamspaceId] ?? []).filter((view) => view.id !== viewId)
       );
     });
   };

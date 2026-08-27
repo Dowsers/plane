@@ -8,11 +8,22 @@
 import { API_BASE_URL } from "@plane/constants";
 import type {
   ITeamspace,
+  ITeamspaceCycles,
   ITeamspaceDetail,
   ITeamspaceMember,
+  ITeamspaceOverview,
+  ITeamspacePage,
   ITeamspaceProject,
+  ITeamspaceRelations,
+  ITeamspaceStats,
+  ITeamspaceView,
   TTeamspaceMemberWritePayload,
+  TTeamspaceOverviewGroupBy,
+  TTeamspacePageWritePayload,
   TTeamspaceProjectWritePayload,
+  TTeamspaceRelationDirection,
+  TTeamspaceStatsGroupBy,
+  TTeamspaceViewWritePayload,
   TTeamspaceWritePayload,
 } from "@plane/types";
 // services
@@ -104,13 +115,108 @@ export class TeamspaceService extends APIService {
   }
 
   // Category 13, feature 2 - team overview/dashboard aggregation (spec
-  // section 2). Only the summary "overview" endpoint is wired up here for
-  // the MVP frontend - cycles/relations/stats have no dedicated UI yet
-  // (see the create-update/list-only scope of this iteration) but their
-  // backend endpoints already exist at the same base path if a future
-  // detail page needs them.
-  async getTeamspaceOverview(workspaceSlug: string, teamspaceId: string): Promise<any> {
-    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/overview/`)
+  // section 2): the detail page's Overview/Cycles/Relations/Stats tabs.
+  async getTeamspaceOverview(
+    workspaceSlug: string,
+    teamspaceId: string,
+    groupBy?: TTeamspaceOverviewGroupBy
+  ): Promise<ITeamspaceOverview> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/overview/`, {
+      params: { group_by: groupBy },
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamspaceCycles(workspaceSlug: string, teamspaceId: string): Promise<ITeamspaceCycles> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/cycles/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamspaceRelations(
+    workspaceSlug: string,
+    teamspaceId: string,
+    direction: TTeamspaceRelationDirection
+  ): Promise<ITeamspaceRelations> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/relations/`, {
+      params: { direction },
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamspaceStats(
+    workspaceSlug: string,
+    teamspaceId: string,
+    groupBy: TTeamspaceStatsGroupBy
+  ): Promise<ITeamspaceStats> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/stats/`, {
+      params: { group_by: groupBy },
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  // Category 13, feature 3 - Teamspace Pages/Views (spec section 3).
+  async getTeamspacePages(workspaceSlug: string, teamspaceId: string): Promise<ITeamspacePage[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/pages/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createTeamspacePage(
+    workspaceSlug: string,
+    teamspaceId: string,
+    data: TTeamspacePageWritePayload
+  ): Promise<ITeamspacePage> {
+    return this.post(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/pages/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteTeamspacePage(workspaceSlug: string, teamspaceId: string, pageId: string): Promise<any> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/pages/${pageId}/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamspaceViews(workspaceSlug: string, teamspaceId: string): Promise<ITeamspaceView[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/views/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createTeamspaceView(
+    workspaceSlug: string,
+    teamspaceId: string,
+    data: TTeamspaceViewWritePayload
+  ): Promise<ITeamspaceView> {
+    return this.post(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/views/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteTeamspaceView(workspaceSlug: string, teamspaceId: string, viewId: string): Promise<any> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/views/${viewId}/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

@@ -2251,9 +2251,11 @@ export default {
     description: "Description",
     members: "Members",
     projects: "Projects",
+    lead: "Lead",
     delete_confirm: {
       title: "Delete teamspace",
       description: "Are you sure you want to delete this teamspace? This action cannot be undone.",
+      type_name_prompt: "Enter the teamspace name to continue:",
     },
     toast: {
       create_success: "Teamspace created successfully",
@@ -2264,6 +2266,72 @@ export default {
     empty_state: {
       title: "No teamspaces yet",
       description: "Create a teamspace to group members and projects together.",
+    },
+    tabs: {
+      overview: "Overview",
+      cycles: "Cycles",
+      pages: "Pages",
+      views: "Views",
+      members: "Members",
+      projects: "Projects",
+      info: "Info",
+    },
+    jump_into: {
+      work_items: "Work items",
+      cycles: "Cycles",
+      views: "Views",
+      pages: "Pages",
+    },
+    overview: {
+      overdue_work_items: "overdue work items",
+      team_progress: "Team progress",
+      team_relations: "Team relations",
+      team_stats: "Team stats",
+      relations_blocking: "Blocking",
+      relations_blocked: "Blocked",
+      blocks: "blocks",
+      blocked_by: "blocked by",
+      no_relations: "No relations found for this direction.",
+      no_progress_data: "No work items to chart yet.",
+      work_items_count: "Work items",
+      no_stats_data: "No work items to break down yet.",
+      empty_state: {
+        title: "Nothing to show yet",
+        description:
+          "This teamspace has no attached projects yet, or you don't have access to any of its attached projects.",
+      },
+    },
+    cycles: {
+      active: "Active",
+      upcoming: "Upcoming",
+      completed: "Completed",
+      empty_state: {
+        title: "No cycles yet",
+        description: "Cycles from projects attached to this teamspace will show up here.",
+      },
+    },
+    pages: {
+      new_page_placeholder: "New page name",
+      create: "Create page",
+      updated: "Updated",
+      empty_state: "No teamspace pages yet.",
+    },
+    views: {
+      new_view_placeholder: "New view name",
+      create: "Create view",
+      updated: "Updated",
+      empty_state: "No teamspace views yet.",
+    },
+    members_panel: {
+      add_member: "Add member",
+      lead: "Lead",
+      member: "Member",
+      last_lead_error: "A teamspace must always have at least one Lead. Promote another member first.",
+    },
+    projects_tab: {
+      add_projects: "Add projects",
+      no_projects_linked: "No projects linked to this teamspace yet",
+      no_projects_available: "All your projects are already linked to this teamspace.",
     },
   },
   // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers") in

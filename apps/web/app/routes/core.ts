@@ -83,6 +83,19 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/teams", "./(all)/[workspaceSlug]/(projects)/teams/page.tsx"),
         ]),
 
+        // Teamspaces (docs/feature-specs/13-teamspaces.md in
+        // plane-selfhost) - deliberately a separate/parallel section from
+        // Teams above, same list + detail split as Initiatives/Customers.
+        layout("./(all)/[workspaceSlug]/(projects)/teamspaces/layout.tsx", [
+          route(":workspaceSlug/teamspaces", "./(all)/[workspaceSlug]/(projects)/teamspaces/page.tsx"),
+        ]),
+        layout("./(all)/[workspaceSlug]/(projects)/teamspaces/(detail)/[teamspaceId]/layout.tsx", [
+          route(
+            ":workspaceSlug/teamspaces/:teamspaceId",
+            "./(all)/[workspaceSlug]/(projects)/teamspaces/(detail)/[teamspaceId]/page.tsx"
+          ),
+        ]),
+
         // Customers (docs/feature-specs/14-pricing-gap-remediation.md,
         // "14b. Customers", feature 3) - a top-level workspace-scoped
         // section, sibling to Teams/Initiatives, with a Teamspace-style
