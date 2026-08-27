@@ -83,6 +83,20 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/teams", "./(all)/[workspaceSlug]/(projects)/teams/page.tsx"),
         ]),
 
+        // Customers (docs/feature-specs/14-pricing-gap-remediation.md,
+        // "14b. Customers", feature 3) - a top-level workspace-scoped
+        // section, sibling to Teams/Initiatives, with a Teamspace-style
+        // list + detail split.
+        layout("./(all)/[workspaceSlug]/(projects)/customers/layout.tsx", [
+          route(":workspaceSlug/customers", "./(all)/[workspaceSlug]/(projects)/customers/page.tsx"),
+        ]),
+        layout("./(all)/[workspaceSlug]/(projects)/customers/(detail)/[customerId]/layout.tsx", [
+          route(
+            ":workspaceSlug/customers/:customerId",
+            "./(all)/[workspaceSlug]/(projects)/customers/(detail)/[customerId]/page.tsx"
+          ),
+        ]),
+
         // Wiki (category 10, feature 4 - "Wiki workspace en GA") - a
         // top-level workspace-scoped section, sibling to Initiatives/
         // Projects, matching the `/${workspaceSlug}/wiki/${pageId}` URL

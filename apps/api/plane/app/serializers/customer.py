@@ -80,12 +80,16 @@ class CustomerListSerializer(BaseSerializer):
 class CustomerRequestIssueSerializer(BaseSerializer):
     """A work item linked to a CustomerRequest - spec section 2, exigence
     9: enough to render the link (id/sequence/name/state/project) without
-    duplicating the full Issue payload."""
+    duplicating the full Issue payload. `project_identifier` is included
+    alongside `project_id` since the frontend's work item links are always
+    built from the project's short identifier (`generateWorkItemLink`),
+    never the raw project id."""
 
     issue_id = serializers.PrimaryKeyRelatedField(source="issue", read_only=True)
     sequence_id = serializers.IntegerField(source="issue.sequence_id", read_only=True)
     name = serializers.CharField(source="issue.name", read_only=True)
     project_id = serializers.PrimaryKeyRelatedField(source="issue.project_id", read_only=True)
+    project_identifier = serializers.CharField(source="issue.project.identifier", read_only=True)
     state_id = serializers.PrimaryKeyRelatedField(source="issue.state_id", read_only=True)
 
     class Meta:
@@ -97,6 +101,7 @@ class CustomerRequestIssueSerializer(BaseSerializer):
             "sequence_id",
             "name",
             "project_id",
+            "project_identifier",
             "state_id",
             "created_at",
             "created_by",

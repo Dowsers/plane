@@ -24,6 +24,7 @@ export default {
     modules: "Modules",
     updates: "Updates",
     intake: "Intake",
+    customers: "Customers",
     drafts: "Drafts",
     favorites: "Favorites",
     pro: "Pro",

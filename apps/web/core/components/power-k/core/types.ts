@@ -149,4 +149,9 @@ export type TPowerKSearchResultsKeys =
   | "module"
   | "issue_view"
   | "page"
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
+  // feature 3, exigence 10) in plane-selfhost - core, edition-independent
+  // category (same reasoning as issue_comment/member above), not gated
+  // behind `TPowerKSearchResultsKeysExtended`.
+  | "customer"
   | TPowerKSearchResultsKeysExtended;

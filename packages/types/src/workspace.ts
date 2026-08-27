@@ -313,6 +313,16 @@ export interface IWorkspaceProjectSearchResult {
   workspace__slug: string;
 }
 
+// docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
+// feature 3, exigence 10) in plane-selfhost - new "Customers" Cmd+K/Power-K
+// category. See `GlobalSearchEndpoint.filter_customers`
+// (apps/api/plane/app/views/search/base.py).
+export interface IWorkspaceCustomerSearchResult {
+  id: string;
+  name: string;
+  workspace__slug: string;
+}
+
 export interface IWorkspaceSearchResults {
   // Category 12, feature 6 (exigence 10) - the backend now omits ANY
   // category with zero matches from `results` entirely instead of
@@ -329,6 +339,7 @@ export interface IWorkspaceSearchResults {
     module?: IWorkspaceDefaultSearchResult[];
     issue_view?: IWorkspaceDefaultSearchResult[];
     page?: IWorkspacePageSearchResult[];
+    customer?: IWorkspaceCustomerSearchResult[];
   };
 }
 

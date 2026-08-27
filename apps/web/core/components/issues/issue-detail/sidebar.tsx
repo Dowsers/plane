@@ -42,6 +42,7 @@ import { WorkItemAdditionalSidebarProperties } from "@/plane-web/components/issu
 import { IssueParentSelectRoot } from "@/plane-web/components/issues/issue-details/parent-select-root";
 import { DateAlert } from "@/plane-web/components/issues/issue-details/sidebar/date-alert";
 import { TransferHopInfo } from "@/plane-web/components/issues/issue-details/sidebar/transfer-hop-info";
+import { IssueCustomerRequestsProperty } from "@/plane-web/components/issues/customer-requests/root";
 import { IssueWorklogProperty } from "@/plane-web/components/issues/worklog/property";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
 import { IssueSLAProperty } from "@/components/sla-policies/issue-sla-property";
@@ -348,6 +349,13 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
             </SidebarPropertyListItem>
 
             <IssueWorklogProperty
+              workspaceSlug={workspaceSlug}
+              projectId={projectId}
+              issueId={issueId}
+              disabled={!isEditable}
+            />
+
+            <IssueCustomerRequestsProperty
               workspaceSlug={workspaceSlug}
               projectId={projectId}
               issueId={issueId}

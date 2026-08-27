@@ -637,6 +637,7 @@ export default {
     comments: "Comments",
     updates: "Updates",
     worklogs: "Worklogs",
+    customer_requests: "Customer requests",
     clear_all: "Clear all",
     copied: "Copied!",
     link_copied: "Link copied!",
@@ -2243,6 +2244,57 @@ export default {
     empty_state: {
       title: "No teamspaces yet",
       description: "Create a teamspace to group members and projects together.",
+    },
+  },
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers") in
+  // plane-selfhost.
+  customers: {
+    label: "Customers",
+    create_customer: "Create customer",
+    update_customer: "Update customer",
+    name: "Name",
+    description: "Description",
+    contact_name: "Contact name",
+    contact_email: "Contact email",
+    domain: "Domain / website",
+    status: "Status",
+    status_all: "All",
+    status_active: "Active",
+    status_prospect: "Prospect",
+    status_churned: "Churned",
+    requests: "Requests",
+    work_items: "Work items",
+    new_request: "New request",
+    request_name: "Title",
+    request_description: "Request / quote",
+    link_work_item: "Link a work item",
+    delete_confirm: {
+      title: "Delete customer",
+      description:
+        "Are you sure you want to delete this customer? Its requests will be deleted too. Linked work items will not be affected. This action cannot be undone.",
+    },
+    delete_request_confirm: {
+      title: "Delete request",
+      description: "Are you sure you want to delete this request? This action cannot be undone.",
+    },
+    toast: {
+      create_success: "Customer created successfully",
+      update_success: "Customer updated successfully",
+      delete_success: "Customer deleted successfully",
+      request_create_success: "Request created successfully",
+      request_delete_success: "Request deleted successfully",
+      link_success: "Work item linked successfully",
+      unlink_success: "Work item unlinked successfully",
+      error: "Something went wrong. Please try again.",
+    },
+    empty_state: {
+      title: "No customers yet",
+      description: "Create a customer profile to start tracking their requests and the work items that answer them.",
+      primary_button: "Create your first customer",
+    },
+    requests_empty_state: {
+      title: "No requests yet",
+      description: "Create the first request to start tracking what this customer has asked for.",
     },
   },
   roadmap: {

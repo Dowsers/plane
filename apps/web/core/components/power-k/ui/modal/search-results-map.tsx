@@ -4,10 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { Briefcase, FileText, Layers, LayoutGrid } from "lucide-react";
+import { Briefcase, Building2, FileText, Layers, LayoutGrid } from "lucide-react";
 // plane imports
 import { CommentReplyIcon, ContrastIcon, DiceIcon } from "@plane/propel/icons";
 import type {
+  IWorkspaceCustomerSearchResult,
   IWorkspaceDefaultSearchResult,
   IWorkspaceIssueCommentSearchResult,
   IWorkspaceIssueSearchResult,
@@ -214,6 +215,15 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     itemName: (project: IWorkspaceProjectSearchResult) => project?.name,
     path: (project: IWorkspaceProjectSearchResult) => `/${project?.workspace__slug}/projects/${project?.id}/issues/`,
     title: "Projects",
+  },
+  // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
+  // feature 3, exigence 10) in plane-selfhost - new "Customers" category,
+  // same shape as `project` above (workspace-scoped, name-only match).
+  customer: {
+    icon: Building2,
+    itemName: (customer: IWorkspaceCustomerSearchResult) => customer?.name,
+    path: (customer: IWorkspaceCustomerSearchResult) => `/${customer?.workspace__slug}/customers/${customer?.id}/`,
+    title: "Customers",
   },
   workspace: {
     icon: LayoutGrid,

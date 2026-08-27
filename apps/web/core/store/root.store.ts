@@ -27,6 +27,8 @@ import type { ICycleFilterStore } from "./cycle_filter.store";
 import { CycleFilterStore } from "./cycle_filter.store";
 import type { ICustomDashboardStore } from "./custom-dashboard.store";
 import { CustomDashboardStore } from "./custom-dashboard.store";
+import type { ICustomerStore } from "./customer.store";
+import { CustomerStore } from "./customer.store";
 import type { IDashboardStore } from "./dashboard.store";
 import { DashboardStore } from "./dashboard.store";
 import type { IEditorAssetStore } from "./editor/asset.store";
@@ -104,6 +106,7 @@ export class CoreRootStore {
   initiative: IInitiativeStore;
   team: ITeamStore;
   teamspace: ITeamspaceStore;
+  customer: ICustomerStore;
   milestone: IMilestoneStore;
   roadmap: IRoadmapStore;
   module: IModuleStore;
@@ -152,6 +155,7 @@ export class CoreRootStore {
     this.initiative = new InitiativeStore(this);
     this.team = new TeamStore(this);
     this.teamspace = new TeamspaceStore(this);
+    this.customer = new CustomerStore(this);
     this.milestone = new MilestoneStore(this);
     this.roadmap = new RoadmapStore(this);
     this.module = new ModulesStore(this);
@@ -203,6 +207,7 @@ export class CoreRootStore {
     this.initiative = new InitiativeStore(this);
     this.team = new TeamStore(this);
     this.teamspace = new TeamspaceStore(this);
+    this.customer = new CustomerStore(this);
     this.milestone = new MilestoneStore(this);
     this.roadmap = new RoadmapStore(this);
     this.module = new ModulesStore(this);

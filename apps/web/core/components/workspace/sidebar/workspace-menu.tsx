@@ -6,7 +6,7 @@
 
 import React from "react";
 import { observer } from "mobx-react";
-import { Map, Target, Users } from "lucide-react";
+import { Building2, Map, Target, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Disclosure, Transition } from "@headlessui/react";
 // plane imports
@@ -72,6 +72,17 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
       href: `/${workspaceSlug}/teamspaces/`,
       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
       Icon: Users,
+    },
+    // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
+    // feature 3, exigence 1) in plane-selfhost - same level as Projects/
+    // Teamspaces, visible to Guest too (feature 1, exigence 6 - read
+    // access is open to the whole workspace, including Guest).
+    {
+      key: "customers",
+      labelTranslationKey: "sidebar.customers",
+      href: `/${workspaceSlug}/customers/`,
+      access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+      Icon: Building2,
     },
     // Opt-in nav item - hidden unless the workspace admin has turned on
     // Initiatives under Settings > Features (default off, see

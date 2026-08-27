@@ -38,6 +38,7 @@ from plane.db.models import (
     Issue,
     IssueComment,
     Cycle,
+    Customer,
     Module,
     Page,
     IssueView,
@@ -445,6 +446,34 @@ class GlobalSearchEndpoint(BaseAPIView):
             ]
         )
 
+    def filter_customers(self, query, slug, _project_id, _workspace_search, limit, offset):
+        """docs/feature-specs/14-pricing-gap-remediation.md ("14b.
+        Customers", feature 3, exigence 10) in plane-selfhost - new
+        "Customers" category, same shape/access rule as `filter_initiatives`
+        just above (workspace-scoped, no project dimension). Question
+        ouverte #2 of that section (index Customer name only vs. also
+        CustomerRequest title/citation) is answered in favor of name-only
+        for this MVP, matching every other name-only category here.
+        """
+        fields = ["name"]
+        q = Q()
+        if query:
+            for field in fields:
+                q |= Q(**{f"{field}__icontains": query})
+
+        customers = Customer.objects.filter(
+            q,
+            workspace__slug=slug,
+            workspace__workspace_member__member=self.request.user,
+            workspace__workspace_member__is_active=True,
+        )
+
+        return list(
+            customers.order_by("-created_at").distinct().values("name", "id", "workspace__slug")[
+                offset : offset + limit
+            ]
+        )
+
     def filter_issue_comments(self, query, slug, project_id, workspace_search, limit, offset):
         """Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md
         in plane-selfhost), feature 6, exigence 2/7 - new category, absent
@@ -682,6 +711,7 @@ class GlobalSearchEndpoint(BaseAPIView):
             "page": self.filter_pages,
             "intake": self.filter_intakes,
             "initiative": self.filter_initiatives,
+            "customer": self.filter_customers,
         }
 
         # Determine which entities to search
