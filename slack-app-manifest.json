@@ -1,0 +1,76 @@
+{
+  "display_information": {
+    "name": "Plane",
+    "description": "Plane integration for creating and syncing issues from Slack",
+    "background_color": "#224dab"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Plane",
+      "always_online": false
+    },
+    "shortcuts": [
+      {
+        "name": "Create new issue",
+        "type": "message",
+        "callback_id": "issue_shortcut",
+        "description": "Create a new issue in plane"
+      },
+      {
+        "name": "Link Work Item",
+        "type": "message",
+        "callback_id": "link_work_item",
+        "description": "Links thread with an existing work item"
+      }
+    ],
+    "slash_commands": [
+      {
+        "command": "/plane",
+        "url": "https://plane.tail03343c.ts.net/api/public/integrations/slack/commands/",
+        "description": "Create issue in Plane",
+        "should_escape": false
+      }
+    ],
+    "unfurl_domains": ["plane.tail03343c.ts.net"]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "channels:join",
+        "channels:read",
+        "users:read",
+        "users:read.email",
+        "chat:write",
+        "chat:write.customize",
+        "channels:history",
+        "groups:history",
+        "mpim:history",
+        "im:history",
+        "links:read",
+        "links:write",
+        "groups:read",
+        "im:read",
+        "mpim:read",
+        "reactions:read",
+        "reactions:write",
+        "files:read",
+        "files:write",
+        "im:write",
+        "commands"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://plane.tail03343c.ts.net/api/public/integrations/slack/events/",
+      "bot_events": ["link_shared", "message.channels", "message.im"]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://plane.tail03343c.ts.net/api/public/integrations/slack/interactive/"
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}
