@@ -21,6 +21,7 @@ export const locales = {
     "empty-state": () => import("./en/empty-state"),
   },
   fr: {
+    core: () => import("./fr/core"),
     translations: () => import("./fr/translations"),
     accessibility: () => import("./fr/accessibility"),
     editor: () => import("./fr/editor"),

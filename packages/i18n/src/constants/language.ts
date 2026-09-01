@@ -35,6 +35,7 @@ export const SUPPORTED_LANGUAGES: ILanguageOption[] = [
  * These are the JSON files that contain translations each category
  */
 export enum ETranslationFiles {
+  CORE = "core",
   TRANSLATIONS = "translations",
   ACCESSIBILITY = "accessibility",
   EDITOR = "editor",

@@ -176,6 +176,12 @@ export default {
     analytics_no_intake: {
       title: "Configurez l’intake pour gérer les demandes entrantes et suivre comment elles sont acceptées et rejetées",
     },
+    initiatives: {
+      cta_primary: "Créer une initiative",
+      description:
+        "Regroupez des projets liés sous une initiative pour suivre les progrès et l’état de santé vers un objectif commun.",
+      title: "Aucune initiative pour le moment",
+    },
   },
   settings_empty_state: {
     estimates: {
