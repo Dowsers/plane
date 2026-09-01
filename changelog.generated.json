@@ -1,1 +1,602 @@
-[]
+[
+  {
+    "hash": "b91d08815",
+    "subject": "fix(web): replace What's New iframe (sites.plane.so) with git-log changelog",
+    "author": "QuentinDowsers",
+    "date": "2026-08-31T12:09:09+00:00"
+  },
+  {
+    "hash": "a7d102767",
+    "subject": "fix(web): remove Community edition badge / paid plans modal button",
+    "author": "QuentinDowsers",
+    "date": "2026-08-31T09:24:37+00:00"
+  },
+  {
+    "hash": "695ea1dc2",
+    "subject": "fix(web): remove GitHub star button from top navigation",
+    "author": "QuentinDowsers",
+    "date": "2026-08-31T09:03:12+00:00"
+  },
+  {
+    "hash": "3c2d256f1",
+    "subject": "fix(web): remove Contact Sales link from help menu",
+    "author": "QuentinDowsers",
+    "date": "2026-08-31T08:56:21+00:00"
+  },
+  {
+    "hash": "9a54c7930",
+    "subject": "Fix TS2550 regression: oxlint --fix rewrote .sort() to toSorted() again",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T18:57:33+00:00"
+  },
+  {
+    "hash": "28250ce04",
+    "subject": "Fix Teamspaces/Customers/Initiatives missing from the actual sidebar nav",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T18:55:46+00:00"
+  },
+  {
+    "hash": "26f61a8a5",
+    "subject": "Add Teamspace detail page (Overview/Cycles/Pages/Views/Members/Projects), per docs/feature-specs/13-teamspaces.md",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T17:08:29+00:00"
+  },
+  {
+    "hash": "913d1041f",
+    "subject": "Add Intake Email and Slack frontend (channel settings, Slack connect, account link), per docs/feature-specs/14-pricing-gap-remediation.md (14d)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T14:54:28+00:00"
+  },
+  {
+    "hash": "b87928c8d",
+    "subject": "Add Intake Email and Slack backend (email inbound parsing, app_mention), per docs/feature-specs/14-pricing-gap-remediation.md (14d)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T14:40:23+00:00"
+  },
+  {
+    "hash": "3cd2c9a26",
+    "subject": "Add Page Templates frontend (gallery, save-as-template, settings screen), per docs/feature-specs/14-pricing-gap-remediation.md (14c)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T14:20:06+00:00"
+  },
+  {
+    "hash": "1c258a0a8",
+    "subject": "Add Page Templates backend (PageTemplate, save-as-template, create-page), per docs/feature-specs/14-pricing-gap-remediation.md (14c)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T14:09:43+00:00"
+  },
+  {
+    "hash": "db02e0973",
+    "subject": "Add Customers frontend (list, detail, issue sidebar block, Cmd+K), per docs/feature-specs/14-pricing-gap-remediation.md (14b)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T13:53:45+00:00"
+  },
+  {
+    "hash": "17fd5605d",
+    "subject": "Add Customers backend (Customer, CustomerRequest, CustomerRequestIssue), per docs/feature-specs/14-pricing-gap-remediation.md (14b)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T13:36:46+00:00"
+  },
+  {
+    "hash": "710e2e48c",
+    "subject": "Add Timesheets reporting and approval frontend (category 14, feature 14a completion)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T13:28:59+00:00"
+  },
+  {
+    "hash": "05327972d",
+    "subject": "Add Time Tracking and Work Logs feature (backend + frontend), per docs/feature-specs/14-pricing-gap-remediation.md (14a)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-27T10:37:53+00:00"
+  },
+  {
+    "hash": "8aa42c157",
+    "subject": "Add Teamspaces feature (backend + frontend), per docs/feature-specs/13-teamspaces.md",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T15:33:25+00:00"
+  },
+  {
+    "hash": "0bbb1d20e",
+    "subject": "Fix issue/draft-issue/page creation failing with generic 400",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T13:38:08+00:00"
+  },
+  {
+    "hash": "9bffdf2e8",
+    "subject": "Fix docker-compose.yml for production deployment",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T12:57:10+00:00"
+  },
+  {
+    "hash": "9529dd412",
+    "subject": "Add DISABLE_TELEMETRY/DISABLE_ANALYTICS flags to opt out of plane.so reporting",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T10:01:03+00:00"
+  },
+  {
+    "hash": "277b56f4f",
+    "subject": "Add Teams frontend routes/UI",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T09:57:18+00:00"
+  },
+  {
+    "hash": "c03f50af5",
+    "subject": "Add Teams (TeamMember/TeamProject) backend — extracted from production",
+    "author": "QuentinDowsers",
+    "date": "2026-08-26T09:57:09+00:00"
+  },
+  {
+    "hash": "c59459ad5",
+    "subject": "Fix category 12 feature 4 data-integrity review findings",
+    "author": "QuentinDowsers",
+    "date": "2026-08-25T15:54:52+00:00"
+  },
+  {
+    "hash": "28c7ccc94",
+    "subject": "Add offline sync engine: IndexedDB queue, Web Worker, multi-tab locking, LRU cache, rollout toggle (category 12, feature 4, frontend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-25T13:58:35+00:00"
+  },
+  {
+    "hash": "0d094155b",
+    "subject": "Add idempotency-key replay, workspace delta-sync, and access-revocation reconciliation endpoints (category 12, feature 4, backend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-25T10:25:20+00:00"
+  },
+  {
+    "hash": "4c8e4ef78",
+    "subject": "Add Web Push UI and service worker (category 12, feature 3, frontend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-25T09:15:14+00:00"
+  },
+  {
+    "hash": "21a18f38a",
+    "subject": "Add push notification subscriptions, preferences, and admin config (category 12, feature 3, backend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-25T08:47:50+00:00"
+  },
+  {
+    "hash": "77d3425a9",
+    "subject": "Add deep search across descriptions, comments, and members (category 12, feature 6, frontend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-24T21:13:53+00:00"
+  },
+  {
+    "hash": "9e9ea27b8",
+    "subject": "Add deep search across descriptions, comments, and members (category 12, feature 6, backend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-24T20:44:32+00:00"
+  },
+  {
+    "hash": "ca40c696c",
+    "subject": "Fix category 11 feature 4 security review finding 7 (frontend copy)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-24T14:41:23+00:00"
+  },
+  {
+    "hash": "32adbf920",
+    "subject": "Fix category 11 feature 4 security review findings 1-6, 8-9 (backend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-24T14:41:03+00:00"
+  },
+  {
+    "hash": "672fb48fb",
+    "subject": "Add role/permission-bundle management UI + self-service my-permissions panel (category 11, feature 4, frontend)",
+    "author": "QuentinDowsers",
+    "date": "2026-08-24T13:25:49+00:00"
+  },
+  {
+    "hash": "0766577f1",
+    "subject": "Add self-service my-permissions endpoint (category 11, feature 4, frontend prep)",
+    "author": "root",
+    "date": "2026-08-24T12:31:44+00:00"
+  },
+  {
+    "hash": "8da6214f0",
+    "subject": "Add composable custom-role/permission-bundle builder (category 11, feature 4)",
+    "author": "root",
+    "date": "2026-08-24T12:20:05+00:00"
+  },
+  {
+    "hash": "a51c5a49a",
+    "subject": "Add SCIM token management + provisioning UI, member badge (category 11, feature 2, frontend)",
+    "author": "root",
+    "date": "2026-08-24T09:01:25+00:00"
+  },
+  {
+    "hash": "786253ab0",
+    "subject": "Add SCIM admin token management + provisioning log (category 11, feature 2, part 3/3)",
+    "author": "root",
+    "date": "2026-08-23T22:01:54+00:00"
+  },
+  {
+    "hash": "e228aef05",
+    "subject": "Add SCIM 2.0 protocol view layer (category 11, feature 2, part 2/3)",
+    "author": "root",
+    "date": "2026-08-23T21:21:24+00:00"
+  },
+  {
+    "hash": "779021d72",
+    "subject": "Add SCIM models, migrations, and ENABLE_SCIM flag (category 11, feature 2, part 1/3)",
+    "author": "root",
+    "date": "2026-08-23T21:09:21+00:00"
+  },
+  {
+    "hash": "b3e3c3e33",
+    "subject": "Add SAML discover login-screen integration to apps/space (category 11, feature 1, part 3/3)",
+    "author": "root",
+    "date": "2026-08-23T20:43:03+00:00"
+  },
+  {
+    "hash": "42d88276c",
+    "subject": "Add SAML discover login-screen integration + member badge (category 11, feature 1, part 2/3)",
+    "author": "root",
+    "date": "2026-08-23T20:38:35+00:00"
+  },
+  {
+    "hash": "c6af64422",
+    "subject": "Add SAML SSO god-mode admin UI (category 11, feature 1, part 1/3)",
+    "author": "root",
+    "date": "2026-08-23T20:33:30+00:00"
+  },
+  {
+    "hash": "5183e1e4e",
+    "subject": "Add SAML JIT provisioning, enforce_sso, and admin/auth endpoints (category 11, feature 1, part 3/3)",
+    "author": "root",
+    "date": "2026-08-23T17:12:39+00:00"
+  },
+  {
+    "hash": "54d8c703c",
+    "subject": "Add SAML protocol logic: signature verification, AuthnRequest, enforcement (category 11, feature 1, part 2/3)",
+    "author": "root",
+    "date": "2026-08-23T16:57:58+00:00"
+  },
+  {
+    "hash": "cb7880fd0",
+    "subject": "Add SAML SSO models and migrations (category 11, feature 1, part 1/3)",
+    "author": "root",
+    "date": "2026-08-23T16:33:48+00:00"
+  },
+  {
+    "hash": "fd540604e",
+    "subject": "Wire reauth guard into workspace deletion/export + god-mode session ceiling (category 11, feature 6, part 2/2)",
+    "author": "root",
+    "date": "2026-08-23T15:57:09+00:00"
+  },
+  {
+    "hash": "bc92e9a23",
+    "subject": "Add workspace security-policy panel + verified domains UI (category 11, feature 6, part 1/2)",
+    "author": "root",
+    "date": "2026-08-23T15:50:19+00:00"
+  },
+  {
+    "hash": "8fc0f0ccd",
+    "subject": "Add configurable workspace security policies backend (category 11, feature 6)",
+    "author": "root",
+    "date": "2026-08-23T15:24:05+00:00"
+  },
+  {
+    "hash": "aa2d10de9",
+    "subject": "Add Owner transfer + Project Owner UI (category 11, features 3+5, part 2/2)",
+    "author": "root",
+    "date": "2026-08-23T10:12:34+00:00"
+  },
+  {
+    "hash": "bb232a910",
+    "subject": "Add audit log UI + types/services foundation (category 11, features 3+5, part 1/2)",
+    "author": "root",
+    "date": "2026-08-23T09:56:11+00:00"
+  },
+  {
+    "hash": "e8a620c71",
+    "subject": "Add unified audit log + Owner/Project Owner mechanics (category 11, features 3+5)",
+    "author": "root",
+    "date": "2026-08-22T12:12:17+00:00"
+  },
+  {
+    "hash": "3734d9741",
+    "subject": "Add page subscriptions/notifications frontend (category 10, feature 5)",
+    "author": "root",
+    "date": "2026-08-21T14:54:13+00:00"
+  },
+  {
+    "hash": "bd3e86442",
+    "subject": "Add page subscriptions/notifications backend (category 10, feature 5)",
+    "author": "root",
+    "date": "2026-08-21T14:19:36+00:00"
+  },
+  {
+    "hash": "e33fe2d0b",
+    "subject": "Add real-alignment comment gutter + thread UI (category 10, features 1+3 frontend, part 2/2)",
+    "author": "root",
+    "date": "2026-08-21T13:36:02+00:00"
+  },
+  {
+    "hash": "c6d94388b",
+    "subject": "Add InlineComment Mark extension + comment store/service foundation (category 10, features 1+3 frontend, part 1/2)",
+    "author": "root",
+    "date": "2026-08-21T13:26:38+00:00"
+  },
+  {
+    "hash": "24975e2cc",
+    "subject": "Add anchored Page comments + thread resolution backend (category 10, features 1+3)",
+    "author": "root",
+    "date": "2026-08-21T09:58:54+00:00"
+  },
+  {
+    "hash": "44b088667",
+    "subject": "Wire Wiki into Favorites and Cmd+K/Power-K search (category 10, feature 4, part 2/2)",
+    "author": "root",
+    "date": "2026-08-20T18:27:42+00:00"
+  },
+  {
+    "hash": "55018bcd8",
+    "subject": "Add Wiki workspace frontend routing/store/service layer (category 10, feature 4, part 1/2)",
+    "author": "root",
+    "date": "2026-08-20T18:18:18+00:00"
+  },
+  {
+    "hash": "90fba7acd",
+    "subject": "Add workspace-scoped Page/PageCollection REST surface (category 10, feature 4, part 2/2)",
+    "author": "root",
+    "date": "2026-08-20T17:12:10+00:00"
+  },
+  {
+    "hash": "5ef4795c9",
+    "subject": "Add PageCollection model and Page/Workspace fields (category 10, feature 4, part 1/2)",
+    "author": "root",
+    "date": "2026-08-20T14:50:54+00:00"
+  },
+  {
+    "hash": "645208629",
+    "subject": "Add emoji reactions on Pages frontend, project-scoped v1 (category 10, feature 2)",
+    "author": "root",
+    "date": "2026-08-20T14:02:45+00:00"
+  },
+  {
+    "hash": "d5730c9cf",
+    "subject": "Add emoji reactions on Pages backend, project-scoped v1 (category 10, feature 2)",
+    "author": "root",
+    "date": "2026-08-20T11:45:51+00:00"
+  },
+  {
+    "hash": "84e803aa3",
+    "subject": "Add in-app AI chat assistant frontend (category 9, feature 3)",
+    "author": "root",
+    "date": "2026-08-20T10:16:25+00:00"
+  },
+  {
+    "hash": "efa11ccde",
+    "subject": "Add in-app AI chat assistant backend, polling-based (category 9, feature 3)",
+    "author": "root",
+    "date": "2026-08-20T09:36:00+00:00"
+  },
+  {
+    "hash": "73ec04f8f",
+    "subject": "Add automated periodic digest frontend (category 9, feature 5)",
+    "author": "root",
+    "date": "2026-08-19T17:45:45+00:00"
+  },
+  {
+    "hash": "544c26ec1",
+    "subject": "Add automated periodic digest backend (category 9, feature 5)",
+    "author": "root",
+    "date": "2026-08-19T17:17:38+00:00"
+  },
+  {
+    "hash": "5d41c0ee0",
+    "subject": "Add duplicate/similarity detection frontend (category 9, feature 2)",
+    "author": "root",
+    "date": "2026-08-19T12:20:43+00:00"
+  },
+  {
+    "hash": "531ff0b11",
+    "subject": "Add duplicate/similarity detection backend (category 9, feature 2)",
+    "author": "root",
+    "date": "2026-08-19T09:59:44+00:00"
+  },
+  {
+    "hash": "9d1b8ed41",
+    "subject": "Add AI-assisted auto-triage frontend (category 9, feature 1)",
+    "author": "root",
+    "date": "2026-08-19T09:22:51+00:00"
+  },
+  {
+    "hash": "3abae1974",
+    "subject": "Add AI-assisted auto-triage backend (category 9, feature 1)",
+    "author": "root",
+    "date": "2026-08-19T08:50:00+00:00"
+  },
+  {
+    "hash": "26a86a226",
+    "subject": "Add shared issue-embeddings pipeline, pure-Python + external-API (category 9 prerequisite)",
+    "author": "root",
+    "date": "2026-08-18T17:44:14+00:00"
+  },
+  {
+    "hash": "13a47a394",
+    "subject": "Add AI-assisted status update drafting frontend, project-scoped v1 (category 9, feature 6)",
+    "author": "root",
+    "date": "2026-08-18T15:19:13+00:00"
+  },
+  {
+    "hash": "50b9854d4",
+    "subject": "Add AI-assisted status update drafting backend, project-scoped v1 (category 9, feature 6)",
+    "author": "root",
+    "date": "2026-08-18T15:01:39+00:00"
+  },
+  {
+    "hash": "35b8d7e2b",
+    "subject": "Add AI thread summary frontend (category 9, feature 4)",
+    "author": "root",
+    "date": "2026-08-18T12:59:25+00:00"
+  },
+  {
+    "hash": "26e00e137",
+    "subject": "Add AI thread summary backend (category 9, feature 4)",
+    "author": "root",
+    "date": "2026-08-18T09:34:11+00:00"
+  },
+  {
+    "hash": "8f32072cc",
+    "subject": "Add shared per-workspace LLM config foundation (category 9 prerequisite)",
+    "author": "root",
+    "date": "2026-08-17T18:10:18+00:00"
+  },
+  {
+    "hash": "c774ac36c",
+    "subject": "Add first-class agent actor type frontend (category 9, feature 7)",
+    "author": "root",
+    "date": "2026-08-17T15:09:02+00:00"
+  },
+  {
+    "hash": "e59172f45",
+    "subject": "Add first-class agent actor type (category 9, feature 7)",
+    "author": "root",
+    "date": "2026-08-17T14:43:08+00:00"
+  },
+  {
+    "hash": "92d5c38d5",
+    "subject": "Add Category 7 integrations backend: GitHub, GitLab, Slack, Figma, Sentry, support bridge",
+    "author": "root",
+    "date": "2026-08-15T15:10:01+00:00"
+  },
+  {
+    "hash": "a9b79bb5b",
+    "subject": "Add shared encrypted-field and integration-bot foundation (category 7 prerequisite)",
+    "author": "root",
+    "date": "2026-08-10T13:57:27+00:00"
+  },
+  {
+    "hash": "04ae3d83a",
+    "subject": "Add API explorer frontend (category 8, feature 6, frontend half)",
+    "author": "root",
+    "date": "2026-08-10T13:32:30+00:00"
+  },
+  {
+    "hash": "d2b4deb94",
+    "subject": "Add official data-management CLI (category 8, feature 5)",
+    "author": "root",
+    "date": "2026-08-10T12:16:57+00:00"
+  },
+  {
+    "hash": "4b3641056",
+    "subject": "Add flexible query + rate limiting frontend (category 8, features 1+2)",
+    "author": "root",
+    "date": "2026-08-10T12:16:09+00:00"
+  },
+  {
+    "hash": "85c792d96",
+    "subject": "Add API explorer backend (category 8, feature 6, backend half)",
+    "author": "root",
+    "date": "2026-08-10T09:54:43+00:00"
+  },
+  {
+    "hash": "1b294e7e4",
+    "subject": "Add session-authenticated rate-limit override endpoint (category 8, feature 2 follow-up)",
+    "author": "root",
+    "date": "2026-08-07T09:42:00+00:00"
+  },
+  {
+    "hash": "0dff92dac",
+    "subject": "Add session-authenticated flexible query settings endpoint (category 8, feature 1 follow-up)",
+    "author": "root",
+    "date": "2026-08-07T09:36:04+00:00"
+  },
+  {
+    "hash": "1c423e3fc",
+    "subject": "Add API-token bulk issue operations endpoint (category 8, feature 5 backend prerequisite)",
+    "author": "root",
+    "date": "2026-08-07T09:26:27+00:00"
+  },
+  {
+    "hash": "ea007250c",
+    "subject": "Add flexible query layer backend (category 8, feature 1, backend half)",
+    "author": "root",
+    "date": "2026-08-07T09:25:30+00:00"
+  },
+  {
+    "hash": "ee3a4f3ac",
+    "subject": "Add rate limiting tiers backend (category 8, feature 2, backend half)",
+    "author": "root",
+    "date": "2026-08-07T09:23:11+00:00"
+  },
+  {
+    "hash": "0d46c9536",
+    "subject": "Add governed workflows frontend (category 6, feature 4, frontend half)",
+    "author": "root",
+    "date": "2026-08-06T09:39:10+00:00"
+  },
+  {
+    "hash": "d0dfb5091",
+    "subject": "Wire governed workflow gate into real mutation paths, phase 2 of 2 (category 6, feature 4)",
+    "author": "root",
+    "date": "2026-08-05T15:41:27+00:00"
+  },
+  {
+    "hash": "e3e3edde1",
+    "subject": "Add governed workflows engine backend, phase 1 of 2 (category 6, feature 4)",
+    "author": "root",
+    "date": "2026-08-05T14:45:15+00:00"
+  },
+  {
+    "hash": "fa6767862",
+    "subject": "Add SLA policies frontend (category 6, feature 2, frontend half)",
+    "author": "root",
+    "date": "2026-08-05T14:02:14+00:00"
+  },
+  {
+    "hash": "c7df2892a",
+    "subject": "Expose recurring_template on the issue serializer (category 6, feature 3 follow-up)",
+    "author": "root",
+    "date": "2026-08-05T09:58:16+00:00"
+  },
+  {
+    "hash": "c3984b3ca",
+    "subject": "Add recurring issue templates frontend (category 6, feature 3, frontend half)",
+    "author": "root",
+    "date": "2026-08-05T09:49:08+00:00"
+  },
+  {
+    "hash": "38b70a97e",
+    "subject": "Add SLA policies backend (category 6, feature 2, backend half)",
+    "author": "root",
+    "date": "2026-08-05T09:13:35+00:00"
+  },
+  {
+    "hash": "ce97a330d",
+    "subject": "Add automation rule engine frontend (category 6, feature 1, frontend half)",
+    "author": "root",
+    "date": "2026-08-04T14:55:21+00:00"
+  },
+  {
+    "hash": "c39c321a9",
+    "subject": "Add recurring issue templates backend (category 6, feature 3, backend half)",
+    "author": "root",
+    "date": "2026-08-04T14:42:03+00:00"
+  },
+  {
+    "hash": "0759849dd",
+    "subject": "Add automation rule engine backend (category 6, feature 1, backend half)",
+    "author": "root",
+    "date": "2026-08-04T14:03:55+00:00"
+  },
+  {
+    "hash": "d1aca2074",
+    "subject": "Add custom dashboards frontend (category 5, feature 3, frontend half)",
+    "author": "root",
+    "date": "2026-08-04T12:46:55+00:00"
+  },
+  {
+    "hash": "23ea7339f",
+    "subject": "Add custom dashboards backend (category 5, feature 3, backend half)",
+    "author": "root",
+    "date": "2026-08-04T08:43:10+00:00"
+  },
+  {
+    "hash": "8763dcaba",
+    "subject": "Add cross-workspace analytics & percentile reports (category 5, feature 2)",
+    "author": "root",
+    "date": "2026-08-04T08:06:22+00:00"
+  }
+]
