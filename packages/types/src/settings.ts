@@ -20,7 +20,6 @@ export type TProfileSettingsTabs =
 export type TWorkspaceSettingsTabs =
   | "general"
   | "members"
-  | "billing-and-plans"
   | "export"
   | "webhooks"
   | "features"
