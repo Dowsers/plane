@@ -6,6 +6,7 @@
 
 export default {
   submit: "Submit",
+  contact_support: "Contact Support",
   cancel: "Cancel",
   loading: "Loading",
   error: "Error",
@@ -4045,6 +4046,9 @@ export default {
     edited_by: "Edited by",
   },
   self_hosted_maintenance_message: {
+    title: "Looks like Plane didn't start up correctly!",
+    description:
+      "Some services might have failed to start. Please check your container logs to identify and resolve the issue. If you're stuck, reach out to our support team for more help.",
     plane_didnt_start_up_this_could_be_because_one_or_more_plane_services_failed_to_start:
       "Plane didn't start up. This could be because one or more Plane services failed to start.",
     choose_view_logs_from_setup_sh_and_docker_logs_to_be_sure:

@@ -4,11 +4,15 @@
  * See the LICENSE file for details.
  */
 
+import { useTranslation } from "@plane/i18n";
+
 export function MaintenanceMessage() {
+  const { t } = useTranslation();
+
   const linkMap = [
     {
       key: "mail_to",
-      label: "Contact Support",
+      label: t("contact_support"),
       value: "mailto:support@plane.so",
     },
   ];
@@ -17,11 +21,10 @@ export function MaintenanceMessage() {
     <>
       <div className="flex flex-col gap-2.5">
         <h1 className="text-left text-18 font-semibold text-primary">
-          &#x1F6A7; Looks like Plane didn&apos;t start up correctly!
+          &#x1F6A7; {t("self_hosted_maintenance_message.title")}
         </h1>
         <span className="text-left text-14 font-medium text-secondary">
-          Some services might have failed to start. Please check your container logs to identify and resolve the issue.
-          If you&apos;re stuck, reach out to our support team for more help.
+          {t("self_hosted_maintenance_message.description")}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-start gap-6">

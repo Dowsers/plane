@@ -194,6 +194,7 @@ export default {
     },
   },
   submit: "Valider",
+  contact_support: "Contacter le support",
   cancel: "Annuler",
   loading: "Chargement",
   error: "Erreur",
@@ -3127,6 +3128,9 @@ export default {
     edited_by: "Modifié par",
   },
   self_hosted_maintenance_message: {
+    title: "Il semblerait que Plane n'ait pas démarré correctement !",
+    description:
+      "Certains services n'ont peut-être pas réussi à démarrer. Veuillez consulter les logs de vos conteneurs pour identifier et résoudre le problème. Si vous êtes bloqué, contactez notre équipe de support pour obtenir de l'aide.",
     plane_didnt_start_up_this_could_be_because_one_or_more_plane_services_failed_to_start:
       "Plane n’a pas démarré. Cela pourrait être dû au fait qu’un ou plusieurs services Plane ont échoué à démarrer.",
     choose_view_logs_from_setup_sh_and_docker_logs_to_be_sure:
