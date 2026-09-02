@@ -11,6 +11,7 @@ import { Copy, Pencil, RefreshCw, Trash2 } from "lucide-react";
 // plane imports
 import { SITES_URL } from "@plane/constants";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIntakeForm } from "@plane/types";
 import { Button, Loader, ToggleSwitch } from "@plane/ui";
@@ -35,6 +36,7 @@ type Props = {
 
 export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
   const { workspaceSlug, projectId } = props;
+  const { t } = useTranslation();
   const { allowPermissions } = useUserPermissions();
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
   const canView = allowPermissions(
@@ -60,7 +62,11 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
 
   const handleCopyLink = (token: string) => {
     copyTextToClipboard(publicLink(token));
-    setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Lien copié dans le presse-papier." });
+    setToast({
+      type: TOAST_TYPE.SUCCESS,
+      title: t("toast.success"),
+      message: t("intake_settings.forms.list.link_copied"),
+    });
   };
 
   const handleToggleEnabled = async (form: TIntakeForm) => {
@@ -68,7 +74,11 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
       await intakeFormService.update(workspaceSlug, projectId, form.id, { is_enabled: !form.is_enabled });
       refresh();
     } catch (error: any) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: error?.error ?? "Unable to update the form." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.forms.list.update_error"),
+      });
     }
   };
 
@@ -77,12 +87,16 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
       await intakeFormService.regenerateToken(workspaceSlug, projectId, form.id);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
-        message: "Le lien précédent est désormais invalide.",
+        title: t("toast.success"),
+        message: t("intake_settings.forms.list.token_regenerated"),
       });
       refresh();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to regenerate the token." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.forms.list.regenerate_error"),
+      });
     }
   };
 
@@ -91,7 +105,11 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
       await intakeFormService.remove(workspaceSlug, projectId, form.id);
       refresh();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the form." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.forms.list.delete_error"),
+      });
     }
   };
 
@@ -99,8 +117,8 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
     <section className="mt-7 w-full border-t border-subtle pt-7">
       <div className="flex items-center justify-between">
         <SettingsHeading
-          title="Formulaires web"
-          description="Permet à des visiteurs externes anonymes de soumettre des demandes directement dans la file Intake."
+          title={t("intake_settings.forms.list.title")}
+          description={t("intake_settings.forms.list.description")}
         />
         {isAdmin && (
           <Button
@@ -112,7 +130,7 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
               setIsModalOpen(true);
             }}
           >
-            Nouveau formulaire
+            {t("intake_settings.forms.list.new_form")}
           </Button>
         )}
       </div>
@@ -123,7 +141,7 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
             <Loader.Item height="50px" />
           </Loader>
         )}
-        {forms?.length === 0 && <p className="text-13 text-tertiary">Aucun formulaire web configuré.</p>}
+        {forms?.length === 0 && <p className="text-13 text-tertiary">{t("intake_settings.forms.list.no_forms")}</p>}
         {forms?.map((form) => (
           <div
             key={form.id}
@@ -142,7 +160,7 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
                   type="button"
                   onClick={() => handleCopyLink(form.token)}
                   className="rounded-sm p-1 hover:bg-layer-1"
-                  title="Copier le lien"
+                  title={t("intake_settings.forms.list.copy_link")}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </button>
@@ -150,7 +168,7 @@ export const IntakeFormsRoot = observer(function IntakeFormsRoot(props: Props) {
                   type="button"
                   onClick={() => handleRegenerateToken(form)}
                   className="rounded-sm p-1 hover:bg-layer-1"
-                  title="Régénérer le lien"
+                  title={t("intake_settings.forms.list.regenerate_link")}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                 </button>

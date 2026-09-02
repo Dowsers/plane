@@ -104,7 +104,11 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
       setMaxDepth(updated.max_depth);
       setMaxCost(updated.max_cost);
       setTimeoutMs(updated.timeout_ms);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Quotas updated." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("flexible_query.toast.quotas_updated_title"),
+        message: t("flexible_query.toast.quotas_updated_message"),
+      });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("flexible_query.toast.error");
       setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
@@ -115,14 +119,22 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
 
   const handleRunQuery = async () => {
     if (!apiToken.trim()) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Paste one of your API tokens first." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("flexible_query.toast.error"),
+        message: t("flexible_query.try_it.missing_token"),
+      });
       return;
     }
     let parsedBody: TFlexibleQueryRequest;
     try {
       parsedBody = JSON.parse(queryBody);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Query body must be valid JSON." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("flexible_query.toast.error"),
+        message: t("flexible_query.try_it.invalid_json"),
+      });
       return;
     }
     setIsRunningQuery(true);
@@ -131,7 +143,11 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
       const { status, data } = await flexibleQueryService.runQuery(workspaceSlug, apiToken.trim(), parsedBody);
       setQueryResult({ status, body: data });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "The request could not be sent." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("flexible_query.toast.error"),
+        message: t("flexible_query.try_it.request_failed"),
+      });
     } finally {
       setIsRunningQuery(false);
     }
@@ -141,11 +157,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4 rounded-md border border-subtle p-4">
         <div>
-          <h5 className="text-14 font-medium text-primary">Enable for this workspace</h5>
-          <p className="text-13 text-tertiary">
-            Also requires the instance-wide flag to be enabled by whoever deployed this instance - this toggle only
-            covers this workspace's own opt-in.
-          </p>
+          <h5 className="text-14 font-medium text-primary">{t("flexible_query.enable.title")}</h5>
+          <p className="text-13 text-tertiary">{t("flexible_query.enable.description")}</p>
         </div>
         <ToggleSwitch
           value={Boolean(currentWorkspace?.is_flexible_query_enabled)}
@@ -155,10 +168,10 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-subtle p-4">
-        <h5 className="text-14 font-medium text-primary">Quotas</h5>
+        <h5 className="text-14 font-medium text-primary">{t("flexible_query.quotas.title")}</h5>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <span className="text-13 text-secondary">Max nesting depth</span>
+            <span className="text-13 text-secondary">{t("flexible_query.quotas.max_depth")}</span>
             <Input
               type="number"
               min={1}
@@ -169,7 +182,7 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-13 text-secondary">Max cost</span>
+            <span className="text-13 text-secondary">{t("flexible_query.quotas.max_cost")}</span>
             <Input
               type="number"
               min={1}
@@ -180,7 +193,7 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-13 text-secondary">Timeout (ms)</span>
+            <span className="text-13 text-secondary">{t("flexible_query.quotas.timeout_ms")}</span>
             <Input
               type="number"
               min={1}
@@ -200,20 +213,17 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
               loading={isSavingQuotas}
               disabled={!hasLoadedQuotas}
             >
-              Save
+              {t("save")}
             </Button>
           </div>
         )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-subtle p-4">
-        <h5 className="text-14 font-medium text-primary">Try it</h5>
-        <p className="text-13 text-tertiary">
-          Paste one of your own API tokens (Workspace Settings &gt; API Tokens) and a query body to send a real request
-          against this workspace - never a mocked preview.
-        </p>
+        <h5 className="text-14 font-medium text-primary">{t("flexible_query.try_it.title")}</h5>
+        <p className="text-13 text-tertiary">{t("flexible_query.try_it.description")}</p>
         <Input
-          placeholder="Your API token"
+          placeholder={t("flexible_query.try_it.token_placeholder")}
           value={apiToken}
           onChange={(e) => setApiToken(e.target.value)}
           inputSize="sm"
@@ -226,7 +236,7 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
         />
         <div>
           <Button variant="neutral-primary" size="sm" onClick={handleRunQuery} loading={isRunningQuery}>
-            Run query
+            {t("flexible_query.try_it.run_query")}
           </Button>
         </div>
         {queryResult && (

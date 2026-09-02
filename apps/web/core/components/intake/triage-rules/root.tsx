@@ -10,6 +10,7 @@ import useSWR, { mutate } from "swr";
 import { ArrowDown, ArrowUp, Pencil, Play, Trash2 } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TTriageRule, TTriageRuleDryRunMatch } from "@plane/types";
 import { Button, Loader, ToggleSwitch } from "@plane/ui";
@@ -31,15 +32,15 @@ type Props = {
   projectId: string;
 };
 
-const ACTION_TYPE_LABELS: Record<string, string> = {
-  SET_PRIORITY: "priorité",
-  SET_LABELS: "labels",
-  SET_ASSIGNEES: "assignés",
-  SET_STATE: "état",
-};
-
 export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
   const { workspaceSlug, projectId } = props;
+  const { t } = useTranslation();
+  const ACTION_TYPE_LABELS: Record<string, string> = {
+    SET_PRIORITY: t("common.priority"),
+    SET_LABELS: t("common.labels"),
+    SET_ASSIGNEES: t("common.assignees"),
+    SET_STATE: t("common.state"),
+  };
   const { allowPermissions } = useUserPermissions();
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
   const canView = allowPermissions(
@@ -70,7 +71,11 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
       await triageRuleService.update(workspaceSlug, projectId, rule.id, { is_active: !rule.is_active });
       refresh();
     } catch (error: any) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: error?.error ?? "Unable to update the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.triage_rules.update_error"),
+      });
     }
   };
 
@@ -79,7 +84,11 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
       await triageRuleService.remove(workspaceSlug, projectId, rule.id);
       refresh();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.delete_error"),
+      });
     }
   };
 
@@ -100,7 +109,11 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
         reordered.map((r) => r.id)
       );
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to reorder rules." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.reorder_error"),
+      });
     } finally {
       refresh();
     }
@@ -111,7 +124,11 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
       const response = await triageRuleService.dryRun(workspaceSlug, projectId, rule.id);
       setDryRunResults({ ruleId: rule.id, matches: response.matches });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to test the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.dry_run_error"),
+      });
     }
   };
 
@@ -121,11 +138,15 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
       const response = await triageRuleService.reapply(workspaceSlug, projectId);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
-        message: `${response.applied_count} item(s) mis à jour.`,
+        title: t("toast.success"),
+        message: t("intake_settings.triage_rules.reapply_success", { count: response.applied_count }),
       });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to reapply the rules." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.reapply_error"),
+      });
     } finally {
       setIsReapplying(false);
     }
@@ -135,13 +156,13 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
     <section className="mt-7 w-full border-t border-subtle pt-7">
       <div className="flex items-center justify-between">
         <SettingsHeading
-          title="Règles de triage"
-          description="Applique automatiquement priorité/labels/assignés/état aux items d'intake entrants."
+          title={t("intake_settings.triage_rules.list.title")}
+          description={t("intake_settings.triage_rules.list.description")}
         />
         {isAdmin && (
           <div className="flex shrink-0 items-center gap-2">
             <Button variant="neutral-primary" size="sm" onClick={handleReapply} loading={isReapplying}>
-              Réappliquer sur la file
+              {t("intake_settings.triage_rules.list.reapply_button")}
             </Button>
             <Button
               variant="primary"
@@ -151,7 +172,7 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
                 setIsModalOpen(true);
               }}
             >
-              Nouvelle règle
+              {t("intake_settings.triage_rules.list.new_rule")}
             </Button>
           </div>
         )}
@@ -164,7 +185,9 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
             <Loader.Item height="50px" />
           </Loader>
         )}
-        {rules?.length === 0 && <p className="text-13 text-tertiary">Aucune règle de triage configurée.</p>}
+        {rules?.length === 0 && (
+          <p className="text-13 text-tertiary">{t("intake_settings.triage_rules.list.no_rules")}</p>
+        )}
         {rules?.map((rule, index) => (
           <div key={rule.id} className="flex flex-col gap-2 rounded-md border border-subtle px-3 py-2.5">
             <div className="flex items-center justify-between gap-2">
@@ -173,7 +196,7 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
                 <span className="text-13 font-medium text-primary">{rule.name}</span>
                 {!rule.is_valid && (
                   <span className="bg-danger-component-surface-light text-danger-strong rounded-xs px-1.5 py-0.5 text-11">
-                    Règle invalide - action à corriger
+                    {t("intake_settings.triage_rules.list.invalid_rule")}
                   </span>
                 )}
               </div>
@@ -199,7 +222,7 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
                     type="button"
                     onClick={() => handleDryRun(rule)}
                     className="rounded-sm p-1 hover:bg-layer-1"
-                    title="Tester"
+                    title={t("intake_settings.triage_rules.list.test_button")}
                   >
                     <Play className="h-3.5 w-3.5" />
                   </button>
@@ -220,14 +243,14 @@ export const TriageRulesRoot = observer(function TriageRulesRoot(props: Props) {
               )}
             </div>
             <p className="text-12 text-tertiary">
-              {rule.conditions.length} condition(s) -{" "}
+              {t("intake_settings.triage_rules.list.condition_count", { count: rule.conditions.length })} -{" "}
               {rule.actions.map((a) => ACTION_TYPE_LABELS[a.action_type] ?? a.action_type).join(", ") ||
-                "aucune action"}
+                t("intake_settings.triage_rules.list.no_actions")}
             </p>
             {dryRunResults?.ruleId === rule.id && (
               <div className="mt-1 flex flex-col gap-1 rounded-sm bg-surface-1 p-2">
                 <p className="text-12 font-medium text-secondary">
-                  {dryRunResults.matches.length} item(s) en attente correspondent actuellement :
+                  {t("intake_settings.triage_rules.list.dry_run_matches", { count: dryRunResults.matches.length })}
                 </p>
                 {dryRunResults.matches.slice(0, 10).map((match) => (
                   <p key={match.intake_issue_id} className="text-12 text-tertiary">

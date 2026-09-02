@@ -15,6 +15,7 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TAuditEventType } from "@plane/types";
 import { Loader } from "@plane/ui";
 import { renderFormattedDate, renderFormattedPayloadDate, renderFormattedTime } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // components
 import { DateRangeDropdown } from "@/components/dropdowns/date-range";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
@@ -45,6 +46,7 @@ type Props = {
  */
 export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAuditLog(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   // state
   const [eventTypes, setEventTypes] = useState<TAuditEventType[]>([]);
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -89,14 +91,14 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
       await workspaceAuditLogService.exportCsv(workspaceSlug, filters);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Export started",
-        message: "Once the export is ready you will be able to download it from Workspace Settings > Exports.",
+        title: t("audit_log.toast.export_started_title"),
+        message: t("audit_log.toast.export_started_message"),
       });
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Export failed",
-        message: "Something went wrong while starting the export. Please try again.",
+        title: t("audit_log.toast.export_failed_title"),
+        message: t("audit_log.toast.export_failed_message"),
       });
     } finally {
       setIsExporting(false);
@@ -111,7 +113,7 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
           buttonVariant="border-with-text"
           value={dateRange}
           onSelect={(range) => applyFilter(() => setDateRange({ from: range?.from, to: range?.to }))}
-          placeholder={{ from: "From date", to: "To date" }}
+          placeholder={{ from: t("audit_log.filters.from_date"), to: t("audit_log.filters.to_date") }}
           isClearable
         />
         <MemberDropdown
@@ -119,7 +121,7 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
           multiple={false}
           value={actorId}
           onChange={(v) => applyFilter(() => setActorId(v))}
-          placeholder="Actor"
+          placeholder={t("audit_log.filters.actor")}
           buttonVariant="border-with-text"
           showUserDetails
         />
@@ -128,12 +130,12 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
           multiple={false}
           value={targetUserId}
           onChange={(v) => applyFilter(() => setTargetUserId(v))}
-          placeholder="Target"
+          placeholder={t("audit_log.filters.target")}
           buttonVariant="border-with-text"
           showUserDetails
         />
         <Button variant="secondary" size="sm" className="ml-auto" onClick={handleExport} loading={isExporting}>
-          Export CSV
+          {t("audit_log.export_csv")}
         </Button>
       </div>
 
@@ -141,11 +143,11 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
         <table className="w-full text-13">
           <thead>
             <tr className="border-b border-subtle bg-layer-1 text-left text-tertiary">
-              <th className="px-3 py-2 font-medium">Date / Time</th>
-              <th className="px-3 py-2 font-medium">Event</th>
-              <th className="px-3 py-2 font-medium">Actor</th>
-              <th className="px-3 py-2 font-medium">Target</th>
-              <th className="px-3 py-2 font-medium">IP</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.date_time")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.event")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.actor")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.target")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.ip")}</th>
               <th className="px-3 py-2 font-medium" />
             </tr>
           </thead>
@@ -163,13 +165,13 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
                   {AUDIT_EVENT_TYPE_LABELS[log.event_type]}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-secondary">
-                  {log.actor?.email ?? log.actor_email_snapshot ?? "System"}
+                  {log.actor?.email ?? log.actor_email_snapshot ?? t("audit_log.detail_modal.system")}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-secondary">
                   {log.target_user?.email ?? log.target_email_snapshot ?? (log.target_type || "—")}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-tertiary">{log.ip_address ?? "—"}</td>
-                <td className="px-3 py-2 text-right text-accent-primary">Details</td>
+                <td className="px-3 py-2 text-right text-accent-primary">{t("audit_log.details")}</td>
               </tr>
             ))}
           </tbody>
@@ -184,8 +186,8 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
         {!isLoading && (data?.results?.length ?? 0) === 0 && (
           <EmptyStateCompact
             assetKey="search"
-            title="No audit log entries"
-            description="No security events match the current filters yet."
+            title={t("audit_log.empty.title")}
+            description={t("audit_log.empty.description")}
             align="center"
             rootClassName="py-16"
           />
@@ -199,7 +201,7 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
           disabled={!data?.prev_page_results || !data?.prev_cursor}
           onClick={() => setCursor(data?.prev_cursor)}
         >
-          Previous
+          {t("audit_log.pagination.previous")}
         </Button>
         <Button
           variant="secondary"
@@ -207,7 +209,7 @@ export const WorkspaceSecurityAuditLog = observer(function WorkspaceSecurityAudi
           disabled={!data?.next_page_results || !data?.next_cursor}
           onClick={() => setCursor(data?.next_cursor)}
         >
-          Next
+          {t("next")}
         </Button>
       </div>
 

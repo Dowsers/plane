@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { EModalPosition, EModalWidth, ModalCore } from "@plane/ui";
@@ -42,6 +43,7 @@ export const MoveToProjectModal = observer(function MoveToProjectModal(props: Pr
   const router = useAppRouter();
   // store hooks
   const { convertToProject } = usePageStore(EPageStoreType.WORKSPACE);
+  const { t } = useTranslation();
 
   const handleClose = () => {
     setProjectId(null);
@@ -53,14 +55,18 @@ export const MoveToProjectModal = observer(function MoveToProjectModal(props: Pr
     setIsSubmitting(true);
     try {
       await convertToProject(workspaceSlug, page.id, projectId);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Page moved to the project." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: t("wiki.toast.convert_to_project_success"),
+      });
       handleClose();
       router.push(`/${workspaceSlug}/projects/${projectId}/pages/${page.id}`);
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: error?.error || "The page could not be moved. Please try again.",
+        title: t("toast.error"),
+        message: error?.error || t("wiki.toast.convert_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -70,26 +76,24 @@ export const MoveToProjectModal = observer(function MoveToProjectModal(props: Pr
   return (
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.TOP} width={EModalWidth.XL}>
       <div className="space-y-4 p-5">
-        <h3 className="text-18 font-medium text-secondary">Move to project</h3>
-        <p className="text-13 text-secondary">
-          Choose the project this page should move into. Its version history and sub-pages are preserved.
-        </p>
+        <h3 className="text-18 font-medium text-secondary">{t("wiki.move_to_project")}</h3>
+        <p className="text-13 text-secondary">{t("wiki.move_to_project_description")}</p>
         <ProjectDropdown
           buttonVariant="border-with-text"
           multiple={false}
           value={projectId}
           onChange={(val: string) => setProjectId(val)}
-          placeholder="Select a project"
+          placeholder={t("wiki.move_to_project_modal.select_project_placeholder")}
           className="w-full"
           buttonClassName="w-full"
         />
       </div>
       <div className="flex items-center justify-end gap-2 border-t-[0.5px] border-subtle px-5 py-4">
         <Button variant="secondary" size="lg" onClick={handleClose}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button variant="primary" size="lg" loading={isSubmitting} disabled={!projectId} onClick={handleSubmit}>
-          Move
+          {t("wiki.move_to_project_modal.move_button")}
         </Button>
       </div>
     </ModalCore>

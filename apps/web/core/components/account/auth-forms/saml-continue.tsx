@@ -7,6 +7,7 @@
 import { XCircle } from "lucide-react";
 // plane imports
 import { API_BASE_URL } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { Input } from "@plane/ui";
 
@@ -32,6 +33,7 @@ type Props = {
  */
 export function SAMLContinueForm(props: Props) {
   const { email, name, loginUrl, nextPath, handleEmailClear } = props;
+  const { t } = useTranslation();
 
   const handleContinue = () => {
     const params = nextPath ? `?next_path=${encodeURIComponent(nextPath)}` : "";
@@ -42,7 +44,7 @@ export function SAMLContinueForm(props: Props) {
     <div className="space-y-4">
       <div className="space-y-1">
         <label htmlFor="saml-email" className="text-13 font-medium text-tertiary">
-          Email
+          {t("auth.common.email.label")}
         </label>
         <div className="relative flex items-center rounded-md border border-strong bg-surface-1">
           <Input
@@ -56,17 +58,17 @@ export function SAMLContinueForm(props: Props) {
             type="button"
             className="absolute right-3 size-5"
             onClick={handleEmailClear}
-            aria-label="Use a different email"
+            aria-label={t("auth.saml.use_different_email")}
           >
             <XCircle className="size-5 stroke-placeholder" />
           </button>
         </div>
       </div>
       <p className="text-13 text-tertiary">
-        Your organization requires signing in through <span className="font-medium text-secondary">{name}</span>.
+        {t("auth.saml.sso_required_notice")} <span className="font-medium text-secondary">{name}</span>.
       </p>
       <Button type="button" variant="primary" className="w-full" size="xl" onClick={handleContinue}>
-        Continue with {name}
+        {t("auth.saml.continue_with", { name })}
       </Button>
     </div>
   );

@@ -10,6 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 import { usePopper } from "react-popper";
 import { Loader } from "lucide-react";
 import { Popover } from "@headlessui/react";
+import { useTranslation } from "@plane/i18n";
 import { PlusIcon, CloseIcon } from "@plane/propel/icons";
 import type { IIssueLabel } from "@plane/types";
 // hooks
@@ -34,6 +35,8 @@ const defaultValues: Partial<IIssueLabel> = {
 
 export function LabelCreate(props: ILabelCreate) {
   const { workspaceSlug, projectId, issueId, values, labelOperations, disabled = false } = props;
+  // hooks
+  const { t } = useTranslation();
   // state
   const [isCreateToggle, setIsCreateToggle] = useState(false);
   const handleIsCreateToggle = () => setIsCreateToggle(!isCreateToggle);
@@ -81,15 +84,16 @@ export function LabelCreate(props: ILabelCreate) {
 
   return (
     <>
-      <div
+      <button
+        type="button"
         className="relative flex flex-shrink-0 cursor-pointer items-center gap-1 rounded-full border border-subtle p-0.5 px-2 text-11 text-tertiary transition-all hover:bg-surface-2 hover:text-secondary"
         onClick={handleIsCreateToggle}
       >
         <div className="flex-shrink-0">
           {isCreateToggle ? <CloseIcon className="h-2.5 w-2.5" /> : <PlusIcon className="h-2.5 w-2.5" />}
         </div>
-        <div className="flex-shrink-0">{isCreateToggle ? "Cancel" : "New"}</div>
-      </div>
+        <div className="flex-shrink-0">{isCreateToggle ? t("cancel") : t("issue.labels.create.new_label_toggle")}</div>
+      </button>
 
       {isCreateToggle && (
         <form className="relative flex items-center gap-x-2 p-1" onSubmit={handleSubmit(handleLabel)}>
@@ -97,16 +101,16 @@ export function LabelCreate(props: ILabelCreate) {
             <Controller
               name="color"
               control={control}
-              render={({ field: { value, onChange } }) => (
+              render={({ field: { value: fieldValue, onChange } }) => (
                 <Popover>
                   <>
                     <Popover.Button as={Fragment}>
                       <button type="button" ref={setReferenceElement} className="grid place-items-center outline-none">
-                        {value && value?.trim() !== "" && (
+                        {fieldValue && fieldValue?.trim() !== "" && (
                           <span
                             className="h-5 w-5 rounded-sm"
                             style={{
-                              backgroundColor: value ?? "black",
+                              backgroundColor: fieldValue ?? "black",
                             }}
                           />
                         )}
@@ -119,7 +123,11 @@ export function LabelCreate(props: ILabelCreate) {
                         style={styles.popper}
                         {...attributes.popper}
                       >
-                        <TwitterPicker triangle={"hide"} color={value} onChange={(value) => onChange(value.hex)} />
+                        <TwitterPicker
+                          triangle={"hide"}
+                          color={fieldValue}
+                          onChange={(colorValue) => onChange(colorValue.hex)}
+                        />
                       </div>
                     </Popover.Panel>
                   </>
@@ -131,7 +139,7 @@ export function LabelCreate(props: ILabelCreate) {
             control={control}
             name="name"
             rules={{
-              required: "This is required",
+              required: t("issue.labels.create.name_required"),
             }}
             render={({ field: { value, onChange, ref } }) => (
               <Input
@@ -142,7 +150,7 @@ export function LabelCreate(props: ILabelCreate) {
                 onChange={onChange}
                 ref={ref}
                 hasError={Boolean(errors.name)}
-                placeholder="Title"
+                placeholder={t("title")}
                 className="w-full px-1.5 py-1 text-11"
                 disabled={isSubmitting}
               />

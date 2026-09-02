@@ -8,6 +8,8 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 // editor
 import type { EditorRefApi } from "@plane/editor";
+// i18n
+import { useTranslation } from "@plane/i18n";
 // ui
 import { TextArea } from "@plane/ui";
 import { cn, getPageName } from "@plane/utils";
@@ -28,6 +30,7 @@ export const PageEditorTitle = observer(function PageEditorTitle(props: Props) {
   const [isLengthVisible, setIsLengthVisible] = useState(false);
   // page filters
   const { fontSize } = usePageFilters();
+  const { t } = useTranslation();
   // ui
   const titleFontClassName = cn("font-bold tracking-[-2%]", {
     "text-[1.6rem] leading-[1.9rem]": fontSize === "small-font",
@@ -52,7 +55,7 @@ export const PageEditorTitle = observer(function PageEditorTitle(props: Props) {
         <div className="relative">
           <TextArea
             className={cn(titleFontClassName, "block w-full resize-none rounded-none border-none p-0 outline-none")}
-            placeholder="Untitled"
+            placeholder={t("wiki.editor.title_placeholder")}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -64,7 +67,6 @@ export const PageEditorTitle = observer(function PageEditorTitle(props: Props) {
             maxLength={255}
             onFocus={() => setIsLengthVisible(true)}
             onBlur={() => setIsLengthVisible(false)}
-            autoFocus
           />
           <div
             className={cn(

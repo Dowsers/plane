@@ -11,6 +11,7 @@ import { AUDIT_EVENT_TYPE_LABELS } from "@plane/constants";
 import type { TWorkspaceAuditLogDetail } from "@plane/types";
 import { EModalPosition, EModalWidth, Loader, ModalCore } from "@plane/ui";
 import { renderFormattedDate, renderFormattedTime } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceAuditLogService from "@/services/workspace-audit-log.service";
 
@@ -73,6 +74,7 @@ export function AuditLogDetailModal(props: Props) {
     fetchDetail = (slug, id) => workspaceAuditLogService.retrieve(slug, id),
     queryKeyPrefix = "WORKSPACE_AUDIT_LOG_DETAIL",
   } = props;
+  const { t } = useTranslation();
 
   const { data, isLoading } = useSWR(
     auditLogId ? [queryKeyPrefix, workspaceSlug, auditLogId] : null,
@@ -84,7 +86,7 @@ export function AuditLogDetailModal(props: Props) {
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto p-5">
         <div className="flex items-center justify-between gap-2">
           <h4 className="truncate text-16 font-medium text-primary">
-            {data ? AUDIT_EVENT_TYPE_LABELS[data.event_type] : "Audit log entry"}
+            {data ? AUDIT_EVENT_TYPE_LABELS[data.event_type] : t("audit_log.detail_modal.title")}
           </h4>
           <button onClick={onClose} type="button" className="shrink-0">
             <X className="h-4 w-4" />
@@ -100,29 +102,32 @@ export function AuditLogDetailModal(props: Props) {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             <DetailRow
-              label="Date"
+              label={t("audit_log.detail_modal.date")}
               value={`${renderFormattedDate(data.created_at)}, ${renderFormattedTime(data.created_at)}`}
             />
-            <DetailRow label="Event" value={AUDIT_EVENT_TYPE_LABELS[data.event_type]} />
-            <DetailRow label="Actor" value={data.actor?.email ?? data.actor_email_snapshot ?? "System"} />
+            <DetailRow label={t("audit_log.detail_modal.event")} value={AUDIT_EVENT_TYPE_LABELS[data.event_type]} />
             <DetailRow
-              label="Target"
+              label={t("audit_log.detail_modal.actor")}
+              value={data.actor?.email ?? data.actor_email_snapshot ?? t("audit_log.detail_modal.system")}
+            />
+            <DetailRow
+              label={t("audit_log.detail_modal.target")}
               value={
                 data.target_user?.email ??
                 data.target_email_snapshot ??
                 (data.target_type ? `${data.target_type} (${data.target_id})` : "—")
               }
             />
-            <DetailRow label="IP address" value={data.ip_address ?? "—"} />
-            <DetailRow label="User agent" value={data.user_agent || "—"} />
+            <DetailRow label={t("audit_log.detail_modal.ip_address")} value={data.ip_address ?? "—"} />
+            <DetailRow label={t("audit_log.detail_modal.user_agent")} value={data.user_agent || "—"} />
             <div className="col-span-2">
-              <DetailRow label="Old value" value={<JsonBlock value={data.old_value} />} />
+              <DetailRow label={t("audit_log.detail_modal.old_value")} value={<JsonBlock value={data.old_value} />} />
             </div>
             <div className="col-span-2">
-              <DetailRow label="New value" value={<JsonBlock value={data.new_value} />} />
+              <DetailRow label={t("audit_log.detail_modal.new_value")} value={<JsonBlock value={data.new_value} />} />
             </div>
             <div className="col-span-2">
-              <DetailRow label="Metadata" value={<JsonBlock value={data.metadata} />} />
+              <DetailRow label={t("audit_log.detail_modal.metadata")} value={<JsonBlock value={data.metadata} />} />
             </div>
           </div>
         )}

@@ -5,6 +5,7 @@
  */
 
 import { observer } from "mobx-react";
+import { useTranslation } from "@plane/i18n";
 // components
 import { SettingsHeading } from "@/components/settings/heading";
 // local imports
@@ -37,21 +38,22 @@ type Props = {
  */
 export const SCIMProvisioningPanel = observer(function SCIMProvisioningPanel(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-y-8">
       <div className="flex flex-col gap-y-3">
         <SettingsHeading
-          title="SCIM token"
-          description="Generate a token and connect it to your identity provider (Okta, Azure AD, Google Workspace) to automatically create, update, and deactivate members."
+          title={t("scim.provisioning_panel.token_heading.title")}
+          description={t("scim.provisioning_panel.token_heading.description")}
         />
         <SCIMTokenPanel workspaceSlug={workspaceSlug} />
       </div>
 
       <div className="flex flex-col gap-y-3">
         <SettingsHeading
-          title="Provisioning log"
-          description="The last 90 days of SCIM create/update/deactivate/sync-error events for this workspace."
+          title={t("scim.provisioning_panel.log_heading.title")}
+          description={t("scim.provisioning_panel.log_heading.description")}
         />
         <SCIMProvisioningLog workspaceSlug={workspaceSlug} />
       </div>

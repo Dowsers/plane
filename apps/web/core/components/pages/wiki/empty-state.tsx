@@ -6,6 +6,7 @@
 
 import { observer } from "mobx-react";
 import { useTheme } from "next-themes";
+import { useTranslation } from "@plane/i18n";
 // assets
 import darkWikiAsset from "@/app/assets/empty-state/wiki/all-dark.webp?url";
 import lightWikiAsset from "@/app/assets/empty-state/wiki/all-light.webp?url";
@@ -25,12 +26,13 @@ export const WikiEmptyState = observer(function WikiEmptyState(props: Props) {
   const { workspaceSlug, canCreate, onPageCreated } = props;
   const { resolvedTheme } = useTheme();
   const resolvedPath = resolvedTheme === "light" ? lightWikiAsset : darkWikiAsset;
+  const { t } = useTranslation();
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4">
       <DetailedEmptyState
-        title="Nothing here yet"
-        description="Create your first Wiki page or folder to start documenting."
+        title={t("wiki.empty_state.all.title")}
+        description={t("wiki.empty_state.all.description")}
         assetPath={resolvedPath}
       />
       {canCreate && (

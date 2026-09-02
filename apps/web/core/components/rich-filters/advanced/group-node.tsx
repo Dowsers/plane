@@ -8,6 +8,7 @@ import { observer } from "mobx-react";
 import { FolderPlus, Plus, Trash2 } from "lucide-react";
 // plane imports
 import { FILTER_TREE_MAX_CONDITIONS, FILTER_TREE_MAX_DEPTH } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { getButtonStyling } from "@plane/propel/button";
 import { IconButton } from "@plane/propel/icon-button";
 import { Tooltip } from "@plane/propel/tooltip";
@@ -44,6 +45,8 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
   props: TFilterGroupProps<P, E>
 ) {
   const { filter, group, depth, isRoot = false, isDisabled = false } = props;
+  // plane hooks
+  const { t } = useTranslation();
 
   const totalConditionCount = filter.allConditions.length;
   const canAddCondition = totalConditionCount < FILTER_TREE_MAX_CONDITIONS;
@@ -78,7 +81,7 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
           isDisabled={isDisabled}
         />
         {group.children.length === 0 && (
-          <span className="text-11 text-placeholder italic">Empty group - add a condition or remove it</span>
+          <span className="text-11 text-placeholder italic">{t("rich_filters.advanced.group.empty_group")}</span>
         )}
 
         {showActions && (
@@ -90,7 +93,7 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
                 customButton={
                   <span className={cn(getButtonStyling("secondary", "sm"), "gap-1")}>
                     <Plus className="size-3" />
-                    Condition
+                    {t("rich_filters.advanced.group.condition")}
                   </span>
                 }
               />
@@ -99,15 +102,20 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
               // `CustomSearchSelect`'s custom-button click handler opens the panel regardless of
               // its `disabled` prop (only headlessui's own Combobox interactions are gated), so the
               // condition cap must be enforced by not rendering the dropdown at all once reached.
-              <Tooltip tooltipContent={`Maximum of ${FILTER_TREE_MAX_CONDITIONS} conditions reached`} position="top">
+              <Tooltip
+                tooltipContent={t("rich_filters.advanced.group.max_conditions_reached", {
+                  max: FILTER_TREE_MAX_CONDITIONS,
+                })}
+                position="top"
+              >
                 <span className={cn(getButtonStyling("secondary", "sm"), "cursor-not-allowed gap-1 opacity-50")}>
                   <Plus className="size-3" />
-                  Condition
+                  {t("rich_filters.advanced.group.condition")}
                 </span>
               </Tooltip>
             )}
             <Tooltip
-              tooltipContent={`Maximum nesting depth of ${FILTER_TREE_MAX_DEPTH} reached`}
+              tooltipContent={t("rich_filters.advanced.group.max_depth_reached", { max: FILTER_TREE_MAX_DEPTH })}
               disabled={canAddGroup}
               position="top"
             >
@@ -119,7 +127,7 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
                   className={cn(getButtonStyling("secondary", "sm"), "gap-1")}
                 >
                   <FolderPlus className="size-3" />
-                  Group
+                  {t("rich_filters.advanced.group.group")}
                 </button>
               </div>
             </Tooltip>
@@ -129,7 +137,7 @@ export const FilterGroup = observer(function FilterGroup<P extends TFilterProper
                 size="sm"
                 icon={Trash2}
                 onClick={() => filter.removeGroup(group.id)}
-                aria-label="Remove group"
+                aria-label={t("rich_filters.advanced.group.remove_group_aria")}
               />
             )}
           </div>

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react";
 
+import { useTranslation } from "@plane/i18n";
 import { SearchIcon, CloseIcon } from "@plane/propel/icons";
 import type { TViewFilterProps, TViewFilters } from "@plane/types";
 import { EViewAccess } from "@plane/types";
@@ -16,7 +17,6 @@ import { FilterCreatedBy } from "@/components/common/filters/created-by";
 import { FilterOption } from "@/components/issues/issue-layouts/filters";
 // constants
 // hooks
-import { usePlatformOS } from "@/hooks/use-platform-os";
 // plane web components
 import { FilterByAccess } from "@/plane-web/components/views/filters/access-filter";
 
@@ -28,10 +28,10 @@ type Props = {
 
 export const ViewFiltersSelection = observer(function ViewFiltersSelection(props: Props) {
   const { filters, handleFiltersUpdate, memberIds } = props;
+  // i18n
+  const { t } = useTranslation();
   // states
   const [filtersSearchQuery, setFiltersSearchQuery] = useState("");
-  // store
-  const { isMobile } = usePlatformOS();
 
   // handles filter update
   const handleFilters = (key: keyof TViewFilterProps, value: boolean | string | EViewAccess | string[]) => {
@@ -65,10 +65,9 @@ export const ViewFiltersSelection = observer(function ViewFiltersSelection(props
           <input
             type="text"
             className="w-full bg-surface-2 outline-none placeholder:text-placeholder"
-            placeholder="Search"
+            placeholder={t("search")}
             value={filtersSearchQuery}
             onChange={(e) => setFiltersSearchQuery(e.target.value)}
-            autoFocus={!isMobile}
           />
           {filtersSearchQuery !== "" && (
             <button type="button" className="grid place-items-center" onClick={() => setFiltersSearchQuery("")}>
@@ -87,7 +86,7 @@ export const ViewFiltersSelection = observer(function ViewFiltersSelection(props
                 favorites: !filters.filters?.favorites,
               })
             }
-            title="Favorites"
+            title={t("favorites")}
           />
         </div>
 
@@ -97,8 +96,8 @@ export const ViewFiltersSelection = observer(function ViewFiltersSelection(props
           handleUpdate={(val: string | string[]) => handleFilters("view_type", val)}
           searchQuery={filtersSearchQuery}
           accessFilters={[
-            { key: EViewAccess.PRIVATE, value: "Private" },
-            { key: EViewAccess.PUBLIC, value: "Public" },
+            { key: EViewAccess.PRIVATE, value: t("common.access.private") },
+            { key: EViewAccess.PUBLIC, value: t("common.access.public") },
           ]}
         />
 

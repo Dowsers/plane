@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import useSWR from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssuePriorities, TSLAPolicy, TSLAPolicyPayload, TSLAStateGroup } from "@plane/types";
 import { Button, Checkbox, CustomSelect, EModalPosition, EModalWidth, Input, ModalCore, TextArea } from "@plane/ui";
@@ -43,11 +44,14 @@ type Props = {
 
 type TDurationUnit = "minutes" | "hours" | "days";
 
-const UNIT_OPTIONS: { value: TDurationUnit; label: string }[] = [
-  { value: "minutes", label: "Minutes" },
-  { value: "hours", label: "Hours" },
-  { value: "days", label: "Days" },
-];
+const useUnitOptions = (): { value: TDurationUnit; label: string }[] => {
+  const { t } = useTranslation();
+  return [
+    { value: "minutes", label: t("sla_policies.form.unit_minutes") },
+    { value: "hours", label: t("sla_policies.form.unit_hours") },
+    { value: "days", label: t("sla_policies.form.unit_days") },
+  ];
+};
 
 const UNIT_TO_MINUTES: Record<TDurationUnit, number> = { minutes: 1, hours: 60, days: 1440 };
 
@@ -129,6 +133,8 @@ const defaultState = () => ({
  */
 export function SLAPolicyFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, policy, onSaved } = props;
+  const { t } = useTranslation();
+  const UNIT_OPTIONS = useUnitOptions();
   const [state, setState] = useState(defaultState());
   const [isSaving, setIsSaving] = useState(false);
 
@@ -177,7 +183,7 @@ export function SLAPolicyFormModal(props: Props) {
   const handleSave = async () => {
     const validationError = validate();
     if (validationError) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: validationError });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("common.errors.default.title"), message: validationError });
       return;
     }
 
@@ -207,8 +213,8 @@ export function SLAPolicyFormModal(props: Props) {
       onSaved();
       handleClose();
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to save the SLA policy.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message = (error as { error?: string })?.error ?? t("sla_policies.form.save_error");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("common.errors.default.title"), message });
     } finally {
       setIsSaving(false);
     }
@@ -220,7 +226,9 @@ export function SLAPolicyFormModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.TOP} width={EModalWidth.XXXL}>
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto py-5">
         <div className="flex items-center justify-between px-5">
-          <h4 className="text-18 font-medium text-primary">{policy ? "Edit SLA policy" : "New SLA policy"}</h4>
+          <h4 className="text-18 font-medium text-primary">
+            {policy ? t("sla_policies.form.edit_title") : t("sla_policies.form.create_title")}
+          </h4>
           <button onClick={handleClose} type="button">
             <X className="h-4 w-4" />
           </button>
@@ -230,7 +238,7 @@ export function SLAPolicyFormModal(props: Props) {
           <div className="flex items-center gap-3">
             <Input
               type="text"
-              placeholder="Policy name"
+              placeholder={t("sla_policies.form.name_placeholder")}
               value={state.name}
               onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
               className="flex-1"
@@ -242,12 +250,12 @@ export function SLAPolicyFormModal(props: Props) {
                 checked={state.isActive}
                 onChange={(event) => setState((prev) => ({ ...prev, isActive: event.target.checked }))}
               />
-              Active
+              {t("common.active")}
             </label>
           </div>
 
           <TextArea
-            placeholder="Description (optional)"
+            placeholder={t("sla_policies.form.description_placeholder")}
             value={state.description}
             onChange={(event) => setState((prev) => ({ ...prev, description: event.target.value }))}
             textAreaSize="sm"
@@ -255,7 +263,7 @@ export function SLAPolicyFormModal(props: Props) {
           />
 
           <div className="flex flex-col gap-2">
-            <h5 className="text-13 font-medium text-secondary">Project scope</h5>
+            <h5 className="text-13 font-medium text-secondary">{t("sla_policies.form.project_scope")}</h5>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-1.5 text-13 text-primary">
                 <input
@@ -263,7 +271,7 @@ export function SLAPolicyFormModal(props: Props) {
                   checked={state.appliesToAllProjects}
                   onChange={() => setState((prev) => ({ ...prev, appliesToAllProjects: true }))}
                 />
-                All projects
+                {t("sla_policies.scope.all_projects")}
               </label>
               <label className="flex items-center gap-1.5 text-13 text-primary">
                 <input
@@ -271,7 +279,7 @@ export function SLAPolicyFormModal(props: Props) {
                   checked={!state.appliesToAllProjects}
                   onChange={() => setState((prev) => ({ ...prev, appliesToAllProjects: false }))}
                 />
-                Specific projects
+                {t("sla_policies.scope.specific_projects")}
               </label>
             </div>
             {!state.appliesToAllProjects && (
@@ -289,62 +297,59 @@ export function SLAPolicyFormModal(props: Props) {
             {showNoProjectsWarning && (
               <div className="bg-amber-50 text-amber-700 flex items-start gap-1.5 rounded-md px-2.5 py-1.5 text-11">
                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                <span>
-                  This policy applies to no project yet - choose &quot;All projects&quot; or select at least one
-                  project, otherwise it will never match any work item.
-                </span>
+                <span>{t("sla_policies.scope.no_projects_warning")}</span>
               </div>
             )}
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Priority</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.priority")}</span>
               <DashboardGenericMultiSelect
                 value={state.priorityFilter}
                 onChange={(val) => setState((prev) => ({ ...prev, priorityFilter: val as TIssuePriorities[] }))}
                 options={SLA_PRIORITY_OPTIONS}
-                placeholder="Any priority"
+                placeholder={t("sla_policies.form.any_priority")}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">State group</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.state_group")}</span>
               <DashboardGenericMultiSelect
                 value={state.stateGroupFilter}
                 onChange={(val) => setState((prev) => ({ ...prev, stateGroupFilter: val as TSLAStateGroup[] }))}
                 options={SLA_STATE_GROUP_OPTIONS}
-                placeholder="Any state group"
+                placeholder={t("sla_policies.form.any_state_group")}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Labels</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.labels")}</span>
               <DashboardGenericMultiSelect
                 value={state.labelIds}
                 onChange={(val) => setState((prev) => ({ ...prev, labelIds: val }))}
                 options={labelOptions}
-                placeholder="Any label"
+                placeholder={t("sla_policies.form.any_label")}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Assignees</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.assignees")}</span>
               <MemberDropdown
                 multiple
                 value={state.assigneeIds}
                 onChange={(val) => setState((prev) => ({ ...prev, assigneeIds: val }))}
                 buttonVariant="border-with-text"
-                placeholder="Any assignee"
+                placeholder={t("sla_policies.form.any_assignee")}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Response time</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.response_time")}</span>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
                   min={0}
-                  placeholder="e.g. 30"
+                  placeholder={t("sla_policies.form.response_time_placeholder")}
                   value={state.responseTime.value}
                   onChange={(event) =>
                     setState((prev) => ({ ...prev, responseTime: { ...prev.responseTime, value: event.target.value } }))
@@ -369,12 +374,12 @@ export function SLAPolicyFormModal(props: Props) {
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Resolution time</span>
+              <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.resolution_time")}</span>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
                   min={0}
-                  placeholder="e.g. 4"
+                  placeholder={t("sla_policies.form.resolution_time_placeholder")}
                   value={state.resolutionTime.value}
                   onChange={(event) =>
                     setState((prev) => ({
@@ -402,11 +407,13 @@ export function SLAPolicyFormModal(props: Props) {
               </div>
             </div>
           </div>
-          <p className="text-11 text-tertiary">At least one of response time or resolution time must be set.</p>
+          <p className="text-11 text-tertiary">{t("sla_policies.form.time_budget_hint")}</p>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Warning threshold (%)</span>
+              <span className="text-13 font-medium text-secondary">
+                {t("sla_policies.form.warning_threshold_percent")}
+              </span>
               <Input
                 type="number"
                 min={1}
@@ -419,7 +426,9 @@ export function SLAPolicyFormModal(props: Props) {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-13 font-medium text-secondary">Critical threshold (%)</span>
+              <span className="text-13 font-medium text-secondary">
+                {t("sla_policies.form.critical_threshold_percent")}
+              </span>
               <Input
                 type="number"
                 min={1}
@@ -432,18 +441,15 @@ export function SLAPolicyFormModal(props: Props) {
               />
             </div>
           </div>
-          <p className="text-11 text-tertiary">
-            The critical threshold must be greater than the warning threshold - both are percentages of the total time
-            budget elapsed before the SLA is due.
-          </p>
+          <p className="text-11 text-tertiary">{t("sla_policies.form.threshold_order_hint")}</p>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            Save policy
+            {t("sla_policies.form.save_policy")}
           </Button>
         </div>
       </div>

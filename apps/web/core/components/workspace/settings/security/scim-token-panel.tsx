@@ -14,6 +14,7 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TSCIMToken } from "@plane/types";
 import { AlertModalCore, Loader } from "@plane/ui";
 import { calculateTimeAgo, copyTextToClipboard, joinUrlPath, renderFormattedDate } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // components
 import { resolveAbsoluteUrl } from "@/components/api-explorer/utils";
 // services
@@ -38,6 +39,7 @@ const TOKENS_KEY = (workspaceSlug: string) => `WORKSPACE_SCIM_TOKENS_${workspace
  */
 export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   // state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<TSCIMToken | null>(null);
@@ -58,7 +60,11 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
 
   const copyBaseUrl = () => {
     copyTextToClipboard(baseUrl).then(() =>
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Copied", message: "Base URL copied to clipboard." })
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("scim.token_panel.toast.copied_title"),
+        message: t("scim.token_panel.toast.copied_message"),
+      })
     );
   };
 
@@ -73,8 +79,8 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: err?.error ?? "Unable to revoke this token.",
+        title: t("scim.token_panel.toast.revoke_failed_title"),
+        message: err?.error ?? t("scim.token_panel.toast.revoke_failed_message"),
       });
     } finally {
       setIsRevoking(false);
@@ -84,7 +90,7 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <span className="text-caption-sm-medium text-tertiary uppercase">Base URL</span>
+        <span className="text-caption-sm-medium text-tertiary uppercase">{t("scim.token_panel.base_url")}</span>
         <button
           type="button"
           onClick={copyBaseUrl}
@@ -96,17 +102,14 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-13 text-tertiary">
-          Generate a token and paste it, together with the Base URL above, into your identity provider&apos;s SCIM
-          connection settings.
-        </p>
+        <p className="text-13 text-tertiary">{t("scim.token_panel.description")}</p>
         <Button
           variant="primary"
           size="sm"
           prependIcon={<Plus className="h-3.5 w-3.5" />}
           onClick={() => setIsCreateOpen(true)}
         >
-          Generate token
+          {t("scim.create_token_modal.submit")}
         </Button>
       </div>
 
@@ -119,7 +122,7 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
 
       {!isLoading && (tokens?.length ?? 0) === 0 && (
         <p className="rounded-lg border border-subtle bg-layer-2 px-4 py-6 text-center text-13 text-tertiary">
-          No SCIM tokens yet. Generate one to connect an identity provider.
+          {t("scim.token_panel.empty")}
         </p>
       )}
 
@@ -137,17 +140,19 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
                     token.is_active ? "bg-success-subtle text-success-primary" : "bg-layer-1 text-placeholder"
                   }`}
                 >
-                  {token.is_active ? "Active" : "Revoked"}
+                  {token.is_active ? t("scim.token_panel.status_active") : t("scim.token_panel.status_revoked")}
                 </span>
               </div>
               <span className="text-11 text-tertiary">
-                Created {renderFormattedDate(token.created_at)}
-                {token.last_used_at ? ` - Last used ${calculateTimeAgo(token.last_used_at)}` : " - Never used"}
+                {t("scim.token_panel.created_at", { date: renderFormattedDate(token.created_at) })}
+                {token.last_used_at
+                  ? t("scim.token_panel.last_used", { time: calculateTimeAgo(token.last_used_at) })
+                  : t("scim.token_panel.never_used")}
               </span>
             </div>
             {token.is_active && (
               <Button variant="error-fill" size="sm" onClick={() => setRevokeTarget(token)}>
-                Revoke
+                {t("scim.token_panel.revoke")}
               </Button>
             )}
           </div>
@@ -167,8 +172,8 @@ export const SCIMTokenPanel = observer(function SCIMTokenPanel(props: Props) {
         handleClose={() => setRevokeTarget(null)}
         handleSubmit={handleRevoke}
         isSubmitting={isRevoking}
-        title="Revoke SCIM token"
-        content={`Are you sure you want to revoke "${revokeTarget?.label}"? This is immediate and cannot be undone - your identity provider will stop being able to sync using this token.`}
+        title={t("scim.token_panel.revoke_modal.title")}
+        content={t("scim.token_panel.revoke_modal.content", { label: revokeTarget?.label })}
       />
     </div>
   );

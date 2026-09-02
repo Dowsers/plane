@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // types
 import type { TIssue } from "@plane/types";
+import { useTranslation } from "@plane/i18n";
 // components
 import { CycleDropdown } from "@/components/dropdowns/cycle";
 // hooks
@@ -24,6 +25,8 @@ export const SpreadsheetCycleColumn = observer(function SpreadsheetCycleColumn(p
   const { issue, disabled, onClose } = props;
   // router
   const { workspaceSlug } = useParams();
+  // i18n
+  const { t } = useTranslation();
   // hooks
   const {
     issues: { addCycleToIssue, removeCycleFromIssue },
@@ -45,7 +48,7 @@ export const SpreadsheetCycleColumn = observer(function SpreadsheetCycleColumn(p
         value={issue.cycle_id}
         onChange={handleCycle}
         disabled={disabled}
-        placeholder="Select cycle"
+        placeholder={t("issue.columns.cycle.placeholder")}
         buttonVariant="transparent-with-text"
         buttonContainerClassName="w-full relative flex items-center p-2 group-[.selected-issue-row]:bg-accent-primary/5 group-[.selected-issue-row]:hover:bg-accent-primary/10 px-page-x"
         buttonClassName="relative leading-4 h-4.5 bg-transparent hover:bg-transparent px-0"

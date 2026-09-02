@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IAgentProfile, TAgentType } from "@plane/types";
 import { Button, CustomSelect, EModalPosition, EModalWidth, Input, ModalCore, TextArea } from "@plane/ui";
@@ -44,6 +45,7 @@ const defaultState = () => ({
  */
 export function AgentFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, agent, onSaved } = props;
+  const { t } = useTranslation();
   const [state, setState] = useState(defaultState());
   const [isSaving, setIsSaving] = useState(false);
 
@@ -61,7 +63,11 @@ export function AgentFormModal(props: Props) {
 
   const handleSave = async () => {
     if (!state.displayName.trim()) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Display name is required." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("agents.form.errors.display_name_required"),
+      });
       return;
     }
 
@@ -83,8 +89,8 @@ export function AgentFormModal(props: Props) {
       onSaved();
       handleClose();
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to save the agent.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message = (error as { error?: string })?.error ?? t("agents.form.errors.save_failed");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("common.errors.default.title"), message });
     } finally {
       setIsSaving(false);
     }
@@ -96,17 +102,19 @@ export function AgentFormModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.TOP} width={EModalWidth.XL}>
       <div className="flex flex-col gap-4 p-5">
         <div className="flex items-center justify-between">
-          <h4 className="text-18 font-medium text-primary">{agent ? "Edit agent" : "New agent"}</h4>
+          <h4 className="text-18 font-medium text-primary">
+            {agent ? t("agents.form.edit_title") : t("agents.form.create_title")}
+          </h4>
           <button onClick={handleClose} type="button">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-13 font-medium text-secondary">Display name</span>
+          <span className="text-13 font-medium text-secondary">{t("display_name")}</span>
           <Input
             type="text"
-            placeholder="e.g. Claude Code runner"
+            placeholder={t("agents.form.display_name_placeholder")}
             value={state.displayName}
             onChange={(event) => setState((prev) => ({ ...prev, displayName: event.target.value }))}
             inputSize="sm"
@@ -114,7 +122,7 @@ export function AgentFormModal(props: Props) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-13 font-medium text-secondary">Agent type</span>
+          <span className="text-13 font-medium text-secondary">{t("agents.form.agent_type")}</span>
           <CustomSelect
             value={state.agentType}
             label={selectedAgentTypeLabel}
@@ -130,9 +138,9 @@ export function AgentFormModal(props: Props) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-13 font-medium text-secondary">Description (optional)</span>
+          <span className="text-13 font-medium text-secondary">{t("agents.form.description_optional")}</span>
           <TextArea
-            placeholder="What does this agent do?"
+            placeholder={t("agents.form.description_placeholder")}
             value={state.description}
             onChange={(event) => setState((prev) => ({ ...prev, description: event.target.value }))}
             textAreaSize="sm"
@@ -140,16 +148,14 @@ export function AgentFormModal(props: Props) {
           />
         </div>
 
-        <p className="text-11 text-tertiary">
-          Agents are always created as workspace Members and can never be granted Admin or workspace ownership.
-        </p>
+        <p className="text-11 text-tertiary">{t("agents.form.role_notice")}</p>
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            {agent ? "Save changes" : "Create agent"}
+            {agent ? t("save_changes") : t("agents.form.create_agent")}
           </Button>
         </div>
       </div>

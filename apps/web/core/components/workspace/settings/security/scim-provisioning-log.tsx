@@ -14,6 +14,7 @@ import { EmptyStateCompact } from "@plane/propel/empty-state";
 import type { TAuditEventType } from "@plane/types";
 import { CustomSelect, Input, Loader } from "@plane/ui";
 import { renderFormattedDate, renderFormattedTime } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceSCIMService from "@/services/workspace-scim.service";
 // local imports
@@ -26,10 +27,10 @@ type TStatusFilter = "ALL" | "SUCCESS" | "ERROR";
 const SUCCESS_EVENT_TYPES: TAuditEventType[] = SCIM_AUDIT_EVENT_TYPES.filter((type) => type !== "SCIM_SYNC_ERROR");
 const ERROR_EVENT_TYPES: TAuditEventType[] = ["SCIM_SYNC_ERROR"];
 
-const STATUS_FILTER_LABELS: Record<TStatusFilter, string> = {
-  ALL: "All statuses",
-  SUCCESS: "Success",
-  ERROR: "Error",
+const STATUS_FILTER_LABEL_KEYS: Record<TStatusFilter, string> = {
+  ALL: "scim.provisioning_log.status_filter.all",
+  SUCCESS: "success",
+  ERROR: "error",
 };
 
 /**
@@ -60,6 +61,7 @@ const STATUS_FILTER_LABELS: Record<TStatusFilter, string> = {
  */
 export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: { workspaceSlug: string }) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   // state
   const [statusFilter, setStatusFilter] = useState<TStatusFilter>("ALL");
   const [emailSearch, setEmailSearch] = useState("");
@@ -104,12 +106,12 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
         <CustomSelect
           value={statusFilter}
           onChange={(value: TStatusFilter) => applyFilter(() => setStatusFilter(value))}
-          label={STATUS_FILTER_LABELS[statusFilter]}
+          label={t(STATUS_FILTER_LABEL_KEYS[statusFilter])}
           buttonClassName="border border-subtle bg-layer-1"
         >
-          {(Object.keys(STATUS_FILTER_LABELS) as TStatusFilter[]).map((key) => (
+          {(Object.keys(STATUS_FILTER_LABEL_KEYS) as TStatusFilter[]).map((key) => (
             <CustomSelect.Option key={key} value={key}>
-              {STATUS_FILTER_LABELS[key]}
+              {t(STATUS_FILTER_LABEL_KEYS[key])}
             </CustomSelect.Option>
           ))}
         </CustomSelect>
@@ -117,7 +119,7 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
           type="text"
           value={emailSearch}
           onChange={(e) => setEmailSearch(e.target.value)}
-          placeholder="Search by email (current page)"
+          placeholder={t("scim.provisioning_log.search_placeholder")}
           className="w-64"
         />
       </div>
@@ -126,10 +128,10 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
         <table className="w-full text-13">
           <thead>
             <tr className="border-b border-subtle bg-layer-1 text-left text-tertiary">
-              <th className="px-3 py-2 font-medium">Date / Time</th>
-              <th className="px-3 py-2 font-medium">Event</th>
-              <th className="px-3 py-2 font-medium">Target</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.date_time")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.event")}</th>
+              <th className="px-3 py-2 font-medium">{t("audit_log.table.target")}</th>
+              <th className="px-3 py-2 font-medium">{t("scim.provisioning_log.status")}</th>
               <th className="px-3 py-2 font-medium" />
             </tr>
           </thead>
@@ -157,10 +159,10 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
                         : "bg-success-subtle text-success-primary"
                     }`}
                   >
-                    {log.event_type === "SCIM_SYNC_ERROR" ? "Error" : "Success"}
+                    {log.event_type === "SCIM_SYNC_ERROR" ? t("error") : t("success")}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-right text-accent-primary">Details</td>
+                <td className="px-3 py-2 text-right text-accent-primary">{t("audit_log.details")}</td>
               </tr>
             ))}
           </tbody>
@@ -175,8 +177,8 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
         {!isLoading && visibleResults.length === 0 && (
           <EmptyStateCompact
             assetKey="search"
-            title="No provisioning events"
-            description="No SCIM provisioning events match the current filters yet."
+            title={t("scim.provisioning_log.empty.title")}
+            description={t("scim.provisioning_log.empty.description")}
             align="center"
             rootClassName="py-16"
           />
@@ -190,7 +192,7 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
           disabled={!data?.prev_page_results || !data?.prev_cursor}
           onClick={() => setCursor(data?.prev_cursor)}
         >
-          Previous
+          {t("audit_log.pagination.previous")}
         </Button>
         <Button
           variant="secondary"
@@ -198,7 +200,7 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
           disabled={!data?.next_page_results || !data?.next_cursor}
           onClick={() => setCursor(data?.next_cursor)}
         >
-          Next
+          {t("next")}
         </Button>
       </div>
 

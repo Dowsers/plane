@@ -16,6 +16,7 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TWorkspaceVerifiedDomain } from "@plane/types";
 import { AlertModalCore, Loader } from "@plane/ui";
 import { renderFormattedDate } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceSecurityService from "@/services/workspace-security.service";
 // local imports
@@ -38,6 +39,7 @@ type Props = {
  */
 export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props: Props) {
   const { workspaceSlug, isOwner } = props;
+  const { t } = useTranslation();
   // state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
@@ -59,17 +61,25 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
     try {
       const result = await workspaceSecurityService.verifyDomain(workspaceSlug, domain.id);
       if (result.is_verified) {
-        setToast({ type: TOAST_TYPE.SUCCESS, title: "Domain verified", message: result.detail });
+        setToast({
+          type: TOAST_TYPE.SUCCESS,
+          title: t("verified_domains_panel.toast.verified_title"),
+          message: result.detail,
+        });
       } else {
-        setToast({ type: TOAST_TYPE.ERROR, title: "Verification failed", message: result.detail });
+        setToast({
+          type: TOAST_TYPE.ERROR,
+          title: t("verified_domains_panel.toast.verify_failed_title"),
+          message: result.detail,
+        });
       }
       await mutate();
     } catch (error: unknown) {
       const err = error as { detail?: string; error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Verification failed",
-        message: err?.detail ?? err?.error ?? "Something went wrong. Please try again.",
+        title: t("verified_domains_panel.toast.verify_failed_title"),
+        message: err?.detail ?? err?.error ?? t("something_went_wrong_please_try_again"),
       });
     } finally {
       setVerifyingId(null);
@@ -82,12 +92,16 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
     try {
       await workspaceSecurityService.deleteVerifiedDomain(workspaceSlug, pendingDeleteId);
       await mutate((prev) => (prev ?? []).filter((d) => d.id !== pendingDeleteId), false);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Domain removed", message: "The verified domain was removed." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("verified_domains_panel.toast.removed_title"),
+        message: t("verified_domains_panel.toast.removed_message"),
+      });
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not remove domain",
-        message: "Something went wrong. Please try again.",
+        title: t("verified_domains_panel.toast.remove_failed_title"),
+        message: t("something_went_wrong_please_try_again"),
       });
     } finally {
       setIsDeleting(false);
@@ -98,9 +112,7 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-body-xs-regular text-tertiary">
-          Domains you&apos;ve proven ownership of - required before you can enforce SSO-only login for them.
-        </p>
+        <p className="text-body-xs-regular text-tertiary">{t("verified_domains_panel.description")}</p>
         {isOwner && (
           <Button
             variant="secondary"
@@ -108,7 +120,7 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
             prependIcon={<Plus className="size-3.5" />}
             onClick={() => setIsAddOpen(true)}
           >
-            Add domain
+            {t("verified_domains_panel.add_domain")}
           </Button>
         )}
       </div>
@@ -121,11 +133,11 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
       ) : (data?.length ?? 0) === 0 ? (
         <EmptyStateCompact
           assetKey="search"
-          title="No verified domains yet"
+          title={t("verified_domains_panel.empty.title")}
           description={
             isOwner
-              ? "Add a domain to start enforcing SSO-only login for it."
-              : "The workspace Owner hasn't added any verified domains yet."
+              ? t("verified_domains_panel.empty.description_owner")
+              : t("verified_domains_panel.empty.description_non_owner")
           }
           align="center"
           rootClassName="py-10"
@@ -135,10 +147,10 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
           <table className="w-full text-13">
             <thead>
               <tr className="border-b border-subtle bg-layer-1 text-left text-tertiary">
-                <th className="px-3 py-2 font-medium">Domain</th>
-                <th className="px-3 py-2 font-medium">Method</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Verified at</th>
+                <th className="px-3 py-2 font-medium">{t("verified_domains_panel.table.domain")}</th>
+                <th className="px-3 py-2 font-medium">{t("verified_domains_panel.table.method")}</th>
+                <th className="px-3 py-2 font-medium">{t("verified_domains_panel.table.status")}</th>
+                <th className="px-3 py-2 font-medium">{t("verified_domains_panel.table.verified_at")}</th>
                 {isOwner && <th className="px-3 py-2 font-medium" />}
               </tr>
             </thead>
@@ -157,7 +169,9 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
                           : "bg-warning-subtle text-warning-primary"
                       }`}
                     >
-                      {domain.is_verified ? "Verified" : "Pending"}
+                      {domain.is_verified
+                        ? t("verified_domains_panel.status_verified")
+                        : t("verified_domains_panel.status_pending")}
                     </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-tertiary">
@@ -173,11 +187,11 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
                             onClick={() => handleVerify(domain)}
                             loading={verifyingId === domain.id}
                           >
-                            Verify now
+                            {t("verified_domains_panel.verify_now")}
                           </Button>
                         )}
                         <Button variant="error-outline" size="sm" onClick={() => setPendingDeleteId(domain.id)}>
-                          Delete
+                          {t("delete")}
                         </Button>
                       </div>
                     </td>
@@ -201,8 +215,8 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
         handleClose={() => setPendingDeleteId(null)}
         handleSubmit={handleDelete}
         isSubmitting={isDeleting}
-        title="Remove verified domain"
-        content="Are you sure you want to remove this verified domain? Any SSO enforcement relying on it will stop applying."
+        title={t("verified_domains_panel.remove_modal.title")}
+        content={t("verified_domains_panel.remove_modal.content")}
       />
     </div>
   );

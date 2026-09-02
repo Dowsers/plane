@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Badge } from "@plane/propel/badge";
 import type { TApiExplorerEndpoint } from "@plane/types";
 import { cn } from "@plane/utils";
@@ -28,6 +29,7 @@ const METHOD_BADGE_VARIANT: Record<string, "brand" | "success" | "warning" | "da
 };
 
 export function EndpointBrowser({ endpoints, selectedEndpointId, onSelect }: Props) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => endpoints.filter((endpoint) => matchesSearch(endpoint, search)), [endpoints, search]);
@@ -40,12 +42,14 @@ export function EndpointBrowser({ endpoints, selectedEndpointId, onSelect }: Pro
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search endpoints..."
+          placeholder={t("api_explorer.endpoint_browser.search_placeholder")}
           className="focus:border-accent-primary w-full rounded-md border border-subtle bg-layer-1 py-1.5 pr-2 pl-7 text-13 text-primary outline-none"
         />
       </div>
       <div className="flex-1 overflow-y-auto pr-1">
-        {filtered.length === 0 && <p className="p-2 text-13 text-tertiary">No endpoint matches your search.</p>}
+        {filtered.length === 0 && (
+          <p className="p-2 text-13 text-tertiary">{t("api_explorer.endpoint_browser.no_matches")}</p>
+        )}
         {[...grouped.entries()].map(([tag, items]) => (
           <div key={tag} className="mb-2">
             <div className="sticky top-0 bg-surface-1 px-1 py-1 text-11 font-semibold tracking-wide text-tertiary uppercase">

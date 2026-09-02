@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 import { DueDatePropertyIcon, StartDatePropertyIcon } from "@plane/propel/icons";
 // types
 import type { TIssuePriorities, TWorkspaceDraftIssue } from "@plane/types";
+import { useTranslation } from "@plane/i18n";
 import { getDate, renderFormattedPayloadDate, shouldHighlightIssueDueDate } from "@plane/utils";
 // components
 import { CycleDropdown } from "@/components/dropdowns/cycle";
@@ -39,8 +40,15 @@ export interface IIssueProperties {
   className: string;
 }
 
+const handleEventPropagation = (e: React.MouseEvent) => {
+  e.stopPropagation();
+  e.preventDefault();
+};
+
 export const DraftIssueProperties = observer(function DraftIssueProperties(props: IIssueProperties) {
   const { issue, updateIssue, className } = props;
+  // i18n
+  const { t } = useTranslation();
   // store hooks
   const { getProjectById } = useProject();
   const { labelMap } = useLabel();
@@ -130,15 +138,11 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
   const maxDate = getDate(issue.target_date);
   maxDate?.setDate(maxDate.getDate());
 
-  const handleEventPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   return (
     <div className={className}>
       {/* basic properties */}
       {/* state */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button */}
       <div className="h-5" onClick={handleEventPropagation}>
         <StateDropdown
           buttonContainerClassName="truncate max-w-40"
@@ -152,6 +156,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
       </div>
 
       {/* priority */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button */}
       <div className="h-5" onClick={handleEventPropagation}>
         <PriorityDropdown
           value={issue?.priority}
@@ -175,12 +180,13 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
       />
 
       {/* start date */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button */}
       <div className="h-5" onClick={handleEventPropagation}>
         <DateDropdown
           value={issue.start_date ?? null}
           onChange={handleStartDate}
           maxDate={maxDate}
-          placeholder="Start date"
+          placeholder={t("start_date")}
           icon={<StartDatePropertyIcon className="h-3 w-3 flex-shrink-0" />}
           buttonVariant={issue.start_date ? "border-with-text" : "border-without-text"}
           optionsClassName="z-10"
@@ -190,12 +196,13 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
       </div>
 
       {/* target/due date */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button */}
       <div className="h-5" onClick={handleEventPropagation}>
         <DateDropdown
           value={issue?.target_date ?? null}
           onChange={handleTargetDate}
           minDate={minDate}
-          placeholder="Due date"
+          placeholder={t("due_date")}
           icon={<DueDatePropertyIcon className="h-3 w-3 flex-shrink-0" />}
           buttonVariant={issue.target_date ? "border-with-text" : "border-without-text"}
           buttonClassName={
@@ -209,6 +216,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
       </div>
 
       {/* assignee */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button */}
       <div className="h-5" onClick={handleEventPropagation}>
         <MemberDropdown
           projectId={issue?.project_id}
@@ -218,7 +226,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
           buttonVariant={issue.assignee_ids?.length > 0 ? "transparent-without-text" : "border-without-text"}
           buttonClassName={issue.assignee_ids?.length > 0 ? "hover:bg-transparent px-0" : ""}
           showTooltip={issue?.assignee_ids?.length === 0}
-          placeholder="Assignees"
+          placeholder={t("assignees")}
           optionsClassName="z-10"
           tooltipContent=""
           renderByDefault={isMobile}
@@ -227,6 +235,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
 
       {/* modules */}
       {projectDetails?.module_view && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button
         <div className="h-5" onClick={handleEventPropagation}>
           <ModuleDropdown
             buttonContainerClassName="truncate max-w-40"
@@ -244,6 +253,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
 
       {/* cycles */}
       {projectDetails?.cycle_view && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button
         <div className="h-5" onClick={handleEventPropagation}>
           <CycleDropdown
             buttonContainerClassName="truncate max-w-40"
@@ -259,6 +269,7 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
 
       {/* estimates */}
       {issue.project_id && areEstimateEnabledByProjectId(issue.project_id?.toString()) && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- wrapper only stops click propagation to the parent row; the dropdown inside provides its own keyboard-accessible button
         <div className="h-5" onClick={handleEventPropagation}>
           <EstimateDropdown
             value={issue.estimate_point ?? undefined}

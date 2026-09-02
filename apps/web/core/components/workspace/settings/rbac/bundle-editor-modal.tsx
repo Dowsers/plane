@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TPermissionCatalogue, TPermissionCategory, TPermissionCondition, TPermissionScheme } from "@plane/types";
@@ -25,19 +26,25 @@ type Props = {
   onSaved: (scheme: TPermissionScheme) => void;
 };
 
-const CONDITION_LABELS: Record<TPermissionCondition, string> = {
-  NONE: "No condition",
-  CREATOR_ONLY: "Creator only",
-  PROJECT_LEAD_ONLY: "Project lead only",
+const useConditionLabels = (): Record<TPermissionCondition, string> => {
+  const { t } = useTranslation();
+  return {
+    NONE: t("rbac.condition.none"),
+    CREATOR_ONLY: t("rbac.condition.creator_only"),
+    PROJECT_LEAD_ONLY: t("rbac.condition.project_lead_only"),
+  };
 };
 
-const CATEGORY_LABELS: Record<TPermissionCategory, string> = {
-  ISSUE: "Work items",
-  CYCLE: "Cycles",
-  MODULE: "Modules",
-  PAGE: "Pages",
-  VIEW: "Views",
-  WORKSPACE: "Workspace (anti-lockout only - see below)",
+const useCategoryLabels = (): Record<TPermissionCategory, string> => {
+  const { t } = useTranslation();
+  return {
+    ISSUE: t("common.work_items"),
+    CYCLE: t("common.cycles"),
+    MODULE: t("common.modules"),
+    PAGE: t("common.page"),
+    VIEW: t("account_settings.permissions_page.category_views"),
+    WORKSPACE: t("rbac.bundle_editor.category_workspace"),
+  };
 };
 
 type TDraftRow = { included: boolean; condition: TPermissionCondition };
@@ -55,6 +62,9 @@ type TDraftRow = { included: boolean; condition: TPermissionCondition };
  */
 export function BundleEditorModal(props: Props) {
   const { workspaceSlug, catalogue, scheme, isOpen, onClose, onSaved } = props;
+  const { t } = useTranslation();
+  const CONDITION_LABELS = useConditionLabels();
+  const CATEGORY_LABELS = useCategoryLabels();
   const isReadOnly = Boolean(scheme?.is_system || scheme?.workspace === null);
   const [name, setName] = useState(scheme?.name ?? "");
   const [description, setDescription] = useState(scheme?.description ?? "");
@@ -111,15 +121,15 @@ export function BundleEditorModal(props: Props) {
       onClose();
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: scheme ? "Bundle updated" : "Bundle created",
-        message: `"${saved.name}" was saved.`,
+        title: scheme ? t("rbac.bundle_editor.updated_title") : t("rbac.bundle_editor.created_title"),
+        message: t("rbac.bundle_editor.saved_message", { name: saved.name }),
       });
     } catch (error: unknown) {
       const err = error as { error?: string; name?: string[] };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not save bundle",
-        message: err?.error ?? err?.name?.[0] ?? "Something went wrong. Please try again.",
+        title: t("rbac.bundle_editor.save_error_title"),
+        message: err?.error ?? err?.name?.[0] ?? t("common.errors.default.message"),
       });
     } finally {
       setIsSubmitting(false);
@@ -130,37 +140,36 @@ export function BundleEditorModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={onClose} position={EModalPosition.CENTER} width={EModalWidth.XXXXL}>
       <div className="flex max-h-[85vh] flex-col gap-4 p-6">
         <div className="flex items-center gap-2">
-          <h3 className="text-h5-medium">{scheme ? "Edit bundle" : "Create bundle"}</h3>
+          <h3 className="text-h5-medium">
+            {scheme ? t("rbac.bundle_editor.edit_title") : t("rbac.bundle_editor.create_title")}
+          </h3>
           {isReadOnly && <SystemBadge />}
         </div>
         {isReadOnly && (
-          <p className="text-caption-sm-regular text-tertiary">
-            System bundles reproduce this fork&apos;s built-in role behavior and cannot be edited or deleted - shown
-            here read-only for reference. Create a new bundle to compose your own permission set.
-          </p>
+          <p className="text-caption-sm-regular text-tertiary">{t("rbac.bundle_editor.read_only_notice")}</p>
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Name</span>
+            <span className="text-body-xs-medium text-secondary">{t("common.name")}</span>
             <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full"
               disabled={isReadOnly}
-              placeholder="e.g. Cycle management"
+              placeholder={t("rbac.bundle_editor.name_placeholder")}
             />
           </div>
           <div className="flex flex-1 flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Description</span>
+            <span className="text-body-xs-medium text-secondary">{t("common.description")}</span>
             <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full"
               disabled={isReadOnly}
-              placeholder="Optional"
+              placeholder={t("rbac.bundle_editor.description_placeholder")}
             />
           </div>
         </div>
@@ -223,11 +232,11 @@ export function BundleEditorModal(props: Props) {
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={onClose}>
-            {isReadOnly ? "Close" : "Cancel"}
+            {isReadOnly ? t("close") : t("common.cancel")}
           </Button>
           {!isReadOnly && (
             <Button variant="primary" size="lg" onClick={handleSubmit} disabled={!name.trim()} loading={isSubmitting}>
-              {scheme ? "Save changes" : "Create bundle"}
+              {scheme ? t("save_changes") : t("rbac.bundle_editor.create_title")}
             </Button>
           )}
         </div>

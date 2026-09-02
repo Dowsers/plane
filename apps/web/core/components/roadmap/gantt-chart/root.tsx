@@ -6,6 +6,7 @@
 
 import { useParams } from "next/navigation";
 import { observer } from "mobx-react";
+import { useTranslation } from "@plane/i18n";
 import { GANTT_TIMELINE_TYPE } from "@plane/types";
 import type { IBlockUpdateData, IBlockUpdateDependencyData, TRoadmapColorBy } from "@plane/types";
 import { GanttChartRoot } from "@/components/gantt-chart";
@@ -23,6 +24,7 @@ type Props = {
 export const ProjectsGanttChartView = observer(function ProjectsGanttChartView(props: Props) {
   const { projectIds, colorBy } = props;
   const { workspaceSlug } = useParams();
+  const { t } = useTranslation();
   const { updateProject } = useProject();
   const { applyProjectDatesUpdate, getRoadmapProjectById } = useRoadmap();
 
@@ -55,8 +57,8 @@ export const ProjectsGanttChartView = observer(function ProjectsGanttChartView(p
   return (
     <TimeLineTypeContext.Provider value={GANTT_TIMELINE_TYPE.PROJECT}>
       <GanttChartRoot
-        title="Roadmap"
-        loaderTitle="Projects"
+        title={t("roadmap.label")}
+        loaderTitle={t("projects")}
         blockIds={projectIds}
         sidebarToRender={(sidebarProps) => <ProjectsGanttSidebar {...sidebarProps} />}
         blockUpdateHandler={(block, payload) => handleProjectUpdate(block, payload)}

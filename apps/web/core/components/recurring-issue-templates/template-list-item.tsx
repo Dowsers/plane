@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { ListChecks, MoreHorizontal, Pause, Pencil, Play, Repeat, Trash2, Zap } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { IconButton } from "@plane/propel/icon-button";
 import { Tooltip } from "@plane/propel/tooltip";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -35,6 +36,7 @@ type Props = {
 
 export function RecurringIssueTemplateListItem(props: Props) {
   const { template, workspaceSlug, projectId, canEdit, onEdit, onViewGeneratedIssues, onChanged } = props;
+  const { t } = useTranslation();
   const [isToggling, setIsToggling] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -50,8 +52,9 @@ export function RecurringIssueTemplateListItem(props: Props) {
         : await recurringIssueTemplateService.resume(workspaceSlug, projectId, template.id);
       onChanged(updated);
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to update the template.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message =
+        (error as { error?: string })?.error ?? t("recurring_issue_templates.list_item.errors.update_failed");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("recurring_issue_templates.list_item.errors.toast_title"), message });
     } finally {
       setIsToggling(false);
     }
@@ -63,12 +66,13 @@ export function RecurringIssueTemplateListItem(props: Props) {
       const issue = await recurringIssueTemplateService.generateNow(workspaceSlug, projectId, template.id);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
-        message: `"${issue.name}" was created from this template.`,
+        title: t("recurring_issue_templates.list_item.success.toast_title"),
+        message: t("recurring_issue_templates.list_item.success.generated_message", { name: issue.name }),
       });
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to generate a work item from this template.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message =
+        (error as { error?: string })?.error ?? t("recurring_issue_templates.list_item.errors.generate_failed");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("recurring_issue_templates.list_item.errors.toast_title"), message });
     } finally {
       setIsGenerating(false);
     }
@@ -81,7 +85,11 @@ export function RecurringIssueTemplateListItem(props: Props) {
       setDeleteModal(false);
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the template." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("recurring_issue_templates.list_item.errors.toast_title"),
+        message: t("recurring_issue_templates.list_item.errors.delete_failed"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -99,7 +107,9 @@ export function RecurringIssueTemplateListItem(props: Props) {
           <Repeat className="h-3.5 w-3.5 shrink-0 text-tertiary" />
           <span className="truncate text-13 font-medium text-primary">{template.name}</span>
           {isDraft && (
-            <span className="shrink-0 rounded-xs bg-surface-2 px-1.5 py-0.5 text-11 text-tertiary">Draft</span>
+            <span className="shrink-0 rounded-xs bg-surface-2 px-1.5 py-0.5 text-11 text-tertiary">
+              {t("recurring_issue_templates.list_item.draft")}
+            </span>
           )}
         </div>
         <CustomMenu
@@ -108,7 +118,7 @@ export function RecurringIssueTemplateListItem(props: Props) {
           closeOnSelect
         >
           <CustomMenu.MenuItem onClick={onEdit} className="flex items-center gap-2" disabled={!canEdit}>
-            <Pencil className="h-3 w-3" /> {isDraft ? "Configure" : "Edit"}
+            <Pencil className="h-3 w-3" /> {isDraft ? t("recurring_issue_templates.list_item.configure") : t("edit")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem
             onClick={handleToggle}
@@ -117,30 +127,30 @@ export function RecurringIssueTemplateListItem(props: Props) {
           >
             {template.is_active ? (
               <>
-                <Pause className="h-3 w-3" /> Pause
+                <Pause className="h-3 w-3" /> {t("recurring_issue_templates.list_item.pause")}
               </>
             ) : (
               <>
-                <Play className="h-3 w-3" /> Resume
+                <Play className="h-3 w-3" /> {t("recurring_issue_templates.list_item.resume")}
               </>
             )}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem onClick={onViewGeneratedIssues} className="flex items-center gap-2">
-            <ListChecks className="h-3 w-3" /> View generated work items
+            <ListChecks className="h-3 w-3" /> {t("recurring_issue_templates.list_item.view_generated")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem
             onClick={handleGenerateNow}
             className="flex items-center gap-2"
             disabled={!canEdit || isDraft || isGenerating}
           >
-            <Zap className="h-3 w-3" /> Generate now
+            <Zap className="h-3 w-3" /> {t("recurring_issue_templates.list_item.generate_now")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem
             onClick={() => setDeleteModal(true)}
             className="flex items-center gap-2 text-danger-primary"
             disabled={!canEdit}
           >
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {t("delete")}
           </CustomMenu.MenuItem>
         </CustomMenu>
       </div>
@@ -154,16 +164,22 @@ export function RecurringIssueTemplateListItem(props: Props) {
                 <Tooltip
                   tooltipContent={`${renderFormattedDate(template.next_run_at)}, ${renderFormattedTime(template.next_run_at)}`}
                 >
-                  <span>Next run {calculateTimeAgo(template.next_run_at)}</span>
+                  <span>
+                    {t("recurring_issue_templates.list_item.next_run", {
+                      time_ago: calculateTimeAgo(template.next_run_at),
+                    })}
+                  </span>
                 </Tooltip>
               ) : (
-                <span>Next run pending</span>
+                <span>{t("recurring_issue_templates.list_item.next_run_pending")}</span>
               )
             ) : (
-              <span>Paused</span>
+              <span>{t("recurring_issue_templates.list_item.paused")}</span>
             )}
             {" - "}
-            {template.occurrences_generated} generated
+            {t("recurring_issue_templates.list_item.occurrences_generated", {
+              count: template.occurrences_generated,
+            })}
           </>
         )}
       </p>
@@ -172,8 +188,8 @@ export function RecurringIssueTemplateListItem(props: Props) {
         handleClose={() => setDeleteModal(false)}
         handleSubmit={handleDelete}
         isSubmitting={isDeleting}
-        title="Delete recurring template"
-        content={`Are you sure you want to delete "${template.name}"? Work items already generated from it will not be affected. This action cannot be undone.`}
+        title={t("recurring_issue_templates.list_item.delete_modal.title")}
+        content={t("recurring_issue_templates.list_item.delete_modal.content", { name: template.name })}
       />
     </div>
   );

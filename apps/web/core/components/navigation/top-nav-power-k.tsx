@@ -9,6 +9,7 @@ import { Command } from "cmdk";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // hooks
+import { useTranslation } from "@plane/i18n";
 import { CloseIcon, SearchIcon } from "@plane/propel/icons";
 import { cn } from "@plane/utils";
 // power-k
@@ -22,6 +23,8 @@ import { useAppRouter } from "@/hooks/use-app-router";
 import { useExpandableSearch } from "@/hooks/use-expandable-search";
 
 export const TopNavPowerK = observer(() => {
+  // i18n
+  const { t } = useTranslation();
   // router
   const router = useAppRouter();
   const params = useParams();
@@ -101,6 +104,7 @@ export const TopNavPowerK = observer(() => {
     return () => {
       setTopNavInputRef(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTopNavInputRef]);
 
   const handleClear = () => {
@@ -203,7 +207,8 @@ export const TopNavPowerK = observer(() => {
         return;
       }
     },
-    [searchTerm, activePage, context, shouldShowContextBasedActions, setActivePage, closePanel]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchTerm, activePage, context, shouldShowContextBasedActions, setActivePage, closePanel, isOpen]
   );
 
   return (
@@ -213,6 +218,7 @@ export const TopNavPowerK = observer(() => {
           "w-[554px]": isOpen,
         })}
       >
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- container just focuses the nested input, which is itself independently keyboard-reachable */}
         <div
           className={cn(
             "flex h-7 w-full items-center rounded-lg border border-subtle-1 bg-layer-2 p-2 transition-colors duration-200",
@@ -221,6 +227,7 @@ export const TopNavPowerK = observer(() => {
             }
           )}
           onClick={() => inputRef.current?.focus()}
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- see above; cannot be a real <button> since it wraps an <input> and a <button>
           role="button"
         >
           <SearchIcon className="mr-2 size-3.5 shrink-0 text-placeholder" />
@@ -235,7 +242,7 @@ export const TopNavPowerK = observer(() => {
             onMouseDown={handleMouseDown}
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
-            placeholder="Search commands..."
+            placeholder={t("power_k.search_placeholder")}
             className="placeholder-text-placeholder min-w-0 flex-1 bg-transparent text-13 text-primary outline-none"
           />
           {searchTerm && (

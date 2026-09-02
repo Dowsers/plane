@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import useSWR from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import type { TMyEffectivePermission, TPermissionCategory } from "@plane/types";
 import { CustomSelect, Loader } from "@plane/ui";
@@ -20,13 +21,16 @@ import { useUserSettings } from "@/hooks/store/user";
 // services
 import workspaceRBACService from "@/services/workspace-rbac.service";
 
-const CATEGORY_LABELS: Record<TPermissionCategory, string> = {
-  ISSUE: "Work items",
-  CYCLE: "Cycles",
-  MODULE: "Modules",
-  PAGE: "Pages",
-  VIEW: "Views",
-  WORKSPACE: "Workspace",
+const useCategoryLabels = (): Record<TPermissionCategory, string> => {
+  const { t } = useTranslation();
+  return {
+    ISSUE: t("common.work_items"),
+    CYCLE: t("common.cycles"),
+    MODULE: t("common.modules"),
+    PAGE: t("common.page"),
+    VIEW: t("account_settings.permissions_page.category_views"),
+    WORKSPACE: t("common.workspace"),
+  };
 };
 
 /**
@@ -42,6 +46,9 @@ const CATEGORY_LABELS: Record<TPermissionCategory, string> = {
  * defaulting to the user's last-active workspace.
  */
 export const PermissionsProfileSettings = observer(function PermissionsProfileSettings() {
+  // i18n
+  const { t } = useTranslation();
+  const CATEGORY_LABELS = useCategoryLabels();
   // store hooks
   const { workspaces } = useWorkspace();
   const { data: userSettings } = useUserSettings();
@@ -77,13 +84,13 @@ export const PermissionsProfileSettings = observer(function PermissionsProfileSe
   return (
     <div className="size-full">
       <ProfileSettingsHeading
-        title="My permissions"
-        description="Your workspace-level baseline across the 5 areas this builder covers (Work items, Cycles, Modules, Pages, Views). Your actual permissions can be higher or lower on a specific project if your role there differs from your workspace role - this summary doesn't reflect per-project overrides. Everything else (billing, integrations, exports...) still follows your plain workspace role."
+        title={t("account_settings.actions.permissions")}
+        description={t("account_settings.permissions_page.description")}
       />
 
       {workspaceList.length > 1 && selectedSlug && (
         <div className="mt-6 flex items-center gap-2">
-          <span className="text-body-xs-medium text-secondary">Workspace</span>
+          <span className="text-body-xs-medium text-secondary">{t("common.workspace")}</span>
           <CustomSelect
             value={selectedSlug}
             onChange={(value: string) => setSelectedSlug(value)}
@@ -108,16 +115,16 @@ export const PermissionsProfileSettings = observer(function PermissionsProfileSe
       ) : (
         <div className="mt-6 flex flex-col gap-5">
           <div className="flex items-center gap-2">
-            <span className="text-body-xs-medium text-secondary">Your role</span>
+            <span className="text-body-xs-medium text-secondary">
+              {t("account_settings.permissions_page.your_role")}
+            </span>
             <Pill variant={EPillVariant.PRIMARY} size={EPillSize.SM}>
-              {data.role?.name ?? "Unknown"}
+              {data.role?.name ?? t("account_settings.permissions_page.unknown_role")}
             </Pill>
           </div>
 
           {data.permissions.length === 0 ? (
-            <p className="text-body-xs-regular text-tertiary">
-              Your role doesn&apos;t grant any of the permissions this builder covers yet.
-            </p>
+            <p className="text-body-xs-regular text-tertiary">{t("account_settings.permissions_page.empty_state")}</p>
           ) : (
             (Object.keys(groupedByCategory) as TPermissionCategory[]).map((category) => (
               <div key={category} className="flex flex-col gap-2">

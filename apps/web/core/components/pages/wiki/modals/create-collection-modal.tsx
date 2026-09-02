@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { Folder } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { EmojiIconPickerTypes, EmojiPicker, Logo } from "@plane/propel/emoji-icon-picker";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -37,6 +38,7 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
   const [isSubmitting, setIsSubmitting] = useState(false);
   // store hooks
   const { createCollection, updateCollection, getCollectionDepth } = usePageCollectionStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isOpen) {
@@ -59,8 +61,8 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
     if (!collectionToEdit && getCollectionDepth(parentId) >= WIKI_COLLECTION_MAX_DEPTH) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: "Folders can only be nested 3 levels deep.",
+        title: t("toast.error"),
+        message: t("wiki.toast.max_depth_error"),
       });
       return;
     }
@@ -69,17 +71,25 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
     try {
       if (collectionToEdit) {
         await updateCollection(workspaceSlug, collectionToEdit.id, { name: name.trim(), logo_props: logoProps });
-        setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Folder updated successfully." });
+        setToast({
+          type: TOAST_TYPE.SUCCESS,
+          title: t("toast.success"),
+          message: t("wiki.toast.folder_update_success"),
+        });
       } else {
         await createCollection(workspaceSlug, { name: name.trim(), logo_props: logoProps, parent: parentId });
-        setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Folder created successfully." });
+        setToast({
+          type: TOAST_TYPE.SUCCESS,
+          title: t("toast.success"),
+          message: t("wiki.toast.folder_create_success"),
+        });
       }
       handleClose();
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: error?.error || "Something went wrong. Please try again.",
+        title: t("toast.error"),
+        message: error?.error || t("wiki.toast.folder_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -95,7 +105,9 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
         }}
       >
         <div className="space-y-5 p-5">
-          <h3 className="text-18 font-medium text-secondary">{collectionToEdit ? "Rename folder" : "New folder"}</h3>
+          <h3 className="text-18 font-medium text-secondary">
+            {collectionToEdit ? t("wiki.folder_form.rename_title") : t("wiki.folder_form.create_title")}
+          </h3>
           <div className="flex h-9 w-full items-start gap-2">
             <EmojiPicker
               isOpen={isEmojiPickerOpen}
@@ -126,7 +138,7 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Folder name"
+                placeholder={t("wiki.folder_form.name_placeholder")}
                 className="w-full resize-none text-14"
                 required
               />
@@ -135,10 +147,10 @@ export const CreateCollectionModal = observer(function CreateCollectionModal(pro
         </div>
         <div className="flex items-center justify-end gap-2 border-t-[0.5px] border-subtle px-5 py-4">
           <Button variant="secondary" size="lg" onClick={handleClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="lg" type="submit" loading={isSubmitting} disabled={!name.trim()}>
-            {collectionToEdit ? "Save" : "Create folder"}
+            {collectionToEdit ? t("save") : t("create_folder")}
           </Button>
         </div>
       </form>

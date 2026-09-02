@@ -298,17 +298,21 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
             </SidebarPropertyListItem>
 
             {issue?.recurring_template_name_snapshot && (
-              <SidebarPropertyListItem icon={Repeat} label="Recurring">
+              <SidebarPropertyListItem icon={Repeat} label={t("issue.sidebar.recurring.label")}>
                 <span
                   className="truncate text-body-xs-regular text-tertiary"
                   title={
                     issue.recurring_template_id
-                      ? `Generated from: ${issue.recurring_template_name_snapshot}`
-                      : `Generated from: ${issue.recurring_template_name_snapshot} (template deleted)`
+                      ? t("issue.sidebar.recurring.generated_from", {
+                          name: issue.recurring_template_name_snapshot,
+                        })
+                      : t("issue.sidebar.recurring.generated_from_deleted", {
+                          name: issue.recurring_template_name_snapshot,
+                        })
                   }
                 >
                   {issue.recurring_template_name_snapshot}
-                  {!issue.recurring_template_id && " (template deleted)"}
+                  {!issue.recurring_template_id && ` ${t("issue.sidebar.recurring.template_deleted_suffix")}`}
                 </span>
               </SidebarPropertyListItem>
             )}

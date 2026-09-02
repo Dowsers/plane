@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TWorkspaceRole } from "@plane/types";
@@ -40,6 +41,7 @@ const workspaceService = new WorkspaceService();
  */
 export function DeleteRoleModal(props: Props) {
   const { workspaceSlug, role, allRoles, isOpen, onClose, onDeleted } = props;
+  const { t } = useTranslation();
   const [reassignToRoleId, setReassignToRoleId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Refreshing the MobX-backed Members tab's own store after a bulk
@@ -66,14 +68,18 @@ export function DeleteRoleModal(props: Props) {
     setIsSubmitting(true);
     try {
       await workspaceRBACService.deleteRole(workspaceSlug, role.id);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Role deleted", message: `"${role.name}" was deleted.` });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("rbac.delete_role.deleted_title"),
+        message: t("rbac.delete_role.deleted_message", { name: role.name }),
+      });
       onDeleted();
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not delete role",
-        message: err?.error ?? "Something went wrong. Please try again.",
+        title: t("rbac.delete_role.delete_error_title"),
+        message: err?.error ?? t("common.errors.default.message"),
       });
     } finally {
       setIsSubmitting(false);
@@ -93,16 +99,16 @@ export function DeleteRoleModal(props: Props) {
       await fetchWorkspaceMembers(workspaceSlug);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Role deleted",
-        message: `${members.length} member(s) were reassigned and "${role.name}" was deleted.`,
+        title: t("rbac.delete_role.deleted_title"),
+        message: t("rbac.delete_role.reassigned_and_deleted_message", { count: members.length, name: role.name }),
       });
       onDeleted();
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not reassign and delete",
-        message: err?.error ?? "Something went wrong. Please try again.",
+        title: t("rbac.delete_role.reassign_error_title"),
+        message: err?.error ?? t("common.errors.default.message"),
       });
     } finally {
       setIsSubmitting(false);
@@ -128,9 +134,9 @@ export function DeleteRoleModal(props: Props) {
         handleSubmit={handleDelete}
         isSubmitting={isSubmitting}
         variant="danger"
-        title="Delete this role?"
-        content={<>No member currently holds &quot;{role.name}&quot; - this cannot be undone.</>}
-        primaryButtonText={{ loading: "Deleting", default: "Delete role" }}
+        title={t("rbac.delete_role.confirm_title")}
+        content={t("rbac.delete_role.confirm_content_empty", { name: role.name })}
+        primaryButtonText={{ loading: t("common.deleting"), default: t("rbac.delete_role.confirm_button") }}
       />
     );
   }
@@ -139,10 +145,9 @@ export function DeleteRoleModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={onClose} position={EModalPosition.CENTER} width={EModalWidth.XL}>
       <div className="flex flex-col gap-4 p-6">
         <div>
-          <h3 className="text-h5-medium">Reassign members before deleting</h3>
+          <h3 className="text-h5-medium">{t("rbac.delete_role.reassign_title")}</h3>
           <p className="mt-1 text-body-xs-regular text-secondary">
-            {members.length} member(s) currently hold &quot;{role.name}&quot;. Choose a role to move all of them to
-            before this role can be deleted - there is no silent removal.
+            {t("rbac.delete_role.reassign_description", { count: members.length, name: role.name })}
           </p>
         </div>
 
@@ -166,12 +171,13 @@ export function DeleteRoleModal(props: Props) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">Reassign to</span>
+          <span className="text-body-xs-medium text-secondary">{t("rbac.delete_role.reassign_to_label")}</span>
           <CustomSelect
             value={reassignToRoleId ?? ""}
             onChange={(value: string) => setReassignToRoleId(value)}
             label={
-              reassignmentCandidates.find((candidate) => candidate.id === reassignToRoleId)?.name ?? "Select a role"
+              reassignmentCandidates.find((candidate) => candidate.id === reassignToRoleId)?.name ??
+              t("rbac.delete_role.select_a_role")
             }
             buttonClassName="border border-subtle bg-layer-2 w-full"
           >
@@ -185,7 +191,7 @@ export function DeleteRoleModal(props: Props) {
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={onClose} disabled={isSubmitting}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             variant="error-fill"
@@ -194,7 +200,7 @@ export function DeleteRoleModal(props: Props) {
             disabled={!reassignToRoleId}
             loading={isSubmitting}
           >
-            Reassign {members.length} member(s) &amp; delete
+            {t("rbac.delete_role.reassign_and_delete_button", { count: members.length })}
           </Button>
         </div>
       </div>

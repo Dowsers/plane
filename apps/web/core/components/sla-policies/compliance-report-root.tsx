@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import useSWR from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { EPillSize, Pill } from "@plane/propel/pill";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TSLAReportParams } from "@plane/types";
@@ -47,6 +48,7 @@ const formatDateTime = (value: string | null): string => {
  */
 export function ComplianceReportRoot(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   const [projectId, setProjectId] = useState<string | null>(null);
   const [policyId, setPolicyId] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
@@ -86,7 +88,11 @@ export function ComplianceReportRoot(props: Props) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to export the SLA compliance report." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("sla_policies.report.export_error"),
+      });
     } finally {
       setIsExporting(false);
     }
@@ -107,15 +113,19 @@ export function ComplianceReportRoot(props: Props) {
           value={projectId}
           onChange={(val) => setProjectId(val)}
           buttonVariant="border-with-text"
-          placeholder="All projects"
+          placeholder={t("sla_policies.scope.all_projects")}
         />
         <CustomSelect
           value={policyId ?? "ALL"}
-          label={policyId ? (policies?.find((policy) => policy.id === policyId)?.name ?? "Policy") : "All policies"}
+          label={
+            policyId
+              ? (policies?.find((policy) => policy.id === policyId)?.name ?? t("sla_policies.report.policy"))
+              : t("sla_policies.report.all_policies")
+          }
           onChange={(value: string) => setPolicyId(value === "ALL" ? null : value)}
           input
         >
-          <CustomSelect.Option value="ALL">All policies</CustomSelect.Option>
+          <CustomSelect.Option value="ALL">{t("sla_policies.report.all_policies")}</CustomSelect.Option>
           {policies?.map((policy) => (
             <CustomSelect.Option key={policy.id} value={policy.id}>
               {policy.name}
@@ -127,17 +137,17 @@ export function ComplianceReportRoot(props: Props) {
           value={assigneeId}
           onChange={(val) => setAssigneeId(val)}
           buttonVariant="border-with-text"
-          placeholder="All assignees"
+          placeholder={t("sla_policies.report.all_assignees")}
         />
         <DateRangeDropdown
           buttonVariant="border-with-text"
           value={dateRange}
           onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-          placeholder={{ from: "From date", to: "To date" }}
+          placeholder={{ from: t("sla_policies.report.from_date"), to: t("sla_policies.report.to_date") }}
           isClearable
         />
         <Button variant="neutral-primary" size="sm" onClick={clearFilters}>
-          Clear filters
+          {t("sla_policies.report.clear_filters")}
         </Button>
         <Button
           variant="accent-primary"
@@ -147,7 +157,7 @@ export function ComplianceReportRoot(props: Props) {
           loading={isExporting}
           className="ml-auto"
         >
-          Export CSV
+          {t("sla_policies.report.export_csv")}
         </Button>
       </div>
 
@@ -160,13 +170,14 @@ export function ComplianceReportRoot(props: Props) {
             <span className="text-13 font-medium text-primary">{report?.summary[option.value] ?? 0}</span>
           </div>
         ))}
-        <div className="ml-auto text-12 text-tertiary">Total: {report?.total ?? 0}</div>
+        <div className="ml-auto text-12 text-tertiary">
+          {t("sla_policies.report.total")}: {report?.total ?? 0}
+        </div>
       </div>
 
       {report?.results_truncated && (
         <p className="text-11 text-tertiary">
-          Showing the first {report.results.length} of {report.total} results - narrow your filters or export CSV for
-          the full set.
+          {t("sla_policies.report.truncated_notice", { shown: report.results.length, total: report.total })}
         </p>
       )}
 
@@ -174,14 +185,14 @@ export function ComplianceReportRoot(props: Props) {
         <table className="w-full text-13">
           <thead>
             <tr className="border-b border-subtle text-left text-tertiary">
-              <th className="px-3 py-2 font-medium">Issue</th>
-              <th className="px-3 py-2 font-medium">Project</th>
-              <th className="px-3 py-2 font-medium">Policy</th>
-              <th className="px-3 py-2 font-medium">Type</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Due at</th>
-              <th className="px-3 py-2 font-medium">Met at</th>
-              <th className="px-3 py-2 font-medium">Breached at</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_issue")}</th>
+              <th className="px-3 py-2 font-medium">{t("common.project")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.policy")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_type")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_status")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_due_at")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_met_at")}</th>
+              <th className="px-3 py-2 font-medium">{t("sla_policies.report.column_breached_at")}</th>
             </tr>
           </thead>
           <tbody>
@@ -213,7 +224,7 @@ export function ComplianceReportRoot(props: Props) {
           </Loader>
         )}
         {!isLoading && (report?.results.length ?? 0) === 0 && (
-          <p className="py-6 text-center text-13 text-tertiary">No SLA data for the selected filters.</p>
+          <p className="py-6 text-center text-13 text-tertiary">{t("sla_policies.report.empty_state")}</p>
         )}
       </div>
     </div>

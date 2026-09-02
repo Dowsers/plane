@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import useSWR, { mutate } from "swr";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button, Loader } from "@plane/ui";
 import type { TWorkflowRule } from "@plane/types";
 // components
@@ -55,6 +56,7 @@ type Props = {
  */
 export function WorkflowRulesRoot(props: Props) {
   const { workspaceSlug, projectId } = props;
+  const { t } = useTranslation();
   const { allowPermissions } = useUserPermissions();
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
 
@@ -74,8 +76,8 @@ export function WorkflowRulesRoot(props: Props) {
   return (
     <section className="mt-7 w-full border-t border-subtle pt-7">
       <SettingsHeading
-        title="Custom rules"
-        description="Automatically update work items based on triggers, conditions, and actions."
+        title={t("workflow_rules.root.title")}
+        description={t("workflow_rules.root.description")}
         control={
           <Button
             variant="primary"
@@ -86,7 +88,7 @@ export function WorkflowRulesRoot(props: Props) {
               setIsFormOpen(true);
             }}
           >
-            New rule
+            {t("workflow_rules.root.new_rule")}
           </Button>
         }
       />
@@ -99,7 +101,7 @@ export function WorkflowRulesRoot(props: Props) {
           </Loader>
         )}
         {!isLoading && (rules?.length ?? 0) === 0 && (
-          <p className="text-13 text-tertiary">No custom rules configured yet.</p>
+          <p className="text-13 text-tertiary">{t("workflow_rules.root.empty_state")}</p>
         )}
         {rules?.map((rule) => (
           <WorkflowRuleListItem

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { ArrowRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { IconButton } from "@plane/propel/icon-button";
 import { StateGroupIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -33,6 +34,7 @@ type Props = {
 
 export const WorkflowTransitionListItem = observer(function WorkflowTransitionListItem(props: Props) {
   const { transition, allTransitions, workspaceSlug, projectId, onEdit, onChanged } = props;
+  const { t } = useTranslation();
   const { getStateById } = useProjectState();
   const [isToggling, setIsToggling] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -50,7 +52,11 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
       });
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to update the transition." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("governed_workflows.transition_list_item.toast.error"),
+        message: t("governed_workflows.transition_list_item.toast.update_error"),
+      });
     } finally {
       setIsToggling(false);
     }
@@ -73,7 +79,11 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
       setFreezeConfirmModal(null);
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the transition." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("governed_workflows.transition_list_item.toast.error"),
+        message: t("governed_workflows.transition_list_item.toast.delete_error"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -99,18 +109,22 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
           <div className="flex min-w-0 items-center gap-1.5 text-13 font-medium text-primary">
             {fromStateDetails ? (
               <span className="flex items-center gap-1">
-                <StateGroupIcon stateGroup={fromStateDetails.group} color={fromStateDetails.color} className="size-3.5" />
+                <StateGroupIcon
+                  stateGroup={fromStateDetails.group}
+                  color={fromStateDetails.color}
+                  className="size-3.5"
+                />
                 {fromStateDetails.name}
               </span>
             ) : (
-              <span className="text-tertiary">From creation</span>
+              <span className="text-tertiary">{t("governed_workflows.transition_list_item.from_creation")}</span>
             )}
             <ArrowRight className="size-3.5 shrink-0 text-tertiary" />
             <span className="flex items-center gap-1">
               {toStateDetails && (
                 <StateGroupIcon stateGroup={toStateDetails.group} color={toStateDetails.color} className="size-3.5" />
               )}
-              {toStateDetails?.name ?? "Unknown state"}
+              {toStateDetails?.name ?? t("governed_workflows.transition_list_item.unknown_state")}
             </span>
           </div>
         </div>
@@ -120,16 +134,21 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
           closeOnSelect
         >
           <CustomMenu.MenuItem onClick={onEdit} className="flex items-center gap-2">
-            <Pencil className="h-3 w-3" /> Edit
+            <Pencil className="h-3 w-3" /> {t("edit")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem onClick={handleDeleteClick} className="flex items-center gap-2 text-danger-primary">
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {t("delete")}
           </CustomMenu.MenuItem>
         </CustomMenu>
       </div>
       <p className="text-12 text-tertiary">
-        {transition.approvers.length > 0 ? `${transition.approvers.length} approver(s) - ` : "No approver restriction - "}
-        {transition.conditions.length} condition(s) - {transition.actions.length} action(s)
+        {transition.approvers.length > 0
+          ? t("governed_workflows.transition_list_item.approver_count", { count: transition.approvers.length })
+          : t("governed_workflows.transition_list_item.no_approver_restriction")}
+        {t("governed_workflows.transition_list_item.condition_action_count", {
+          conditions: transition.conditions.length,
+          actions: transition.actions.length,
+        })}
       </p>
 
       <AlertModalCore
@@ -137,8 +156,8 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
         handleClose={() => setDeleteModal(false)}
         handleSubmit={applyDelete}
         isSubmitting={isDeleting}
-        title="Delete transition"
-        content="Are you sure you want to delete this workflow transition? This action cannot be undone."
+        title={t("governed_workflows.transition_list_item.delete_modal.title")}
+        content={t("governed_workflows.transition_list_item.delete_modal.content")}
       />
 
       <AlertModalCore
@@ -146,7 +165,7 @@ export const WorkflowTransitionListItem = observer(function WorkflowTransitionLi
         handleClose={() => setFreezeConfirmModal(null)}
         handleSubmit={freezeConfirmModal === "delete" ? applyDelete : applyToggle}
         isSubmitting={freezeConfirmModal === "delete" ? isDeleting : isToggling}
-        title="This will block every transition for this issue type"
+        title={t("governed_workflows.transition_list_item.freeze_modal.title")}
         content={FREEZE_WARNING_MESSAGE}
       />
     </div>

@@ -6,6 +6,7 @@
 
 import { Plus, X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button, Checkbox, CustomSelect } from "@plane/ui";
 // components
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
@@ -45,6 +46,7 @@ const emptyApprover = (): TLocalWorkflowTransitionApprover => ({
  */
 export function ApproverList(props: Props) {
   const { projectId, approvers, onChange } = props;
+  const { t } = useTranslation();
 
   const updateApprover = (index: number, patch: Partial<TLocalWorkflowTransitionApprover>) => {
     onChange(approvers.map((approver, i) => (i === index ? Object.assign({}, approver, patch) : approver)));
@@ -52,24 +54,24 @@ export function ApproverList(props: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h5 className="text-13 font-medium text-secondary">Approvers</h5>
+      <h5 className="text-13 font-medium text-secondary">{t("governed_workflows.approvers.heading")}</h5>
       {approvers.length === 0 && (
-        <p className="text-12 text-tertiary">
-          No restriction - any project member who reaches this transition may execute it directly.
-        </p>
+        <p className="text-12 text-tertiary">{t("governed_workflows.approvers.empty_state")}</p>
       )}
       {approvers.map((approver, index) => (
         <div key={approver._key} className="flex flex-wrap items-center gap-2 rounded-md border border-subtle p-2">
           <CustomSelect
             value={approver.member ? "member" : "role"}
-            label={approver.member ? "Specific member" : "Role"}
+            label={approver.member ? t("governed_workflows.approvers.specific_member") : t("role")}
             onChange={(value: "member" | "role") =>
               updateApprover(index, value === "member" ? { role: null } : { member: null })
             }
             input
           >
-            <CustomSelect.Option value="role">Role</CustomSelect.Option>
-            <CustomSelect.Option value="member">Specific member</CustomSelect.Option>
+            <CustomSelect.Option value="role">{t("role")}</CustomSelect.Option>
+            <CustomSelect.Option value="member">
+              {t("governed_workflows.approvers.specific_member")}
+            </CustomSelect.Option>
           </CustomSelect>
 
           {approver.member !== null ? (
@@ -79,12 +81,16 @@ export function ApproverList(props: Props) {
               value={approver.member}
               onChange={(value) => updateApprover(index, { member: value })}
               buttonVariant="border-with-text"
-              placeholder="Choose member"
+              placeholder={t("governed_workflows.approvers.choose_member")}
             />
           ) : (
             <CustomSelect
               value={approver.role ?? ""}
-              label={approver.role !== null ? APPROVER_ROLE_LABELS[approver.role] : "Choose role"}
+              label={
+                approver.role !== null
+                  ? APPROVER_ROLE_LABELS[approver.role]
+                  : t("governed_workflows.approvers.choose_role")
+              }
               onChange={(value: number) => updateApprover(index, { role: value })}
               input
             >
@@ -105,7 +111,7 @@ export function ApproverList(props: Props) {
               checked={approver.approval_required}
               onChange={(event) => updateApprover(index, { approval_required: event.target.checked })}
             />
-            Needs approval
+            {t("governed_workflows.approvers.needs_approval")}
           </label>
 
           <button
@@ -124,7 +130,7 @@ export function ApproverList(props: Props) {
         prependIcon={<Plus className="h-3.5 w-3.5" />}
         onClick={() => onChange([...approvers, emptyApprover()])}
       >
-        Add approver
+        {t("governed_workflows.approvers.add_approver")}
       </Button>
     </div>
   );

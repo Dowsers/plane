@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useTranslation } from "@plane/i18n";
 import type { TIssuePriorities, TWorkflowAction, TWorkflowActionConfig } from "@plane/types";
 import { CustomSelect, Input } from "@plane/ui";
 import { getDate, renderFormattedPayloadDate } from "@plane/utils";
@@ -28,6 +29,7 @@ type Props = {
  * concern here). */
 export function ActionConfigForm(props: Props) {
   const { projectId, action, onChange } = props;
+  const { t } = useTranslation();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- action_config is a per-action_type union; each branch below only ever accesses the keys valid for its own type.
   const config = (action.action_config ?? {}) as any;
   const setConfig = (patch: Record<string, unknown>) =>
@@ -62,16 +64,24 @@ export function ActionConfigForm(props: Props) {
             value={config.assignee_ids ?? []}
             onChange={(value) => setConfig({ assignee_ids: value })}
             buttonVariant="border-with-text"
-            placeholder="Assignees"
+            placeholder={t("assignees")}
           />
           <CustomSelect
             value={config.mode ?? "replace"}
-            label={config.mode === "add" ? "Add to existing" : "Replace existing"}
+            label={
+              config.mode === "add"
+                ? t("workflow_rules.action_config.add_to_existing")
+                : t("workflow_rules.action_config.replace_existing")
+            }
             onChange={(value: string) => setConfig({ mode: value })}
             input
           >
-            <CustomSelect.Option value="replace">Replace existing assignees</CustomSelect.Option>
-            <CustomSelect.Option value="add">Add to existing assignees</CustomSelect.Option>
+            <CustomSelect.Option value="replace">
+              {t("workflow_rules.action_config.replace_existing_assignees")}
+            </CustomSelect.Option>
+            <CustomSelect.Option value="add">
+              {t("workflow_rules.action_config.add_to_existing_assignees")}
+            </CustomSelect.Option>
           </CustomSelect>
         </div>
       );
@@ -85,7 +95,11 @@ export function ActionConfigForm(props: Props) {
           onChange={(value) => setConfig({ label_ids: value })}
           label={
             <span>
-              {(config.label_ids?.length ?? 0) > 0 ? `${config.label_ids.length} label(s) selected` : "Choose labels"}
+              {(config.label_ids?.length ?? 0) > 0
+                ? t("workflow_rules.action_config.labels_selected_count", {
+                    count: config.label_ids.length,
+                  })
+                : t("workflow_rules.action_config.choose_labels")}
             </span>
           }
         />
@@ -98,7 +112,11 @@ export function ActionConfigForm(props: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <CustomSelect
             value={mode}
-            label={mode === "relative" ? "Relative to trigger" : "Fixed date"}
+            label={
+              mode === "relative"
+                ? t("workflow_rules.action_config.relative_to_trigger")
+                : t("workflow_rules.action_config.fixed_date")
+            }
             onChange={(value: "fixed" | "relative") =>
               setConfig(
                 value === "relative"
@@ -112,8 +130,10 @@ export function ActionConfigForm(props: Props) {
             }
             input
           >
-            <CustomSelect.Option value="fixed">Fixed date</CustomSelect.Option>
-            <CustomSelect.Option value="relative">Relative to trigger</CustomSelect.Option>
+            <CustomSelect.Option value="fixed">{t("workflow_rules.action_config.fixed_date")}</CustomSelect.Option>
+            <CustomSelect.Option value="relative">
+              {t("workflow_rules.action_config.relative_to_trigger")}
+            </CustomSelect.Option>
           </CustomSelect>
           {mode === "relative" ? (
             <div className="flex items-center gap-1.5 text-13 text-secondary">
@@ -125,7 +145,7 @@ export function ActionConfigForm(props: Props) {
                 value={config.days_from_trigger ?? 0}
                 onChange={(event) => setConfig({ days_from_trigger: Number(event.target.value) })}
               />
-              day(s) from trigger
+              {t("workflow_rules.action_config.days_from_trigger")}
             </div>
           ) : (
             <DateDropdown
@@ -155,7 +175,7 @@ export function ActionConfigForm(props: Props) {
             value={config.user_id ?? null}
             onChange={(value) => setConfig({ user_id: value })}
             buttonVariant="border-with-text"
-            placeholder="User to mention"
+            placeholder={t("workflow_rules.action_config.user_to_mention")}
           />
           <TemplateTokenTextarea
             value={config.comment_template ?? ""}

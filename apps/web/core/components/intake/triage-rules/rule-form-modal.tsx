@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { Plus, X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssuePriorities, TTriageRule, TTriageRuleAction, TTriageRuleCondition } from "@plane/types";
 import { Button, Checkbox, CustomSelect, EModalPosition, EModalWidth, Input, ModalCore } from "@plane/ui";
@@ -58,6 +59,7 @@ type Props = {
 
 export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, projectId, rule, onSaved } = props;
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -95,12 +97,20 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Le nom de la règle est requis." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.form_modal.name_required"),
+      });
       return;
     }
     const validConditions = conditions.filter((c) => c.value.trim().length > 0);
     if (validConditions.length === 0) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Au moins une condition est requise." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.triage_rules.form_modal.condition_required"),
+      });
       return;
     }
 
@@ -121,7 +131,11 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
       onSaved();
       handleClose();
     } catch (error: any) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: error?.error ?? "Unable to save the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.triage_rules.form_modal.save_error"),
+      });
     } finally {
       setIsSaving(false);
     }
@@ -131,7 +145,11 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.TOP} width={EModalWidth.XXXL}>
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto py-5">
         <div className="flex items-center justify-between px-5">
-          <h4 className="text-18 font-medium text-primary">{rule ? "Modifier la règle" : "Nouvelle règle"}</h4>
+          <h4 className="text-18 font-medium text-primary">
+            {rule
+              ? t("intake_settings.triage_rules.form_modal.title_edit")
+              : t("intake_settings.triage_rules.list.new_rule")}
+          </h4>
           <button onClick={handleClose}>
             <X className="h-4 w-4" />
           </button>
@@ -141,7 +159,7 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
           <div className="flex items-center gap-3">
             <Input
               type="text"
-              placeholder="Nom de la règle"
+              placeholder={t("intake_settings.triage_rules.form_modal.name_placeholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="flex-1"
@@ -149,22 +167,30 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
             />
             <label htmlFor="triage-rule-is-active" className="flex items-center gap-1.5 text-13 text-secondary">
               <Checkbox id="triage-rule-is-active" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-              Active
+              {t("intake_settings.triage_rules.form_modal.active")}
             </label>
           </div>
 
           <div className="flex flex-col gap-2">
-            <h5 className="text-13 font-medium text-secondary">SI (toutes les conditions doivent correspondre)</h5>
+            <h5 className="text-13 font-medium text-secondary">
+              {t("intake_settings.triage_rules.form_modal.conditions_heading")}
+            </h5>
             {conditions.map((condition, index) => (
               <div key={condition._key} className="flex items-center gap-2">
                 <CustomSelect
                   value={condition.field}
-                  label={condition.field === "TITLE" ? "Titre" : "Description"}
+                  label={
+                    condition.field === "TITLE"
+                      ? t("intake_settings.triage_rules.form_modal.field_title")
+                      : t("description")
+                  }
                   onChange={(val: TTriageRuleCondition["field"]) => updateCondition(index, { field: val })}
                   input
                 >
-                  <CustomSelect.Option value="TITLE">Titre</CustomSelect.Option>
-                  <CustomSelect.Option value="DESCRIPTION">Description</CustomSelect.Option>
+                  <CustomSelect.Option value="TITLE">
+                    {t("intake_settings.triage_rules.form_modal.field_title")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="DESCRIPTION">{t("description")}</CustomSelect.Option>
                 </CustomSelect>
                 <CustomSelect
                   value={condition.operator}
@@ -172,14 +198,22 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
                   onChange={(val: TTriageRuleCondition["operator"]) => updateCondition(index, { operator: val })}
                   input
                 >
-                  <CustomSelect.Option value="CONTAINS">contient</CustomSelect.Option>
-                  <CustomSelect.Option value="NOT_CONTAINS">ne contient pas</CustomSelect.Option>
-                  <CustomSelect.Option value="STARTS_WITH">commence par</CustomSelect.Option>
-                  <CustomSelect.Option value="REGEX">regex</CustomSelect.Option>
+                  <CustomSelect.Option value="CONTAINS">
+                    {t("intake_settings.triage_rules.form_modal.operator_contains")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="NOT_CONTAINS">
+                    {t("intake_settings.triage_rules.form_modal.operator_not_contains")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="STARTS_WITH">
+                    {t("intake_settings.triage_rules.form_modal.operator_starts_with")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="REGEX">
+                    {t("intake_settings.triage_rules.form_modal.operator_regex")}
+                  </CustomSelect.Option>
                 </CustomSelect>
                 <Input
                   type="text"
-                  placeholder="Valeur"
+                  placeholder={t("intake_settings.triage_rules.form_modal.value_placeholder")}
                   value={condition.value}
                   onChange={(e) => updateCondition(index, { value: e.target.value })}
                   className="flex-1"
@@ -203,31 +237,41 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
               onClick={() => setConditions([...conditions, emptyCondition()])}
               disabled={conditions.length >= MAX_CONDITIONS}
             >
-              Ajouter une condition
+              {t("intake_settings.triage_rules.form_modal.add_condition")}
             </Button>
           </div>
 
           <div className="flex flex-col gap-2">
-            <h5 className="text-13 font-medium text-secondary">ALORS</h5>
+            <h5 className="text-13 font-medium text-secondary">
+              {t("intake_settings.triage_rules.form_modal.actions_heading")}
+            </h5>
             {actions.map((action, index) => (
               <div key={action._key} className="flex items-center gap-2">
                 <CustomSelect
                   value={action.action_type}
                   label={
                     {
-                      SET_PRIORITY: "Définir la priorité",
-                      SET_LABELS: "Ajouter des labels",
-                      SET_ASSIGNEES: "Assigner des membres",
-                      SET_STATE: "Définir l'état",
+                      SET_PRIORITY: t("intake_settings.triage_rules.form_modal.action_set_priority"),
+                      SET_LABELS: t("intake_settings.triage_rules.form_modal.action_set_labels"),
+                      SET_ASSIGNEES: t("intake_settings.triage_rules.form_modal.action_set_assignees"),
+                      SET_STATE: t("intake_settings.triage_rules.form_modal.action_set_state"),
                     }[action.action_type]
                   }
                   onChange={(val: TTriageRuleAction["action_type"]) => updateAction(index, { action_type: val })}
                   input
                 >
-                  <CustomSelect.Option value="SET_PRIORITY">Définir la priorité</CustomSelect.Option>
-                  <CustomSelect.Option value="SET_LABELS">Ajouter des labels</CustomSelect.Option>
-                  <CustomSelect.Option value="SET_ASSIGNEES">Assigner des membres</CustomSelect.Option>
-                  <CustomSelect.Option value="SET_STATE">Définir l'état</CustomSelect.Option>
+                  <CustomSelect.Option value="SET_PRIORITY">
+                    {t("intake_settings.triage_rules.form_modal.action_set_priority")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="SET_LABELS">
+                    {t("intake_settings.triage_rules.form_modal.action_set_labels")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="SET_ASSIGNEES">
+                    {t("intake_settings.triage_rules.form_modal.action_set_assignees")}
+                  </CustomSelect.Option>
+                  <CustomSelect.Option value="SET_STATE">
+                    {t("intake_settings.triage_rules.form_modal.action_set_state")}
+                  </CustomSelect.Option>
                 </CustomSelect>
 
                 <div className="flex-1">
@@ -253,7 +297,9 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
                       onChange={(val) => updateAction(index, { labels: val })}
                       label={
                         <span>
-                          {action.labels.length > 0 ? `${action.labels.length} label(s)` : "Choisir des labels"}
+                          {action.labels.length > 0
+                            ? t("intake_settings.forms.form_modal.label_count", { count: action.labels.length })
+                            : t("intake_settings.triage_rules.form_modal.choose_labels")}
                         </span>
                       }
                     />
@@ -265,7 +311,7 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
                       value={action.assignees}
                       onChange={(val) => updateAction(index, { assignees: val })}
                       buttonVariant="border-with-text"
-                      placeholder="Choisir des membres"
+                      placeholder={t("intake_settings.triage_rules.form_modal.choose_members")}
                     />
                   )}
                 </div>
@@ -288,17 +334,17 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
               onClick={() => setActions([...actions, emptyAction()])}
               disabled={actions.length >= MAX_ACTIONS}
             >
-              Ajouter une action
+              {t("intake_settings.triage_rules.form_modal.add_action")}
             </Button>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            Enregistrer
+            {t("save")}
           </Button>
         </div>
       </div>

@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type {
   TWorkflowAction,
@@ -74,6 +75,7 @@ const sanitizeConditions = (conditions: TLocalWorkflowCondition[]): TWorkflowRul
  */
 export function WorkflowRuleFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, projectId, rule, onSaved } = props;
+  const { t } = useTranslation();
   const [state, setState] = useState(defaultState());
   const [isSaving, setIsSaving] = useState(false);
 
@@ -98,7 +100,7 @@ export function WorkflowRuleFormModal(props: Props) {
   }, [rule, isOpen]);
 
   const validate = (): string | null => {
-    if (!state.name.trim()) return "Name is required.";
+    if (!state.name.trim()) return t("workflow_rules.form.name_required");
     if (state.actions.length === 0) return ERROR_ZERO_ACTIONS;
     if (state.actions.length > MAX_ACTIONS_PER_RULE) return ERROR_MAX_ACTIONS;
     return null;
@@ -107,7 +109,7 @@ export function WorkflowRuleFormModal(props: Props) {
   const handleSave = async () => {
     const validationError = validate();
     if (validationError) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: validationError });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: validationError });
       return;
     }
 
@@ -139,8 +141,8 @@ export function WorkflowRuleFormModal(props: Props) {
       onSaved();
       handleClose();
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to save the rule.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message = (error as { error?: string })?.error ?? t("workflow_rules.form.save_error");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSaving(false);
     }
@@ -150,7 +152,9 @@ export function WorkflowRuleFormModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.TOP} width={EModalWidth.XXXL}>
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto py-5">
         <div className="flex items-center justify-between px-5">
-          <h4 className="text-18 font-medium text-primary">{rule ? "Edit rule" : "New rule"}</h4>
+          <h4 className="text-18 font-medium text-primary">
+            {rule ? t("workflow_rules.form.edit_rule") : t("workflow_rules.form.new_rule")}
+          </h4>
           <button onClick={handleClose} type="button">
             <X className="h-4 w-4" />
           </button>
@@ -160,7 +164,7 @@ export function WorkflowRuleFormModal(props: Props) {
           <div className="flex items-center gap-3">
             <Input
               type="text"
-              placeholder="Rule name"
+              placeholder={t("workflow_rules.form.rule_name_placeholder")}
               value={state.name}
               onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
               className="flex-1"
@@ -175,12 +179,12 @@ export function WorkflowRuleFormModal(props: Props) {
                 checked={state.isActive}
                 onChange={(event) => setState((prev) => ({ ...prev, isActive: event.target.checked }))}
               />
-              Active
+              {t("common.active")}
             </label>
           </div>
 
           <TextArea
-            placeholder="Description (optional)"
+            placeholder={t("workflow_rules.form.description_placeholder")}
             value={state.description}
             onChange={(event) => setState((prev) => ({ ...prev, description: event.target.value }))}
             textAreaSize="sm"
@@ -188,7 +192,7 @@ export function WorkflowRuleFormModal(props: Props) {
           />
 
           <div className="flex flex-col gap-2">
-            <h5 className="text-13 font-medium text-secondary">Trigger</h5>
+            <h5 className="text-13 font-medium text-secondary">{t("workflow_rules.form.trigger")}</h5>
             <CustomSelect
               value={state.triggerType}
               label={TRIGGER_TYPE_LABELS[state.triggerType]}
@@ -227,10 +231,10 @@ export function WorkflowRuleFormModal(props: Props) {
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            Save rule
+            {t("workflow_rules.form.save_rule")}
           </Button>
         </div>
       </div>

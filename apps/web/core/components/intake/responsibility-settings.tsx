@@ -10,6 +10,7 @@ import useSWR, { mutate } from "swr";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIntakeResponsibilitySetting } from "@plane/types";
 import { Avatar, Button, CustomSelect, Input, Loader, ToggleSwitch } from "@plane/ui";
@@ -38,6 +39,7 @@ type Props = {
 
 export const IntakeResponsibilitySettings = observer(function IntakeResponsibilitySettings(props: Props) {
   const { workspaceSlug, projectId } = props;
+  const { t } = useTranslation();
   const { allowPermissions } = useUserPermissions();
   const {
     project: { getProjectMemberIds },
@@ -87,8 +89,8 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: error?.error ?? "Unable to save intake responsibility settings. Please try again.",
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.responsibility.save_error"),
       });
       setForm(form);
     }
@@ -101,7 +103,11 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
       setAddMemberId(null);
       mutate(ROTATION_KEY(workspaceSlug, projectId));
     } catch (error: any) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: error?.error ?? "Unable to add member." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.responsibility.add_member_error"),
+      });
     }
   };
 
@@ -110,7 +116,11 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
       await intakeResponsibilityService.removeRotationMember(workspaceSlug, projectId, rotationMemberId);
       mutate(ROTATION_KEY(workspaceSlug, projectId));
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to remove member." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.responsibility.remove_member_error"),
+      });
     }
   };
 
@@ -132,7 +142,11 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
       );
       mutate(ROTATION_KEY(workspaceSlug, projectId));
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to reorder rotation." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.responsibility.reorder_error"),
+      });
       mutate(ROTATION_KEY(workspaceSlug, projectId));
     }
   };
@@ -143,13 +157,13 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
   return (
     <section className="mt-7 w-full border-t border-subtle pt-7">
       <SettingsHeading
-        title="Responsabilité d'intake"
-        description="Assigne automatiquement chaque nouvel item d'intake à un responsable."
+        title={t("intake_settings.responsibility.heading.title")}
+        description={t("intake_settings.responsibility.heading.description")}
       />
       <div className="mt-4 divide-y divide-subtle">
         <SettingsControlItem
-          title="Activer la responsabilité d'intake"
-          description="Un responsable sera calculé et notifié dès la création de chaque item d'intake."
+          title={t("intake_settings.responsibility.enable.title")}
+          description={t("intake_settings.responsibility.enable.description")}
           control={
             <ToggleSwitch
               value={form.is_enabled}
@@ -159,25 +173,33 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
           }
         />
         <SettingsControlItem
-          title="Mode d'assignation"
-          description="Owner fixe (une seule personne) ou rotation round-robin entre plusieurs membres."
+          title={t("intake_settings.responsibility.assignment_mode.title")}
+          description={t("intake_settings.responsibility.assignment_mode.description")}
           control={
             <CustomSelect
               value={form.assignment_mode}
-              label={form.assignment_mode === "fixed_owner" ? "Owner fixe" : "Rotation round-robin"}
+              label={
+                form.assignment_mode === "fixed_owner"
+                  ? t("intake_settings.responsibility.assignment_mode.fixed_owner")
+                  : t("intake_settings.responsibility.assignment_mode.round_robin")
+              }
               onChange={(val: "fixed_owner" | "round_robin") => persist({ assignment_mode: val })}
               disabled={!isAdmin}
               input
             >
-              <CustomSelect.Option value="fixed_owner">Owner fixe</CustomSelect.Option>
-              <CustomSelect.Option value="round_robin">Rotation round-robin</CustomSelect.Option>
+              <CustomSelect.Option value="fixed_owner">
+                {t("intake_settings.responsibility.assignment_mode.fixed_owner")}
+              </CustomSelect.Option>
+              <CustomSelect.Option value="round_robin">
+                {t("intake_settings.responsibility.assignment_mode.round_robin")}
+              </CustomSelect.Option>
             </CustomSelect>
           }
         />
         {form.assignment_mode === "fixed_owner" ? (
           <SettingsControlItem
-            title="Owner fixe"
-            description="Le membre auquel tout nouvel item d'intake sera assigné."
+            title={t("intake_settings.responsibility.assignment_mode.fixed_owner")}
+            description={t("intake_settings.responsibility.fixed_owner.description")}
             control={
               <MemberDropdown
                 projectId={projectId}
@@ -186,7 +208,7 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
                 onChange={(val) => persist({ fixed_owner: val })}
                 buttonVariant="border-with-text"
                 disabled={!isAdmin}
-                placeholder="Choisir un membre"
+                placeholder={t("intake_settings.responsibility.choose_member")}
               />
             }
           />
@@ -194,9 +216,11 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
           <div className="flex flex-col gap-3 py-3">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h4 className="text-body-sm-medium text-primary">Membres de la rotation</h4>
+                <h4 className="text-body-sm-medium text-primary">
+                  {t("intake_settings.responsibility.rotation.members_heading")}
+                </h4>
                 <p className="text-caption-md-regular text-secondary">
-                  Ordre d'assignation - le pointeur de rotation avance à chaque nouvel item.
+                  {t("intake_settings.responsibility.rotation.members_description")}
                 </p>
               </div>
               {isAdmin && (
@@ -208,10 +232,10 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
                     value={addMemberId}
                     onChange={setAddMemberId}
                     buttonVariant="border-with-text"
-                    placeholder="Choisir un membre"
+                    placeholder={t("intake_settings.responsibility.choose_member")}
                   />
                   <Button variant="neutral-primary" size="sm" onClick={handleAddMember} disabled={!addMemberId}>
-                    Ajouter
+                    {t("add")}
                   </Button>
                 </div>
               )}
@@ -259,14 +283,14 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
                 </div>
               ))}
               {(rotationMembers ?? []).length === 0 && (
-                <p className="text-13 text-tertiary">Aucun membre dans la rotation pour le moment.</p>
+                <p className="text-13 text-tertiary">{t("intake_settings.responsibility.rotation.no_members")}</p>
               )}
             </div>
           </div>
         )}
         <SettingsControlItem
-          title="Délai d'escalade"
-          description="Minutes avant qu'un item Pending non traité soit réassigné au membre suivant (5-1440, rotation uniquement)."
+          title={t("intake_settings.responsibility.escalation.title")}
+          description={t("intake_settings.responsibility.escalation.description")}
           control={
             <Input
               type="number"

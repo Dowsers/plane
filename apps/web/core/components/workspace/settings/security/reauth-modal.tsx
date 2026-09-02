@@ -12,6 +12,7 @@ import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { EModalPosition, EModalWidth, Input, ModalCore } from "@plane/ui";
 import { cn } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // hooks
 import { useUser } from "@/hooks/store/user";
 // services
@@ -50,6 +51,7 @@ type TMagicStep = "request" | "confirm";
  */
 export const ReauthModal = observer(function ReauthModal(props: Props) {
   const { workspaceSlug, isOpen, onClose, onSuccess } = props;
+  const { t } = useTranslation();
   // store hooks
   const { data: currentUser } = useUser();
   // derived values
@@ -84,7 +86,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
 
   const handlePasswordSubmit = async () => {
     if (!password) {
-      setError("Enter your password to continue.");
+      setError(t("reauth_modal.errors.enter_password"));
       return;
     }
     setIsSubmitting(true);
@@ -96,7 +98,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
       }
     } catch (err: unknown) {
       const e = err as { error_message?: string; detail?: string };
-      setError(e?.error_message ?? e?.detail ?? "Incorrect password. Please try again.");
+      setError(e?.error_message ?? e?.detail ?? t("reauth_modal.errors.incorrect_password"));
     } finally {
       setIsSubmitting(false);
     }
@@ -110,12 +112,12 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
       setMagicStep("confirm");
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Code sent",
-        message: "Check your email for a verification code.",
+        title: t("reauth_modal.toast.code_sent_title"),
+        message: t("reauth_modal.toast.code_sent_message"),
       });
     } catch (err: unknown) {
       const e = err as { error_message?: string; detail?: string };
-      setError(e?.error_message ?? e?.detail ?? "Could not send a verification code. Please try again.");
+      setError(e?.error_message ?? e?.detail ?? t("reauth_modal.errors.code_send_failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +125,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
 
   const handleConfirmCode = async () => {
     if (!code) {
-      setError("Enter the code you received by email.");
+      setError(t("reauth_modal.errors.enter_code"));
       return;
     }
     setIsSubmitting(true);
@@ -139,7 +141,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
       }
     } catch (err: unknown) {
       const e = err as { error_message?: string; detail?: string };
-      setError(e?.error_message ?? e?.detail ?? "Invalid or expired code. Please try again.");
+      setError(e?.error_message ?? e?.detail ?? t("reauth_modal.errors.invalid_code"));
     } finally {
       setIsSubmitting(false);
     }
@@ -157,22 +159,20 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
             <ShieldCheck className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <h3 className="text-h5-medium">Confirm it&apos;s you</h3>
-            <p className="text-body-xs-regular text-secondary">
-              This action is sensitive and requires you to re-confirm your identity.
-            </p>
+            <h3 className="text-h5-medium">{t("reauth_modal.title")}</h3>
+            <p className="text-body-xs-regular text-secondary">{t("reauth_modal.description")}</p>
           </div>
         </div>
 
         {method === "password" && (
           <div className="flex flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Password</span>
+            <span className="text-body-xs-medium text-secondary">{t("reauth_modal.password_label")}</span>
             <div className="relative flex items-center rounded-md">
               <Input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t("reauth_modal.password_placeholder")}
                 className="w-full"
                 hasError={Boolean(error)}
                 autoComplete="current-password"
@@ -202,7 +202,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
                   setError(null);
                 }}
               >
-                Use an email code instead
+                {t("reauth_modal.use_email_code")}
               </button>
             )}
           </div>
@@ -211,17 +211,15 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
         {method === "magic_code" && (
           <div className="flex flex-col gap-2">
             {magicStep === "request" ? (
-              <p className="text-body-xs-regular text-secondary">
-                We&apos;ll send a one-time verification code to your email address.
-              </p>
+              <p className="text-body-xs-regular text-secondary">{t("reauth_modal.magic_code_request_description")}</p>
             ) : (
               <>
-                <span className="text-body-xs-medium text-secondary">Verification code</span>
+                <span className="text-body-xs-medium text-secondary">{t("reauth_modal.verification_code_label")}</span>
                 <Input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="Enter the 6-digit code"
+                  placeholder={t("reauth_modal.verification_code_placeholder")}
                   className="w-full"
                   hasError={Boolean(error)}
                   autoComplete="one-time-code"
@@ -240,7 +238,7 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
                   setError(null);
                 }}
               >
-                Use your password instead
+                {t("reauth_modal.use_password")}
               </button>
             )}
           </div>
@@ -250,21 +248,21 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            {t("cancel")}
           </Button>
           {method === "password" && (
             <Button variant="primary" size="lg" onClick={handlePasswordSubmit} loading={isSubmitting}>
-              Confirm
+              {t("confirm")}
             </Button>
           )}
           {method === "magic_code" && magicStep === "request" && (
             <Button variant="primary" size="lg" onClick={handleRequestCode} loading={isSubmitting}>
-              Send code
+              {t("reauth_modal.send_code")}
             </Button>
           )}
           {method === "magic_code" && magicStep === "confirm" && (
             <Button variant="primary" size="lg" onClick={handleConfirmCode} loading={isSubmitting}>
-              Confirm
+              {t("confirm")}
             </Button>
           )}
         </div>

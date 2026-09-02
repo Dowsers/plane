@@ -13,6 +13,7 @@ import { Disclosure } from "@headlessui/react";
 import { Crown } from "lucide-react";
 // plane imports
 import { ROLE, EUserPermissions, EUserPermissionsLevel, MEMBER_TRACKER_ELEMENTS } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TrashIcon, SuspendedUserIcon } from "@plane/propel/icons";
 import { Pill, EPillVariant, EPillSize } from "@plane/propel/pill";
 import { Tooltip } from "@plane/propel/tooltip";
@@ -79,6 +80,8 @@ type AccountTypeProps = {
 
 export function NameColumn(props: NameProps) {
   const { rowData, workspaceSlug, isAdmin, currentUser, setRemoveMemberModal, setTransferOwnershipModal } = props;
+  // i18n
+  const { t } = useTranslation();
   // derived values
   const { avatar_url, display_name, email, first_name, id, last_name } = rowData.member;
   const isSuspended = rowData.is_active === false;
@@ -120,8 +123,11 @@ export function NameColumn(props: NameProps) {
                 {first_name} {last_name}
               </span>
               {rowData.is_owner && (
-                <Tooltip tooltipContent="Workspace Owner">
-                  <Crown className="size-3.5 shrink-0 text-warning-primary" aria-label="Workspace Owner" />
+                <Tooltip tooltipContent={t("workspace_settings.settings.members.columns.workspace_owner")}>
+                  <Crown
+                    className="size-3.5 shrink-0 text-warning-primary"
+                    aria-label={t("workspace_settings.settings.members.columns.workspace_owner")}
+                  />
                 </Tooltip>
               )}
             </div>
@@ -139,7 +145,8 @@ export function NameColumn(props: NameProps) {
                       className="flex w-full cursor-pointer items-center gap-x-3"
                       onClick={() => setTransferOwnershipModal?.()}
                     >
-                      <Crown className="size-3.5 align-middle" /> Transfer ownership
+                      <Crown className="size-3.5 align-middle" />{" "}
+                      {t("workspace_settings.settings.members.columns.transfer_ownership")}
                     </button>
                   ) : (
                     <button
@@ -148,7 +155,10 @@ export function NameColumn(props: NameProps) {
                       onClick={() => setRemoveMemberModal(rowData)}
                       data-ph-element={MEMBER_TRACKER_ELEMENTS.WORKSPACE_MEMBER_TABLE_CONTEXT_MENU}
                     >
-                      <TrashIcon className="size-3.5 align-middle" /> {isCurrentUser ? "Leave " : "Remove "}
+                      <TrashIcon className="size-3.5 align-middle" />{" "}
+                      {isCurrentUser
+                        ? t("workspace_settings.settings.members.columns.leave")
+                        : t("workspace_settings.settings.members.columns.remove")}
                     </button>
                   )
                 }
@@ -163,6 +173,8 @@ export function NameColumn(props: NameProps) {
 
 export const AccountTypeColumn = observer(function AccountTypeColumn(props: AccountTypeProps) {
   const { rowData, workspaceSlug } = props;
+  // i18n
+  const { t } = useTranslation();
   // state
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 2 ("SCIM 2.0 natif") - the spec's own UX note
@@ -244,7 +256,7 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
       {isSuspended ? (
         <div className="flex w-32">
           <Pill variant={EPillVariant.DEFAULT} size={EPillSize.SM} className="border-none">
-            Suspended
+            {t("workspace_settings.settings.members.columns.suspended")}
           </Pill>
         </div>
       ) : isRoleNonEditable || !roles ? (
@@ -284,15 +296,14 @@ export const AccountTypeColumn = observer(function AccountTypeColumn(props: Acco
         handleSubmit={handleConfirmRoleChange}
         isSubmitting={isConfirmingRoleChange}
         variant="primary"
-        title="Change role of a SCIM-managed member?"
-        content={
-          <>
-            {rowData.member.display_name || rowData.member.email}&apos;s role is managed by your SCIM identity provider.
-            Changing it here only affects Plane - your IdP is not aware of this change and may overwrite it on the next
-            sync.
-          </>
-        }
-        primaryButtonText={{ loading: "Changing", default: "Change role anyway" }}
+        title={t("workspace_settings.settings.members.columns.scim_confirm_title")}
+        content={t("workspace_settings.settings.members.columns.scim_confirm_content", {
+          name: rowData.member.display_name || rowData.member.email,
+        })}
+        primaryButtonText={{
+          loading: t("workspace_settings.settings.members.columns.scim_confirm_loading"),
+          default: t("workspace_settings.settings.members.columns.scim_confirm_default"),
+        }}
       />
     </>
   );

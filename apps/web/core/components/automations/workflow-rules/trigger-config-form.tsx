@@ -6,6 +6,7 @@
 
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import type { TWorkflowRuleTriggerConfig } from "@plane/types";
 // components
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
@@ -25,17 +26,18 @@ type Props = {
  */
 export function TriggerConfigForm(props: Props) {
   const { projectId, triggerConfig, onChange } = props;
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="flex items-center gap-1.5">
-        <span className="text-13 text-secondary">From state</span>
+        <span className="text-13 text-secondary">{t("workflow_rules.trigger_config.from_state")}</span>
         <StateDropdown
           projectId={projectId}
           value={triggerConfig.from_state_id ?? null}
           onChange={(value) => onChange({ ...triggerConfig, from_state_id: value })}
           buttonVariant="border-with-text"
-          placeholder="Any state"
+          placeholder={t("workflow_rules.trigger_config.any_state")}
         />
         {triggerConfig.from_state_id && (
           <button
@@ -48,13 +50,13 @@ export function TriggerConfigForm(props: Props) {
         )}
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="text-13 text-secondary">To state</span>
+        <span className="text-13 text-secondary">{t("workflow_rules.trigger_config.to_state")}</span>
         <StateDropdown
           projectId={projectId}
           value={triggerConfig.to_state_id ?? null}
           onChange={(value) => onChange({ ...triggerConfig, to_state_id: value })}
           buttonVariant="border-with-text"
-          placeholder="Any state"
+          placeholder={t("workflow_rules.trigger_config.any_state")}
         />
         {triggerConfig.to_state_id && (
           <button

@@ -9,6 +9,7 @@ import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TSCIMTokenCreateResponse } from "@plane/types";
 import { EModalPosition, EModalWidth, Input, ModalCore } from "@plane/ui";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceSCIMService from "@/services/workspace-scim.service";
 // local imports
@@ -31,6 +32,7 @@ type Props = {
  */
 export function CreateSCIMTokenModal(props: Props) {
   const { isOpen, workspaceSlug, baseUrl, onClose, onCreated } = props;
+  const { t } = useTranslation();
   // state
   const [label, setLabel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,8 +56,8 @@ export function CreateSCIMTokenModal(props: Props) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not generate token",
-        message: err?.error ?? "Something went wrong. Please try again.",
+        title: t("scim.create_token_modal.toast.failed_title"),
+        message: err?.error ?? t("something_went_wrong_please_try_again"),
       });
     } finally {
       setIsSubmitting(false);
@@ -69,28 +71,26 @@ export function CreateSCIMTokenModal(props: Props) {
       ) : (
         <div className="flex flex-col gap-4 p-5">
           <div>
-            <h3 className="text-16 font-medium text-primary">Generate a SCIM token</h3>
-            <p className="mt-1 text-13 text-tertiary">
-              Give it a label that helps you recognize which identity provider it belongs to.
-            </p>
+            <h3 className="text-16 font-medium text-primary">{t("scim.create_token_modal.title")}</h3>
+            <p className="mt-1 text-13 text-tertiary">{t("scim.create_token_modal.description")}</p>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Label</span>
+            <span className="text-body-xs-medium text-secondary">{t("scim.create_token_modal.label")}</span>
             <Input
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="Okta - Prod"
+              placeholder={t("scim.create_token_modal.label_placeholder")}
               className="w-full"
               autoComplete="off"
             />
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="lg" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button variant="primary" size="lg" onClick={handleSubmit} loading={isSubmitting}>
-              Generate token
+              {t("scim.create_token_modal.submit")}
             </Button>
           </div>
         </div>

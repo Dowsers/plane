@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { CheckCircle2, Locate, MoreHorizontal, RotateCcw, Trash2, Pencil } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TPageComment } from "@plane/types";
 import { Avatar } from "@plane/ui";
@@ -43,13 +44,14 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getUserDetails } = useMember();
   const author = getUserDetails(comment.actor);
+  const { t } = useTranslation();
 
   const handleEdit = async (commentHtml: string) => {
     try {
       await page.comments.updateComment(comment.id, { comment_html: commentHtml });
       setIsEditing(false);
     } catch (_error) {
-      setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Couldn't update the comment." });
+      setToast({ title: t("toast.error"), type: TOAST_TYPE.ERROR, message: t("wiki.comments.errors.update_failed") });
     }
   };
 
@@ -57,7 +59,7 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
     try {
       await page.comments.deleteComment(comment.id);
     } catch (_error) {
-      setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Couldn't delete the comment." });
+      setToast({ title: t("toast.error"), type: TOAST_TYPE.ERROR, message: t("wiki.comments.errors.delete_failed") });
     }
   };
 
@@ -66,8 +68,12 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Avatar src={getFileURL(author?.avatar_url ?? "")} name={author?.display_name} size="sm" />
-          <span className="text-13 font-medium text-primary">{author?.display_name ?? "Deactivated user"}</span>
-          <span className="text-11 text-tertiary">{calculateTimeAgo(comment.created_at)} ago</span>
+          <span className="text-13 font-medium text-primary">
+            {author?.display_name ?? t("common.deactivated_user")}
+          </span>
+          <span className="text-11 text-tertiary">
+            {t("wiki.comments.time_ago", { time: calculateTimeAgo(comment.created_at) })}
+          </span>
         </div>
         {(canEdit || canDelete) && (
           <div className="relative">
@@ -75,7 +81,7 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
               type="button"
               className="grid size-5 place-items-center rounded-sm text-tertiary opacity-0 transition-opacity group-hover/comment-row:opacity-100 hover:bg-layer-1"
               onClick={() => setIsMenuOpen((v) => !v)}
-              aria-label="Comment actions"
+              aria-label={t("wiki.comments.aria.actions")}
             >
               <MoreHorizontal className="size-3.5" />
             </button>
@@ -90,7 +96,7 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
                       setIsMenuOpen(false);
                     }}
                   >
-                    <Pencil className="size-3" /> Edit
+                    <Pencil className="size-3" /> {t("edit")}
                   </button>
                 )}
                 {canDelete && (
@@ -102,7 +108,7 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
                       void handleDelete();
                     }}
                   >
-                    <Trash2 className="size-3" /> Delete
+                    <Trash2 className="size-3" /> {t("delete")}
                   </button>
                 )}
               </div>
@@ -113,8 +119,8 @@ const CommentEntryRow = observer(function CommentEntryRow(props: TCommentEntryPr
       {isEditing ? (
         <PageCommentComposer
           initialValue={comment.comment_stripped}
-          placeholder="Edit comment…"
-          submitLabel="Save"
+          placeholder={t("wiki.comments.placeholder_edit")}
+          submitLabel={t("save")}
           focusOnMount
           onSubmit={handleEdit}
           onCancel={() => setIsEditing(false)}
@@ -161,6 +167,7 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
   const [isResolving, setIsResolving] = useState(false);
   // store hooks
   const { data: currentUser } = useUser();
+  const { t } = useTranslation();
 
   const canWrite = page.canCurrentUserCommentOnPage;
   const isAuthor = thread.actor === currentUser?.id;
@@ -174,7 +181,11 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
       if (thread.is_resolved) await page.comments.reopenThread(thread.id);
       else await page.comments.resolveThread(thread.id);
     } catch (_error) {
-      setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Couldn't update the thread's status." });
+      setToast({
+        title: t("toast.error"),
+        type: TOAST_TYPE.ERROR,
+        message: t("wiki.comments.errors.status_update_failed"),
+      });
     } finally {
       setIsResolving(false);
     }
@@ -185,7 +196,7 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
       await page.comments.addReply(thread.id, { comment_html: commentHtml });
       setIsReplying(false);
     } catch (_error) {
-      setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Couldn't post the reply." });
+      setToast({ title: t("toast.error"), type: TOAST_TYPE.ERROR, message: t("wiki.comments.errors.reply_failed") });
     }
   };
 
@@ -221,8 +232,8 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
       {!thread.is_orphaned && (
         <button
           type="button"
-          aria-label="Scroll to this comment's text in the document"
-          title="Scroll to text in document"
+          aria-label={t("wiki.comments.aria.scroll_to_text")}
+          title={t("wiki.comments.scroll_to_text")}
           className="absolute top-2 right-2 grid size-5 place-items-center rounded-sm text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-layer-1"
           onClick={onCardClick}
         >
@@ -231,7 +242,7 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
       )}
       {thread.is_orphaned && (
         <div className="mb-1.5 rounded-sm bg-layer-1 px-1.5 py-1 text-11 text-tertiary">
-          Anchor text no longer found in the document: <span className="italic">“{thread.anchor_text}”</span>
+          {t("wiki.comments.anchor_not_found")} <span className="italic">“{thread.anchor_text}”</span>
         </div>
       )}
       <CommentEntryRow
@@ -256,8 +267,8 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
       {isReplying && canReply && (
         <div className="mt-1 ml-3 pl-2.5">
           <PageCommentComposer
-            placeholder="Reply…"
-            submitLabel="Reply"
+            placeholder={t("wiki.comments.placeholder_reply")}
+            submitLabel={t("wiki.comments.reply")}
             focusOnMount
             onSubmit={handleReply}
             onCancel={() => setIsReplying(false)}
@@ -271,7 +282,7 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
             className="text-12 font-medium text-secondary transition-colors hover:text-primary"
             onClick={() => setIsReplying(true)}
           >
-            Reply
+            {t("wiki.comments.reply")}
           </button>
         )}
         {canResolveOrReopen && (
@@ -283,11 +294,11 @@ export const PageCommentThreadCard = observer(function PageCommentThreadCard(pro
           >
             {thread.is_resolved ? (
               <>
-                <RotateCcw className="size-3" /> Reopen
+                <RotateCcw className="size-3" /> {t("wiki.comments.reopen")}
               </>
             ) : (
               <>
-                <CheckCircle2 className="size-3" /> Resolve
+                <CheckCircle2 className="size-3" /> {t("wiki.comments.resolve")}
               </>
             )}
           </button>

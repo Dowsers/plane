@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 // ui
 import { useParams } from "next/navigation";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { AlertModalCore } from "@plane/ui";
 import { getPageName } from "@plane/utils";
@@ -32,6 +33,7 @@ export const DeletePageModal = observer(function DeletePageModal(props: TConfirm
   const [isDeleting, setIsDeleting] = useState(false);
   // store hooks
   const { removePage } = usePageStore(storeType);
+  const { t } = useTranslation();
 
   // derived values
   const { id: pageId, name } = page;
@@ -52,19 +54,21 @@ export const DeletePageModal = observer(function DeletePageModal(props: TConfirm
         handleClose();
         setToast({
           type: TOAST_TYPE.SUCCESS,
-          title: "Success!",
-          message: "Page deleted successfully.",
+          title: t("toast.success"),
+          message: t("wiki.delete_modal.success"),
         });
 
         if (routePageId) {
           router.back();
         }
+
+        return;
       })
       .catch(() => {
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
-          message: "Page could not be deleted. Please try again.",
+          title: t("toast.error"),
+          message: t("wiki.delete_modal.error"),
         });
       });
 
@@ -79,12 +83,12 @@ export const DeletePageModal = observer(function DeletePageModal(props: TConfirm
       handleSubmit={handleDelete}
       isSubmitting={isDeleting}
       isOpen={isOpen}
-      title="Delete page"
+      title={t("wiki.delete_modal.title")}
       content={
         <>
-          Are you sure you want to delete page-{" "}
-          <span className="font-medium break-words break-all text-primary">{getPageName(name)}</span> ? The Page will be
-          deleted permanently. This action cannot be undone.
+          {t("wiki.delete_modal.confirm_prefix")}{" "}
+          <span className="font-medium break-words break-all text-primary">{getPageName(name)}</span>{" "}
+          {t("wiki.delete_modal.confirm_suffix")}
         </>
       }
     />

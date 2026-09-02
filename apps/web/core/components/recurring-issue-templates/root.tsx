@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import useSWR, { mutate } from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button, Loader } from "@plane/ui";
 import type { TRecurringIssueTemplate } from "@plane/types";
 // components
@@ -54,6 +55,8 @@ type Props = {
  */
 export function RecurringIssueTemplatesRoot(props: Props) {
   const { workspaceSlug, projectId, canEdit } = props;
+  // plane hooks
+  const { t } = useTranslation();
 
   const [editingTemplate, setEditingTemplate] = useState<TRecurringIssueTemplate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -69,8 +72,8 @@ export function RecurringIssueTemplatesRoot(props: Props) {
   return (
     <section className="mt-7 w-full">
       <SettingsHeading
-        title="Recurring work items"
-        description="Templates that automatically create work items on a repeating schedule."
+        title={t("recurring_issue_templates.root.title")}
+        description={t("recurring_issue_templates.root.description")}
         control={
           canEdit && (
             <Button
@@ -82,7 +85,7 @@ export function RecurringIssueTemplatesRoot(props: Props) {
                 setIsFormOpen(true);
               }}
             >
-              New template
+              {t("recurring_issue_templates.root.new_template")}
             </Button>
           )
         }
@@ -96,7 +99,7 @@ export function RecurringIssueTemplatesRoot(props: Props) {
           </Loader>
         )}
         {!isLoading && (data?.results.length ?? 0) === 0 && (
-          <p className="text-13 text-tertiary">No recurring templates configured yet.</p>
+          <p className="text-13 text-tertiary">{t("recurring_issue_templates.root.empty_state")}</p>
         )}
         {data?.results.map((template) => (
           <RecurringIssueTemplateListItem
@@ -123,7 +126,7 @@ export function RecurringIssueTemplatesRoot(props: Props) {
             disabled={!data?.prev_page_results || !data?.prev_cursor}
             onClick={() => setCursor(data?.prev_cursor)}
           >
-            Previous
+            {t("recurring_issue_templates.root.previous")}
           </Button>
           <Button
             variant="neutral-primary"
@@ -131,7 +134,7 @@ export function RecurringIssueTemplatesRoot(props: Props) {
             disabled={!data?.next_page_results || !data?.next_cursor}
             onClick={() => setCursor(data?.next_cursor)}
           >
-            Next
+            {t("next")}
           </Button>
         </div>
       )}

@@ -161,6 +161,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
     if (!inboxIssue || !currentInboxIssueId) return;
     await deleteInboxIssue(workspaceSlug, projectId, currentInboxIssueId).then(() => {
       if (!isNotificationEmbed) router.push(`/${workspaceSlug}/projects/${projectId}/intake`);
+      return;
     });
   };
 
@@ -217,7 +218,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
     else {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Permission denied",
+        title: t("inbox_issue.errors.permission_denied"),
         message: errorMessage,
       });
     }
@@ -311,14 +312,14 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
                 variant="secondary"
                 size="lg"
                 icon={ChevronUpIcon}
-                aria-label="Previous work item"
+                aria-label={t("inbox_issue.navigation.previous")}
                 onClick={() => handleInboxIssueNavigation("prev")}
               />
               <IconButton
                 variant="secondary"
                 size="lg"
                 icon={ChevronDownIcon}
-                aria-label="Next work item"
+                aria-label={t("inbox_issue.navigation.next")}
                 onClick={() => handleInboxIssueNavigation("next")}
               />
             </div>
@@ -407,7 +408,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
                           handleActionWithPermission(
                             isProjectAdmin,
                             () => setSelectDuplicateIssue(true),
-                            "Only project admins can mark work item as duplicate"
+                            t("inbox_issue.errors.duplicate_permission")
                           )
                         }
                       >

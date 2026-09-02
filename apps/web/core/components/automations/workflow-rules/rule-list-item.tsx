@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Copy, History, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { IconButton } from "@plane/propel/icon-button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TWorkflowRule } from "@plane/types";
@@ -30,6 +31,7 @@ type Props = {
 
 export function WorkflowRuleListItem(props: Props) {
   const { rule, workspaceSlug, projectId, onEdit, onViewLogs, onChanged } = props;
+  const { t } = useTranslation();
   const [isToggling, setIsToggling] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,7 +42,11 @@ export function WorkflowRuleListItem(props: Props) {
       await workflowRuleService.toggle(workspaceSlug, projectId, rule.id);
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to update the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("workflow_rules.list_item.update_error"),
+      });
     } finally {
       setIsToggling(false);
     }
@@ -50,9 +56,17 @@ export function WorkflowRuleListItem(props: Props) {
     try {
       await workflowRuleService.duplicate(workspaceSlug, projectId, rule.id);
       onChanged();
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Rule duplicated." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: t("workflow_rules.list_item.duplicate_success"),
+      });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to duplicate the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("workflow_rules.list_item.duplicate_error"),
+      });
     }
   };
 
@@ -63,7 +77,11 @@ export function WorkflowRuleListItem(props: Props) {
       setDeleteModal(false);
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the rule." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("workflow_rules.list_item.delete_error"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -85,34 +103,39 @@ export function WorkflowRuleListItem(props: Props) {
           closeOnSelect
         >
           <CustomMenu.MenuItem onClick={onEdit} className="flex items-center gap-2">
-            <Pencil className="h-3 w-3" /> Edit
+            <Pencil className="h-3 w-3" /> {t("edit")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem onClick={handleDuplicate} className="flex items-center gap-2">
-            <Copy className="h-3 w-3" /> Duplicate
+            <Copy className="h-3 w-3" /> {t("common.duplicate")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem onClick={onViewLogs} className="flex items-center gap-2">
-            <History className="h-3 w-3" /> View execution history
+            <History className="h-3 w-3" /> {t("workflow_rules.list_item.view_execution_history")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem
             onClick={() => setDeleteModal(true)}
             className="flex items-center gap-2 text-danger-primary"
           >
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {t("delete")}
           </CustomMenu.MenuItem>
         </CustomMenu>
       </div>
       <p className="text-12 text-tertiary">
-        {rule.conditions.length} condition(s) - {rule.actions.length} action(s) - triggered {rule.execution_count}{" "}
-        time(s)
-        {rule.last_triggered_at && <> - last run {calculateTimeAgo(rule.last_triggered_at)}</>}
+        {t("workflow_rules.list_item.summary", {
+          conditionCount: rule.conditions.length,
+          actionCount: rule.actions.length,
+          executionCount: rule.execution_count,
+        })}
+        {rule.last_triggered_at && (
+          <> - {t("workflow_rules.list_item.last_run", { time: calculateTimeAgo(rule.last_triggered_at) })}</>
+        )}
       </p>
       <AlertModalCore
         isOpen={deleteModal}
         handleClose={() => setDeleteModal(false)}
         handleSubmit={handleDelete}
         isSubmitting={isDeleting}
-        title="Delete rule"
-        content={`Are you sure you want to delete "${rule.name}"? This action cannot be undone.`}
+        title={t("workflow_rules.list_item.delete_title")}
+        content={t("workflow_rules.list_item.delete_content", { name: rule.name })}
       />
     </div>
   );

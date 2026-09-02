@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { AlertTriangle, Settings as SettingsIcon } from "lucide-react";
 // plane imports
 import { EUserPermissions } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type {
   TApiExplorerEndpoint,
@@ -58,6 +59,7 @@ type Props = {
  * session-local, replayable call history below the builder.
  */
 export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug }: Props) {
+  const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { getWorkspaceRoleByWorkspaceSlug } = useUserPermissions();
 
@@ -81,7 +83,11 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
       })
       .catch(() => {
         if (!cancelled) {
-          setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Could not load API Explorer settings." });
+          setToast({
+            type: TOAST_TYPE.ERROR,
+            title: t("common.errors.default.title"),
+            message: t("api_explorer.root.errors.load_settings_failed"),
+          });
         }
       })
       .finally(() => {
@@ -90,7 +96,7 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
     return () => {
       cancelled = true;
     };
-  }, [workspaceSlug]);
+  }, [workspaceSlug, t]);
 
   const handleToggleEnabled = async (value: boolean) => {
     setIsSavingSettings(true);
@@ -98,7 +104,11 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
       const updated = await apiExplorerService.updateSettings(workspaceSlug, { is_enabled: value });
       setSettings(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Could not update this setting." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("api_explorer.root.errors.update_setting_failed"),
+      });
     } finally {
       setIsSavingSettings(false);
     }
@@ -110,7 +120,11 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
       const updated = await apiExplorerService.updateSettings(workspaceSlug, { allow_members_execute: value });
       setSettings(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Could not update this setting." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("api_explorer.root.errors.update_setting_failed"),
+      });
     } finally {
       setIsSavingSettings(false);
     }
@@ -146,15 +160,15 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
           return;
         }
         if (result.status === 404) {
-          setSchemaError("The API Explorer is not enabled on this instance (or for this workspace).");
+          setSchemaError(t("api_explorer.root.errors.not_enabled"));
           return;
         }
         if (result.status === 401 || result.status === 403) {
-          setSchemaError("This token was rejected (invalid, expired, or insufficient permissions).");
+          setSchemaError(t("api_explorer.root.errors.token_rejected"));
           return;
         }
         if (result.status < 200 || result.status >= 300) {
-          setSchemaError(`Could not load the schema (HTTP ${result.status}).`);
+          setSchemaError(t("api_explorer.root.errors.schema_load_failed_status", { status: result.status }));
           return;
         }
         setSchemaDoc(result.data);
@@ -162,7 +176,7 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
         return null;
       })
       .catch(() => {
-        if (!cancelled) setSchemaError("Could not load the schema.");
+        if (!cancelled) setSchemaError(t("api_explorer.root.errors.schema_load_failed"));
       })
       .finally(() => {
         if (!cancelled) setIsLoadingSchema(false);
@@ -244,8 +258,8 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
     if (!endpoint) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Can't replay",
-        message: "This endpoint is no longer present in the current schema.",
+        title: t("api_explorer.root.errors.replay_failed_title"),
+        message: t("api_explorer.root.errors.replay_failed_message"),
       });
       return;
     }
@@ -287,7 +301,7 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
   }
 
   if (!settings) {
-    return <p className="text-13 text-tertiary">Could not load API Explorer settings for this workspace.</p>;
+    return <p className="text-13 text-tertiary">{t("api_explorer.root.errors.load_settings_failed_body")}</p>;
   }
 
   return (
@@ -296,8 +310,8 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
         <div className="flex items-center gap-2">
           <AlertTriangle className="size-4 shrink-0 text-warning-primary" />
           <p className="text-13 text-warning-primary">
-            You are calling the real API of workspace <strong>{currentWorkspace?.name ?? workspaceSlug}</strong>. Every
-            request here affects real data.
+            {t("api_explorer.root.live_data_warning_prefix")} <strong>{currentWorkspace?.name ?? workspaceSlug}</strong>
+            . {t("api_explorer.root.live_data_warning_suffix")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -307,7 +321,7 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
               type="button"
               onClick={() => setShowSettings((prev) => !prev)}
               className="text-tertiary hover:text-primary"
-              aria-label="API Explorer settings"
+              aria-label={t("api_explorer.root.settings_aria_label")}
             >
               <SettingsIcon className="size-4" />
             </button>
@@ -327,8 +341,8 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
 
       {!settings.is_enabled ? (
         <p className="rounded-md border border-subtle p-4 text-13 text-tertiary">
-          The API Explorer is currently disabled for this workspace.
-          {isAdmin ? " Enable it above to continue." : " Ask a workspace Admin to enable it."}
+          {t("api_explorer.root.disabled_notice")}{" "}
+          {isAdmin ? t("api_explorer.root.disabled_notice_admin") : t("api_explorer.root.disabled_notice_member")}
         </p>
       ) : (
         <>
@@ -380,7 +394,7 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
                         activeTokenValue={activeToken.value}
                       />
                     ) : (
-                      <p className="text-13 text-tertiary">Select an endpoint on the left to build a request.</p>
+                      <p className="text-13 text-tertiary">{t("api_explorer.root.select_endpoint_hint")}</p>
                     )}
                   </div>
                   <div className="flex flex-col gap-4">
@@ -388,7 +402,9 @@ export const ApiExplorerRoot = observer(function ApiExplorerRoot({ workspaceSlug
                       <ResponseViewer entry={lastResult} />
                     </div>
                     <div className="rounded-md border border-subtle p-2">
-                      <h6 className="mb-1 px-1 text-12 font-semibold tracking-wide text-tertiary uppercase">History</h6>
+                      <h6 className="mb-1 px-1 text-12 font-semibold tracking-wide text-tertiary uppercase">
+                        {t("api_explorer.history.label")}
+                      </h6>
                       <HistoryPanel entries={history} onReplay={handleReplay} />
                     </div>
                   </div>

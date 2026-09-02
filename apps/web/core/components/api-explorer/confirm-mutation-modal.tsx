@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useTranslation } from "@plane/i18n";
 import { Badge } from "@plane/propel/badge";
 import { AlertModalCore } from "@plane/ui";
 
@@ -32,6 +33,7 @@ type Props = {
  * even check.
  */
 export function ConfirmMutationModal({ pending, isSubmitting, onCancel, onConfirm }: Props) {
+  const { t } = useTranslation();
   return (
     <AlertModalCore
       variant="danger"
@@ -39,15 +41,18 @@ export function ConfirmMutationModal({ pending, isSubmitting, onCancel, onConfir
       handleClose={onCancel}
       handleSubmit={onConfirm}
       isSubmitting={isSubmitting}
-      title="This will modify real data"
-      primaryButtonText={{ default: "Send request", loading: "Sending..." }}
-      secondaryButtonText="Cancel"
+      title={t("api_explorer.confirm_mutation.title")}
+      primaryButtonText={{
+        default: t("api_explorer.confirm_mutation.send_request"),
+        loading: t("api_explorer.confirm_mutation.sending"),
+      }}
+      secondaryButtonText={t("cancel")}
       content={
         pending && (
           <div className="flex flex-col gap-2">
             <p>
-              You are about to send a real <strong>{pending.method.toUpperCase()}</strong> request against this
-              workspace's live data. This action cannot be undone from here.
+              {t("api_explorer.confirm_mutation.warning_prefix")} <strong>{pending.method.toUpperCase()}</strong>{" "}
+              {t("api_explorer.confirm_mutation.warning_suffix")}
             </p>
             <div className="flex items-center gap-2 rounded-md border border-subtle bg-layer-1 p-2">
               <Badge variant="danger" size="base">

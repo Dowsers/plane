@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Tooltip } from "@plane/propel/tooltip";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type {
@@ -129,6 +130,7 @@ const defaultState = (defaultTimezone: string): FormState => ({
  */
 export function RecurringIssueTemplateFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, projectId, template, onSaved } = props;
+  const { t } = useTranslation();
   const { getProjectById } = useProject();
   const { areEstimateEnabledByProjectId } = useProjectEstimates();
 
@@ -166,15 +168,19 @@ export function RecurringIssueTemplateFormModal(props: Props) {
   const canActivate = !!state.frequency && !!state.startDate;
 
   const validate = (): string | null => {
-    if (!state.name.trim()) return "Name is required.";
-    if (state.isActive && !canActivate) return "Frequency and a start date are required to make this template active.";
+    if (!state.name.trim()) return t("recurring_issue_templates.form_modal.errors.name_required");
+    if (state.isActive && !canActivate) return t("recurring_issue_templates.form_modal.errors.activation_requirements");
     return null;
   };
 
   const handleSave = async () => {
     const validationError = validate();
     if (validationError) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: validationError });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("recurring_issue_templates.form_modal.errors.toast_title"),
+        message: validationError,
+      });
       return;
     }
 
@@ -206,8 +212,13 @@ export function RecurringIssueTemplateFormModal(props: Props) {
       onSaved(saved);
       handleClose();
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to save the recurring template.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message =
+        (error as { error?: string })?.error ?? t("recurring_issue_templates.form_modal.errors.save_failed");
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("recurring_issue_templates.form_modal.errors.toast_title"),
+        message,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -220,7 +231,9 @@ export function RecurringIssueTemplateFormModal(props: Props) {
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto py-5">
         <div className="flex items-center justify-between px-5">
           <h4 className="text-18 font-medium text-primary">
-            {template ? "Edit recurring template" : "New recurring template"}
+            {template
+              ? t("recurring_issue_templates.form_modal.edit_title")
+              : t("recurring_issue_templates.form_modal.new_title")}
           </h4>
           <button onClick={handleClose} type="button">
             <X className="h-4 w-4" />
@@ -231,20 +244,21 @@ export function RecurringIssueTemplateFormModal(props: Props) {
           <div className="flex flex-col gap-1">
             <Input
               type="text"
-              placeholder="Template name"
+              placeholder={t("recurring_issue_templates.form_modal.name_placeholder")}
               value={state.name}
               onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
               className="w-full"
               inputSize="sm"
             />
             <p className="text-caption-sm-regular text-tertiary">
-              Use the <code className="rounded-xs bg-surface-2 px-1">{"{{date}}"}</code> token to include the
-              occurrence&apos;s date, e.g. &quot;Weekly standup — {"{{date}}"}&quot;.
+              {t("recurring_issue_templates.form_modal.date_token_hint_prefix")}{" "}
+              <code className="rounded-xs bg-surface-2 px-1">{"{{date}}"}</code>{" "}
+              {t("recurring_issue_templates.form_modal.date_token_hint_suffix")} {"{{date}}"}&quot;.
             </p>
           </div>
 
           <TextArea
-            placeholder="Description (optional)"
+            placeholder={t("recurring_issue_templates.form_modal.description_placeholder")}
             value={state.descriptionText}
             onChange={(event) => setState((prev) => ({ ...prev, descriptionText: event.target.value }))}
             textAreaSize="sm"
@@ -273,7 +287,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                 value={state.assigneeIds}
                 onChange={(assigneeIds) => setState((prev) => ({ ...prev, assigneeIds }))}
                 buttonVariant={state.assigneeIds.length > 0 ? "transparent-without-text" : "border-with-text"}
-                placeholder="Assignees"
+                placeholder={t("assignees")}
                 multiple
               />
             </div>
@@ -291,23 +305,25 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                   onChange={(estimatePointId) => setState((prev) => ({ ...prev, estimatePointId }))}
                   projectId={projectId}
                   buttonVariant="border-with-text"
-                  placeholder="Estimate"
+                  placeholder={t("estimate")}
                 />
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-3 rounded-md border border-subtle p-3">
-            <h5 className="text-13 font-medium text-secondary">Recurrence</h5>
+            <h5 className="text-13 font-medium text-secondary">
+              {t("recurring_issue_templates.form_modal.recurrence")}
+            </h5>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-13 text-tertiary">Repeats</span>
+              <span className="text-13 text-tertiary">{t("recurring_issue_templates.form_modal.repeats")}</span>
               <CustomSelect
                 value={state.frequency}
                 label={
                   state.frequency
                     ? FREQUENCY_OPTIONS.find((o) => o.value === state.frequency)?.label
-                    : "Select frequency"
+                    : t("recurring_issue_templates.form_modal.select_frequency")
                 }
                 onChange={(value: TRecurringIssueFrequency) => setState((prev) => ({ ...prev, frequency: value }))}
                 input
@@ -320,7 +336,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
               </CustomSelect>
               {state.frequency && (
                 <>
-                  <span className="text-13 text-tertiary">every</span>
+                  <span className="text-13 text-tertiary">{t("recurring_issue_templates.form_modal.every")}</span>
                   <Input
                     type="number"
                     min={1}
@@ -332,10 +348,10 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                     }
                   />
                   <span className="text-13 text-tertiary">
-                    {state.frequency === "DAILY" && "day(s)"}
-                    {state.frequency === "WEEKLY" && "week(s)"}
-                    {state.frequency === "MONTHLY" && "month(s)"}
-                    {state.frequency === "YEARLY" && "year(s)"}
+                    {state.frequency === "DAILY" && t("recurring_issue_templates.form_modal.interval_unit.daily")}
+                    {state.frequency === "WEEKLY" && t("recurring_issue_templates.form_modal.interval_unit.weekly")}
+                    {state.frequency === "MONTHLY" && t("recurring_issue_templates.form_modal.interval_unit.monthly")}
+                    {state.frequency === "YEARLY" && t("recurring_issue_templates.form_modal.interval_unit.yearly")}
                   </span>
                 </>
               )}
@@ -348,7 +364,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                   onChange={(weekdays) => setState((prev) => ({ ...prev, weekdays }))}
                 />
                 <p className="text-caption-sm-regular text-tertiary">
-                  If no days are selected, occurrences repeat on the same weekday as the start date.
+                  {t("recurring_issue_templates.form_modal.weekday_hint")}
                 </p>
               </div>
             )}
@@ -356,7 +372,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
             {(state.frequency === "MONTHLY" || state.frequency === "YEARLY") && (
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-13 text-tertiary">On day</span>
+                  <span className="text-13 text-tertiary">{t("recurring_issue_templates.form_modal.on_day")}</span>
                   <Input
                     type="number"
                     min={1}
@@ -371,11 +387,16 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                       }))
                     }
                   />
-                  <span className="text-13 text-tertiary">of the month</span>
+                  <span className="text-13 text-tertiary">
+                    {t("recurring_issue_templates.form_modal.of_the_month")}
+                  </span>
                   {state.frequency === "YEARLY" && (
                     <CustomSelect
                       value={state.monthOfYear}
-                      label={MONTH_OPTIONS.find((o) => o.value === state.monthOfYear)?.label ?? "Select month"}
+                      label={
+                        MONTH_OPTIONS.find((o) => o.value === state.monthOfYear)?.label ??
+                        t("recurring_issue_templates.form_modal.select_month")
+                      }
                       onChange={(value: number) => setState((prev) => ({ ...prev, monthOfYear: value }))}
                       input
                     >
@@ -388,8 +409,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                   )}
                 </div>
                 <p className="text-caption-sm-regular text-tertiary">
-                  Days 29-31 aren&apos;t available in every month - if the chosen day doesn&apos;t exist in a given
-                  month, the occurrence is generated on that month&apos;s last day instead.
+                  {t("recurring_issue_templates.form_modal.day_of_month_hint")}
                 </p>
               </div>
             )}
@@ -397,7 +417,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
             {state.frequency && (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex flex-col gap-1">
-                  <span className="text-caption-sm-regular text-tertiary">Start date</span>
+                  <span className="text-caption-sm-regular text-tertiary">{t("start_date")}</span>
                   <DateDropdown
                     value={state.startDate}
                     onChange={(date) =>
@@ -407,11 +427,13 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                       }))
                     }
                     buttonVariant="border-with-text"
-                    placeholder="Start date"
+                    placeholder={t("start_date")}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-caption-sm-regular text-tertiary">End date (optional)</span>
+                  <span className="text-caption-sm-regular text-tertiary">
+                    {t("recurring_issue_templates.form_modal.end_date_optional")}
+                  </span>
                   <DateDropdown
                     value={state.endDate}
                     onChange={(date) =>
@@ -422,12 +444,14 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                     }
                     buttonVariant="border-with-text"
                     minDate={minEndDate}
-                    placeholder="No end date"
+                    placeholder={t("recurring_issue_templates.form_modal.no_end_date")}
                     isClearable
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-caption-sm-regular text-tertiary">Max occurrences (optional)</span>
+                  <span className="text-caption-sm-regular text-tertiary">
+                    {t("recurring_issue_templates.form_modal.max_occurrences_optional")}
+                  </span>
                   <Input
                     type="number"
                     min={1}
@@ -443,7 +467,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-caption-sm-regular text-tertiary">Timezone</span>
+                  <span className="text-caption-sm-regular text-tertiary">{t("timezone")}</span>
                   <TimezoneSelect
                     value={state.timezone}
                     onChange={(timezone) => setState((prev) => ({ ...prev, timezone }))}
@@ -453,10 +477,7 @@ export function RecurringIssueTemplateFormModal(props: Props) {
             )}
           </div>
 
-          <Tooltip
-            tooltipContent="Set a frequency and a start date before activating this template."
-            disabled={canActivate}
-          >
+          <Tooltip tooltipContent={t("recurring_issue_templates.form_modal.activation_tooltip")} disabled={canActivate}>
             <label
               htmlFor="recurring-template-is-active"
               className={`flex w-fit items-center gap-1.5 text-13 text-secondary ${
@@ -469,17 +490,17 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                 disabled={!canActivate}
                 onChange={(event) => setState((prev) => ({ ...prev, isActive: event.target.checked }))}
               />
-              Active
+              {t("recurring_issue_templates.form_modal.active")}
             </label>
           </Tooltip>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            Save
+            {t("save")}
           </Button>
         </div>
       </div>

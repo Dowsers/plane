@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import useSWR, { mutate } from "swr";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TCycleAutoScheduleConfig, TCycleAutoScheduleWindowPreview } from "@plane/types";
 import { Button, CustomSelect, Input, Loader, ToggleSwitch } from "@plane/ui";
@@ -23,16 +24,6 @@ import { CycleService } from "@/services/cycle.service";
 
 const cycleService = new CycleService();
 
-const WEEKDAY_OPTIONS = [
-  { value: 0, label: "Monday" },
-  { value: 1, label: "Tuesday" },
-  { value: 2, label: "Wednesday" },
-  { value: 3, label: "Thursday" },
-  { value: 4, label: "Friday" },
-  { value: 5, label: "Saturday" },
-  { value: 6, label: "Sunday" },
-];
-
 type Props = {
   workspaceSlug: string;
   projectId: string;
@@ -43,6 +34,16 @@ const CONFIG_KEY = (workspaceSlug: string, projectId: string) =>
 
 export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSettings(props: Props) {
   const { workspaceSlug, projectId } = props;
+  const { t } = useTranslation();
+  const WEEKDAY_OPTIONS = [
+    { value: 0, label: t("digest.preferences.weekday.0") },
+    { value: 1, label: t("digest.preferences.weekday.1") },
+    { value: 2, label: t("digest.preferences.weekday.2") },
+    { value: 3, label: t("digest.preferences.weekday.3") },
+    { value: 4, label: t("digest.preferences.weekday.4") },
+    { value: 5, label: t("digest.preferences.weekday.5") },
+    { value: 6, label: t("digest.preferences.weekday.6") },
+  ];
   const { allowPermissions } = useUserPermissions();
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
   const canView = allowPermissions(
@@ -87,8 +88,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: error?.error ?? "Unable to save auto-scheduling settings. Please try again.",
+        title: t("toast.error"),
+        message: error?.error ?? t("cycle.auto_schedule.save_error"),
       });
       setForm(form);
     }
@@ -100,7 +101,7 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
       const windows = await cycleService.previewCycleAutoSchedule(workspaceSlug, projectId, form.lookahead_count);
       setPreview(windows);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to compute preview." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("cycle.auto_schedule.preview_error") });
     } finally {
       setPreviewLoading(false);
     }
@@ -108,14 +109,11 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
 
   return (
     <section className="mt-7 w-full border-t border-subtle pt-7">
-      <SettingsHeading
-        title="Planification automatique"
-        description="Créez automatiquement les prochains cycles selon une cadence récurrente."
-      />
+      <SettingsHeading title={t("cycle.auto_schedule.title")} description={t("cycle.auto_schedule.description")} />
       <div className="mt-4 divide-y divide-subtle">
         <SettingsControlItem
-          title="Activer la planification automatique"
-          description="Un nouveau cycle sera créé dès que le nombre de cycles à venir passe sous le seuil configuré."
+          title={t("cycle.auto_schedule.enable_title")}
+          description={t("cycle.auto_schedule.enable_description")}
           control={
             <ToggleSwitch
               value={form.is_enabled}
@@ -125,8 +123,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Cadence"
-          description="Durée de chaque cycle auto-planifié, en semaines (1-12)."
+          title={t("cycle.auto_schedule.cadence_title")}
+          description={t("cycle.auto_schedule.cadence_description")}
           control={
             <Input
               type="number"
@@ -142,8 +140,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Jour de démarrage"
-          description="Jour de la semaine auquel chaque nouveau cycle commence."
+          title={t("cycle.auto_schedule.start_day_title")}
+          description={t("cycle.auto_schedule.start_day_description")}
           control={
             <CustomSelect
               value={form.start_day_of_week}
@@ -161,8 +159,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Cooldown"
-          description="Nombre de jours de battement entre la fin d'un cycle et le début du suivant (0-14)."
+          title={t("cycle.auto_schedule.cooldown_title")}
+          description={t("cycle.auto_schedule.cooldown_description")}
           control={
             <Input
               type="number"
@@ -178,8 +176,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Lookahead"
-          description="Nombre de cycles futurs à toujours garder déjà créés d'avance (1-3)."
+          title={t("cycle.auto_schedule.lookahead_title")}
+          description={t("cycle.auto_schedule.lookahead_description")}
           control={
             <Input
               type="number"
@@ -195,8 +193,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Gabarit de nom"
-          description="Le texte {number} est remplacé par le numéro de cycle auto-incrémenté."
+          title={t("cycle.auto_schedule.naming_template_title")}
+          description={t("cycle.auto_schedule.naming_template_description")}
           control={
             <Input
               type="text"
@@ -210,8 +208,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           }
         />
         <SettingsControlItem
-          title="Transfert automatique (rollover)"
-          description="À la clôture d'un cycle auto-planifié, transfère ses work items non terminés vers le suivant."
+          title={t("cycle.auto_schedule.rollover_title")}
+          description={t("cycle.auto_schedule.rollover_description")}
           control={
             <ToggleSwitch
               value={form.rollover_enabled}
@@ -223,7 +221,7 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
       </div>
       <div className="mt-5 flex flex-col gap-3">
         <Button variant="neutral-primary" size="sm" onClick={handlePreview} loading={previewLoading} className="w-fit">
-          Prévisualiser les prochains cycles
+          {t("cycle.auto_schedule.preview_button")}
         </Button>
         {preview && (
           <div className="flex flex-col gap-1.5 rounded-md border border-subtle bg-surface-1 p-3">

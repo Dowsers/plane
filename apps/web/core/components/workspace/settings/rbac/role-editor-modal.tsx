@@ -13,6 +13,7 @@ import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TPermission, TPermissionScheme, TWorkspaceRole } from "@plane/types";
 import { CustomSelect, EModalPosition, EModalWidth, Input, Loader, ModalCore } from "@plane/ui";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceRBACService from "@/services/workspace-rbac.service";
 // local imports
@@ -45,6 +46,7 @@ const GUEST_LEGACY_VALUE = 5;
  */
 export function RoleEditorModal(props: Props) {
   const { workspaceSlug, role, allSchemes, catalogueByKey, isOpen, onClose, onUpdated } = props;
+  const { t } = useTranslation();
   const [currentRole, setCurrentRole] = useState(role);
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description);
@@ -75,13 +77,17 @@ export function RoleEditorModal(props: Props) {
       });
       setCurrentRole(updated);
       onUpdated(updated);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Role updated", message: `"${updated.name}" was saved.` });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("workspace_roles.editor.toast.updated_title"),
+        message: t("workspace_roles.editor.toast.updated_message", { name: updated.name }),
+      });
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not save role",
-        message: err?.error ?? "Something went wrong. Please try again.",
+        title: t("workspace_roles.editor.toast.save_failed_title"),
+        message: err?.error ?? t("something_went_wrong_please_try_again"),
       });
     } finally {
       setIsSavingDetails(false);
@@ -99,12 +105,14 @@ export function RoleEditorModal(props: Props) {
     } catch (error: unknown) {
       const err = error as { error?: string; missing_permissions?: string[] };
       const missing = err?.missing_permissions?.length
-        ? ` (would leave ${err.missing_permissions.join(", ")} unprotected)`
+        ? t("workspace_roles.editor.toast.would_leave_unprotected", {
+            permissions: err.missing_permissions.join(", "),
+          })
         : "";
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not update bundles",
-        message: `${err?.error ?? "Something went wrong. Please try again."}${missing}`,
+        title: t("workspace_roles.editor.toast.update_bundles_failed_title"),
+        message: `${err?.error ?? t("something_went_wrong_please_try_again")}${missing}`,
       });
     } finally {
       setPendingSchemeId(null);
@@ -129,23 +137,23 @@ export function RoleEditorModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={onClose} position={EModalPosition.CENTER} width={EModalWidth.XXL}>
       <div className="flex max-h-[80vh] flex-col gap-5 overflow-y-auto p-6">
         <div className="flex items-center gap-2">
-          <h3 className="text-h5-medium">Edit role</h3>
+          <h3 className="text-h5-medium">{t("workspace_roles.editor.title")}</h3>
           {currentRole.is_system && <SystemBadge />}
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex flex-1 flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Name</span>
+            <span className="text-body-xs-medium text-secondary">{t("name")}</span>
             <Input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
           </div>
           <div className="flex flex-1 flex-col gap-2">
-            <span className="text-body-xs-medium text-secondary">Description</span>
+            <span className="text-body-xs-medium text-secondary">{t("description")}</span>
             <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full"
-              placeholder="Optional"
+              placeholder={t("optional")}
             />
           </div>
           <Button
@@ -155,21 +163,21 @@ export function RoleEditorModal(props: Props) {
             disabled={!isDetailsDirty}
             loading={isSavingDetails}
           >
-            Save
+            {t("save")}
           </Button>
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">Attached bundles</span>
+          <span className="text-body-xs-medium text-secondary">{t("workspace_roles.editor.attached_bundles")}</span>
           {isGuest ? (
-            <p className="text-caption-sm-regular text-tertiary">
-              The Guest role cannot be customized (billing/seat-limit logic depends on it staying fixed).
-            </p>
+            <p className="text-caption-sm-regular text-tertiary">{t("workspace_roles.editor.guest_locked")}</p>
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-1.5">
                 {currentRole.schemes.length === 0 && (
-                  <span className="text-caption-sm-regular text-placeholder">No bundles attached yet.</span>
+                  <span className="text-caption-sm-regular text-placeholder">
+                    {t("workspace_roles.editor.no_bundles_attached")}
+                  </span>
                 )}
                 {currentRole.schemes.map((scheme) => (
                   <Pill
@@ -183,7 +191,7 @@ export function RoleEditorModal(props: Props) {
                       type="button"
                       onClick={() => handleDetach(scheme.id)}
                       disabled={pendingSchemeId !== null}
-                      aria-label={`Remove ${scheme.name}`}
+                      aria-label={t("workspace_roles.editor.aria_remove_bundle", { name: scheme.name })}
                     >
                       <X className="size-3" />
                     </button>
@@ -194,14 +202,14 @@ export function RoleEditorModal(props: Props) {
                 <CustomSelect
                   value=""
                   onChange={(schemeId: string) => handleAttach(schemeId)}
-                  label="+ Add bundle"
+                  label={t("workspace_roles.editor.add_bundle")}
                   disabled={pendingSchemeId !== null}
                   buttonClassName="border border-subtle bg-layer-2 w-fit"
                 >
                   {availableSchemes.map((scheme) => (
                     <CustomSelect.Option key={scheme.id} value={scheme.id}>
                       {scheme.name}
-                      {scheme.is_system ? " (System)" : ""}
+                      {scheme.is_system ? ` (${t("workspace_roles.editor.system_suffix")})` : ""}
                     </CustomSelect.Option>
                   ))}
                 </CustomSelect>
@@ -211,7 +219,9 @@ export function RoleEditorModal(props: Props) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">Effective permissions ({permissionEntries.length})</span>
+          <span className="text-body-xs-medium text-secondary">
+            {t("workspace_roles.editor.effective_permissions", { count: permissionEntries.length })}
+          </span>
           {allSchemes === undefined ? (
             <Loader className="flex flex-col gap-2">
               <Loader.Item height="24px" />
@@ -219,7 +229,7 @@ export function RoleEditorModal(props: Props) {
             </Loader>
           ) : permissionEntries.length === 0 ? (
             <span className="text-caption-sm-regular text-placeholder">
-              This role grants none of the 5 in-scope permissions yet.
+              {t("workspace_roles.editor.no_permissions_yet")}
             </span>
           ) : (
             <div className="flex flex-col gap-1.5 rounded-md border border-subtle bg-layer-1 p-3">
@@ -235,7 +245,7 @@ export function RoleEditorModal(props: Props) {
 
         <div className="flex justify-end">
           <Button variant="secondary" size="lg" onClick={onClose}>
-            Done
+            {t("workspace_roles.editor.done")}
           </Button>
         </div>
       </div>

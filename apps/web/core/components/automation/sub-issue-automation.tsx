@@ -65,8 +65,8 @@ export const SubIssueAutomation = observer(function SubIssueAutomation(props: Pr
           <GitMerge className="size-4 shrink-0 text-danger-primary" />
         </div>
         <SettingsControlItem
-          title="Auto-close parent when all sub-items are done"
-          description="When every sub-item of a work item reaches a completed or cancelled state, automatically close the parent too."
+          title={t("project_settings.automations.sub_issue_auto_close.title")}
+          description={t("project_settings.automations.sub_issue_auto_close.description")}
           control={
             <ToggleSwitch
               value={autoCloseEnabled}
@@ -88,7 +88,9 @@ export const SubIssueAutomation = observer(function SubIssueAutomation(props: Pr
           <div className="ml-13">
             <div className="flex flex-col rounded-sm border border-subtle bg-surface-2">
               <div className="flex w-full items-center justify-between gap-2 px-5 py-4">
-                <div className="w-1/2 text-13 font-medium">Close parent to</div>
+                <div className="w-1/2 text-13 font-medium">
+                  {t("project_settings.automations.sub_issue_auto_close.close_parent_to")}
+                </div>
                 <div className="w-1/2">
                   <CustomSearchSelect
                     value={currentProjectDetails?.sub_issue_auto_close_state ?? defaultCloseState}
@@ -127,8 +129,8 @@ export const SubIssueAutomation = observer(function SubIssueAutomation(props: Pr
           <GitMerge className="size-4 shrink-0 rotate-180 text-danger-primary" />
         </div>
         <SettingsControlItem
-          title="Close remaining sub-items when parent is closed"
-          description="When a work item is moved to a completed or cancelled state, automatically close its direct sub-items too."
+          title={t("project_settings.automations.sub_issue_cascade_close.title")}
+          description={t("project_settings.automations.sub_issue_cascade_close.description")}
           control={
             <ToggleSwitch
               value={cascadeCloseEnabled}

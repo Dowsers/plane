@@ -1024,6 +1024,38 @@ export default {
       deselect_all: "Deselect all",
     },
     open_in_full_screen: "Open work item in full screen",
+    columns: {
+      cycle: {
+        placeholder: "Select cycle",
+      },
+      module: {
+        placeholder: "Select modules",
+      },
+    },
+    bulk_operations: {
+      action_bar: {
+        delete_modal: {
+          title: "Delete work items",
+          content: "Are you sure you want to delete the {count} selected work item(s)? This action cannot be undone.",
+        },
+        clear_selection: "Clear selection",
+        selected_count: "{count} selected",
+      },
+    },
+    labels: {
+      create: {
+        new_label_toggle: "New",
+        name_required: "This is required",
+      },
+    },
+    sidebar: {
+      recurring: {
+        label: "Recurring",
+        generated_from: "Generated from: {name}",
+        generated_from_deleted: "Generated from: {name} (template deleted)",
+        template_deleted_suffix: "(template deleted)",
+      },
+    },
   },
   attachment: {
     error: "File could not be attached. Try uploading again.",
@@ -1039,6 +1071,13 @@ export default {
       failed: "Label creation failed",
       already_exists: "Label already exists",
       type: "Type to add a new label",
+    },
+    delete_modal: {
+      title: "Delete Label",
+      content_prefix: "Are you sure you want to delete",
+      content_suffix:
+        "? This will remove the label from all the work item and from any views where the label is being filtered upon.",
+      error: "Label could not be deleted. Please try again.",
     },
   },
   sub_work_item: {
@@ -1070,6 +1109,20 @@ export default {
     },
     update: {
       label: "Update View",
+    },
+    subscription: {
+      also_send_by_email_description: "In-app notifications are always on while subscribed.",
+      also_send_by_email_title: "Also send by email",
+      item_added_description: "A work item starts matching this view's filters.",
+      item_added_title: "Item added",
+      item_cancelled_description: "A matching work item's state changes to a cancelled state.",
+      item_cancelled_title: "Item cancelled",
+      item_completed_description: "A matching work item's state changes to a completed state.",
+      item_completed_title: "Item completed",
+      notify_me_description: "Get an in-app notification when a work item starts matching this view.",
+      notify_me_title: "Notify me about this view",
+      subscribe_tooltip: "Subscribe to this view",
+      subscribed_tooltip: "Subscribed to this view",
     },
   },
   inbox_issue: {
@@ -1110,6 +1163,8 @@ export default {
       snooze_permission: "Only project admins can snooze/Un-snooze work items",
       accept_permission: "Only project admins can accept work items",
       decline_permission: "Only project admins can deny work items",
+      permission_denied: "Permission denied",
+      duplicate_permission: "Only project admins can mark work item as duplicate",
     },
     actions: {
       accept: "Accept",
@@ -1156,6 +1211,21 @@ export default {
         title: "Select a work item to view its details.",
       },
     },
+    navigation: {
+      previous: "Previous work item",
+      next: "Next work item",
+    },
+    filters: {
+      created_by: "Created By",
+      created_date: "Created date",
+      updated_date: "Updated date",
+      last_updated_date: "Last updated date",
+      custom: "Custom",
+    },
+    select_duplicate: {
+      select_work_item: "Select work item",
+      search_placeholder: "Search...",
+    },
   },
   workspace_creation: {
     heading: "Create your workspace",
@@ -1164,6 +1234,7 @@ export default {
       name: {
         label: "Name your workspace",
         placeholder: "Something familiar and recognizable is always best.",
+        onboarding_placeholder: "Enter workspace name",
       },
       url: {
         label: "Set your workspace's URL",
@@ -1173,6 +1244,9 @@ export default {
       organization_size: {
         label: "How many people will use this workspace?",
         placeholder: "Select a range",
+        options: {
+          just_myself: "Just myself",
+        },
       },
     },
     errors: {
@@ -1189,6 +1263,8 @@ export default {
         url_length: "Limit your URL to 48 characters.",
         url_already_taken: "Workspace URL is already taken!",
       },
+      creation_disabled_no_invites:
+        "You don't seem to have any invites to a workspace and your instance admin has restricted creation of new workspaces. Please ask a workspace owner or admin to invite you to a workspace first and come back to this screen to join.",
     },
     request_email: {
       subject: "Requesting a new workspace",
@@ -1208,6 +1284,7 @@ export default {
         message: "Workspace could not be created. Please try again.",
       },
     },
+    join_existing_workspace: "Join existing workspace",
   },
   workspace_dashboard: {
     empty_state: {
@@ -1319,6 +1396,9 @@ export default {
           },
         },
       },
+    },
+    select_params: {
+      add_property: "Add Property",
     },
   },
   workspace_dashboards: {
@@ -1614,6 +1694,28 @@ export default {
           sending: "Sending",
         },
       },
+      general_form: {
+        toast: {
+          success_title: "Success!",
+          error_title: "Error!",
+          avatar_delete_success: "Profile picture deleted successfully.",
+          avatar_delete_error: "There was some error in deleting your profile picture. Please try again.",
+          cover_image_error: "Failed to process cover image",
+          updating: "Updating...",
+          update_success: "Profile updated successfully.",
+          update_error: "There was some error in updating your profile. Please try again.",
+        },
+        errors: {
+          first_name_required: "Please enter first name",
+          display_name_required: "Display name is required.",
+          email_required: "Email is required.",
+        },
+        placeholders: {
+          first_name: "Enter your first name",
+          last_name: "Enter your last name",
+          display_name: "Enter your display name",
+        },
+      },
     },
     preferences: {
       heading: "Preferences",
@@ -1653,6 +1755,17 @@ export default {
     activity: {
       heading: "Activity",
       description: "Track your recent actions and changes across all projects and work items.",
+    },
+    actions: {
+      permissions: "My permissions",
+    },
+    permissions_page: {
+      category_views: "Views",
+      description:
+        "Your workspace-level baseline across the 5 areas this builder covers (Work items, Cycles, Modules, Pages, Views). Your actual permissions can be higher or lower on a specific project if your role there differs from your workspace role - this summary doesn't reflect per-project overrides. Everything else (billing, integrations, exports...) still follows your plain workspace role.",
+      empty_state: "Your role doesn't grant any of the permissions this builder covers yet.",
+      unknown_role: "Unknown",
+      your_role: "Your role",
     },
   },
   workspace_settings: {
@@ -1722,6 +1835,18 @@ export default {
             required: "We need an email address to invite them.",
             invalid: "Email is invalid",
           },
+        },
+        columns: {
+          leave: "Leave",
+          remove: "Remove",
+          scim_confirm_content:
+            "{name}'s role is managed by your SCIM identity provider. Changing it here only affects Plane - your IdP is not aware of this change and may overwrite it on the next sync.",
+          scim_confirm_default: "Change role anyway",
+          scim_confirm_loading: "Changing",
+          scim_confirm_title: "Change role of a SCIM-managed member?",
+          suspended: "Suspended",
+          transfer_ownership: "Transfer ownership",
+          workspace_owner: "Workspace Owner",
         },
       },
       billing_and_plans: {
@@ -1808,6 +1933,13 @@ export default {
             message: "Error occurred while copying secret key.",
           },
         },
+        delete_modal: {
+          content:
+            "Are you sure you want to delete this webhook? Future events will not be delivered to this webhook. This action cannot be undone.",
+          error_message: "Webhook could not be deleted. Please try again.",
+          success_message: "Webhook deleted successfully.",
+          title: "Delete webhook",
+        },
       },
       api_tokens: {
         title: "Personal Access Tokens",
@@ -1829,6 +1961,20 @@ export default {
             message: "The token could not be deleted",
           },
         },
+        errors: {
+          expiration_date_required: "Please select an expiration date.",
+        },
+        custom_date: "Custom date",
+        set_expiration_date: "Set expiration date",
+        expiry_options: {
+          custom: "Custom",
+          "1_week": "1 week",
+          "1_month": "1 month",
+          "3_months": "3 months",
+          "1_year": "1 year",
+        },
+        set_date: "Set date",
+        expires_at: "Expires {date} at {time}",
       },
     },
     empty_state: {
@@ -2054,6 +2200,11 @@ export default {
           hours: "Hours",
         },
       },
+      list_title: "Estimates list",
+      archived_title: "Archived estimates",
+      archived_description:
+        "Estimates have gone through a change, these are the estimates you had in your older versions which were not in use. Read more about them",
+      archived_read_more: "here.",
     },
     automations: {
       label: "Automations",
@@ -2070,6 +2221,17 @@ export default {
         description: "Plane will automatically close work items that haven't been completed or canceled.",
         duration: "Auto-close work items that are inactive for",
         auto_close_status: "Auto-close status",
+      },
+      sub_issue_auto_close: {
+        title: "Auto-close parent when all sub-items are done",
+        description:
+          "When every sub-item of a work item reaches a completed or cancelled state, automatically close the parent too.",
+        close_parent_to: "Close parent to",
+      },
+      sub_issue_cascade_close: {
+        title: "Close remaining sub-items when parent is closed",
+        description:
+          "When a work item is moved to a completed or cancelled state, automatically close its direct sub-items too.",
       },
     },
     recurring_issue_templates: {
@@ -2486,6 +2648,22 @@ export default {
       description:
         "Reusable, named sets of atomic permissions - attach one or more bundles to a role to compose its effective access.",
     },
+    panel: {
+      description:
+        "Reusable, named sets of atomic permissions. Attach a bundle to one or more roles from the Roles tab (Workspace Settings > Members > Roles).",
+      create_bundle: "Create bundle",
+      toast: {
+        deleted_title: "Bundle deleted",
+        deleted_message: '"{name}" was deleted.',
+        delete_failed_title: "Could not delete bundle",
+        delete_failed_attached_message: "{error} (attached to {count} role(s) - detach it first).",
+      },
+      permission_count: "{count, plural, one{# permission} other{# permissions}}",
+      empty: {
+        title: "No bundles yet",
+        description: "Create your first reusable permission bundle.",
+      },
+    },
   },
   slack_integration: {
     label: "Slack",
@@ -2616,6 +2794,61 @@ export default {
       truncated_notice:
         "Showing the first {shown} of {total} results - narrow your filters or export CSV for the full set.",
       empty_state: "No SLA data for the selected filters.",
+      all_assignees: "All assignees",
+      all_policies: "All policies",
+      clear_filters: "Clear filters",
+      column_breached_at: "Breached at",
+      column_due_at: "Due at",
+      column_issue: "Issue",
+      column_met_at: "Met at",
+      column_status: "Status",
+      column_type: "Type",
+      export_error: "Unable to export the SLA compliance report.",
+      from_date: "From date",
+      policy: "Policy",
+      to_date: "To date",
+      total: "Total",
+    },
+    form: {
+      any_assignee: "Any assignee",
+      any_label: "Any label",
+      any_priority: "Any priority",
+      any_state_group: "Any state group",
+      create_title: "New SLA policy",
+      critical_threshold_percent: "Critical threshold (%)",
+      description_placeholder: "Description (optional)",
+      edit_title: "Edit SLA policy",
+      name_placeholder: "Policy name",
+      project_scope: "Project scope",
+      resolution_time_placeholder: "e.g. 4",
+      response_time_placeholder: "e.g. 30",
+      save_error: "Unable to save the SLA policy.",
+      save_policy: "Save policy",
+      threshold_order_hint:
+        "The critical threshold must be greater than the warning threshold - both are percentages of the total time budget elapsed before the SLA is due.",
+      time_budget_hint: "At least one of response time or resolution time must be set.",
+      unit_days: "Days",
+      unit_hours: "Hours",
+      unit_minutes: "Minutes",
+      warning_threshold_percent: "Warning threshold (%)",
+    },
+    list_item: {
+      delete_confirm_content:
+        'Are you sure you want to delete "{name}"? Work items already tracked against it keep their historical compliance record.',
+      delete_error: "Unable to delete the policy.",
+      duplicate_error: "Unable to duplicate the policy.",
+      duplicate_success: "SLA policy duplicated.",
+      move_down: "Move down",
+      move_up: "Move up",
+      no_projects: "No projects (never matches)",
+      project_count_one: "{count} project",
+      project_count_other: "{count} projects",
+      update_error: "Unable to update the policy.",
+    },
+    property: {
+      due_tooltip: "Due {date}, {time}",
+      due_tooltip_with_policy: "{policy} - due {date}, {time}",
+      label: "SLA",
     },
   },
   flexible_query: {
@@ -2627,6 +2860,29 @@ export default {
     },
     toast: {
       error: "Something went wrong. Please try again.",
+      quotas_updated_title: "Success!",
+      quotas_updated_message: "Quotas updated.",
+    },
+    try_it: {
+      missing_token: "Paste one of your API tokens first.",
+      invalid_json: "Query body must be valid JSON.",
+      request_failed: "The request could not be sent.",
+      title: "Try it",
+      description:
+        "Paste one of your own API tokens (Workspace Settings > API Tokens) and a query body to send a real request against this workspace - never a mocked preview.",
+      token_placeholder: "Your API token",
+      run_query: "Run query",
+    },
+    enable: {
+      title: "Enable for this workspace",
+      description:
+        "Also requires the instance-wide flag to be enabled by whoever deployed this instance - this toggle only covers this workspace's own opt-in.",
+    },
+    quotas: {
+      title: "Quotas",
+      max_depth: "Max nesting depth",
+      max_cost: "Max cost",
+      timeout_ms: "Timeout (ms)",
     },
   },
   api_explorer: {
@@ -2635,6 +2891,70 @@ export default {
       title: "API Explorer",
       description:
         "Browse this instance's real OpenAPI schema and execute real calls against this workspace's own data, directly from the browser - no external docs site required.",
+    },
+    confirm_mutation: {
+      title: "This will modify real data",
+      send_request: "Send request",
+      sending: "Sending...",
+      warning_prefix: "You are about to send a real",
+      warning_suffix: "request against this workspace's live data. This action cannot be undone from here.",
+    },
+    endpoint_browser: {
+      search_placeholder: "Search endpoints...",
+      no_matches: "No endpoint matches your search.",
+    },
+    history: {
+      label: "History",
+      no_calls: "No calls made yet in this session.",
+      replay: "Replay this call",
+    },
+    root: {
+      errors: {
+        load_settings_failed: "Could not load API Explorer settings.",
+        update_setting_failed: "Could not update this setting.",
+        not_enabled: "The API Explorer is not enabled on this instance (or for this workspace).",
+        token_rejected: "This token was rejected (invalid, expired, or insufficient permissions).",
+        schema_load_failed_status: "Could not load the schema (HTTP {status}).",
+        schema_load_failed: "Could not load the schema.",
+        replay_failed_title: "Can't replay",
+        replay_failed_message: "This endpoint is no longer present in the current schema.",
+        load_settings_failed_body: "Could not load API Explorer settings for this workspace.",
+      },
+      live_data_warning_prefix: "You are calling the real API of workspace",
+      live_data_warning_suffix: "Every request here affects real data.",
+      settings_aria_label: "API Explorer settings",
+      disabled_notice: "The API Explorer is currently disabled for this workspace.",
+      disabled_notice_admin: "Enable it above to continue.",
+      disabled_notice_member: "Ask a workspace Admin to enable it.",
+      select_endpoint_hint: "Select an endpoint on the left to build a request.",
+    },
+    token_panel: {
+      errors: {
+        bootstrap_required: "Paste one of your existing API tokens first - it is needed to authenticate this request.",
+        request_rejected: "The server rejected this request (HTTP {status}).",
+      },
+      copied_message: "Token copied to clipboard.",
+      active_token: "Active token",
+      ephemeral: "Ephemeral",
+      pasted: "Pasted",
+      expires_at: "Expires {date} at {time}",
+      change_token: "Change token",
+      hide: "Hide",
+      reveal: "Reveal",
+      copy: "Copy",
+      setup_title: "Set up a token to start exploring",
+      setup_description:
+        "Browsing the schema and executing real calls both require one of your own API tokens (Profile Settings > API Tokens). Paste one below, then either use it directly or trade it for a short-lived one scoped to this session.",
+      paste_placeholder: "Paste an existing API token",
+      use_this_token: "Use this token",
+      generate_temporary_token: "Generate a temporary token",
+      scope: "Scope",
+      read_only: "Read only",
+      read_write: "Read & write",
+      read_write_restricted_tooltip:
+        "Only Admins (or Members, if this workspace allows it below) can request a read-write token.",
+      lifetime: "Lifetime (seconds, max 3600)",
+      generate_token: "Generate token",
     },
   },
   ai: {
@@ -3243,6 +3563,11 @@ export default {
         error: "Failed to delete module",
       },
     },
+    delete_modal: {
+      content_prefix: "Are you sure you want to delete module-",
+      content_suffix:
+        "? All of the data related to the module will be permanently removed. This action cannot be undone.",
+    },
   },
   project_views: {
     empty_state: {
@@ -3382,6 +3707,19 @@ export default {
       "1_week": "1 week",
       "2_weeks": "2 weeks",
       custom: "Custom",
+    },
+    snooze_modal: {
+      am: "AM",
+      date_required: "Please select a date",
+      no_available_time: "No available time for this date.",
+      pick_a_date: "Pick a date",
+      pick_a_time: "Pick a time",
+      pm: "PM",
+      select_date: "Select date",
+      select_time: "Select a time",
+      submitting: "Submitting...",
+      time_required: "Please select a time",
+      title: "Customize Snooze Time",
     },
   },
   active_cycle: {
@@ -3641,10 +3979,65 @@ export default {
   cycle: {
     label: "{count, plural, one {Cycle} other {Cycles}}",
     no_cycle: "No cycle",
+    auto_schedule: {
+      title: "Automatic scheduling",
+      description: "Automatically create upcoming cycles on a recurring cadence.",
+      enable_title: "Enable automatic scheduling",
+      enable_description:
+        "A new cycle will be created as soon as the number of upcoming cycles falls below the configured threshold.",
+      cadence_title: "Cadence",
+      cadence_description: "Duration of each auto-scheduled cycle, in weeks (1-12).",
+      start_day_title: "Start day",
+      start_day_description: "Day of the week on which each new cycle starts.",
+      cooldown_title: "Cooldown",
+      cooldown_description: "Number of buffer days between the end of one cycle and the start of the next (0-14).",
+      lookahead_title: "Lookahead",
+      lookahead_description: "Number of future cycles to always keep already created in advance (1-3).",
+      naming_template_title: "Naming template",
+      naming_template_description: "The text {number} is replaced by the auto-incremented cycle number.",
+      rollover_title: "Automatic rollover",
+      rollover_description: "When an auto-scheduled cycle closes, transfer its unfinished work items to the next one.",
+      preview_button: "Preview upcoming cycles",
+      save_error: "Unable to save auto-scheduling settings. Please try again.",
+      preview_error: "Unable to compute preview.",
+    },
+    delete_modal: {
+      success_message: "Cycle deleted successfully.",
+      warning_title: "Warning!",
+      generic_error: "Something went wrong please try again later.",
+      title: "Delete cycle",
+      content:
+        'Are you sure you want to delete cycle "{name}"? All of the data related to the cycle will be permanently removed. This action cannot be undone.',
+    },
+    transfer_issues_modal: {
+      title: "Transfer work items",
+      search_placeholder: "Search for a cycle...",
+      toast: {
+        success: {
+          title: "Success!",
+          message: "Work items have been transferred successfully",
+        },
+        error: {
+          title: "Error!",
+          message: "Unable to transfer work items. Please try again.",
+        },
+        fetch_error: {
+          title: "Error",
+          message: "Unable to fetch cycle details",
+        },
+      },
+      empty_state: "You don\u2019t have any current cycle. Please create one to transfer the work items.",
+    },
   },
   module: {
     label: "{count, plural, one {Module} other {Modules}}",
     no_module: "No module",
+    links: {
+      toasts: {
+        created: "Module link created successfully.",
+        updated: "Module link updated successfully.",
+      },
+    },
   },
   description_versions: {
     last_edited_by: "Last edited by",
@@ -3764,6 +4157,53 @@ export default {
       root_creation_role_member: "Admins and Members",
     },
     search_badge: "Wiki",
+    comments: {
+      anchor_not_found: "Anchor text no longer found in the document:",
+      aria: {
+        actions: "Comment actions",
+        scroll_to_text: "Scroll to this comment's text in the document",
+      },
+      errors: {
+        delete_failed: "Couldn't delete the comment.",
+        reply_failed: "Couldn't post the reply.",
+        status_update_failed: "Couldn't update the thread's status.",
+        update_failed: "Couldn't update the comment.",
+      },
+      placeholder_edit: "Edit comment\u2026",
+      placeholder_reply: "Reply\u2026",
+      reopen: "Reopen",
+      reply: "Reply",
+      resolve: "Resolve",
+      scroll_to_text: "Scroll to text in document",
+      time_ago: "{time} ago",
+    },
+    delete_modal: {
+      confirm_prefix: "Are you sure you want to delete page-",
+      confirm_suffix: "? The Page will be deleted permanently. This action cannot be undone.",
+      error: "Page could not be deleted. Please try again.",
+      success: "Page deleted successfully.",
+      title: "Delete page",
+    },
+    editor: {
+      content_limit_banner: {
+        dismiss_aria: "Dismiss content limit warning",
+        message:
+          "Content limit reached and live sync is off. Create a new page or use nested pages to continue syncing.",
+      },
+      title_placeholder: "Untitled",
+    },
+    form: {
+      create_button: "Create Page",
+      create_title: "Create page",
+      max_length_error: "Max length of the name should be less than 255 characters",
+    },
+    list: {
+      search_placeholder: "Search pages",
+    },
+    move_to_project_modal: {
+      move_button: "Move",
+      select_project_placeholder: "Select a project",
+    },
   },
   project_members: {
     full_name: "Full name",
@@ -3956,6 +4396,10 @@ export default {
       preferences: "Preferences",
       help: "Help",
     },
+    search_placeholder: "Search commands...",
+    shortcuts_modal: {
+      search_placeholder: "Search for shortcuts",
+    },
   },
   // Navigation customization
   customize_navigation: "Customize navigation",
@@ -4014,5 +4458,917 @@ export default {
     },
     requires_connection: "Requires an internet connection",
     unload_warning: "You have changes that haven't finished syncing yet. Leaving now may lose them.",
+  },
+  workflow_rules: {
+    action_config: {
+      add_to_existing: "Add to existing",
+      replace_existing: "Replace existing",
+      replace_existing_assignees: "Replace existing assignees",
+      add_to_existing_assignees: "Add to existing assignees",
+      choose_labels: "Choose labels",
+      labels_selected_count: "{count, plural, one {# label selected} other {# labels selected}}",
+      relative_to_trigger: "Relative to trigger",
+      fixed_date: "Fixed date",
+      days_from_trigger: "day(s) from trigger",
+      user_to_mention: "User to mention",
+    },
+    root: {
+      title: "Custom rules",
+      description: "Automatically update work items based on triggers, conditions, and actions.",
+      new_rule: "New rule",
+      empty_state: "No custom rules configured yet.",
+    },
+    form: {
+      name_required: "Name is required.",
+      save_error: "Unable to save the rule.",
+      edit_rule: "Edit rule",
+      new_rule: "New rule",
+      rule_name_placeholder: "Rule name",
+      description_placeholder: "Description (optional)",
+      trigger: "Trigger",
+      save_rule: "Save rule",
+    },
+    list_item: {
+      update_error: "Unable to update the rule.",
+      duplicate_success: "Rule duplicated.",
+      duplicate_error: "Unable to duplicate the rule.",
+      delete_error: "Unable to delete the rule.",
+      view_execution_history: "View execution history",
+      summary: "{conditionCount} condition(s) - {actionCount} action(s) - triggered {executionCount} time(s)",
+      last_run: "last run {time}",
+      delete_title: "Delete rule",
+      delete_content: 'Are you sure you want to delete "{name}"? This action cannot be undone.',
+    },
+    trigger_config: {
+      from_state: "From state",
+      to_state: "To state",
+      any_state: "Any state",
+    },
+  },
+  common_filters: {
+    created_date: {
+      title: "Created date",
+    },
+    custom: "Custom",
+    no_matches_found: "No matches found",
+  },
+  image_picker: {
+    tabs: {
+      unsplash: "Unsplash",
+      images: "Images",
+      upload: "Upload",
+    },
+    search_placeholder: "Search for images",
+    no_images_found: "No images found.",
+    cover_image_alt: "Cover image {index}",
+    drop_to_upload: "Drop image here to upload",
+    drag_and_drop: "Drag & drop image here",
+    error_file_too_large: "The image size cannot exceed 5 MB.",
+    error_invalid_format: "Please upload a file in a valid format.",
+    supported_formats: "File formats supported- .jpeg, .jpg, .png, .webp",
+    uploading: "Uploading",
+    upload_and_save: "Upload & Save",
+    upload_error_title: "Image not uploaded",
+    upload_error_message: "The image could not be uploaded",
+  },
+  bulk_delete_issues_modal: {
+    select_at_least_one: "Please select at least one work item.",
+    deleted_success: "Work items deleted successfully!",
+    select_to_delete: "Select work items to delete",
+    search_placeholder: "Search...",
+    deleting: "Deleting...",
+    delete_selected: "Delete selected work items",
+  },
+  auth: {
+    saml: {
+      use_different_email: "Use a different email",
+      sso_required_notice: "Your organization requires signing in through",
+      continue_with: "Continue with {name}",
+    },
+  },
+  agents: {
+    form: {
+      errors: {
+        display_name_required: "Display name is required.",
+        save_failed: "Unable to save the agent.",
+      },
+      edit_title: "Edit agent",
+      create_title: "New agent",
+      display_name_placeholder: "e.g. Claude Code runner",
+      agent_type: "Agent type",
+      description_optional: "Description (optional)",
+      description_placeholder: "What does this agent do?",
+      role_notice:
+        "Agents are always created as workspace Members and can never be granted Admin or workspace ownership.",
+      create_agent: "Create agent",
+    },
+    list: {
+      errors: {
+        status_update_failed: "Unable to update this agent's status.",
+      },
+      project_singular: "project",
+      project_plural: "projects",
+      last_seen: "Last seen",
+      never: "Never",
+      owner: "Owner",
+      manage_tokens: "Manage tokens",
+      re_enable: "Re-enable",
+      disable: "Disable",
+      disable_modal: {
+        title: "Disable agent",
+        content:
+          'Are you sure you want to disable "{name}"? This immediately revokes every active token for this agent. Its past comments and activity history are kept.',
+      },
+    },
+    tokens: {
+      errors: {
+        issue_failed: "Unable to issue a token for this agent.",
+        revoke_failed: "Unable to revoke this token.",
+      },
+      title: "Tokens - {name}",
+      description:
+        "Configure one of these in your agent runner to authenticate as this agent. Disabling the agent revokes every active token immediately.",
+      issue_new_token: "Issue new token",
+      disabled_notice:
+        "This agent is disabled - it can no longer be issued new tokens, and all its previous tokens have already been revoked.",
+      no_tokens: "No tokens issued yet for this agent.",
+      revoked: "Revoked",
+      created: "Created",
+      last_used: "Last used",
+      never_used: "Never used",
+      revoke: "Revoke",
+      revoke_modal: {
+        title: "Revoke token",
+        content:
+          'Are you sure you want to revoke "{label}"? This is immediate and cannot be undone - the agent runner using it will stop being able to authenticate.',
+      },
+    },
+  },
+  automation: {
+    select_month_modal: {
+      errors: {
+        range: "Select a month between 1 and 12.",
+      },
+      enter_months: "Enter Months",
+      months: "Months",
+      submitting: "Submitting...",
+    },
+  },
+  governed_workflows: {
+    actions: {
+      heading: "Actions (run in order after an allowed transition)",
+      empty_state: "No actions configured.",
+      choose_member: "Choose member",
+      no_config_needed: "No additional configuration needed.",
+      add_action: "Add action",
+      max_reached: "Maximum of {max} actions reached.",
+    },
+    approvers: {
+      heading: "Approvers",
+      empty_state: "No restriction - any project member who reaches this transition may execute it directly.",
+      specific_member: "Specific member",
+      choose_member: "Choose member",
+      choose_role: "Choose role",
+      needs_approval: "Needs approval",
+      add_approver: "Add approver",
+    },
+    transition_list_item: {
+      toast: {
+        error: "Error!",
+        update_error: "Unable to update the transition.",
+        delete_error: "Unable to delete the transition.",
+      },
+      from_creation: "From creation",
+      unknown_state: "Unknown state",
+      approver_count: "{count} approver(s) - ",
+      no_approver_restriction: "No approver restriction - ",
+      condition_action_count: "{conditions} condition(s) - {actions} action(s)",
+      delete_modal: {
+        title: "Delete transition",
+        content: "Are you sure you want to delete this workflow transition? This action cannot be undone.",
+      },
+      freeze_modal: {
+        title: "This will block every transition for this issue type",
+      },
+    },
+  },
+  project_empty_state: {
+    intake_sidebar_closed: {
+      title: "No request closed yet",
+      description: "All the work items whether accepted or declined can be found here.",
+    },
+  },
+  intake_settings: {
+    forms: {
+      form_modal: {
+        name_required: "The form name is required.",
+        save_error: "Unable to save the form.",
+        title_edit: "Edit form",
+        title_new: "New web form",
+        name_placeholder: "Internal form name",
+        description_placeholder: "Publicly displayed description (simple HTML)",
+        show_priority_field: "Show the priority field",
+        show_labels_field: "Show the labels field",
+        require_submitter_name: "Submitter name required",
+        require_submitter_email: "Submitter email required",
+        default_state: "Default state",
+        default_labels: "Default labels",
+        label_count: "{count} label(s)",
+        success_message_placeholder: "Success message",
+        redirect_url_placeholder: "Redirect URL after submission (optional)",
+        rate_limit_label: "Limit per IP:",
+        rate_limit_unit: "submissions / hour",
+      },
+      list: {
+        title: "Web forms",
+        description: "Allows anonymous external visitors to submit requests directly into the Intake queue.",
+        new_form: "New form",
+        no_forms: "No web forms configured.",
+        link_copied: "Link copied to clipboard.",
+        update_error: "Unable to update the form.",
+        token_regenerated: "The previous link is now invalid.",
+        regenerate_error: "Unable to regenerate the token.",
+        delete_error: "Unable to delete the form.",
+        copy_link: "Copy link",
+        regenerate_link: "Regenerate link",
+      },
+    },
+    responsibility: {
+      save_error: "Unable to save intake responsibility settings. Please try again.",
+      add_member_error: "Unable to add member.",
+      remove_member_error: "Unable to remove member.",
+      reorder_error: "Unable to reorder rotation.",
+      heading: {
+        title: "Intake responsibility",
+        description: "Automatically assigns each new intake item to a responsible person.",
+      },
+      enable: {
+        title: "Enable intake responsibility",
+        description: "A responsible person will be computed and notified as soon as each intake item is created.",
+      },
+      assignment_mode: {
+        title: "Assignment mode",
+        description: "Fixed owner (a single person) or round-robin rotation among several members.",
+        fixed_owner: "Fixed owner",
+        round_robin: "Round-robin rotation",
+      },
+      fixed_owner: {
+        description: "The member to whom every new intake item will be assigned.",
+      },
+      choose_member: "Choose a member",
+      rotation: {
+        members_heading: "Rotation members",
+        members_description: "Assignment order - the rotation pointer advances with each new item.",
+        no_members: "No members in the rotation yet.",
+      },
+      escalation: {
+        title: "Escalation delay",
+        description:
+          "Minutes before an unhandled Pending item is reassigned to the next member (5-1440, rotation only).",
+      },
+    },
+    triage_rules: {
+      update_error: "Unable to update the rule.",
+      delete_error: "Unable to delete the rule.",
+      reorder_error: "Unable to reorder rules.",
+      dry_run_error: "Unable to test the rule.",
+      reapply_success: "{count} item(s) updated.",
+      reapply_error: "Unable to reapply the rules.",
+      list: {
+        title: "Triage rules",
+        description: "Automatically applies priority/labels/assignees/state to incoming intake items.",
+        reapply_button: "Reapply to the queue",
+        new_rule: "New rule",
+        no_rules: "No triage rules configured.",
+        invalid_rule: "Invalid rule - action to fix",
+        test_button: "Test",
+        condition_count: "{count} condition(s)",
+        no_actions: "no action",
+        dry_run_matches: "{count} pending item(s) currently match:",
+      },
+      form_modal: {
+        name_required: "The rule name is required.",
+        condition_required: "At least one condition is required.",
+        save_error: "Unable to save the rule.",
+        title_edit: "Edit rule",
+        name_placeholder: "Rule name",
+        active: "Active",
+        conditions_heading: "IF (all conditions must match)",
+        field_title: "Title",
+        operator_contains: "contains",
+        operator_not_contains: "does not contain",
+        operator_starts_with: "starts with",
+        operator_regex: "regex",
+        value_placeholder: "Value",
+        add_condition: "Add a condition",
+        actions_heading: "THEN",
+        action_set_priority: "Set priority",
+        action_set_labels: "Add labels",
+        action_set_assignees: "Assign members",
+        action_set_state: "Set state",
+        choose_labels: "Choose labels",
+        choose_members: "Choose members",
+        add_action: "Add an action",
+      },
+    },
+  },
+  issue_view: {
+    empty_state: {
+      project_view: {
+        title: "View work items will appear here",
+        description:
+          "Work items help you track individual pieces of work. With work items, keep track of what's going on, who is working on it, and what's done.",
+      },
+    },
+    filters: {
+      sub_group_by: {
+        title: "Sub-group by",
+      },
+      date: {
+        custom: "Custom",
+      },
+    },
+    all_issue_layout_root: {
+      view_not_found: {
+        title: "View does not exist",
+        description: "The view you are looking for does not exist or you don't have permission to view it.",
+        cta: "Go to All work items",
+      },
+      save_as: "Save as",
+    },
+  },
+  navigation: {
+    tab_overflow_menu: {
+      show: "Show",
+      clear_default: "Clear default",
+      set_as_default: "Set as default",
+    },
+  },
+  onboarding: {
+    profile_setup: {
+      toasts: {
+        success: "Profile setup completed!",
+        error: "Profile setup failed. Please try again!",
+        user_details_error: "User details update failed. Please try again!",
+      },
+      choose_image: "Choose image",
+      errors: {
+        first_name_required: "First name is required",
+        first_name_max_length: "First name must be within 50 characters.",
+        last_name_required: "Last name is required",
+        last_name_max_length: "Last name must be within 50 characters.",
+        passwords_dont_match: "Passwords don't match",
+        select_at_least_one: "Please select at least one option",
+        name_max_length: "Name must be within 50 characters.",
+        passwords_do_not_match: "Passwords do not match",
+      },
+      set_a_password: "Set a password",
+      new_password_placeholder: "New password...",
+      role_question: "What role are you working on? Choose one.",
+      domain_question: "What is your domain expertise? Choose one or more.",
+      roles: {
+        individual_contributor: "Individual contributor",
+        senior_leader: "Senior Leader",
+        manager: "Manager",
+        executive: "Executive",
+        freelancer: "Freelancer",
+        student: "Student",
+      },
+      domains: {
+        engineering: "Engineering",
+        product: "Product",
+        marketing: "Marketing",
+        sales: "Sales",
+        operations: "Operations",
+        legal: "Legal",
+        finance: "Finance",
+        human_resources: "Human Resources",
+        project: "Project",
+        other: "Other",
+      },
+      header: {
+        title: "Create your profile.",
+        description: "This is how you will appear in Plane.",
+      },
+      change_image: "Change image",
+      upload_image: "Upload image",
+      full_name_placeholder: "Enter your full name",
+      passwords_match: "Passwords match",
+    },
+    role_setup: {
+      header: {
+        title: "What's your role?",
+        description: "Let's set up Plane for how you work.",
+      },
+      select_one: "Select one",
+      roles: {
+        product_manager: "Product Manager",
+        engineering_manager: "Engineering Manager",
+        designer: "Designer",
+        developer: "Developer",
+        founder_executive: "Founder/Executive",
+        operations_manager: "Operations Manager",
+        others: "Others",
+      },
+    },
+    common: {
+      skip: "Skip",
+      tagline: "All your work \u2014 unified.",
+    },
+    invite_team: {
+      errors: {
+        invalid_email: "Invalid Email ID",
+        not_an_email: "That doesn't look like an email address.",
+      },
+      header: {
+        title: "Invite your teammates",
+        description: "Work in plane happens best with your team. Invite them now to use Plane to its potential.",
+      },
+      add_another: "Add another",
+      do_it_later: "I'll do it later",
+    },
+    usecase_setup: {
+      use_cases: {
+        plan_and_track_product_roadmaps: "Plan and track product roadmaps",
+        manage_engineering_sprints: "Manage engineering sprints",
+        coordinate_cross_functional_projects: "Coordinate cross-functional projects",
+        replace_our_current_tool: "Replace our current tool",
+        just_exploring: "Just exploring",
+      },
+      header: {
+        title: "What brings you to Plane?",
+        description: "Tell us your goals and team size.",
+      },
+      select_one_or_more: "Select one or more",
+    },
+    join_invites: {
+      header: {
+        title: "Join invites or create a workspace",
+      },
+      create_new_workspace: "Create new workspace",
+      no_invitations_found: "No Invitations found",
+    },
+  },
+  project: {
+    delete_modal: {
+      confirm_phrase: "delete my project",
+      confirm_phrase_placeholder: "Enter '{phrase}'",
+      confirm_phrase_prefix: "To confirm, type",
+      confirm_phrase_suffix: "below:",
+      confirm_prefix: "Are you sure you want to delete project",
+      confirm_suffix:
+        "All of the data related to the project will be permanently removed. This action cannot be undone",
+      enter_name_prefix: "Enter the project name",
+      enter_name_suffix: "to continue:",
+      error: "Something went wrong. Please try again later.",
+      success: "Project deleted successfully.",
+    },
+    filters: {
+      created_at: {
+        title: "Created date",
+      },
+      custom: "Custom",
+    },
+    leave_project_modal: {
+      title: "Leave Project",
+      leaving: "Leaving...",
+      description_prefix: "Are you sure you want to leave the project -",
+      description_suffix: "? All of the work items associated with you will become inaccessible.",
+      enter_project_name_prefix: "Enter the project name",
+      enter_project_name_suffix: "to continue:",
+      project_name_placeholder: "Enter project name",
+      confirm_prefix: "To confirm, type",
+      confirm_phrase: "Leave Project",
+      confirm_suffix: "below:",
+      confirm_placeholder: "Enter 'leave project'",
+      toast: {
+        error_title: "Error!",
+        generic_error: "Something went wrong please try again later.",
+        confirm_text_error: "Please confirm leaving the project by typing the 'Leave Project'.",
+        project_name_error: "Please enter the project name as shown in the description.",
+        fill_all_fields_error: "Please fill all fields.",
+      },
+    },
+    multi_select_modal: {
+      search_placeholder: "Search for projects",
+    },
+    settings: {
+      member_defaults: {
+        project_lead_description: "Select the project lead for the project.",
+        default_assignee_description: "Select the default assignee for the project.",
+        guest_access_title: "Guest access",
+      },
+    },
+    owner_section: {
+      title: "Project Owner",
+      tooltip:
+        "A Project Owner can delete or archive this project, manage its integrations/webhooks, and manage members up to project Admin, without needing a workspace Admin.",
+      permission_hint: "Only the workspace Owner or a workspace Admin can assign or revoke the Project Owner.",
+      current_owner_label: "Current Project Owner",
+      no_owner_placeholder: "No Project Owner assigned",
+      no_eligible_admin: "No project Admin is eligible yet - promote a member to Admin first.",
+      revoke_button: "Revoke Project Owner",
+      toast: {
+        success_title: "Success!",
+        error_title: "Error!",
+        assign_success: "Project Owner assigned.",
+        assign_error: "Something went wrong while assigning the Project Owner.",
+        revoke_success: "Project Owner revoked.",
+        revoke_error: "Something went wrong while revoking the Project Owner.",
+      },
+    },
+  },
+  project_states: {
+    delete: {
+      confirm_prefix: "Are you sure you want to delete state-",
+      confirm_suffix:
+        "? All of the data related to the state will be permanently removed. This action cannot be undone.",
+      title: "Delete State",
+      toast: {
+        error_generic: "State could not be deleted. Please try again.",
+        error_in_use:
+          "This state contains some work items within it, please move them to some other state to delete this state.",
+      },
+      tooltip: {
+        default_state: "Cannot delete the default state.",
+        empty_group: "Cannot have an empty group.",
+      },
+    },
+  },
+  recurring_issue_templates: {
+    root: {
+      title: "Recurring work items",
+      description: "Templates that automatically create work items on a repeating schedule.",
+      new_template: "New template",
+      empty_state: "No recurring templates configured yet.",
+      previous: "Previous",
+    },
+    form_modal: {
+      edit_title: "Edit recurring template",
+      new_title: "New recurring template",
+      name_placeholder: "Template name",
+      date_token_hint_prefix: "Use the",
+      date_token_hint_suffix: "token to include the occurrence's date, e.g. \"Weekly standup \u2014",
+      description_placeholder: "Description (optional)",
+      recurrence: "Recurrence",
+      repeats: "Repeats",
+      select_frequency: "Select frequency",
+      every: "every",
+      interval_unit: {
+        daily: "day(s)",
+        weekly: "week(s)",
+        monthly: "month(s)",
+        yearly: "year(s)",
+      },
+      weekday_hint: "If no days are selected, occurrences repeat on the same weekday as the start date.",
+      on_day: "On day",
+      of_the_month: "of the month",
+      select_month: "Select month",
+      day_of_month_hint:
+        "Days 29-31 aren't available in every month - if the chosen day doesn't exist in a given month, the occurrence is generated on that month's last day instead.",
+      end_date_optional: "End date (optional)",
+      no_end_date: "No end date",
+      max_occurrences_optional: "Max occurrences (optional)",
+      activation_tooltip: "Set a frequency and a start date before activating this template.",
+      active: "Active",
+      errors: {
+        name_required: "Name is required.",
+        activation_requirements: "Frequency and a start date are required to make this template active.",
+        toast_title: "Error!",
+        save_failed: "Unable to save the recurring template.",
+      },
+    },
+    list_item: {
+      draft: "Draft",
+      configure: "Configure",
+      pause: "Pause",
+      resume: "Resume",
+      view_generated: "View generated work items",
+      generate_now: "Generate now",
+      next_run: "Next run {time_ago}",
+      next_run_pending: "Next run pending",
+      paused: "Paused",
+      occurrences_generated: "{count} generated",
+      delete_modal: {
+        title: "Delete recurring template",
+        content:
+          'Are you sure you want to delete "{name}"? Work items already generated from it will not be affected. This action cannot be undone.',
+      },
+      errors: {
+        toast_title: "Error!",
+        update_failed: "Unable to update the template.",
+        generate_failed: "Unable to generate a work item from this template.",
+        delete_failed: "Unable to delete the template.",
+      },
+      success: {
+        toast_title: "Success!",
+        generated_message: '"{name}" was created from this template.',
+      },
+    },
+  },
+  rich_filters: {
+    advanced: {
+      group: {
+        empty_group: "Empty group - add a condition or remove it",
+        condition: "Condition",
+        group: "Group",
+        max_conditions_reached: "Maximum of {max} conditions reached",
+        max_depth_reached: "Maximum nesting depth of {max} reached",
+        remove_group_aria: "Remove group",
+      },
+      move_actions: {
+        move_up_aria: "Move up",
+        move_down_aria: "Move down",
+      },
+    },
+    filter_item: {
+      remove_filter_aria: "Remove filter",
+      invalid: {
+        tooltip:
+          "This filter condition is no longer valid. The property may have been deleted or your access to it may have changed.",
+        label: "Invalid filter",
+      },
+    },
+  },
+  rbac: {
+    bundle_editor: {
+      category_workspace: "Workspace (anti-lockout only - see below)",
+      create_title: "Create bundle",
+      created_title: "Bundle created",
+      description_placeholder: "Optional",
+      edit_title: "Edit bundle",
+      name_placeholder: "e.g. Cycle management",
+      read_only_notice:
+        "System bundles reproduce this fork's built-in role behavior and cannot be edited or deleted - shown here read-only for reference. Create a new bundle to compose your own permission set.",
+      save_error_title: "Could not save bundle",
+      saved_message: '"{name}" was saved.',
+      updated_title: "Bundle updated",
+    },
+    condition: {
+      creator_only: "Creator only",
+      none: "No condition",
+      project_lead_only: "Project lead only",
+    },
+    create_role: {
+      behaves_like_description:
+        "Only Issue/Cycle/Module/Page/View permissions are driven by the bundles you attach below. Every other area of Plane (billing, integrations, exports...) still checks this member's tier directly - pick the closest match.",
+      behaves_like_label: "Behaves like (for settings this builder doesn't cover yet)",
+      description: "A role starts with no bundles attached - add them from the editor once it is created.",
+      description_placeholder: "Optional",
+      error_title: "Could not create role",
+      name_placeholder: "e.g. Junior Project Lead",
+      title: "Create role",
+    },
+    delete_role: {
+      confirm_button: "Delete role",
+      confirm_content_empty: 'No member currently holds "{name}" - this cannot be undone.',
+      confirm_title: "Delete this role?",
+      delete_error_title: "Could not delete role",
+      deleted_message: '"{name}" was deleted.',
+      deleted_title: "Role deleted",
+      reassign_and_delete_button: "Reassign {count} member(s) & delete",
+      reassign_description:
+        '{count} member(s) currently hold "{name}". Choose a role to move all of them to before this role can be deleted - there is no silent removal.',
+      reassign_error_title: "Could not reassign and delete",
+      reassign_title: "Reassign members before deleting",
+      reassign_to_label: "Reassign to",
+      reassigned_and_deleted_message: '{count} member(s) were reassigned and "{name}" was deleted.',
+      select_a_role: "Select a role",
+    },
+    legacy_tier: {
+      admin: "Admin",
+      guest: "Guest",
+      member: "Member",
+    },
+  },
+  sidebar: {
+    aria: {
+      main_sidebar: "Main sidebar",
+      peek_view: "Sidebar peek view",
+      resize: "Resize sidebar",
+    },
+  },
+  workspace_roles: {
+    editor: {
+      title: "Edit role",
+      toast: {
+        updated_title: "Role updated",
+        updated_message: '"{name}" was saved.',
+        save_failed_title: "Could not save role",
+        update_bundles_failed_title: "Could not update bundles",
+        would_leave_unprotected: " (would leave {permissions} unprotected)",
+      },
+      attached_bundles: "Attached bundles",
+      guest_locked: "The Guest role cannot be customized (billing/seat-limit logic depends on it staying fixed).",
+      no_bundles_attached: "No bundles attached yet.",
+      aria_remove_bundle: "Remove {name}",
+      add_bundle: "+ Add bundle",
+      system_suffix: "System",
+      effective_permissions: "Effective permissions ({count})",
+      no_permissions_yet: "This role grants none of the 5 in-scope permissions yet.",
+      done: "Done",
+    },
+  },
+  audit_log: {
+    detail_modal: {
+      title: "Audit log entry",
+      date: "Date",
+      event: "Event",
+      actor: "Actor",
+      system: "System",
+      target: "Target",
+      ip_address: "IP address",
+      user_agent: "User agent",
+      old_value: "Old value",
+      new_value: "New value",
+      metadata: "Metadata",
+    },
+    details: "Details",
+    toast: {
+      export_started_title: "Export started",
+      export_started_message:
+        "Once the export is ready you will be able to download it from Workspace Settings > Exports.",
+      export_failed_title: "Export failed",
+      export_failed_message: "Something went wrong while starting the export. Please try again.",
+    },
+    filters: {
+      from_date: "From date",
+      to_date: "To date",
+      actor: "Actor",
+      target: "Target",
+    },
+    export_csv: "Export CSV",
+    table: {
+      date_time: "Date / Time",
+      event: "Event",
+      actor: "Actor",
+      target: "Target",
+      ip: "IP",
+    },
+    empty: {
+      title: "No audit log entries",
+      description: "No security events match the current filters yet.",
+    },
+    pagination: {
+      previous: "Previous",
+    },
+  },
+  scim: {
+    create_token_modal: {
+      toast: {
+        failed_title: "Could not generate token",
+      },
+      title: "Generate a SCIM token",
+      description: "Give it a label that helps you recognize which identity provider it belongs to.",
+      label: "Label",
+      label_placeholder: "Okta - Prod",
+      submit: "Generate token",
+    },
+    provisioning_log: {
+      status_filter: {
+        all: "All statuses",
+      },
+      search_placeholder: "Search by email (current page)",
+      status: "Status",
+      empty: {
+        title: "No provisioning events",
+        description: "No SCIM provisioning events match the current filters yet.",
+      },
+    },
+    provisioning_panel: {
+      token_heading: {
+        title: "SCIM token",
+        description:
+          "Generate a token and connect it to your identity provider (Okta, Azure AD, Google Workspace) to automatically create, update, and deactivate members.",
+      },
+      log_heading: {
+        title: "Provisioning log",
+        description: "The last 90 days of SCIM create/update/deactivate/sync-error events for this workspace.",
+      },
+    },
+    token_panel: {
+      toast: {
+        copied_title: "Copied",
+        copied_message: "Base URL copied to clipboard.",
+        revoke_failed_title: "Error!",
+        revoke_failed_message: "Unable to revoke this token.",
+      },
+      base_url: "Base URL",
+      description:
+        "Generate a token and paste it, together with the Base URL above, into your identity provider's SCIM connection settings.",
+      empty: "No SCIM tokens yet. Generate one to connect an identity provider.",
+      status_active: "Active",
+      status_revoked: "Revoked",
+      created_at: "Created {date}",
+      last_used: " - Last used {time}",
+      never_used: " - Never used",
+      revoke: "Revoke",
+      revoke_modal: {
+        title: "Revoke SCIM token",
+        content:
+          'Are you sure you want to revoke "{label}"? This is immediate and cannot be undone - your identity provider will stop being able to sync using this token.',
+      },
+    },
+  },
+  reauth_modal: {
+    errors: {
+      enter_password: "Enter your password to continue.",
+      incorrect_password: "Incorrect password. Please try again.",
+      code_send_failed: "Could not send a verification code. Please try again.",
+      enter_code: "Enter the code you received by email.",
+      invalid_code: "Invalid or expired code. Please try again.",
+    },
+    toast: {
+      code_sent_title: "Code sent",
+      code_sent_message: "Check your email for a verification code.",
+    },
+    title: "Confirm it's you",
+    description: "This action is sensitive and requires you to re-confirm your identity.",
+    password_label: "Password",
+    password_placeholder: "Enter your password",
+    use_email_code: "Use an email code instead",
+    magic_code_request_description: "We'll send a one-time verification code to your email address.",
+    verification_code_label: "Verification code",
+    verification_code_placeholder: "Enter the 6-digit code",
+    use_password: "Use your password instead",
+    send_code: "Send code",
+  },
+  security_policy_panel: {
+    toast: {
+      updated_title: "Security policy updated",
+      updated_message: "Your workspace's security policy has been saved.",
+      save_failed_title: "Could not save security policy",
+    },
+    enforce_sso: {
+      title: "Enforce SSO-only login",
+      description:
+        "Block email/password and magic-link login for members whose email belongs to a verified domain below. Requires at least one OAuth method enabled on this instance.",
+    },
+    invite_restriction: {
+      title: "Who can invite members",
+    },
+    session_timeout: {
+      title: "Session idle timeout",
+      description:
+        "Members are signed out of this workspace after this many minutes of inactivity. Leave empty to use your instance's default idle-timeout ceiling, configured by your instance administrator.",
+      placeholder: "Instance default",
+    },
+    require_reauth: {
+      title: "Require re-authentication for sensitive actions",
+      description:
+        "Workspace deletion, full data export, security-policy changes and API token revocation will ask members to confirm their identity again if their last login was more than 15 minutes ago.",
+    },
+    allowed_auth_methods: {
+      title: "Allowed authentication methods",
+      description: "Subset of the methods enabled on this instance that members of this workspace may sign in with.",
+    },
+  },
+  verified_domains_panel: {
+    toast: {
+      verified_title: "Domain verified",
+      verify_failed_title: "Verification failed",
+      removed_title: "Domain removed",
+      removed_message: "The verified domain was removed.",
+      remove_failed_title: "Could not remove domain",
+    },
+    description: "Domains you've proven ownership of - required before you can enforce SSO-only login for them.",
+    add_domain: "Add domain",
+    empty: {
+      title: "No verified domains yet",
+      description_owner: "Add a domain to start enforcing SSO-only login for it.",
+      description_non_owner: "The workspace Owner hasn't added any verified domains yet.",
+    },
+    table: {
+      domain: "Domain",
+      method: "Method",
+      status: "Status",
+      verified_at: "Verified at",
+    },
+    status_verified: "Verified",
+    status_pending: "Pending",
+    verify_now: "Verify now",
+    remove_modal: {
+      title: "Remove verified domain",
+      content:
+        "Are you sure you want to remove this verified domain? Any SSO enforcement relying on it will stop applying.",
+    },
+  },
+  transfer_ownership_modal: {
+    toast: {
+      success_title: "Ownership transferred",
+      success_message: "Workspace ownership has been transferred successfully.",
+      error_title: "Error!",
+      error_message: "Something went wrong while transferring ownership. Please try again.",
+    },
+    title: "Transfer workspace ownership",
+    description_prefix: "You are about to transfer ownership of",
+    description_suffix:
+      ". You will remain an Admin, but you will lose access to Security settings and the audit log. This action cannot be undone by you alone.",
+    new_owner_label: "New owner",
+    select_admin_placeholder: "Select an Admin",
+    no_eligible_admin: "No other active Admin is available to receive ownership.",
+    confirm_name_label: "Type in this workspace's name to confirm.",
+    submit: "Transfer ownership",
+    transferring: "Transferring...",
   },
 } as const;

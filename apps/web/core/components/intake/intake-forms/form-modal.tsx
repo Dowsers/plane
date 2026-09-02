@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIntakeForm } from "@plane/types";
 import { Button, Checkbox, EModalPosition, EModalWidth, Input, ModalCore, ToggleSwitch } from "@plane/ui";
@@ -45,6 +46,7 @@ const DEFAULTS: Partial<TIntakeForm> = {
 
 export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, projectId, form, onSaved } = props;
+  const { t } = useTranslation();
 
   const [values, setValues] = useState<Partial<TIntakeForm>>(DEFAULTS);
   const [isSaving, setIsSaving] = useState(false);
@@ -55,7 +57,11 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
 
   const handleSave = async () => {
     if (!values.name?.trim()) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Le nom du formulaire est requis." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("intake_settings.forms.form_modal.name_required"),
+      });
       return;
     }
 
@@ -84,7 +90,11 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
       onSaved();
       handleClose();
     } catch (error: any) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: error?.error ?? "Unable to save the form." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: error?.error ?? t("intake_settings.forms.form_modal.save_error"),
+      });
     } finally {
       setIsSaving(false);
     }
@@ -95,7 +105,7 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
       <div className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto py-5">
         <div className="flex items-center justify-between px-5">
           <h4 className="text-18 font-medium text-primary">
-            {form ? "Modifier le formulaire" : "Nouveau formulaire web"}
+            {form ? t("intake_settings.forms.form_modal.title_edit") : t("intake_settings.forms.form_modal.title_new")}
           </h4>
           <button onClick={handleClose}>
             <X className="h-4 w-4" />
@@ -105,13 +115,13 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
         <div className="flex flex-col gap-3 px-5">
           <Input
             type="text"
-            placeholder="Nom interne du formulaire"
+            placeholder={t("intake_settings.forms.form_modal.name_placeholder")}
             value={values.name ?? ""}
             onChange={(e) => setValues({ ...values, name: e.target.value })}
             inputSize="sm"
           />
           <textarea
-            placeholder="Description affichée publiquement (HTML simple)"
+            placeholder={t("intake_settings.forms.form_modal.description_placeholder")}
             value={values.description_html ?? ""}
             onChange={(e) => setValues({ ...values, description_html: e.target.value })}
             rows={3}
@@ -123,14 +133,14 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
               value={!!values.show_priority_field}
               onChange={() => setValues({ ...values, show_priority_field: !values.show_priority_field })}
             />
-            Afficher le champ priorité
+            {t("intake_settings.forms.form_modal.show_priority_field")}
           </div>
           <div className="flex items-center gap-1.5 text-13 text-secondary">
             <ToggleSwitch
               value={!!values.show_labels_field}
               onChange={() => setValues({ ...values, show_labels_field: !values.show_labels_field })}
             />
-            Afficher le champ labels
+            {t("intake_settings.forms.form_modal.show_labels_field")}
           </div>
           <label
             htmlFor="intake-form-require-submitter-name"
@@ -141,7 +151,7 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
               checked={!!values.require_submitter_name}
               onChange={(e) => setValues({ ...values, require_submitter_name: e.target.checked })}
             />
-            Nom du soumetteur requis
+            {t("intake_settings.forms.form_modal.require_submitter_name")}
           </label>
           <label
             htmlFor="intake-form-require-submitter-email"
@@ -152,12 +162,12 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
               checked={!!values.require_submitter_email}
               onChange={(e) => setValues({ ...values, require_submitter_email: e.target.checked })}
             />
-            Email du soumetteur requis
+            {t("intake_settings.forms.form_modal.require_submitter_email")}
           </label>
 
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="mb-1 text-13 text-secondary">État par défaut</p>
+              <p className="mb-1 text-13 text-secondary">{t("intake_settings.forms.form_modal.default_state")}</p>
               <StateDropdown
                 projectId={projectId}
                 value={values.default_state ?? null}
@@ -166,32 +176,36 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
               />
             </div>
             <div className="flex-1">
-              <p className="mb-1 text-13 text-secondary">Labels par défaut</p>
+              <p className="mb-1 text-13 text-secondary">{t("intake_settings.forms.form_modal.default_labels")}</p>
               <LabelDropdown
                 projectId={projectId}
                 value={values.default_labels ?? []}
                 onChange={(val) => setValues({ ...values, default_labels: val })}
-                label={<span>{(values.default_labels ?? []).length} label(s)</span>}
+                label={
+                  <span>
+                    {t("intake_settings.forms.form_modal.label_count", { count: (values.default_labels ?? []).length })}
+                  </span>
+                }
               />
             </div>
           </div>
 
           <Input
             type="text"
-            placeholder="Message de succès"
+            placeholder={t("intake_settings.forms.form_modal.success_message_placeholder")}
             value={values.success_message ?? ""}
             onChange={(e) => setValues({ ...values, success_message: e.target.value })}
             inputSize="sm"
           />
           <Input
             type="url"
-            placeholder="URL de redirection après soumission (optionnel)"
+            placeholder={t("intake_settings.forms.form_modal.redirect_url_placeholder")}
             value={values.redirect_url ?? ""}
             onChange={(e) => setValues({ ...values, redirect_url: e.target.value })}
             inputSize="sm"
           />
           <div className="flex items-center gap-2">
-            <span className="text-13 text-secondary">Limite par IP :</span>
+            <span className="text-13 text-secondary">{t("intake_settings.forms.form_modal.rate_limit_label")}</span>
             <Input
               type="number"
               min={1}
@@ -201,16 +215,16 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
               value={values.rate_limit_per_ip_per_hour ?? 10}
               onChange={(e) => setValues({ ...values, rate_limit_per_ip_per_hour: Number(e.target.value) })}
             />
-            <span className="text-13 text-secondary">soumissions / heure</span>
+            <span className="text-13 text-secondary">{t("intake_settings.forms.form_modal.rate_limit_unit")}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 pt-4">
           <Button variant="neutral-primary" size="sm" onClick={handleClose} disabled={isSaving}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={isSaving}>
-            Enregistrer
+            {t("save")}
           </Button>
         </div>
       </div>

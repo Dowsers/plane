@@ -20,6 +20,7 @@ import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TAllowedAuthMethod, TWorkspaceSecurityPolicy, TWorkspaceSecurityPolicyUpdatePayload } from "@plane/types";
 import { CustomSelect, Input, Loader, ToggleSwitch } from "@plane/ui";
+import { useTranslation } from "@plane/i18n";
 // components
 import { SettingsBoxedControlItem } from "@/components/settings/boxed-control-item";
 // helpers
@@ -50,6 +51,7 @@ const ALLOWED_AUTH_METHOD_KEYS: TAllowedAuthMethod[] = ["EMAIL_PASSWORD", "MAGIC
  */
 export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: Props) {
   const { workspaceSlug, isOwner } = props;
+  const { t } = useTranslation();
   // sensitive-action guard - PATCH .../security-policy/ is itself gated by
   // `force_reauth_for_sensitive_actions` (exigence 8).
   const { runGuarded, isReauthModalOpen, onReauthSuccess, onReauthClose } = useSensitiveActionGuard(workspaceSlug);
@@ -108,8 +110,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       await mutate(updated, false);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Security policy updated",
-        message: "Your workspace's security policy has been saved.",
+        title: t("security_policy_panel.toast.updated_title"),
+        message: t("security_policy_panel.toast.updated_message"),
       });
     } catch (error: unknown) {
       // A cancelled re-auth challenge is a deliberate no-op, not a failure
@@ -121,7 +123,11 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       // Anti-lockout guards (exigence 4+10) return `{"error": "..."}` -
       // surface that exact, explicit message rather than a generic one.
       if (err?.error) {
-        setToast({ type: TOAST_TYPE.ERROR, title: "Could not save security policy", message: err.error });
+        setToast({
+          type: TOAST_TYPE.ERROR,
+          title: t("security_policy_panel.toast.save_failed_title"),
+          message: err.error,
+        });
         return;
       }
       // Field-level validation errors (e.g. `session_timeout_minutes`
@@ -129,8 +135,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       const firstFieldError = Object.values(err ?? {}).find((v) => Array.isArray(v) && v.length > 0)?.[0];
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not save security policy",
-        message: firstFieldError ?? "Something went wrong. Please try again.",
+        title: t("security_policy_panel.toast.save_failed_title"),
+        message: firstFieldError ?? t("something_went_wrong_please_try_again"),
       });
     } finally {
       setIsSaving(false);
@@ -150,8 +156,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
   return (
     <div className="flex flex-col gap-3">
       <SettingsBoxedControlItem
-        title="Enforce SSO-only login"
-        description="Block email/password and magic-link login for members whose email belongs to a verified domain below. Requires at least one OAuth method enabled on this instance."
+        title={t("security_policy_panel.enforce_sso.title")}
+        description={t("security_policy_panel.enforce_sso.description")}
         control={
           <ToggleSwitch
             value={draft.enforce_sso_only}
@@ -163,7 +169,7 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       />
 
       <SettingsBoxedControlItem
-        title="Who can invite members"
+        title={t("security_policy_panel.invite_restriction.title")}
         description={MEMBER_INVITE_RESTRICTION_DESCRIPTIONS[draft.member_invite_restriction]}
         control={
           <CustomSelect
@@ -185,15 +191,15 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       />
 
       <SettingsBoxedControlItem
-        title="Session idle timeout"
-        description="Members are signed out of this workspace after this many minutes of inactivity. Leave empty to use your instance's default idle-timeout ceiling, configured by your instance administrator."
+        title={t("security_policy_panel.session_timeout.title")}
+        description={t("security_policy_panel.session_timeout.description")}
         control={
           <Input
             type="number"
             min={SESSION_TIMEOUT_MINUTES_MIN}
             max={SESSION_TIMEOUT_MINUTES_MAX}
             value={draft.session_timeout_minutes ?? ""}
-            placeholder="Instance default"
+            placeholder={t("security_policy_panel.session_timeout.placeholder")}
             onChange={(e) =>
               updateDraft({ session_timeout_minutes: e.target.value === "" ? null : Number(e.target.value) })
             }
@@ -205,8 +211,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       />
 
       <SettingsBoxedControlItem
-        title="Require re-authentication for sensitive actions"
-        description="Workspace deletion, full data export, security-policy changes and API token revocation will ask members to confirm their identity again if their last login was more than 15 minutes ago."
+        title={t("security_policy_panel.require_reauth.title")}
+        description={t("security_policy_panel.require_reauth.description")}
         control={
           <ToggleSwitch
             value={draft.force_reauth_for_sensitive_actions}
@@ -220,9 +226,9 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       />
 
       <div className="flex flex-col gap-2 rounded-lg border border-subtle bg-layer-2 px-4 py-3">
-        <h4 className="text-body-sm-medium text-primary">Allowed authentication methods</h4>
+        <h4 className="text-body-sm-medium text-primary">{t("security_policy_panel.allowed_auth_methods.title")}</h4>
         <p className="text-caption-md-regular text-tertiary">
-          Subset of the methods enabled on this instance that members of this workspace may sign in with.
+          {t("security_policy_panel.allowed_auth_methods.description")}
         </p>
         <div className="mt-1 flex flex-wrap gap-4">
           {ALLOWED_AUTH_METHOD_KEYS.map((method) => (
@@ -243,7 +249,7 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
       {isOwner && (
         <div className="flex justify-end">
           <Button variant="primary" size="sm" onClick={handleSave} disabled={!isDirty} loading={isSaving}>
-            {isSaving ? "Saving..." : "Save changes"}
+            {isSaving ? t("saving") : t("save_changes")}
           </Button>
         </div>
       )}

@@ -14,6 +14,7 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspace } from "@plane/types";
 import { EModalPosition, EModalWidth, Input, ModalCore } from "@plane/ui";
 import { cn } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // components
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 // hooks
@@ -45,6 +46,7 @@ const defaultValues = {
  */
 export const TransferOwnershipModal = observer(function TransferOwnershipModal(props: Props) {
   const { isOpen, workspace, onClose } = props;
+  const { t } = useTranslation();
   // store hooks
   const {
     workspace: { workspaceMemberIds, getWorkspaceMemberDetails, transferOwnership },
@@ -84,15 +86,15 @@ export const TransferOwnershipModal = observer(function TransferOwnershipModal(p
       handleClose();
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Ownership transferred",
-        message: "Workspace ownership has been transferred successfully.",
+        title: t("transfer_ownership_modal.toast.success_title"),
+        message: t("transfer_ownership_modal.toast.success_message"),
       });
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: err?.error ?? "Something went wrong while transferring ownership. Please try again.",
+        title: t("transfer_ownership_modal.toast.error_title"),
+        message: err?.error ?? t("transfer_ownership_modal.toast.error_message"),
       });
     }
   };
@@ -110,16 +112,16 @@ export const TransferOwnershipModal = observer(function TransferOwnershipModal(p
           </span>
           <div className="w-full">
             <div className="text-center sm:text-left">
-              <h3 className="text-h5-medium">Transfer workspace ownership</h3>
+              <h3 className="text-h5-medium">{t("transfer_ownership_modal.title")}</h3>
               <p className="mt-1 text-body-xs-regular text-secondary">
-                You are about to transfer ownership of <span className="text-body-xs-semibold">{workspace?.name}</span>.
-                You will remain an Admin, but you will lose access to Security settings and the audit log. This action
-                cannot be undone by you alone.
+                {t("transfer_ownership_modal.description_prefix")}{" "}
+                <span className="text-body-xs-semibold">{workspace?.name}</span>
+                {t("transfer_ownership_modal.description_suffix")}
               </p>
             </div>
 
             <div className="mt-4 text-secondary">
-              <p className="text-body-xs-regular">New owner</p>
+              <p className="text-body-xs-regular">{t("transfer_ownership_modal.new_owner_label")}</p>
               <Controller
                 control={control}
                 name="newOwnerId"
@@ -129,7 +131,7 @@ export const TransferOwnershipModal = observer(function TransferOwnershipModal(p
                     multiple={false}
                     value={value}
                     onChange={onChange}
-                    placeholder="Select an Admin"
+                    placeholder={t("transfer_ownership_modal.select_admin_placeholder")}
                     buttonVariant="border-with-text"
                     buttonContainerClassName="mt-2 w-full"
                     showUserDetails
@@ -138,13 +140,13 @@ export const TransferOwnershipModal = observer(function TransferOwnershipModal(p
               />
               {eligibleAdminIds.length === 0 && (
                 <p className="mt-1 text-caption-sm-regular text-danger-primary">
-                  No other active Admin is available to receive ownership.
+                  {t("transfer_ownership_modal.no_eligible_admin")}
                 </p>
               )}
             </div>
 
             <div className="mt-4 text-secondary">
-              <p className="text-body-xs-regular break-words">Type in this workspace&apos;s name to confirm.</p>
+              <p className="text-body-xs-regular break-words">{t("transfer_ownership_modal.confirm_name_label")}</p>
               <Controller
                 control={control}
                 name="workspaceName"
@@ -168,10 +170,10 @@ export const TransferOwnershipModal = observer(function TransferOwnershipModal(p
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={handleClose} type="button">
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="primary" size="lg" type="submit" disabled={!canTransfer} loading={isSubmitting}>
-            {isSubmitting ? "Transferring..." : "Transfer ownership"}
+            {isSubmitting ? t("transfer_ownership_modal.transferring") : t("transfer_ownership_modal.submit")}
           </Button>
         </div>
       </form>

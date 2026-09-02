@@ -15,6 +15,7 @@ import { Popover } from "@headlessui/react";
 // plane imports
 import { ACCEPTED_COVER_IMAGE_MIME_TYPES_FOR_REACT_DROPZONE, MAX_FILE_SIZE } from "@plane/constants";
 import { useOutsideClickDetector } from "@plane/hooks";
+import { useTranslation } from "@plane/i18n";
 import { Tabs } from "@plane/propel/tabs";
 import { Button, getButtonStyling } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -50,6 +51,7 @@ const fileService = new FileService();
 
 export const ImagePickerPopover = observer(function ImagePickerPopover(props: Props) {
   const { label, value, control, onChange, disabled = false, tabIndex, isProfileCover = false, projectId } = props;
+  const { t } = useTranslation();
   // states
   const [image, setImage] = useState<File | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -70,21 +72,21 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
     () => [
       {
         key: "unsplash",
-        title: "Unsplash",
+        title: t("image_picker.tabs.unsplash"),
         isEnabled: hasUnsplashConfigured,
       },
       {
         key: "images",
-        title: "Images",
+        title: t("image_picker.tabs.images"),
         isEnabled: true,
       },
       {
         key: "upload",
-        title: "Upload",
+        title: t("image_picker.tabs.upload"),
         isEnabled: true,
       },
     ],
-    [hasUnsplashConfigured]
+    [hasUnsplashConfigured, t]
   );
 
   const enabledTabs = useMemo(() => tabOptions.filter((tab) => tab.isEnabled), [tabOptions]);
@@ -140,9 +142,9 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
           console.error("Error uploading user cover image:", error);
           setIsImageUploading(false);
           setToast({
-            message: error?.error ?? "The image could not be uploaded",
+            message: error?.error ?? t("image_picker.upload_error_message"),
             type: TOAST_TYPE.ERROR,
-            title: "Image not uploaded",
+            title: t("image_picker.upload_error_title"),
           });
         });
     } else {
@@ -161,9 +163,9 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
           console.error("Error uploading project cover image:", error);
           setIsImageUploading(false);
           setToast({
-            message: error?.error ?? "The image could not be uploaded",
+            message: error?.error ?? t("image_picker.upload_error_message"),
             type: TOAST_TYPE.ERROR,
-            title: "Image not uploaded",
+            title: t("image_picker.upload_error_title"),
           });
         });
     }
@@ -219,7 +221,7 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                         <Controller
                           control={control}
                           name="search"
-                          render={({ field: { value, ref } }) => (
+                          render={({ field: { value: searchFieldValue, ref: searchFieldRef } }) => (
                             <Input
                               id="search"
                               name="search"
@@ -230,40 +232,41 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                                   setSearchParams(formData.search);
                                 }
                               }}
-                              value={value}
+                              value={searchFieldValue}
                               onChange={(e) => setFormData({ ...formData, search: e.target.value })}
-                              ref={ref}
-                              placeholder="Search for images"
+                              ref={searchFieldRef}
+                              placeholder={t("image_picker.search_placeholder")}
                               className="w-full text-13"
                             />
                           )}
                         />
                         <Button variant="primary" size="xl" onClick={() => setSearchParams(formData.search)}>
-                          Search
+                          {t("search")}
                         </Button>
                       </div>
                       {unsplashImages ? (
                         unsplashImages.length > 0 ? (
                           <div className="grid grid-cols-4 gap-4">
-                            {unsplashImages.map((image) => (
-                              <div
-                                key={image.id}
+                            {unsplashImages.map((unsplashImage) => (
+                              <button
+                                key={unsplashImage.id}
+                                type="button"
                                 className="relative col-span-2 aspect-video md:col-span-1"
                                 onClick={() => {
                                   setIsOpen(false);
-                                  onChange(image.urls.regular);
+                                  onChange(unsplashImage.urls.regular);
                                 }}
                               >
                                 <img
-                                  src={image.urls.small}
-                                  alt={image.alt_description}
+                                  src={unsplashImage.urls.small}
+                                  alt={unsplashImage.alt_description}
                                   className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-sm object-cover"
                                 />
-                              </div>
+                              </button>
                             ))}
                           </div>
                         ) : (
-                          <p className="pt-7 text-center text-11 text-secondary">No images found.</p>
+                          <p className="pt-7 text-center text-11 text-secondary">{t("image_picker.no_images_found")}</p>
                         )
                       ) : (
                         <Loader className="grid grid-cols-4 gap-4">
@@ -283,17 +286,18 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                 <Tabs.Content value="images" className="h-full w-full space-y-4">
                   <div className="grid grid-cols-4 gap-4">
                     {Object.values(STATIC_COVER_IMAGES).map((imageUrl, index) => (
-                      <div
+                      <button
                         key={imageUrl}
+                        type="button"
                         className="relative col-span-2 aspect-video md:col-span-1"
                         onClick={() => handleStaticImageSelect(imageUrl)}
                       >
                         <img
                           src={imageUrl}
-                          alt={`Cover image ${index + 1}`}
+                          alt={t("image_picker.cover_image_alt", { index: index + 1 })}
                           className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-sm object-cover transition-opacity hover:opacity-80"
                         />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </Tabs.Content>
@@ -312,20 +316,20 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                           type="button"
                           className="absolute top-0 right-0 z-40 -translate-y-1/2 rounded-sm bg-surface-2 px-2 py-0.5 text-11 font-medium text-secondary"
                         >
-                          Edit
+                          {t("edit")}
                         </button>
                         {image !== null || (value && value !== "") ? (
                           <>
                             <img
                               src={image ? URL.createObjectURL(image) : getCoverImageDisplayURL(value, "")}
-                              alt="image"
+                              alt="cover preview"
                               className="h-full w-full rounded-lg object-cover"
                             />
                           </>
                         ) : (
                           <div>
                             <span className="mt-2 block text-13 font-medium text-secondary">
-                              {isDragActive ? "Drop image here to upload" : "Drag & drop image here"}
+                              {isDragActive ? t("image_picker.drop_to_upload") : t("image_picker.drag_and_drop")}
                             </span>
                           </div>
                         )}
@@ -336,12 +340,12 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                     {fileRejections.length > 0 && (
                       <p className="text-13 text-danger-primary">
                         {fileRejections[0].errors[0].code === "file-too-large"
-                          ? "The image size cannot exceed 5 MB."
-                          : "Please upload a file in a valid format."}
+                          ? t("image_picker.error_file_too_large")
+                          : t("image_picker.error_invalid_format")}
                       </p>
                     )}
 
-                    <p className="text-13 text-secondary">File formats supported- .jpeg, .jpg, .png, .webp</p>
+                    <p className="text-13 text-secondary">{t("image_picker.supported_formats")}</p>
 
                     <div className="flex h-12 items-start justify-end gap-2">
                       <Button
@@ -351,7 +355,7 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                           setImage(null);
                         }}
                       >
-                        Cancel
+                        {t("cancel")}
                       </Button>
                       <Button
                         variant="primary"
@@ -360,7 +364,7 @@ export const ImagePickerPopover = observer(function ImagePickerPopover(props: Pr
                         disabled={!image}
                         loading={isImageUploading}
                       >
-                        {isImageUploading ? "Uploading" : "Upload & Save"}
+                        {isImageUploading ? t("image_picker.uploading") : t("image_picker.upload_and_save")}
                       </Button>
                     </div>
                   </div>

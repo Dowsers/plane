@@ -6,6 +6,7 @@
 
 import { Plus, X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import type {
   TWorkflowTransitionActionConfigAssignMember,
   TWorkflowTransitionActionConfigSystemComment,
@@ -56,6 +57,7 @@ const emptyAction = (sortOrder: number): TLocalWorkflowTransitionAction => ({
  */
 export function ActionList(props: Props) {
   const { projectId, actions, onChange } = props;
+  const { t } = useTranslation();
 
   const updateAction = (index: number, patch: Partial<TLocalWorkflowTransitionAction>) => {
     onChange(actions.map((action, i) => (i === index ? Object.assign({}, action, patch) : action)));
@@ -80,8 +82,8 @@ export function ActionList(props: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h5 className="text-13 font-medium text-secondary">Actions (run in order after an allowed transition)</h5>
-      {actions.length === 0 && <p className="text-12 text-tertiary">No actions configured.</p>}
+      <h5 className="text-13 font-medium text-secondary">{t("governed_workflows.actions.heading")}</h5>
+      {actions.length === 0 && <p className="text-12 text-tertiary">{t("governed_workflows.actions.empty_state")}</p>}
       {actions.map((action, index) => (
         <div key={action._key} className="flex flex-col gap-2 rounded-md border border-subtle p-2">
           <div className="flex items-center gap-2">
@@ -107,7 +109,9 @@ export function ActionList(props: Props) {
             <CustomSelect
               value={action.action_type}
               label={ACTION_TYPE_LABELS[action.action_type]}
-              onChange={(value: TWorkflowTransitionActionType) => updateAction(index, { action_type: value, config: {} })}
+              onChange={(value: TWorkflowTransitionActionType) =>
+                updateAction(index, { action_type: value, config: {} })
+              }
               input
             >
               {ACTION_TYPE_OPTIONS.map((option) => (
@@ -146,13 +150,13 @@ export function ActionList(props: Props) {
                 value={(action.config as TWorkflowTransitionActionConfigAssignMember).member_id ?? null}
                 onChange={(value) => updateAction(index, { config: { member_id: value ?? "" } })}
                 buttonVariant="border-with-text"
-                placeholder="Choose member"
+                placeholder={t("governed_workflows.actions.choose_member")}
               />
             )}
             {(action.action_type === "WEBHOOK" ||
               action.action_type === "NOTIFY_ASSIGNEE" ||
               action.action_type === "NOTIFY_WATCHERS") && (
-              <p className="text-11 text-tertiary">No additional configuration needed.</p>
+              <p className="text-11 text-tertiary">{t("governed_workflows.actions.no_config_needed")}</p>
             )}
           </div>
         </div>
@@ -166,10 +170,12 @@ export function ActionList(props: Props) {
           disabled={atCapacity}
           onClick={addAction}
         >
-          Add action
+          {t("governed_workflows.actions.add_action")}
         </Button>
         {atCapacity && (
-          <span className="text-11 text-tertiary">Maximum of {MAX_ACTIONS_PER_TRANSITION} actions reached.</span>
+          <span className="text-11 text-tertiary">
+            {t("governed_workflows.actions.max_reached", { max: MAX_ACTIONS_PER_TRANSITION })}
+          </span>
         )}
       </div>
     </div>

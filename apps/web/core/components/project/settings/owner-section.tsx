@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { Crown } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { Tooltip } from "@plane/propel/tooltip";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -38,6 +39,8 @@ export const ProjectOwnerSection = observer(function ProjectOwnerSection(props: 
   // state
   const [pendingOwnerId, setPendingOwnerId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // plane hooks
+  const { t } = useTranslation();
   // store hooks
   const { allowPermissions, workspaceInfoBySlug } = useUserPermissions();
   const {
@@ -60,13 +63,17 @@ export const ProjectOwnerSection = observer(function ProjectOwnerSection(props: 
     setIsSubmitting(true);
     try {
       await assignProjectOwner(workspaceSlug, projectId, memberId);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Project Owner assigned." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("project.owner_section.toast.success_title"),
+        message: t("project.owner_section.toast.assign_success"),
+      });
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: err?.error ?? "Something went wrong while assigning the Project Owner.",
+        title: t("project.owner_section.toast.error_title"),
+        message: err?.error ?? t("project.owner_section.toast.assign_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -78,13 +85,17 @@ export const ProjectOwnerSection = observer(function ProjectOwnerSection(props: 
     setIsSubmitting(true);
     try {
       await revokeProjectOwner(workspaceSlug, projectId);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Project Owner revoked." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("project.owner_section.toast.success_title"),
+        message: t("project.owner_section.toast.revoke_success"),
+      });
     } catch (error: unknown) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: err?.error ?? "Something went wrong while revoking the Project Owner.",
+        title: t("project.owner_section.toast.error_title"),
+        message: err?.error ?? t("project.owner_section.toast.revoke_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -94,20 +105,18 @@ export const ProjectOwnerSection = observer(function ProjectOwnerSection(props: 
   return (
     <div className="mt-6 flex flex-col gap-4 rounded-lg border border-subtle bg-layer-2 p-4">
       <div className="flex items-center gap-2">
-        <h4 className="text-14 font-medium">Project Owner</h4>
-        <Tooltip tooltipContent="A Project Owner can delete or archive this project, manage its integrations/webhooks, and manage members up to project Admin, without needing a workspace Admin.">
+        <h4 className="text-14 font-medium">{t("project.owner_section.title")}</h4>
+        <Tooltip tooltipContent={t("project.owner_section.tooltip")}>
           <Crown className="size-3.5 text-tertiary" />
         </Tooltip>
       </div>
 
       {!canManageProjectOwner ? (
-        <p className="text-13 text-tertiary">
-          Only the workspace Owner or a workspace Admin can assign or revoke the Project Owner.
-        </p>
+        <p className="text-13 text-tertiary">{t("project.owner_section.permission_hint")}</p>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-13 text-secondary">Current Project Owner</span>
+            <span className="text-13 text-secondary">{t("project.owner_section.current_owner_label")}</span>
             <MemberDropdown
               memberIds={eligibleAdminIds}
               multiple={false}
@@ -116,20 +125,18 @@ export const ProjectOwnerSection = observer(function ProjectOwnerSection(props: 
                 setPendingOwnerId(value);
                 handleAssign(value);
               }}
-              placeholder="No Project Owner assigned"
+              placeholder={t("project.owner_section.no_owner_placeholder")}
               buttonVariant="border-with-text"
               disabled={isSubmitting}
               showUserDetails
             />
             {eligibleAdminIds.length === 0 && (
-              <p className="text-caption-sm-regular text-tertiary">
-                No project Admin is eligible yet - promote a member to Admin first.
-              </p>
+              <p className="text-caption-sm-regular text-tertiary">{t("project.owner_section.no_eligible_admin")}</p>
             )}
           </div>
           {currentOwnerId && (
             <Button variant="secondary" size="sm" className="w-fit" onClick={handleRevoke} loading={isSubmitting}>
-              Revoke Project Owner
+              {t("project.owner_section.revoke_button")}
             </Button>
           )}
         </div>

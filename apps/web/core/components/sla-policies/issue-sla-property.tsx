@@ -7,6 +7,7 @@
 import { Timer } from "lucide-react";
 import useSWR from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { EPillSize, Pill } from "@plane/propel/pill";
 import { Tooltip } from "@plane/propel/tooltip";
 import { calculateTimeAgo, renderFormattedDate, renderFormattedTime } from "@plane/utils";
@@ -40,6 +41,7 @@ const TERMINAL_STATUSES = new Set(["achieved", "cancelled"]);
  */
 export function IssueSLAProperty(props: Props) {
   const { workspaceSlug, projectId, issueId } = props;
+  const { t } = useTranslation();
 
   const shouldFetch = Boolean(workspaceSlug && projectId && issueId);
   const { data: slaEntries } = useSWR(
@@ -50,14 +52,21 @@ export function IssueSLAProperty(props: Props) {
   if (!slaEntries || slaEntries.length === 0) return null;
 
   return (
-    <SidebarPropertyListItem icon={Timer} label="SLA">
+    <SidebarPropertyListItem icon={Timer} label={t("sla_policies.property.label")}>
       {slaEntries.map((entry) => (
         <Tooltip
           key={entry.id}
           tooltipContent={
             entry.sla_policy_name
-              ? `${entry.sla_policy_name} - due ${renderFormattedDate(entry.due_at)}, ${renderFormattedTime(entry.due_at)}`
-              : `Due ${renderFormattedDate(entry.due_at)}, ${renderFormattedTime(entry.due_at)}`
+              ? t("sla_policies.property.due_tooltip_with_policy", {
+                  policy: entry.sla_policy_name,
+                  date: renderFormattedDate(entry.due_at),
+                  time: renderFormattedTime(entry.due_at),
+                })
+              : t("sla_policies.property.due_tooltip", {
+                  date: renderFormattedDate(entry.due_at),
+                  time: renderFormattedTime(entry.due_at),
+                })
           }
         >
           <Pill variant={SLA_STATUS_PILL_VARIANT[entry.status]} size={EPillSize.SM}>

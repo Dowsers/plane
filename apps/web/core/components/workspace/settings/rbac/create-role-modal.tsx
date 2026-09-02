@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TWorkspaceRole } from "@plane/types";
@@ -20,11 +21,14 @@ type Props = {
   onCreated: (role: TWorkspaceRole) => void;
 };
 
-const LEGACY_TIER_OPTIONS: { value: number; label: string }[] = [
-  { value: 20, label: "Admin" },
-  { value: 15, label: "Member" },
-  { value: 5, label: "Guest" },
-];
+const useLegacyTierOptions = (): { value: number; label: string }[] => {
+  const { t } = useTranslation();
+  return [
+    { value: 20, label: t("rbac.legacy_tier.admin") },
+    { value: 15, label: t("rbac.legacy_tier.member") },
+    { value: 5, label: t("rbac.legacy_tier.guest") },
+  ];
+};
 
 /**
  * Category 11 (docs/feature-specs/11-admin-security-sso.md in
@@ -38,6 +42,8 @@ const LEGACY_TIER_OPTIONS: { value: number; label: string }[] = [
  */
 export function CreateRoleModal(props: Props) {
   const { workspaceSlug, isOpen, onClose, onCreated } = props;
+  const { t } = useTranslation();
+  const LEGACY_TIER_OPTIONS = useLegacyTierOptions();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [legacyRoleValue, setLegacyRoleValue] = useState<number>(15);
@@ -67,8 +73,8 @@ export function CreateRoleModal(props: Props) {
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not create role",
-        message: err?.error ?? "Something went wrong. Please try again.",
+        title: t("rbac.create_role.error_title"),
+        message: err?.error ?? t("common.errors.default.message"),
       });
     } finally {
       setIsSubmitting(false);
@@ -79,18 +85,16 @@ export function CreateRoleModal(props: Props) {
     <ModalCore isOpen={isOpen} handleClose={handleClose} position={EModalPosition.CENTER} width={EModalWidth.XL}>
       <div className="flex flex-col gap-4 p-6">
         <div>
-          <h3 className="text-h5-medium">Create role</h3>
-          <p className="mt-1 text-body-xs-regular text-secondary">
-            A role starts with no bundles attached - add them from the editor once it is created.
-          </p>
+          <h3 className="text-h5-medium">{t("rbac.create_role.title")}</h3>
+          <p className="mt-1 text-body-xs-regular text-secondary">{t("rbac.create_role.description")}</p>
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">Name</span>
+          <span className="text-body-xs-medium text-secondary">{t("common.name")}</span>
           <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Junior Project Lead"
+            placeholder={t("rbac.create_role.name_placeholder")}
             className="w-full"
             autoComplete="off"
             // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -98,25 +102,19 @@ export function CreateRoleModal(props: Props) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">Description</span>
+          <span className="text-body-xs-medium text-secondary">{t("common.description")}</span>
           <Input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional"
+            placeholder={t("rbac.create_role.description_placeholder")}
             className="w-full"
             autoComplete="off"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-body-xs-medium text-secondary">
-            Behaves like (for settings this builder doesn't cover yet)
-          </span>
-          <p className="text-caption-sm-regular text-tertiary">
-            Only Issue/Cycle/Module/Page/View permissions are driven by the bundles you attach below. Every other area
-            of Plane (billing, integrations, exports...) still checks this member's tier directly - pick the closest
-            match.
-          </p>
+          <span className="text-body-xs-medium text-secondary">{t("rbac.create_role.behaves_like_label")}</span>
+          <p className="text-caption-sm-regular text-tertiary">{t("rbac.create_role.behaves_like_description")}</p>
           <CustomSelect
             value={legacyRoleValue}
             onChange={(value: number) => setLegacyRoleValue(value)}
@@ -132,10 +130,10 @@ export function CreateRoleModal(props: Props) {
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" size="lg" onClick={handleSubmit} disabled={!name.trim()} loading={isSubmitting}>
-            Create role
+            {t("rbac.create_role.title")}
           </Button>
         </div>
       </div>

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Copy, Eye, EyeOff, KeyRound } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Badge } from "@plane/propel/badge";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
@@ -53,6 +54,7 @@ const DEFAULT_TTL_SECONDS = 3600;
  *   contract.
  */
 export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, activeToken, onActiveTokenChange }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<TMode>("paste");
   const [bootstrapValue, setBootstrapValue] = useState("");
   const [scope, setScope] = useState<TApiExplorerTokenScope>("read_only");
@@ -71,7 +73,7 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
 
   const handleGenerateEphemeral = async () => {
     if (!bootstrapValue.trim()) {
-      setError("Paste one of your existing API tokens first - it is needed to authenticate this request.");
+      setError(t("api_explorer.token_panel.errors.bootstrap_required"));
       return;
     }
     setIsGenerating(true);
@@ -93,7 +95,7 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
         const message =
           (result.data as unknown as { error?: string })?.error ??
           result.error ??
-          `The server rejected this request (HTTP ${result.status}).`;
+          t("api_explorer.token_panel.errors.request_rejected", { status: result.status });
         setError(message);
       }
     } finally {
@@ -104,7 +106,11 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
   const handleCopy = () => {
     if (!activeToken) return;
     copyTextToClipboard(activeToken.value).then(() =>
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Copied!", message: "Token copied to clipboard." })
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("common.copied"),
+        message: t("api_explorer.token_panel.copied_message"),
+      })
     );
   };
 
@@ -113,9 +119,11 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
       <div className="flex flex-col gap-2 rounded-md border border-subtle p-3">
         <div className="flex flex-wrap items-center gap-2">
           <KeyRound className="size-4 text-tertiary" />
-          <span className="text-13 font-medium text-primary">Active token</span>
+          <span className="text-13 font-medium text-primary">{t("api_explorer.token_panel.active_token")}</span>
           <Badge variant={activeToken.source === "ephemeral" ? "brand" : "neutral"} size="sm">
-            {activeToken.source === "ephemeral" ? "Ephemeral" : "Pasted"}
+            {activeToken.source === "ephemeral"
+              ? t("api_explorer.token_panel.ephemeral")
+              : t("api_explorer.token_panel.pasted")}
           </Badge>
           {activeToken.scope && (
             <Badge variant={activeToken.scope === "read_only" ? "neutral" : "warning"} size="sm">
@@ -124,21 +132,26 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
           )}
           {activeToken.expiresAt && (
             <span className="text-12 text-tertiary">
-              Expires {renderFormattedDate(activeToken.expiresAt)} at {renderFormattedTime(activeToken.expiresAt)}
+              {t("api_explorer.token_panel.expires_at", {
+                date: renderFormattedDate(activeToken.expiresAt),
+                time: renderFormattedTime(activeToken.expiresAt),
+              })}
             </span>
           )}
           <Button variant="neutral-primary" size="sm" onClick={() => onActiveTokenChange(null)} className="ml-auto">
-            Change token
+            {t("api_explorer.token_panel.change_token")}
           </Button>
         </div>
         <div className="font-mono flex items-center gap-2 rounded-md border border-subtle bg-layer-1 px-2 py-1.5 text-12">
           <span className="flex-1 truncate">{isRevealed ? activeToken.value : "•".repeat(32)}</span>
-          <Tooltip tooltipContent={isRevealed ? "Hide" : "Reveal"}>
+          <Tooltip
+            tooltipContent={isRevealed ? t("api_explorer.token_panel.hide") : t("api_explorer.token_panel.reveal")}
+          >
             <button type="button" onClick={() => setIsRevealed((prev) => !prev)}>
               {isRevealed ? <EyeOff className="size-3.5 text-tertiary" /> : <Eye className="size-3.5 text-tertiary" />}
             </button>
           </Tooltip>
-          <Tooltip tooltipContent="Copy">
+          <Tooltip tooltipContent={t("api_explorer.token_panel.copy")}>
             <button type="button" onClick={handleCopy}>
               <Copy className="size-3.5 text-tertiary" />
             </button>
@@ -152,14 +165,11 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
     <div className="flex flex-col gap-3 rounded-md border border-subtle p-3">
       <div className="flex items-center gap-2">
         <KeyRound className="size-4 text-tertiary" />
-        <span className="text-13 font-medium text-primary">Set up a token to start exploring</span>
+        <span className="text-13 font-medium text-primary">{t("api_explorer.token_panel.setup_title")}</span>
       </div>
-      <p className="text-12 text-tertiary">
-        Browsing the schema and executing real calls both require one of your own API tokens (Profile Settings &gt; API
-        Tokens). Paste one below, then either use it directly or trade it for a short-lived one scoped to this session.
-      </p>
+      <p className="text-12 text-tertiary">{t("api_explorer.token_panel.setup_description")}</p>
       <Input
-        placeholder="Paste an existing API token"
+        placeholder={t("api_explorer.token_panel.paste_placeholder")}
         value={bootstrapValue}
         onChange={(e) => setBootstrapValue(e.target.value)}
         inputSize="sm"
@@ -171,21 +181,21 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
           onClick={() => setMode("paste")}
           className={`rounded-md px-2 py-1 ${mode === "paste" ? "bg-layer-2 text-primary" : "text-tertiary"}`}
         >
-          Use this token
+          {t("api_explorer.token_panel.use_this_token")}
         </button>
         <button
           type="button"
           onClick={() => setMode("ephemeral")}
           className={`rounded-md px-2 py-1 ${mode === "ephemeral" ? "bg-layer-2 text-primary" : "text-tertiary"}`}
         >
-          Generate a temporary token
+          {t("api_explorer.token_panel.generate_temporary_token")}
         </button>
       </div>
 
       {mode === "paste" && (
         <div>
           <Button variant="primary" size="sm" onClick={handleUsePastedToken} disabled={!bootstrapValue.trim()}>
-            Use this token
+            {t("api_explorer.token_panel.use_this_token")}
           </Button>
         </div>
       )}
@@ -193,17 +203,15 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
       {mode === "ephemeral" && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-12 font-medium text-secondary">Scope</span>
+            <span className="text-12 font-medium text-secondary">{t("api_explorer.token_panel.scope")}</span>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-1.5 text-13">
                 <input type="radio" checked={scope === "read_only"} onChange={() => setScope("read_only")} />
-                Read only
+                {t("api_explorer.token_panel.read_only")}
               </label>
               <Tooltip
                 tooltipContent={
-                  canRequestReadWrite
-                    ? undefined
-                    : "Only Admins (or Members, if this workspace allows it below) can request a read-write token."
+                  canRequestReadWrite ? undefined : t("api_explorer.token_panel.read_write_restricted_tooltip")
                 }
               >
                 <label
@@ -216,13 +224,13 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
                     disabled={!canRequestReadWrite}
                     onChange={() => setScope("read_write")}
                   />
-                  Read &amp; write
+                  {t("api_explorer.token_panel.read_write")}
                 </label>
               </Tooltip>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-12 font-medium text-secondary">Lifetime (seconds, max 3600)</span>
+            <span className="text-12 font-medium text-secondary">{t("api_explorer.token_panel.lifetime")}</span>
             <Input
               type="number"
               min={60}
@@ -234,7 +242,7 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
           </div>
           <div>
             <Button variant="primary" size="sm" onClick={handleGenerateEphemeral} loading={isGenerating}>
-              Generate token
+              {t("api_explorer.token_panel.generate_token")}
             </Button>
           </div>
         </div>

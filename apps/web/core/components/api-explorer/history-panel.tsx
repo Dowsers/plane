@@ -6,6 +6,7 @@
 
 import { RotateCcw } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Badge } from "@plane/propel/badge";
 import type { TApiExplorerHistoryEntry } from "@plane/types";
 
@@ -35,8 +36,9 @@ function statusVariant(status: number | null): "success" | "warning" | "danger" 
  * endpoint, per this session's own research finding), replayable.
  */
 export function HistoryPanel({ entries, onReplay }: Props) {
+  const { t } = useTranslation();
   if (entries.length === 0) {
-    return <p className="p-2 text-13 text-tertiary">No calls made yet in this session.</p>;
+    return <p className="p-2 text-13 text-tertiary">{t("api_explorer.history.no_calls")}</p>;
   }
 
   return (
@@ -54,7 +56,7 @@ export function HistoryPanel({ entries, onReplay }: Props) {
             type="button"
             onClick={() => onReplay(entry)}
             className="text-tertiary hover:text-primary"
-            aria-label="Replay this call"
+            aria-label={t("api_explorer.history.replay")}
           >
             <RotateCcw className="size-3.5" />
           </button>

@@ -14,6 +14,7 @@ import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TPermissionScheme } from "@plane/types";
 import { Loader } from "@plane/ui";
+import { useTranslation } from "@plane/i18n";
 // services
 import workspaceRBACService from "@/services/workspace-rbac.service";
 // local imports
@@ -34,6 +35,7 @@ type Props = {
  */
 export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   const [editorState, setEditorState] = useState<{ open: boolean; scheme: TPermissionScheme | undefined }>({
     open: false,
     scheme: undefined,
@@ -51,16 +53,23 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
   const handleDelete = async (scheme: TPermissionScheme) => {
     try {
       await workspaceRBACService.deletePermissionScheme(workspaceSlug, scheme.id);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Bundle deleted", message: `"${scheme.name}" was deleted.` });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("permission_bundles.panel.toast.deleted_title"),
+        message: t("permission_bundles.panel.toast.deleted_message", { name: scheme.name }),
+      });
       void mutateSchemes();
     } catch (error: unknown) {
       const err = error as { error?: string; role_count?: number };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not delete bundle",
+        title: t("permission_bundles.panel.toast.delete_failed_title"),
         message: err?.role_count
-          ? `${err.error} (attached to ${err.role_count} role(s) - detach it first).`
-          : (err?.error ?? "Something went wrong. Please try again."),
+          ? t("permission_bundles.panel.toast.delete_failed_attached_message", {
+              error: err.error,
+              count: err.role_count,
+            })
+          : (err?.error ?? t("something_went_wrong_please_try_again")),
       });
     }
   };
@@ -78,17 +87,14 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-body-xs-regular text-tertiary">
-          Reusable, named sets of atomic permissions. Attach a bundle to one or more roles from the Roles tab (Workspace
-          Settings &gt; Members &gt; Roles).
-        </p>
+        <p className="text-body-xs-regular text-tertiary">{t("permission_bundles.panel.description")}</p>
         <Button
           variant="primary"
           size="lg"
           onClick={() => setEditorState({ open: true, scheme: undefined })}
           className="shrink-0"
         >
-          Create bundle
+          {t("permission_bundles.panel.create_bundle")}
         </Button>
       </div>
 
@@ -101,7 +107,7 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
                   <h4 className="text-body-sm-medium text-primary">{scheme.name}</h4>
                   {scheme.is_system && <SystemBadge />}
                   <Pill variant={EPillVariant.DEFAULT} size={EPillSize.SM}>
-                    {scheme.items.length} permission{scheme.items.length === 1 ? "" : "s"}
+                    {t("permission_bundles.panel.permission_count", { count: scheme.items.length })}
                   </Pill>
                 </div>
                 {scheme.description && <p className="text-caption-md-regular text-tertiary">{scheme.description}</p>}
@@ -112,7 +118,7 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
                   onClick={() => setEditorState({ open: true, scheme })}
                   className="rounded-md px-2 py-1 text-caption-md-medium text-secondary hover:bg-layer-1"
                 >
-                  {scheme.is_system ? "View" : "Edit"}
+                  {scheme.is_system ? t("common.view") : t("edit")}
                 </button>
                 {!scheme.is_system && (
                   <button
@@ -120,7 +126,7 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
                     onClick={() => handleDelete(scheme)}
                     className="rounded-md px-2 py-1 text-caption-md-medium text-danger-primary hover:bg-layer-1"
                   >
-                    Delete
+                    {t("delete")}
                   </button>
                 )}
               </div>
@@ -128,7 +134,10 @@ export const PermissionBundlesRoot = observer(function PermissionBundlesRoot(pro
           ))}
         </div>
       ) : (
-        <EmptyStateCompact title="No bundles yet" description="Create your first reusable permission bundle." />
+        <EmptyStateCompact
+          title={t("permission_bundles.panel.empty.title")}
+          description={t("permission_bundles.panel.empty.description")}
+        />
       )}
 
       <BundleEditorModal

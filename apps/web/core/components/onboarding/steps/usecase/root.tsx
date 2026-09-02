@@ -8,6 +8,7 @@ import { observer } from "mobx-react";
 import { Controller, useForm } from "react-hook-form";
 // plane imports
 import { USE_CASES } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { CheckIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -28,7 +29,18 @@ const defaultValues = {
   use_case: [] as string[],
 };
 
+// i18n keys for displaying USE_CASES values; the underlying stored value stays in English.
+const USE_CASE_I18N_KEYS: Record<string, string> = {
+  "Plan and track product roadmaps": "onboarding.usecase_setup.use_cases.plan_and_track_product_roadmaps",
+  "Manage engineering sprints": "onboarding.usecase_setup.use_cases.manage_engineering_sprints",
+  "Coordinate cross-functional projects": "onboarding.usecase_setup.use_cases.coordinate_cross_functional_projects",
+  "Replace our current tool": "onboarding.usecase_setup.use_cases.replace_our_current_tool",
+  "Just exploring": "onboarding.usecase_setup.use_cases.just_exploring",
+};
+
 export const UseCaseSetupStep = observer(function UseCaseSetupStep({ handleStepChange }: Props) {
+  // i18n
+  const { t } = useTranslation();
   // store hooks
   const { data: profile, updateUserProfile } = useUserProfile();
   // form info
@@ -50,20 +62,18 @@ export const UseCaseSetupStep = observer(function UseCaseSetupStep({ handleStepC
       use_case: formData.use_case && formData.use_case.length > 0 ? formData.use_case.join(". ") : undefined,
     };
     try {
-      await Promise.all([
-        updateUserProfile(profileUpdatePayload),
-        // totalSteps > 2 && stepChange({ profile_complete: true }),
-      ]);
+      // totalSteps > 2 && stepChange({ profile_complete: true }),
+      await updateUserProfile(profileUpdatePayload);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success",
-        message: "Profile setup completed!",
+        title: t("success"),
+        message: t("onboarding.profile_setup.toasts.success"),
       });
     } catch {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error",
-        message: "Profile setup failed. Please try again!",
+        title: t("error"),
+        message: t("onboarding.profile_setup.toasts.error"),
       });
     }
   };
@@ -81,23 +91,27 @@ export const UseCaseSetupStep = observer(function UseCaseSetupStep({ handleStepC
   };
 
   // derived values
-  const isButtonDisabled = !isSubmitting && isValid ? false : true;
+  const isButtonDisabled = !(!isSubmitting && isValid);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-10">
       {/* Header */}
-      <CommonOnboardingHeader title="What brings you to Plane?" description="Tell us your goals and team size." />
+      <CommonOnboardingHeader
+        title={t("onboarding.usecase_setup.header.title")}
+        description={t("onboarding.usecase_setup.header.description")}
+      />
 
       {/* Use Case Selection */}
       <div className="flex flex-col gap-3">
-        <p className="text-body-sm-semibold text-placeholder">Select one or more</p>
+        <p className="text-body-sm-semibold text-placeholder">{t("onboarding.usecase_setup.select_one_or_more")}</p>
 
         <Controller
           control={control}
           name="use_case"
           rules={{
-            required: "Please select at least one option",
-            validate: (value) => (value && value.length > 0) || "Please select at least one option",
+            required: t("onboarding.profile_setup.errors.select_at_least_one"),
+            validate: (value) =>
+              (value && value.length > 0) || t("onboarding.profile_setup.errors.select_at_least_one"),
           }}
           render={({ field: { value, onChange } }) => (
             <div className="flex flex-col gap-3">
@@ -138,7 +152,7 @@ export const UseCaseSetupStep = observer(function UseCaseSetupStep({ handleStepC
                       />
                     </span>
 
-                    <span className="text-body-sm-regular">{useCase}</span>
+                    <span className="text-body-sm-regular">{t(USE_CASE_I18N_KEYS[useCase])}</span>
                   </button>
                 );
               })}
@@ -151,10 +165,10 @@ export const UseCaseSetupStep = observer(function UseCaseSetupStep({ handleStepC
       {/* Action Buttons */}
       <div className="space-y-3">
         <Button variant="primary" type="submit" className="w-full" size="xl" disabled={isButtonDisabled}>
-          Continue
+          {t("common.continue")}
         </Button>
         <Button variant="ghost" onClick={handleSkip} className="w-full" size="xl">
-          Skip
+          {t("onboarding.common.skip")}
         </Button>
       </div>
     </form>

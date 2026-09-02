@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import useSWR, { mutate } from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IAgentProfile, TAgentAPIToken } from "@plane/types";
 import { AlertModalCore, Button, EModalPosition, EModalWidth, Loader, ModalCore } from "@plane/ui";
@@ -39,6 +40,7 @@ type Props = {
  */
 export function AgentTokensModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, agent } = props;
+  const { t } = useTranslation();
   const [generatedToken, setGeneratedToken] = useState<TAgentAPIToken | null>(null);
   const [isIssuing, setIsIssuing] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<TAgentAPIToken | null>(null);
@@ -67,8 +69,8 @@ export function AgentTokensModal(props: Props) {
       setGeneratedToken(token);
       refresh();
     } catch (error: unknown) {
-      const message = (error as { error?: string })?.error ?? "Unable to issue a token for this agent.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      const message = (error as { error?: string })?.error ?? t("agents.tokens.errors.issue_failed");
+      setToast({ type: TOAST_TYPE.ERROR, title: t("common.errors.default.title"), message });
     } finally {
       setIsIssuing(false);
     }
@@ -82,7 +84,11 @@ export function AgentTokensModal(props: Props) {
       setRevokeTarget(null);
       refresh();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to revoke this token." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("agents.tokens.errors.revoke_failed"),
+      });
     } finally {
       setIsRevoking(false);
     }
@@ -98,11 +104,10 @@ export function AgentTokensModal(props: Props) {
         <div className="flex max-h-[75vh] flex-col gap-4 overflow-y-auto p-5">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h4 className="text-16 font-medium text-primary">Tokens - {agent.display_name}</h4>
-              <p className="text-12 text-tertiary">
-                Configure one of these in your agent runner to authenticate as this agent. Disabling the agent revokes
-                every active token immediately.
-              </p>
+              <h4 className="text-16 font-medium text-primary">
+                {t("agents.tokens.title", { name: agent.display_name })}
+              </h4>
+              <p className="text-12 text-tertiary">{t("agents.tokens.description")}</p>
             </div>
             <Button
               variant="primary"
@@ -112,14 +117,13 @@ export function AgentTokensModal(props: Props) {
               loading={isIssuing}
               disabled={agent.status === "DISABLED"}
             >
-              Issue new token
+              {t("agents.tokens.issue_new_token")}
             </Button>
           </div>
 
           {agent.status === "DISABLED" && (
             <p className="rounded-md bg-layer-1 px-2.5 py-1.5 text-11 text-tertiary">
-              This agent is disabled - it can no longer be issued new tokens, and all its previous tokens have already
-              been revoked.
+              {t("agents.tokens.disabled_notice")}
             </p>
           )}
 
@@ -131,7 +135,7 @@ export function AgentTokensModal(props: Props) {
           )}
 
           {!isLoading && (tokens?.length ?? 0) === 0 && (
-            <p className="text-13 text-tertiary">No tokens issued yet for this agent.</p>
+            <p className="text-13 text-tertiary">{t("agents.tokens.no_tokens")}</p>
           )}
 
           <div className="flex flex-col gap-2">
@@ -148,17 +152,19 @@ export function AgentTokensModal(props: Props) {
                         token.is_active ? "bg-success-subtle text-success-primary" : "bg-layer-1 text-placeholder"
                       }`}
                     >
-                      {token.is_active ? "Active" : "Revoked"}
+                      {token.is_active ? t("common.active") : t("agents.tokens.revoked")}
                     </span>
                   </div>
                   <span className="text-11 text-tertiary">
-                    Created {renderFormattedDate(token.created_at)}
-                    {token.last_used ? ` - Last used ${calculateTimeAgo(token.last_used)}` : " - Never used"}
+                    {t("agents.tokens.created")} {renderFormattedDate(token.created_at)}
+                    {token.last_used
+                      ? ` - ${t("agents.tokens.last_used")} ${calculateTimeAgo(token.last_used)}`
+                      : ` - ${t("agents.tokens.never_used")}`}
                   </span>
                 </div>
                 {token.is_active && (
                   <Button variant="danger" size="sm" onClick={() => setRevokeTarget(token)}>
-                    Revoke
+                    {t("agents.tokens.revoke")}
                   </Button>
                 )}
               </div>
@@ -167,7 +173,7 @@ export function AgentTokensModal(props: Props) {
 
           <div className="flex items-center justify-end gap-2 border-t border-subtle pt-4">
             <Button variant="neutral-primary" size="sm" onClick={handleModalClose}>
-              Close
+              {t("close")}
             </Button>
           </div>
         </div>
@@ -178,8 +184,8 @@ export function AgentTokensModal(props: Props) {
         handleClose={() => setRevokeTarget(null)}
         handleSubmit={handleRevoke}
         isSubmitting={isRevoking}
-        title="Revoke token"
-        content={`Are you sure you want to revoke "${revokeTarget?.label}"? This is immediate and cannot be undone - the agent runner using it will stop being able to authenticate.`}
+        title={t("agents.tokens.revoke_modal.title")}
+        content={t("agents.tokens.revoke_modal.content", { label: revokeTarget?.label })}
       />
     </ModalCore>
   );

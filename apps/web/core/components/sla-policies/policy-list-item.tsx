@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { IconButton } from "@plane/propel/icon-button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TSLAPolicy } from "@plane/types";
@@ -31,10 +32,16 @@ type Props = {
   onReorder: (direction: "up" | "down") => void;
 };
 
-const scopeSummary = (policy: TSLAPolicy, projectCount: number): string => {
-  if (policy.applies_to_all_projects) return "All projects";
-  if (projectCount === 0) return "No projects (never matches)";
-  return `${projectCount} project${projectCount === 1 ? "" : "s"}`;
+const scopeSummary = (
+  policy: TSLAPolicy,
+  projectCount: number,
+  t: (key: string, values?: Record<string, unknown>) => string
+): string => {
+  if (policy.applies_to_all_projects) return t("sla_policies.scope.all_projects");
+  if (projectCount === 0) return t("sla_policies.list_item.no_projects");
+  return projectCount === 1
+    ? t("sla_policies.list_item.project_count_one", { count: projectCount })
+    : t("sla_policies.list_item.project_count_other", { count: projectCount });
 };
 
 const chipOrDash = (values: string[], labels: Record<string, string>, prefix: string): string => {
@@ -44,6 +51,7 @@ const chipOrDash = (values: string[], labels: Record<string, string>, prefix: st
 
 export function SLAPolicyListItem(props: Props) {
   const { policy, workspaceSlug, canMoveUp, canMoveDown, onEdit, onChanged, onReorder } = props;
+  const { t } = useTranslation();
   const { getProjectById } = useProject();
   const [isToggling, setIsToggling] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -55,7 +63,11 @@ export function SLAPolicyListItem(props: Props) {
       await slaPolicyService.update(workspaceSlug, policy.id, { is_active: !policy.is_active });
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to update the policy." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("sla_policies.list_item.update_error"),
+      });
     } finally {
       setIsToggling(false);
     }
@@ -65,9 +77,17 @@ export function SLAPolicyListItem(props: Props) {
     try {
       await slaPolicyService.duplicate(workspaceSlug, policy.id);
       onChanged();
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "SLA policy duplicated." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("common.success"),
+        message: t("sla_policies.list_item.duplicate_success"),
+      });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to duplicate the policy." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("sla_policies.list_item.duplicate_error"),
+      });
     }
   };
 
@@ -78,7 +98,11 @@ export function SLAPolicyListItem(props: Props) {
       setDeleteModal(false);
       onChanged();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to delete the policy." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("common.errors.default.title"),
+        message: t("sla_policies.list_item.delete_error"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -98,7 +122,7 @@ export function SLAPolicyListItem(props: Props) {
               disabled={!canMoveUp}
               onClick={() => onReorder("up")}
               className="text-tertiary hover:text-primary disabled:opacity-30"
-              aria-label="Move up"
+              aria-label={t("sla_policies.list_item.move_up")}
             >
               <ChevronUp className="h-3 w-3" />
             </button>
@@ -107,7 +131,7 @@ export function SLAPolicyListItem(props: Props) {
               disabled={!canMoveDown}
               onClick={() => onReorder("down")}
               className="text-tertiary hover:text-primary disabled:opacity-30"
-              aria-label="Move down"
+              aria-label={t("sla_policies.list_item.move_down")}
             >
               <ChevronDown className="h-3 w-3" />
             </button>
@@ -115,7 +139,7 @@ export function SLAPolicyListItem(props: Props) {
           <ToggleSwitch value={policy.is_active} onChange={handleToggle} disabled={isToggling} />
           <span className="truncate text-13 font-medium text-primary">{policy.name}</span>
           <span className="shrink-0 rounded-xs bg-surface-2 px-1.5 py-0.5 text-11 text-tertiary">
-            {scopeSummary(policy, projectNames.length)}
+            {scopeSummary(policy, projectNames.length, t)}
           </span>
         </div>
         <CustomMenu
@@ -124,34 +148,48 @@ export function SLAPolicyListItem(props: Props) {
           closeOnSelect
         >
           <CustomMenu.MenuItem onClick={onEdit} className="flex items-center gap-2">
-            <Pencil className="h-3 w-3" /> Edit
+            <Pencil className="h-3 w-3" /> {t("common.actions.edit")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem onClick={handleDuplicate} className="flex items-center gap-2">
-            <Copy className="h-3 w-3" /> Duplicate
+            <Copy className="h-3 w-3" /> {t("common.duplicate")}
           </CustomMenu.MenuItem>
           <CustomMenu.MenuItem
             onClick={() => setDeleteModal(true)}
             className="flex items-center gap-2 text-danger-primary"
           >
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {t("common.actions.delete")}
           </CustomMenu.MenuItem>
         </CustomMenu>
       </div>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-12 text-tertiary">
-        <span>Response: {formatSLAMinutes(policy.response_time_minutes)}</span>
-        <span>Resolution: {formatSLAMinutes(policy.resolution_time_minutes)}</span>
-        <span>{chipOrDash(policy.priority_filter, SLA_PRIORITY_LABELS, "Priority")}</span>
-        <span>{chipOrDash(policy.state_group_filter, SLA_STATE_GROUP_LABELS, "State group")}</span>
-        <span>{policy.label_ids.length > 0 ? `Labels: ${policy.label_ids.length}` : "Labels: —"}</span>
-        <span>{policy.assignee_ids.length > 0 ? `Assignees: ${policy.assignee_ids.length}` : "Assignees: —"}</span>
+        <span>
+          {t("sla_policies.fields.response_time")}: {formatSLAMinutes(policy.response_time_minutes)}
+        </span>
+        <span>
+          {t("sla_policies.fields.resolution_time")}: {formatSLAMinutes(policy.resolution_time_minutes)}
+        </span>
+        <span>{chipOrDash(policy.priority_filter, SLA_PRIORITY_LABELS, t("sla_policies.fields.priority"))}</span>
+        <span>
+          {chipOrDash(policy.state_group_filter, SLA_STATE_GROUP_LABELS, t("sla_policies.fields.state_group"))}
+        </span>
+        <span>
+          {policy.label_ids.length > 0
+            ? `${t("sla_policies.fields.labels")}: ${policy.label_ids.length}`
+            : `${t("sla_policies.fields.labels")}: —`}
+        </span>
+        <span>
+          {policy.assignee_ids.length > 0
+            ? `${t("sla_policies.fields.assignees")}: ${policy.assignee_ids.length}`
+            : `${t("sla_policies.fields.assignees")}: —`}
+        </span>
       </p>
       <AlertModalCore
         isOpen={deleteModal}
         handleClose={() => setDeleteModal(false)}
         handleSubmit={handleDelete}
         isSubmitting={isDeleting}
-        title="Delete SLA policy"
-        content={`Are you sure you want to delete "${policy.name}"? Work items already tracked against it keep their historical compliance record.`}
+        title={t("sla_policies.delete_confirm.title")}
+        content={t("sla_policies.list_item.delete_confirm_content", { name: policy.name })}
       />
     </div>
   );

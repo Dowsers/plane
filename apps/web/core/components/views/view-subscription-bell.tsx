@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { Bell } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Popover } from "@plane/propel/popover";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
@@ -38,6 +39,8 @@ type Props = {
  */
 export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props: Props) {
   const { workspaceSlug, viewId, className } = props;
+  // i18n
+  const { t } = useTranslation();
   // states
   const [isSubmitting, setIsSubmitting] = useState(false);
   // store hooks
@@ -56,8 +59,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
   const handleError = () =>
     setToast({
       type: TOAST_TYPE.ERROR,
-      title: "Error!",
-      message: "Something went wrong. Please try again.",
+      title: t("common.errors.default.title"),
+      message: t("common.errors.default.message"),
     });
 
   const handleToggleSubscribed = async (value: boolean) => {
@@ -88,7 +91,11 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
   return (
     <Popover>
       <Popover.Button>
-        <Tooltip tooltipContent={isSubscribed ? "Subscribed to this view" : "Subscribe to this view"}>
+        <Tooltip
+          tooltipContent={
+            isSubscribed ? t("view.subscription.subscribed_tooltip") : t("view.subscription.subscribe_tooltip")
+          }
+        >
           <div
             className={cn(
               "flex size-[26px] flex-shrink-0 items-center justify-center rounded-sm bg-layer-1/70 text-secondary hover:text-primary",
@@ -102,8 +109,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
       <Popover.Panel side="bottom" align="end">
         <div className="w-80 space-y-1 rounded-lg border-[0.5px] border-strong bg-surface-1 p-3 shadow-raised-200">
           <SettingsControlItem
-            title="Notify me about this view"
-            description="Get an in-app notification when a work item starts matching this view."
+            title={t("view.subscription.notify_me_title")}
+            description={t("view.subscription.notify_me_description")}
             control={
               <ToggleSwitch value={isSubscribed} onChange={handleToggleSubscribed} disabled={isSubmitting} size="sm" />
             }
@@ -111,8 +118,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
           {isSubscribed && (
             <div className="space-y-1 border-t border-subtle pt-1">
               <SettingsControlItem
-                title="Item added"
-                description="A work item starts matching this view's filters."
+                title={t("view.subscription.item_added_title")}
+                description={t("view.subscription.item_added_description")}
                 control={
                   <ToggleSwitch
                     value={subscription?.notify_on_add ?? true}
@@ -123,8 +130,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
                 }
               />
               <SettingsControlItem
-                title="Item completed"
-                description="A matching work item's state changes to a completed state."
+                title={t("view.subscription.item_completed_title")}
+                description={t("view.subscription.item_completed_description")}
                 control={
                   <ToggleSwitch
                     value={subscription?.notify_on_complete ?? true}
@@ -135,8 +142,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
                 }
               />
               <SettingsControlItem
-                title="Item cancelled"
-                description="A matching work item's state changes to a cancelled state."
+                title={t("view.subscription.item_cancelled_title")}
+                description={t("view.subscription.item_cancelled_description")}
                 control={
                   <ToggleSwitch
                     value={subscription?.notify_on_cancel ?? true}
@@ -148,8 +155,8 @@ export const ViewSubscriptionBell = observer(function ViewSubscriptionBell(props
               />
               <div className="border-t border-subtle pt-1">
                 <SettingsControlItem
-                  title="Also send by email"
-                  description="In-app notifications are always on while subscribed."
+                  title={t("view.subscription.also_send_by_email_title")}
+                  description={t("view.subscription.also_send_by_email_description")}
                   control={
                     <ToggleSwitch
                       value={subscription?.notify_by_email ?? false}
