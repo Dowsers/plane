@@ -7,11 +7,11 @@
 // ui
 import { Button } from "@plane/propel/button";
 
-function ErrorPage() {
-  const handleRetry = () => {
-    window.location.reload();
-  };
+const handleRetry = () => {
+  window.location.reload();
+};
 
+function ErrorPage() {
   return (
     <div className="grid h-screen place-items-center bg-surface-1 p-4">
       <div className="space-y-8 text-center">
@@ -20,8 +20,8 @@ function ErrorPage() {
           <p className="mx-auto text-13 text-secondary md:w-1/2">
             That crashed Plane, pun intended. No worries, though. Our engineers have been notified. If you have more
             details, please write to{" "}
-            <a href="mailto:support@plane.so" className="text-accent-primary">
-              support@plane.so
+            <a href="mailto:dev@dowsers.finance" className="text-accent-primary">
+              dev@dowsers.finance
             </a>{" "}
             or on our{" "}
             <a href="https://forum.plane.so" target="_blank" className="text-accent-primary" rel="noopener noreferrer">

@@ -13,7 +13,7 @@ export function MaintenanceMessage() {
     {
       key: "mail_to",
       label: t("contact_support"),
-      value: "mailto:support@plane.so",
+      value: "mailto:dev@dowsers.finance",
     },
   ];
 
