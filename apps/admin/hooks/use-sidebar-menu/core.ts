@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { Bell, Image, BrainCog, Cog, Mail, ShieldCheck } from "lucide-react";
+import { Bell, Image, BrainCog, Cog, KeyRound, Mail, ShieldCheck } from "lucide-react";
 // plane imports
 import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
@@ -12,6 +12,7 @@ import type { TSidebarMenuItem } from "./types";
 
 export type TCoreSidebarMenuKey =
   | "general"
+  | "users"
   | "email"
   | "workspace"
   | "authentication"
@@ -26,6 +27,12 @@ export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem>
     name: "General",
     description: "Identify your instances and get key details.",
     href: `/general/`,
+  },
+  users: {
+    Icon: KeyRound,
+    name: "Users",
+    description: "Generate a password reset link for a user.",
+    href: `/users/`,
   },
   email: {
     Icon: Mail,

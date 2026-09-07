@@ -15,6 +15,7 @@ from .configuration import (
 
 
 from .admin import (
+    AdminUserPasswordResetLinkEndpoint,
     InstanceAdminEndpoint,
     InstanceAdminSignInEndpoint,
     InstanceAdminSignUpEndpoint,

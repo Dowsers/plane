@@ -5,6 +5,7 @@
 from django.urls import path
 
 from plane.license.api.views import (
+    AdminUserPasswordResetLinkEndpoint,
     EmailCredentialCheckEndpoint,
     InstanceAdminEndpoint,
     InstanceAdminSignInEndpoint,
@@ -44,6 +45,14 @@ urlpatterns = [
         name="instance-admins",
     ),
     path("admins/<uuid:pk>/", InstanceAdminEndpoint.as_view(), name="instance-admins"),
+    # No-SMTP-required admin-triggered password reset (returns the reset
+    # link to the instance admin instead of emailing it) - god-mode-only
+    # via `BaseAPIView`'s own default `InstanceAdminPermission`.
+    path(
+        "admin/users/reset-password-link/",
+        AdminUserPasswordResetLinkEndpoint.as_view(),
+        name="instance-admin-user-reset-password-link",
+    ),
     path(
         "configurations/",
         InstanceConfigurationEndpoint.as_view(),

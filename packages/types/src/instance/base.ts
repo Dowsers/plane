@@ -149,3 +149,16 @@ export interface IRateLimitTier {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Response of the God Mode "generate a password reset link for a user"
+ * action (`AdminUserPasswordResetLinkEndpoint`, apps/api/plane/license/api/
+ * views/admin.py) - used when the instance has no SMTP configured, so the
+ * normal emailed forgot-password flow is unavailable. `reset_link` points
+ * at the pre-existing `/accounts/reset-password` page/flow and is returned
+ * once, never emailed - the instance admin relays it to the user directly.
+ */
+export type TUserPasswordResetLinkResponse = {
+  reset_link: string;
+  email: string;
+};

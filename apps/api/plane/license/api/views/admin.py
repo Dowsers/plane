@@ -29,7 +29,8 @@ from plane.license.api.serializers import (
     InstanceAdminSerializer,
 )
 from plane.license.models import Instance, InstanceAdmin
-from plane.db.models import User, Profile
+from plane.db.models import AuditEventType, User, Profile
+from plane.utils.audit_log import log_audit_event
 from plane.utils.cache import cache_response, invalidate_cache
 from plane.authentication.utils.login import user_login
 from plane.authentication.utils.host import base_host, user_ip
@@ -37,6 +38,7 @@ from plane.authentication.adapter.error import (
     AUTHENTICATION_ERROR_CODES,
     AuthenticationException,
 )
+from plane.authentication.views.app.password_management import generate_password_token
 from plane.utils.ip_address import get_client_ip
 from plane.utils.path_validator import get_safe_redirect_url
 
@@ -84,6 +86,51 @@ class InstanceAdminEndpoint(BaseAPIView):
         instance = Instance.objects.first()
         InstanceAdmin.objects.filter(instance=instance, pk=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminUserPasswordResetLinkEndpoint(BaseAPIView):
+    """Self-hosted instances with no SMTP configured can't use the normal
+    emailed forgot-password flow (`ForgotPasswordEndpoint` rejects with
+    `SMTP_NOT_CONFIGURED`). This god-mode-only endpoint generates the same
+    kind of reset link, but returns it directly to the instance admin
+    (never emailed) so they can relay it to the user through another
+    channel. Everything past that point - the `/accounts/reset-password`
+    page and `ResetPasswordEndpoint` - is the pre-existing, unmodified
+    flow.
+    """
+
+    def post(self, request):
+        email = request.data.get("email", False)
+
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        email = email.strip().lower()
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({"error": "Invalid email"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response(
+                {"error": "No user exists with this email"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        uidb64, token = generate_password_token(user=user)
+        current_site = base_host(request=request, is_app=True)
+        relative_link = f"/accounts/reset-password/?uidb64={uidb64}&token={token}&email={user.email}"
+        reset_link = str(current_site) + relative_link
+
+        log_audit_event(
+            AuditEventType.PASSWORD_RESET_LINK_GENERATED,
+            request=request,
+            actor=request.user,
+            target_user=user,
+        )
+
+        return Response({"reset_link": reset_link, "email": user.email}, status=status.HTTP_200_OK)
 
 
 class InstanceAdminSignUpEndpoint(View):

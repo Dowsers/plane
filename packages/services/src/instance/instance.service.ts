@@ -25,6 +25,7 @@ import type {
   TSAMLVerifiedDomain,
   TSAMLVerifiedDomainCreatePayload,
   TSAMLVerifiedDomainVerifyResponse,
+  TUserPasswordResetLinkResponse,
   TWorkspaceAuditLogDetail,
 } from "@plane/types";
 // api service
@@ -80,6 +81,22 @@ export class InstanceService extends APIService {
   async admins(): Promise<IInstanceAdmin[]> {
     return this.get("/api/instances/admins/", { validateStatus: null })
       .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Generates a password reset link for a user, for an instance admin to relay directly
+   * (used when the instance has no SMTP configured, so the normal emailed forgot-password
+   * flow is unavailable)
+   * @param {string} email Email of the user to generate the reset link for
+   * @returns {Promise<TUserPasswordResetLinkResponse>} Promise resolving to the generated reset link
+   * @throws {Error} If the API request fails
+   */
+  async generateUserPasswordResetLink(email: string): Promise<TUserPasswordResetLinkResponse> {
+    return this.post("/api/instances/admin/users/reset-password-link/", { email })
+      .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
       });

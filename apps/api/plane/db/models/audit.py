@@ -100,6 +100,16 @@ class AuditEventType(models.TextChoices):
     # `old_value`/`new_value` - only which keys were changed, in
     # `metadata`.
     PUSH_CONFIG_UPDATED = "PUSH_CONFIG_UPDATED"
+    # God-mode "reset a user's password" feature
+    # (apps/api/plane/license/api/views/admin.py,
+    # AdminUserPasswordResetLinkEndpoint) - fired when an instance admin
+    # generates a password-reset link for a user (self-hosted instances
+    # with no SMTP configured have no other way to trigger the normal
+    # emailed forgot-password flow). Instance-scoped (workspace=None),
+    # same convention as OAUTH_CONFIG_UPDATED/PUSH_CONFIG_UPDATED above -
+    # the actual password change, once the user submits the link, still
+    # goes through the pre-existing PASSWORD_CHANGED path (unchanged).
+    PASSWORD_RESET_LINK_GENERATED = "PASSWORD_RESET_LINK_GENERATED"
 
 
 class WorkspaceAuditLog(BaseModel):
