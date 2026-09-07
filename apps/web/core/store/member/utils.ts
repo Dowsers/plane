@@ -109,6 +109,7 @@ export const sortMembers = <T>(
 
   const { field, direction } = parseOrderKey(orderBy);
 
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (spread copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   return [...members].sort((a, b) => {
     const aKey = getMemberKey(a);
     const bKey = getMemberKey(b);

@@ -145,12 +145,12 @@ export class ProjectInboxStore implements IProjectInboxStore {
 
   get getAppliedFiltersCount() {
     let count = 0;
-    this.inboxFilters != undefined &&
+    if (this.inboxFilters != undefined) {
       Object.keys(this.inboxFilters).forEach((key) => {
         const filterKey = key as keyof TInboxIssueFilter;
-        if (this.inboxFilters[filterKey] && this.inboxFilters?.[filterKey])
-          count = count + (this.inboxFilters?.[filterKey]?.length ?? 0);
+        if (this.inboxFilters[filterKey]) count = count + (this.inboxFilters?.[filterKey]?.length ?? 0);
       });
+    }
     return count;
   }
 
@@ -194,7 +194,7 @@ export class ProjectInboxStore implements IProjectInboxStore {
     paginationCursor: string
   ) => {
     const filters: Partial<Record<keyof TInboxIssueFilter, string>> = {};
-    !isEmpty(inboxFilters) &&
+    if (!isEmpty(inboxFilters)) {
       Object.keys(inboxFilters).forEach((key) => {
         const filterKey = key as keyof TInboxIssueFilter;
         if (inboxFilters[filterKey] && inboxFilters[filterKey]?.length) {
@@ -208,6 +208,7 @@ export class ProjectInboxStore implements IProjectInboxStore {
           } else filters[filterKey] = inboxFilters[filterKey]?.join(",");
         }
       });
+    }
 
     const sorting: TInboxIssueSortingOrderByQueryParam = {
       order_by: "-issue__created_at",
@@ -516,6 +517,7 @@ export class ProjectInboxStore implements IProjectInboxStore {
             set(this.store.projectRoot.project.projectMap, [projectId, "intake_count"], Math.max(0, currentCount - 1));
           }
         });
+        return;
       });
     } catch (error) {
       console.error("Error removing the intake issue");

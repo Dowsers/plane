@@ -65,12 +65,15 @@ export class ApiTokenStore implements IApiTokenStore {
    */
   fetchApiTokens = async () =>
     await this.apiTokenService.list().then((response) => {
-      const apiTokensObject: { [apiTokenId: string]: IApiToken } = response.reduce((accumulator, currentWebhook) => {
-        if (currentWebhook && currentWebhook.id) {
-          return { ...accumulator, [currentWebhook.id]: currentWebhook };
-        }
-        return accumulator;
-      }, {});
+      const apiTokensObject: { [apiTokenId: string]: IApiToken } = response.reduce(
+        (accumulator, currentWebhook) => {
+          if (currentWebhook && currentWebhook.id) {
+            accumulator[currentWebhook.id] = currentWebhook;
+          }
+          return accumulator;
+        },
+        {} as { [apiTokenId: string]: IApiToken }
+      );
       runInAction(() => {
         this.apiTokens = apiTokensObject;
       });
@@ -112,5 +115,6 @@ export class ApiTokenStore implements IApiTokenStore {
       runInAction(() => {
         this.apiTokens = updatedApiTokens;
       });
+      return;
     });
 }

@@ -99,14 +99,22 @@ export class WorkflowTransitionService extends APIService {
     transitionId: string,
     data: Omit<TWorkflowTransitionApprover, "id">
   ): Promise<TWorkflowTransitionApprover> {
-    return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/workflows/${transitionId}/approvers/`, data)
+    return this.post(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/workflows/${transitionId}/approvers/`,
+      data
+    )
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
       });
   }
 
-  async removeApprover(workspaceSlug: string, projectId: string, transitionId: string, approverId: string): Promise<void> {
+  async removeApprover(
+    workspaceSlug: string,
+    projectId: string,
+    transitionId: string,
+    approverId: string
+  ): Promise<void> {
     return this.delete(
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/workflows/${transitionId}/approvers/${approverId}/`
     )
@@ -122,7 +130,10 @@ export class WorkflowTransitionService extends APIService {
     transitionId: string,
     data: Omit<TWorkflowTransitionCondition, "id">
   ): Promise<TWorkflowTransitionCondition> {
-    return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/workflows/${transitionId}/conditions/`, data)
+    return this.post(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/workflows/${transitionId}/conditions/`,
+      data
+    )
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

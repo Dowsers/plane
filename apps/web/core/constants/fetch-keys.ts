@@ -40,14 +40,23 @@ const paramsToKey = (params: any) => {
   const layoutKey = layout ? layout.toUpperCase() : "";
 
   // sorting each keys in ascending order
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   projectKey = projectKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   stateKey = stateKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   stateGroupKey = stateGroupKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   priorityKey = priorityKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   assigneesKey = assigneesKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   mentionsKey = mentionsKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   createdByKey = createdByKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   labelsKey = labelsKey.sort().join("_");
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (split() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   subscriberKey = subscriberKey.sort().join("_");
 
   return `${layoutKey}_${projectKey}_${stateGroupKey}_${stateKey}_${priorityKey}_${assigneesKey}_${mentionsKey}_${createdByKey}_${type}_${groupBy}_${orderBy}_${labelsKey}_${startDateKey}_${targetDateKey}_${sub_issue}_${subscriberKey}`;

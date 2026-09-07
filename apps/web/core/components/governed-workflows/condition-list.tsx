@@ -58,7 +58,9 @@ export function ConditionList(props: Props) {
           <CustomSelect
             value={condition.condition_type}
             label={CONDITION_TYPE_LABELS[condition.condition_type]}
-            onChange={(value: TWorkflowTransitionConditionType) => updateCondition(index, { condition_type: value, config: {} })}
+            onChange={(value: TWorkflowTransitionConditionType) =>
+              updateCondition(index, { condition_type: value, config: {} })
+            }
             input
           >
             {CONDITION_TYPE_OPTIONS.map((option) => (

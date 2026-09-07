@@ -116,7 +116,10 @@ export type TWorkflowTransition = {
 };
 
 export type TWorkflowTransitionPayload = Partial<
-  Pick<TWorkflowTransition, "issue_type" | "from_state" | "to_state" | "is_active" | "approvers" | "conditions" | "actions">
+  Pick<
+    TWorkflowTransition,
+    "issue_type" | "from_state" | "to_state" | "is_active" | "approvers" | "conditions" | "actions"
+  >
 >;
 
 export type TIssueTransitionApprovalDecision = "APPROVED" | "REJECTED";

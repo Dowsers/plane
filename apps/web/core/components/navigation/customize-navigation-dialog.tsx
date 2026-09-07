@@ -43,6 +43,14 @@ const PERSONAL_ITEMS: Array<{ key: TPersonalNavigationItemKey; labelTranslationK
   { key: "drafts", labelTranslationKey: "drafts" },
 ];
 
+// Prevent typing invalid characters in number input
+const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Block: e, E, +, -, .
+  if (["e", "E", "+", "-", "."].includes(e.key)) {
+    e.preventDefault();
+  }
+};
+
 export const CustomizeNavigationDialog = observer(function CustomizeNavigationDialog(
   props: TCustomizeNavigationDialogProps
 ) {
@@ -101,6 +109,7 @@ export const CustomizeNavigationDialog = observer(function CustomizeNavigationDi
       };
     });
 
+    // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (map() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
     return items.sort((a, b) => a.sortOrder - b.sortOrder);
   }, [workspaceSlug, allowPermissions, workspacePreferences]);
 
@@ -150,16 +159,9 @@ export const CustomizeNavigationDialog = observer(function CustomizeNavigationDi
       };
     });
 
+    // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (map() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
     return items.sort((a, b) => a.sortOrder - b.sortOrder);
   }, [personalPreferences, filteredPersonalItems]);
-
-  // Prevent typing invalid characters in number input
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Block: e, E, +, -, .
-    if (["e", "E", "+", "-", "."].includes(e.key)) {
-      e.preventDefault();
-    }
-  };
 
   // Handle project count input change
   const handleProjectCountChange = (value: string) => {
@@ -273,6 +275,7 @@ export const CustomizeNavigationDialog = observer(function CustomizeNavigationDi
                       value="ACCORDION"
                       checked={projectPreferences.navigationMode === "ACCORDION"}
                       onChange={() => updateNavigationMode("ACCORDION")}
+                      aria-label={t("accordion_navigation_control")}
                       className="mt-1 size-4 text-accent-primary focus:ring-accent-strong"
                     />
                     <div className="flex-1">
@@ -290,6 +293,7 @@ export const CustomizeNavigationDialog = observer(function CustomizeNavigationDi
                       value="TABBED"
                       checked={projectPreferences.navigationMode === "TABBED"}
                       onChange={() => updateNavigationMode("TABBED")}
+                      aria-label={t("horizontal_navigation_bar")}
                       className="mt-1 size-4 text-accent-primary focus:ring-accent-strong"
                     />
                     <div className="flex-1">

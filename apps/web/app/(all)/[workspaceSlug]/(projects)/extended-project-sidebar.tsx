@@ -91,6 +91,7 @@ export const ExtendedProjectSidebar = observer(function ExtendedProjectSidebar()
         title: t("link_copied"),
         message: t("project_link_copied_to_clipboard"),
       });
+      return;
     });
   };
   return (
@@ -134,7 +135,6 @@ export const ExtendedProjectSidebar = observer(function ExtendedProjectSidebar()
               className="w-full max-w-[234px] border-none bg-transparent text-13 outline-none placeholder:text-placeholder"
               placeholder={t("search")}
               value={searchQuery}
-              autoFocus
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>

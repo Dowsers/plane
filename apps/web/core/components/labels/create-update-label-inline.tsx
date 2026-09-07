@@ -94,6 +94,7 @@ export const CreateUpdateLabelInline = observer(
         .then((_res) => {
           handleClose();
           reset(defaultValues);
+          return;
         })
         .catch((error) => {
           const errorMessage = getErrorMessage(error, "create");
@@ -114,6 +115,7 @@ export const CreateUpdateLabelInline = observer(
         .then((_res) => {
           reset(defaultValues);
           handleClose();
+          return;
         })
         .catch((error) => {
           const errorMessage = getErrorMessage(error, "update");
@@ -197,7 +199,7 @@ export const CreateUpdateLabelInline = observer(
                           <TwitterPicker
                             colors={LABEL_COLOR_OPTIONS}
                             color={value}
-                            onChange={(value) => onChange(value.hex)}
+                            onChange={(newColor) => onChange(newColor.hex)}
                           />
                         )}
                       />
@@ -218,15 +220,14 @@ export const CreateUpdateLabelInline = observer(
                   message: t("project_settings.labels.label_max_char"),
                 },
               }}
-              render={({ field: { value, onChange, ref } }) => (
+              render={({ field: { value, onChange, ref: fieldRef } }) => (
                 <Input
                   id="labelName"
                   name="name"
                   type="text"
-                  autoFocus
                   value={value}
                   onChange={onChange}
-                  ref={ref}
+                  ref={fieldRef}
                   hasError={Boolean(errors.name)}
                   placeholder={t("project_settings.labels.label_title")}
                   className="w-full"

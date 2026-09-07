@@ -10,6 +10,7 @@ import type { IState } from "@plane/types";
 export const sortStates = (states: IState[]) => {
   if (!states || states.length === 0) return;
 
+  // eslint-disable-next-line unicorn/no-array-sort -- callers pass a fresh clone (see store/state.store.ts), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   return states.sort((stateA, stateB) => {
     if (stateA.group === stateB.group) {
       return stateA.sequence - stateB.sequence;

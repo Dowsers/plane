@@ -109,6 +109,7 @@ export const TabNavigationRoot = observer(function TabNavigationRoot(props: TTab
   // Filter and sort navigation items
   const allNavigationItems = navigationItems
     .filter((item) => item.shouldRender)
+    // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (filter() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   // Split items into two categories:

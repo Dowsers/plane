@@ -64,6 +64,7 @@ export const WorkspaceMembersList = observer(function WorkspaceMembersList(props
   const searchedInvitationsIds = getSearchedWorkspaceInvitationIds(searchQuery);
   const memberDetails = searchedMemberIds
     ?.map((memberId) => getWorkspaceMemberDetails(memberId))
+    // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (map() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
     .sort((a, b) => {
       if (a?.is_active && !b?.is_active) return -1;
       if (!a?.is_active && b?.is_active) return 1;

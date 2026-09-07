@@ -99,7 +99,8 @@ export function WorkflowTransitionFormModal(props: Props) {
   const validate = (): string | null => {
     if (!state.toState) return "Choose the destination state.";
     if (!state.isFromCreation && !state.fromState) return "Choose the origin state, or switch to “From creation”.";
-    if (!state.isFromCreation && state.fromState === state.toState) return "The origin and destination states must differ.";
+    if (!state.isFromCreation && state.fromState === state.toState)
+      return "The origin and destination states must differ.";
     return null;
   };
 

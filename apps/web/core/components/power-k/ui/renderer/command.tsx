@@ -37,6 +37,7 @@ export function CommandRenderer(props: Props) {
     {} as Record<TPowerKCommandGroup, TPowerKCommandConfig[]>
   );
 
+  // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (Object.keys() copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
   const sortedGroups = Object.keys(commandsByGroup).sort((a, b) => {
     const aPriority = POWER_K_GROUP_PRIORITY[a as TPowerKCommandGroup];
     const bPriority = POWER_K_GROUP_PRIORITY[b as TPowerKCommandGroup];

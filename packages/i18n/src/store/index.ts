@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+// eslint-disable-next-line import/no-named-as-default -- intl-messageformat's documented usage is the default import
 import IntlMessageFormat from "intl-messageformat";
 import { get, merge } from "lodash-es";
 import { makeAutoObservable, runInAction } from "mobx";
@@ -162,7 +163,7 @@ export class TranslationStore {
       const merged = modules.reduce((acc: any, module: any) => merge(acc, module.default), {});
       return { default: merged };
     } catch (error) {
-      throw new Error(`Failed to import and merge files for ${language}: ${error}`);
+      throw new Error(`Failed to import and merge files for ${language}: ${error}`, { cause: error });
     }
   }
 

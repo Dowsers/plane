@@ -4,7 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import type { TWorkflowTransitionAction, TWorkflowTransitionApprover, TWorkflowTransitionCondition } from "@plane/types";
+import type {
+  TWorkflowTransitionAction,
+  TWorkflowTransitionApprover,
+  TWorkflowTransitionCondition,
+} from "@plane/types";
 
 /** `TWorkflowTransitionApprover` plus a stable local React key - needed
  * because approvers only get a persisted `id` once the transition is saved,

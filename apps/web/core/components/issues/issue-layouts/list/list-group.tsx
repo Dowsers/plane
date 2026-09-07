@@ -132,14 +132,15 @@ export const ListGroup = observer(function ListGroup(props: Props) {
   const loadMore = isPaginating ? (
     <ListLoaderItemRow />
   ) : (
-    <div
+    <button
+      type="button"
       className={
-        "relative flex h-11 cursor-pointer items-center gap-3 border border-transparent border-t-subtle-1 bg-surface-1 p-3 pl-8 text-13 font-medium text-accent-primary hover:text-accent-secondary hover:underline"
+        "relative flex h-11 w-full cursor-pointer items-center gap-3 border border-transparent border-t-subtle-1 bg-surface-1 p-3 pl-8 text-left text-13 font-medium text-accent-primary hover:text-accent-secondary hover:underline"
       }
       onClick={() => loadMoreIssues(group.id)}
     >
       {t("common.load_more")} &darr;
-    </div>
+    </button>
   );
 
   const validateEmptyIssueGroups = (issueCount: number = 0) => {
@@ -198,7 +199,7 @@ export const ListGroup = observer(function ListGroup(props: Props) {
           const sourceGroupId = source?.data?.groupId as string | undefined;
           const currentGroupId = group.id;
 
-          sourceGroupId && handleWorkFlowState(sourceGroupId, currentGroupId);
+          if (sourceGroupId) handleWorkFlowState(sourceGroupId, currentGroupId);
 
           const sourceIndex = getGroupIndex(sourceGroupId);
           const currentIndex = getGroupIndex(currentGroupId);
@@ -237,13 +238,17 @@ export const ListGroup = observer(function ListGroup(props: Props) {
       })
     );
   }, [
-    groupRef?.current,
     group,
     orderBy,
     getGroupIndex,
     setDragColumnOrientation,
     setIsDraggingOverColumn,
     isWorkflowDropDisabled,
+    handleWorkFlowState,
+    handleOnDrop,
+    handleCollapsedGroups,
+    isExpanded,
+    t,
   ]);
 
   const isDragAllowed = group_by ? DRAG_ALLOWED_GROUPS.includes(group_by) : true;
@@ -318,6 +323,7 @@ export const ListGroup = observer(function ListGroup(props: Props) {
             ) : (
               <>
                 {Array.from({ length: 2 }).map((_, index) => (
+                  // eslint-disable-next-line react/no-array-index-key -- static fixed-length loader list, never reordered
                   <ListLoaderItemRow key={index} />
                 ))}
                 <ListLoaderItemRow ref={setIntersectionElement} />

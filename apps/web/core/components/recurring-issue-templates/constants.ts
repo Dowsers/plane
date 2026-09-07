@@ -87,8 +87,8 @@ export const formatRecurrenceSummary = (
     case "WEEKLY": {
       const base = n === 1 ? "Every week" : `Every ${n} weeks`;
       if (weekdays && weekdays.length > 0) {
-        // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (spread copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
         const days = [...weekdays]
+          // eslint-disable-next-line unicorn/no-array-sort -- freshly-built local array (spread copy), no shared-reference mutation risk; toSorted() needs an ES2023 lib bump out of scope here
           .sort((a, b) => a - b)
           .map(weekdayShort)
           .join(", ");

@@ -21,7 +21,8 @@ import { WorkflowTransitionListItem } from "./transition-list-item";
 
 const workflowTransitionService = new WorkflowTransitionService();
 
-const TRANSITIONS_KEY = (workspaceSlug: string, projectId: string) => `WORKFLOW_TRANSITIONS_${workspaceSlug}_${projectId}`;
+const TRANSITIONS_KEY = (workspaceSlug: string, projectId: string) =>
+  `WORKFLOW_TRANSITIONS_${workspaceSlug}_${projectId}`;
 
 type Props = {
   workspaceSlug: string;
@@ -70,7 +71,7 @@ export const WorkflowTransitionListRoot = observer(function WorkflowTransitionLi
     <div className="flex flex-col gap-4">
       {(transitions?.length ?? 0) > 0 && (
         <div className="flex items-start gap-2 rounded-md border border-subtle bg-surface-2 px-3 py-2.5 text-12 text-secondary">
-          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+          <AlertTriangle className="text-amber-600 mt-0.5 size-3.5 shrink-0" />
           <span>
             Once a project has at least one transition rule for an issue type, that type&apos;s workflow becomes
             governed. Untouched transitions stay allowed, but if you deactivate or delete every rule for a type, its
@@ -105,7 +106,9 @@ export const WorkflowTransitionListRoot = observer(function WorkflowTransitionLi
           </Loader>
         )}
         {!isLoading && (transitions?.length ?? 0) === 0 && (
-          <p className="text-13 text-tertiary">No workflow transitions configured yet - every state change is allowed.</p>
+          <p className="text-13 text-tertiary">
+            No workflow transitions configured yet - every state change is allowed.
+          </p>
         )}
         {transitions?.map((transition) => (
           <WorkflowTransitionListItem
