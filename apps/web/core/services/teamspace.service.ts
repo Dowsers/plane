@@ -11,6 +11,7 @@ import type {
   ITeamspaceCycles,
   ITeamspaceDetail,
   ITeamspaceMember,
+  ITeamspaceOverdueIssues,
   ITeamspaceOverview,
   ITeamspacePage,
   ITeamspaceProject,
@@ -124,6 +125,14 @@ export class TeamspaceService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/overview/`, {
       params: { group_by: groupBy },
     })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamspaceOverdueIssues(workspaceSlug: string, teamspaceId: string): Promise<ITeamspaceOverdueIssues> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/overdue-issues/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

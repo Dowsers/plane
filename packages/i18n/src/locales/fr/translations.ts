@@ -4306,6 +4306,10 @@ export default {
       no_progress_data: "Aucun élément de travail à représenter pour l’instant.",
       no_relations: "Aucune relation trouvée pour cette direction.",
       no_stats_data: "Aucun élément de travail à ventiler pour l’instant.",
+      overdue_modal: {
+        empty: "Aucun élément de travail en retard.",
+        title: "Éléments de travail en retard",
+      },
       overdue_work_items: "éléments de travail en retard",
       relations_blocked: "Bloqué",
       relations_blocking: "Bloquant",

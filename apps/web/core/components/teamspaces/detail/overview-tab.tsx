@@ -7,7 +7,6 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { AlertTriangle } from "lucide-react";
 // plane imports
@@ -19,6 +18,7 @@ import { CustomSelect, Loader } from "@plane/ui";
 // hooks
 import { useTeamspace } from "@/hooks/store/use-teamspace";
 // local imports
+import { TeamspaceOverdueIssuesModal } from "./overdue-issues-modal";
 import { TeamspaceRelationsPanel } from "./relations-panel";
 import { TeamspaceStatsPanel } from "./stats-panel";
 
@@ -52,6 +52,7 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
   const { getTeamspaceOverviewById, fetchTeamspaceOverview } = useTeamspace();
 
   const [groupBy, setGroupBy] = useState<"priority" | "due_date" | "start_date">("priority");
+  const [isOverdueModalOpen, setIsOverdueModalOpen] = useState(false);
 
   const { isLoading } = useSWR(
     workspaceSlug ? ["TEAMSPACE_OVERVIEW", workspaceSlug, teamspaceId, groupBy] : null,
@@ -113,17 +114,26 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Overdue banner - spec section 2 exigence 1/6, clickable, filters the summary panel */}
+      {/* Overdue banner - spec section 2 exigence 1/6, clickable, opens the
+          list of overdue work items behind the count (see overdue-issues-modal.tsx) */}
       {overview.overdue_count > 0 && (
-        <Link
-          href={`/${workspaceSlug}/teamspaces/${teamspaceId}/`}
-          className="border-danger-primary/40 flex items-center gap-2 rounded-md border-[0.5px] bg-danger-primary/10 px-3 py-2 text-13 text-danger-primary hover:bg-danger-primary/20"
-        >
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span>
-            {overview.overdue_count} {t("teamspaces.overview.overdue_work_items")}
-          </span>
-        </Link>
+        <>
+          <button
+            type="button"
+            onClick={() => setIsOverdueModalOpen(true)}
+            className="border-danger-primary/40 flex items-center gap-2 rounded-md border-[0.5px] bg-danger-primary/10 px-3 py-2 text-13 text-danger-primary hover:bg-danger-primary/20"
+          >
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span>
+              {overview.overdue_count} {t("teamspaces.overview.overdue_work_items")}
+            </span>
+          </button>
+          <TeamspaceOverdueIssuesModal
+            isOpen={isOverdueModalOpen}
+            teamspaceId={teamspaceId}
+            handleClose={() => setIsOverdueModalOpen(false)}
+          />
+        </>
       )}
 
       {hasNoData ? (

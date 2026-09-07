@@ -9,6 +9,7 @@ from plane.app.views.workspace.teamspace import (
     WorkspaceTeamspaceMembersEndpoint,
     WorkspaceTeamspaceProjectsEndpoint,
     WorkspaceTeamspaceOverviewEndpoint,
+    WorkspaceTeamspaceOverdueIssuesEndpoint,
     WorkspaceTeamspaceCyclesEndpoint,
     WorkspaceTeamspaceRelationsEndpoint,
     WorkspaceTeamspaceStatsEndpoint,
@@ -55,6 +56,11 @@ urlpatterns = [
         "workspaces/<str:slug>/teamspaces/<uuid:teamspace_id>/overview/",
         WorkspaceTeamspaceOverviewEndpoint.as_view(),
         name="workspace-teamspace-overview",
+    ),
+    path(
+        "workspaces/<str:slug>/teamspaces/<uuid:teamspace_id>/overdue-issues/",
+        WorkspaceTeamspaceOverdueIssuesEndpoint.as_view(),
+        name="workspace-teamspace-overdue-issues",
     ),
     path(
         "workspaces/<str:slug>/teamspaces/<uuid:teamspace_id>/cycles/",

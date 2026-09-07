@@ -391,6 +391,52 @@ class WorkspaceTeamspaceOverviewEndpoint(BaseAPIView):
         )
 
 
+class WorkspaceTeamspaceOverdueIssuesEndpoint(BaseAPIView):
+    """GET .../teamspaces/<id>/overdue-issues/ - the individual work items
+    behind the overview endpoint's `overdue_count` (same scope/filters), so
+    the "N overdue" banner can link to something real instead of the
+    overview page itself."""
+
+    permission_classes = [WorkspaceEntityPermission]
+
+    def get(self, request, slug, teamspace_id):
+        try:
+            Teamspace.objects.get(pk=teamspace_id, workspace__slug=slug, deleted_at__isnull=True)
+        except Teamspace.DoesNotExist:
+            return Response({"error": "Teamspace not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        project_ids = _accessible_project_ids(request.user, slug, teamspace_id)
+        if not project_ids:
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
+        issues = (
+            Issue.issue_objects.filter(
+                workspace__slug=slug,
+                project_id__in=project_ids,
+                target_date__lt=timezone.now().date(),
+            )
+            .exclude(state__group__in=["completed", "cancelled"])
+            .select_related("project", "state")
+            .order_by("target_date")
+        )
+
+        results = [
+            {
+                "id": str(issue.id),
+                "name": issue.name,
+                "sequence_id": issue.sequence_id,
+                "priority": issue.priority,
+                "target_date": issue.target_date,
+                "project_id": str(issue.project_id),
+                "project_identifier": issue.project.identifier,
+                "state_group": issue.state.group if issue.state else None,
+            }
+            for issue in issues
+        ]
+
+        return Response({"results": results}, status=status.HTTP_200_OK)
+
+
 class WorkspaceTeamspaceCyclesEndpoint(BaseAPIView):
     """GET .../teamspaces/<id>/cycles/ - cycles of every attached project,
     grouped by status (spec section 2, exigence 3)."""

@@ -12,6 +12,7 @@ import type {
   ITeamspace,
   ITeamspaceCycles,
   ITeamspaceMember,
+  ITeamspaceOverdueIssues,
   ITeamspaceOverview,
   ITeamspacePage,
   ITeamspaceProject,
@@ -41,6 +42,7 @@ export interface ITeamspaceStore {
   teamspaceMembersMap: Record<string, ITeamspaceMember[]>;
   teamspaceProjectsMap: Record<string, ITeamspaceProject[]>;
   teamspaceOverviewMap: Record<string, ITeamspaceOverview>;
+  teamspaceOverdueIssuesMap: Record<string, ITeamspaceOverdueIssues>;
   teamspaceCyclesMap: Record<string, ITeamspaceCycles>;
   teamspaceRelationsMap: Record<string, ITeamspaceRelations>;
   teamspaceStatsMap: Record<string, ITeamspaceStats>;
@@ -53,6 +55,7 @@ export interface ITeamspaceStore {
   getTeamspaceMembersById: (teamspaceId: string) => ITeamspaceMember[];
   getTeamspaceProjectsById: (teamspaceId: string) => ITeamspaceProject[];
   getTeamspaceOverviewById: (teamspaceId: string) => ITeamspaceOverview | null;
+  getTeamspaceOverdueIssuesById: (teamspaceId: string) => ITeamspaceOverdueIssues | null;
   getTeamspaceCyclesById: (teamspaceId: string) => ITeamspaceCycles | null;
   getTeamspaceRelationsById: (teamspaceId: string) => ITeamspaceRelations | null;
   getTeamspaceStatsById: (teamspaceId: string) => ITeamspaceStats | null;
@@ -67,6 +70,7 @@ export interface ITeamspaceStore {
     teamspaceId: string,
     groupBy?: TTeamspaceOverviewGroupBy
   ) => Promise<ITeamspaceOverview>;
+  fetchTeamspaceOverdueIssues: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspaceOverdueIssues>;
   fetchTeamspaceCycles: (workspaceSlug: string, teamspaceId: string) => Promise<ITeamspaceCycles>;
   fetchTeamspaceRelations: (
     workspaceSlug: string,
@@ -115,6 +119,7 @@ export class TeamspaceStore implements ITeamspaceStore {
   teamspaceMembersMap: Record<string, ITeamspaceMember[]> = {};
   teamspaceProjectsMap: Record<string, ITeamspaceProject[]> = {};
   teamspaceOverviewMap: Record<string, ITeamspaceOverview> = {};
+  teamspaceOverdueIssuesMap: Record<string, ITeamspaceOverdueIssues> = {};
   teamspaceCyclesMap: Record<string, ITeamspaceCycles> = {};
   teamspaceRelationsMap: Record<string, ITeamspaceRelations> = {};
   teamspaceStatsMap: Record<string, ITeamspaceStats> = {};
@@ -133,6 +138,7 @@ export class TeamspaceStore implements ITeamspaceStore {
       teamspaceMembersMap: observable,
       teamspaceProjectsMap: observable,
       teamspaceOverviewMap: observable,
+      teamspaceOverdueIssuesMap: observable,
       teamspaceCyclesMap: observable,
       teamspaceRelationsMap: observable,
       teamspaceStatsMap: observable,
@@ -142,6 +148,7 @@ export class TeamspaceStore implements ITeamspaceStore {
       fetchTeamspaces: action,
       fetchTeamspaceDetails: action,
       fetchTeamspaceOverview: action,
+      fetchTeamspaceOverdueIssues: action,
       fetchTeamspaceCycles: action,
       fetchTeamspaceRelations: action,
       fetchTeamspaceStats: action,
@@ -185,6 +192,10 @@ export class TeamspaceStore implements ITeamspaceStore {
 
   getTeamspaceOverviewById = computedFn(
     (teamspaceId: string): ITeamspaceOverview | null => this.teamspaceOverviewMap?.[teamspaceId] ?? null
+  );
+
+  getTeamspaceOverdueIssuesById = computedFn(
+    (teamspaceId: string): ITeamspaceOverdueIssues | null => this.teamspaceOverdueIssuesMap?.[teamspaceId] ?? null
   );
 
   getTeamspaceCyclesById = computedFn(
@@ -307,6 +318,14 @@ export class TeamspaceStore implements ITeamspaceStore {
     const response = await this.teamspaceService.getTeamspaceOverview(workspaceSlug, teamspaceId, groupBy);
     runInAction(() => {
       set(this.teamspaceOverviewMap, [teamspaceId], response);
+    });
+    return response;
+  };
+
+  fetchTeamspaceOverdueIssues = async (workspaceSlug: string, teamspaceId: string) => {
+    const response = await this.teamspaceService.getTeamspaceOverdueIssues(workspaceSlug, teamspaceId);
+    runInAction(() => {
+      set(this.teamspaceOverdueIssuesMap, [teamspaceId], response);
     });
     return response;
   };

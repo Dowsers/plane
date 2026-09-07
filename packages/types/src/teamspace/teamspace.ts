@@ -98,6 +98,21 @@ export interface ITeamspaceCycles {
   completed: ITeamspaceCycleSummary[];
 }
 
+export interface ITeamspaceOverdueIssue {
+  id: string;
+  name: string;
+  sequence_id: number;
+  priority: string | null;
+  target_date: string | null;
+  project_id: string;
+  project_identifier: string;
+  state_group: string | null;
+}
+
+export interface ITeamspaceOverdueIssues {
+  results: ITeamspaceOverdueIssue[];
+}
+
 export type TTeamspaceRelationDirection = "blocking" | "blocked";
 
 export interface ITeamspaceRelation {

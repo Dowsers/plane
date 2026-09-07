@@ -2446,6 +2446,10 @@ export default {
     },
     overview: {
       overdue_work_items: "overdue work items",
+      overdue_modal: {
+        title: "Overdue work items",
+        empty: "No overdue work items.",
+      },
       team_progress: "Team progress",
       team_relations: "Team relations",
       team_stats: "Team stats",
