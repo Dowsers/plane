@@ -130,6 +130,11 @@ urlpatterns = [
         name="leave-workspace-members",
     ),
     path(
+        "workspaces/<str:slug>/members/<uuid:pk>/reset-password-link/",
+        WorkSpaceMemberViewSet.as_view({"post": "reset_password_link"}),
+        name="workspace-member-reset-password-link",
+    ),
+    path(
         "users/last-visited-workspace/",
         UserLastProjectWithWorkspaceEndpoint.as_view(),
         name="workspace-project-details",

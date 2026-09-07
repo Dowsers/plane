@@ -23,6 +23,7 @@ const isSuspended = (rowData: RowData) => rowData.is_active === false;
 export const useMemberColumns = () => {
   // states
   const [removeMemberModal, setRemoveMemberModal] = useState<RowData | null>(null);
+  const [resetPasswordModal, setResetPasswordModal] = useState<RowData | null>(null);
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 5 - "Transfer ownership" modal trigger.
   const [transferOwnershipModal, setTransferOwnershipModal] = useState(false);
@@ -65,6 +66,7 @@ export const useMemberColumns = () => {
           isAdmin={isAdmin}
           currentUser={currentUser}
           setRemoveMemberModal={setRemoveMemberModal}
+          setResetPasswordModal={setResetPasswordModal}
           setTransferOwnershipModal={() => setTransferOwnershipModal(true)}
         />
       ),
@@ -179,6 +181,8 @@ export const useMemberColumns = () => {
     workspaceSlug,
     removeMemberModal,
     setRemoveMemberModal,
+    resetPasswordModal,
+    setResetPasswordModal,
     transferOwnershipModal,
     setTransferOwnershipModal,
   };

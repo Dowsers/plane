@@ -10,7 +10,7 @@ import Link from "next/link";
 import useSWR from "swr";
 
 import { Disclosure } from "@headlessui/react";
-import { Crown } from "lucide-react";
+import { Crown, KeyRound } from "lucide-react";
 // plane imports
 import { ROLE, EUserPermissions, EUserPermissionsLevel, MEMBER_TRACKER_ELEMENTS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
@@ -65,6 +65,7 @@ type NameProps = {
   isAdmin: boolean;
   currentUser: IUser | undefined;
   setRemoveMemberModal: (rowData: RowData) => void;
+  setResetPasswordModal: (rowData: RowData) => void;
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 5 - only ever invoked for the current
   // Owner's own row (see the `isCurrentUser && rowData.is_owner` guard
@@ -79,7 +80,15 @@ type AccountTypeProps = {
 };
 
 export function NameColumn(props: NameProps) {
-  const { rowData, workspaceSlug, isAdmin, currentUser, setRemoveMemberModal, setTransferOwnershipModal } = props;
+  const {
+    rowData,
+    workspaceSlug,
+    isAdmin,
+    currentUser,
+    setRemoveMemberModal,
+    setResetPasswordModal,
+    setTransferOwnershipModal,
+  } = props;
   // i18n
   const { t } = useTranslation();
   // derived values
@@ -90,7 +99,15 @@ export function NameColumn(props: NameProps) {
   // plane-selfhost), feature 5 - "Transfer ownership" is only ever offered
   // on the current Owner's own row.
   const canTransferOwnership = isCurrentUser && rowData.is_owner && Boolean(setTransferOwnershipModal);
-  const menuItems: Array<"transfer" | "remove"> = [...(canTransferOwnership ? (["transfer"] as const) : []), "remove"];
+  // Password reset is admin-only and never offered on the admin's own row -
+  // an admin resetting their own password should go through their normal
+  // account settings instead.
+  const canResetPassword = isAdmin && !isCurrentUser;
+  const menuItems: Array<"transfer" | "reset_password" | "remove"> = [
+    ...(canTransferOwnership ? (["transfer"] as const) : []),
+    ...(canResetPassword ? (["reset_password"] as const) : []),
+    "remove",
+  ];
 
   return (
     <Disclosure>
@@ -147,6 +164,14 @@ export function NameColumn(props: NameProps) {
                     >
                       <Crown className="size-3.5 align-middle" />{" "}
                       {t("workspace_settings.settings.members.columns.transfer_ownership")}
+                    </button>
+                  ) : item === "reset_password" ? (
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center gap-x-3"
+                      onClick={() => setResetPasswordModal(rowData)}
+                    >
+                      <KeyRound className="size-3.5 align-middle" /> Reset password
                     </button>
                   ) : (
                     <button

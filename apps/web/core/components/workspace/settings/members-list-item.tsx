@@ -14,6 +14,7 @@ import { Table } from "@plane/ui";
 // components
 import { MembersLayoutLoader } from "@/components/ui/loader/layouts/members-layout-loader";
 import { ConfirmWorkspaceMemberRemove } from "@/components/workspace/confirm-workspace-member-remove";
+import { ResetMemberPasswordModal } from "@/components/workspace/reset-member-password-modal";
 import type { RowData } from "@/components/workspace/settings/member-columns";
 import { TransferOwnershipModal } from "@/components/workspace/transfer-ownership-modal";
 // hooks
@@ -35,6 +36,8 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
     workspaceSlug,
     removeMemberModal,
     setRemoveMemberModal,
+    resetPasswordModal,
+    setResetPasswordModal,
     transferOwnershipModal,
     setTransferOwnershipModal,
   } = useMemberColumns();
@@ -43,7 +46,7 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
   // store hooks
   const { data: currentUser } = useUser();
   const {
-    workspace: { removeMemberFromWorkspace },
+    workspace: { removeMemberFromWorkspace, generateMemberPasswordResetLink },
   } = useMember();
   const { leaveWorkspace } = useUserPermissions();
   const { currentWorkspace, getWorkspaceRedirectionUrl } = useWorkspace();
@@ -117,6 +120,21 @@ export const WorkspaceMembersListItem = observer(function WorkspaceMembersListIt
         workspace={currentWorkspace}
         onClose={() => setTransferOwnershipModal(false)}
       />
+      {resetPasswordModal && (
+        <ResetMemberPasswordModal
+          isOpen={resetPasswordModal.member.id.length > 0}
+          onClose={() => setResetPasswordModal(null)}
+          userDetails={{
+            id: resetPasswordModal.member.id,
+            display_name: resetPasswordModal.member.display_name || "",
+          }}
+          onGenerate={() =>
+            workspaceSlug
+              ? generateMemberPasswordResetLink(workspaceSlug.toString(), resetPasswordModal.member.id)
+              : Promise.reject(new Error("Missing workspace"))
+          }
+        />
+      )}
       <Table<RowData>
         columns={columns ?? []}
         data={

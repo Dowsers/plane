@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from plane.app.permissions import WorkspaceEntityPermission, allow_permission, is_workspace_owner, ROLE
+from plane.authentication.views.app.password_management import build_password_reset_link
 
 # Module imports
 from plane.app.serializers import (
@@ -361,6 +362,41 @@ class WorkSpaceMemberViewSet(BaseViewSet):
         )
         deactivate_user_view_subscriptions(workspace_member.member_id, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @allow_permission(allowed_roles=[ROLE.ADMIN], level="WORKSPACE")
+    def reset_password_link(self, request, slug, pk):
+        """Workspace-admin equivalent of the instance-wide
+        `AdminUserPasswordResetLinkEndpoint` (`plane.license.api.views.
+        admin`) - lets a workspace Admin generate a password reset link
+        for one of their own members without needing instance-admin (God
+        Mode) access. Self-hosted instances with no SMTP configured have
+        no other way to trigger the normal emailed forgot-password flow.
+        """
+        workspace_member = WorkspaceMember.objects.get(
+            member_visibility_q("member__"), workspace__slug=slug, pk=pk, is_active=True
+        )
+
+        requesting_workspace_member = WorkspaceMember.objects.get(
+            workspace__slug=slug, member=request.user, is_active=True
+        )
+        if str(workspace_member.id) == str(requesting_workspace_member.id):
+            return Response(
+                {"error": "Use your account settings to change your own password"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = workspace_member.member
+        reset_link = build_password_reset_link(request, user)
+
+        log_audit_event(
+            AuditEventType.PASSWORD_RESET_LINK_GENERATED,
+            request=request,
+            workspace=workspace_member.workspace,
+            actor=request.user,
+            target_user=user,
+        )
+
+        return Response({"reset_link": reset_link, "email": user.email}, status=status.HTTP_200_OK)
 
     @invalidate_cache(
         path="/api/workspaces/:slug/members/",

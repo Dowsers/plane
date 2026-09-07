@@ -42,6 +42,19 @@ def generate_password_token(user):
     return uidb64, token
 
 
+def build_password_reset_link(request, user):
+    """Same link shape as the one normally emailed by `forgot_password`
+    (`plane.bgtasks.forgot_password_task`), for callers that hand it to an
+    admin instead of sending it - see `AdminUserPasswordResetLinkEndpoint`
+    (instance-wide, `plane.license.api.views.admin`) and
+    `WorkSpaceMemberViewSet.reset_password_link` (workspace-admin-only,
+    `plane.app.views.workspace.member`)."""
+    uidb64, token = generate_password_token(user=user)
+    current_site = base_host(request=request, is_app=True)
+    relative_link = f"/accounts/reset-password/?uidb64={uidb64}&token={token}&email={user.email}"
+    return str(current_site) + relative_link
+
+
 class ForgotPasswordEndpoint(APIView):
     permission_classes = [AllowAny]
 

@@ -38,7 +38,7 @@ from plane.authentication.adapter.error import (
     AUTHENTICATION_ERROR_CODES,
     AuthenticationException,
 )
-from plane.authentication.views.app.password_management import generate_password_token
+from plane.authentication.views.app.password_management import build_password_reset_link
 from plane.utils.ip_address import get_client_ip
 from plane.utils.path_validator import get_safe_redirect_url
 
@@ -118,10 +118,7 @@ class AdminUserPasswordResetLinkEndpoint(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        uidb64, token = generate_password_token(user=user)
-        current_site = base_host(request=request, is_app=True)
-        relative_link = f"/accounts/reset-password/?uidb64={uidb64}&token={token}&email={user.email}"
-        reset_link = str(current_site) + relative_link
+        reset_link = build_password_reset_link(request, user)
 
         log_audit_event(
             AuditEventType.PASSWORD_RESET_LINK_GENERATED,

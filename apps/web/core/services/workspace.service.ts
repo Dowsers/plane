@@ -26,6 +26,7 @@ import type {
   IWorkspaceSidebarNavigationItem,
   IWorkspaceSidebarNavigation,
   IWorkspaceUserPropertiesResponse,
+  TUserPasswordResetLinkResponse,
 } from "@plane/types";
 // services
 import { APIService } from "@/services/api.service";
@@ -161,6 +162,26 @@ export class WorkspaceService extends APIService {
 
   async deleteWorkspaceMember(workspaceSlug: string, memberId: string): Promise<any> {
     return this.delete(`/api/workspaces/${workspaceSlug}/members/${memberId}/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Workspace-admin equivalent of the instance-wide God Mode "generate a
+   * password reset link" action (`InstanceService.generateUserPasswordResetLink`,
+   * packages/services/src/instance/instance.service.ts) - lets a workspace
+   * Admin generate a reset link for one of their own members without
+   * needing instance-admin (God Mode) access. See
+   * `WorkSpaceMemberViewSet.reset_password_link`
+   * (apps/api/plane/app/views/workspace/member.py).
+   */
+  async generateMemberPasswordResetLink(
+    workspaceSlug: string,
+    memberId: string
+  ): Promise<TUserPasswordResetLinkResponse> {
+    return this.post(`/api/workspaces/${workspaceSlug}/members/${memberId}/reset-password-link/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

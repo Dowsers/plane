@@ -9,7 +9,12 @@ import { action, computed, makeObservable, observable, runInAction } from "mobx"
 import { computedFn } from "mobx-utils";
 // types
 import type { EUserPermissions } from "@plane/constants";
-import type { IWorkspaceBulkInviteFormData, IWorkspaceMember, IWorkspaceMemberInvitation } from "@plane/types";
+import type {
+  IWorkspaceBulkInviteFormData,
+  IWorkspaceMember,
+  IWorkspaceMemberInvitation,
+  TUserPasswordResetLinkResponse,
+} from "@plane/types";
 import { isPubliclyVisibleBotActor } from "@plane/utils";
 // plane-web constants
 // services
@@ -78,6 +83,7 @@ export interface IWorkspaceMemberStore {
     data: { role?: EUserPermissions; custom_role_id?: string | null }
   ) => Promise<void>;
   removeMemberFromWorkspace: (workspaceSlug: string, userId: string) => Promise<void>;
+  generateMemberPasswordResetLink: (workspaceSlug: string, userId: string) => Promise<TUserPasswordResetLinkResponse>;
   // Category 11 (docs/feature-specs/11-admin-security-sso.md in
   // plane-selfhost), feature 5 - transfer real Workspace Owner status.
   transferOwnership: (workspaceSlug: string, newOwnerId: string) => Promise<void>;
@@ -120,6 +126,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       fetchWorkspaceMembers: action,
       updateMember: action,
       removeMemberFromWorkspace: action,
+      generateMemberPasswordResetLink: action,
       transferOwnership: action,
       fetchWorkspaceMemberInvitations: action,
       updateMemberInvitation: action,
@@ -349,6 +356,18 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       });
       return;
     });
+  };
+
+  /**
+   * @description generate a password reset link for a member, for a workspace Admin
+   * to relay directly (used when the instance has no SMTP configured)
+   * @param workspaceSlug
+   * @param userId
+   */
+  generateMemberPasswordResetLink = async (workspaceSlug: string, userId: string) => {
+    const memberDetails = this.getWorkspaceMemberDetails(userId);
+    if (!memberDetails) throw new Error("Member not found");
+    return this.workspaceService.generateMemberPasswordResetLink(workspaceSlug, memberDetails.id);
   };
 
   /**
