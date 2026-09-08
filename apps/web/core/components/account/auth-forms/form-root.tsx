@@ -95,7 +95,7 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
           if (currentAuthMode === EAuthModes.SIGN_UP) setAuthMode(EAuthModes.SIGN_IN);
           if (response.status === "MAGIC_CODE") {
             setAuthStep(EAuthSteps.UNIQUE_CODE);
-            generateEmailUniqueCode(data.email);
+            generateEmailUniqueCode(data.email).catch(() => {});
           } else if (response.status === "CREDENTIAL") {
             setAuthStep(EAuthSteps.PASSWORD);
           }
@@ -103,7 +103,7 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
           if (currentAuthMode === EAuthModes.SIGN_IN) setAuthMode(EAuthModes.SIGN_UP);
           if (response.status === "MAGIC_CODE") {
             setAuthStep(EAuthSteps.UNIQUE_CODE);
-            generateEmailUniqueCode(data.email);
+            generateEmailUniqueCode(data.email).catch(() => {});
           } else if (response.status === "CREDENTIAL") {
             setAuthStep(EAuthSteps.PASSWORD);
           }
@@ -162,7 +162,7 @@ export const AuthFormRoot = observer(function AuthFormRoot(props: TAuthFormRoot)
         email={email}
         handleEmailClear={handleEmailClear}
         handleAuthStep={(step: EAuthSteps) => {
-          if (step === EAuthSteps.UNIQUE_CODE) generateEmailUniqueCode(email);
+          if (step === EAuthSteps.UNIQUE_CODE) generateEmailUniqueCode(email).catch(() => {});
           setAuthStep(step);
         }}
         nextPath={nextPath || undefined}
