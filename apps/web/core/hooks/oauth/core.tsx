@@ -5,6 +5,7 @@
  */
 
 // plane imports
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { API_BASE_URL } from "@plane/constants";
@@ -25,6 +26,12 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
   const next_path = searchParams.get("next_path");
   // theme
   const { resolvedTheme } = useTheme();
+  // next-themes only knows the real theme after mount (it reads localStorage
+  // client-side); rendering resolvedTheme before that point mismatches the
+  // server-rendered HTML, so fall back to the light logo (matching SSR)
+  // until then.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   // store hooks
   const { config } = useInstance();
   // derived values
@@ -50,7 +57,7 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
       text: `${oauthActionText} with GitHub`,
       icon: (
         <img
-          src={resolvedTheme === "dark" ? GithubDarkLogo : GithubLightLogo}
+          src={mounted && resolvedTheme === "dark" ? GithubDarkLogo : GithubLightLogo}
           height={18}
           width={18}
           alt="GitHub Logo"

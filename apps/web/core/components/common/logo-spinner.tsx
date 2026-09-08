@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 // assets
 import LogoSpinnerDark from "@/app/assets/images/logo-spinner-dark.gif?url";
@@ -11,8 +12,14 @@ import LogoSpinnerLight from "@/app/assets/images/logo-spinner-light.gif?url";
 
 export function LogoSpinner() {
   const { resolvedTheme } = useTheme();
+  // next-themes only knows the real theme after mount (it reads localStorage
+  // client-side); rendering resolvedTheme before that point mismatches the
+  // server-rendered HTML, so fall back to the light logo (matching SSR)
+  // until then.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const logoSrc = resolvedTheme === "dark" ? LogoSpinnerDark : LogoSpinnerLight;
+  const logoSrc = mounted && resolvedTheme === "dark" ? LogoSpinnerDark : LogoSpinnerLight;
 
   return (
     <div className="flex items-center justify-center">
