@@ -27,10 +27,13 @@ type Props = {
 export function ParamInput({ parameter, value, onChange }: Props) {
   const schema = parameter.schema;
   const enumValues = schema?.enum;
+  const fieldId = `param-input-${parameter.name}`;
 
   if (enumValues && enumValues.length > 0) {
     return (
       <select
+        id={fieldId}
+        name={fieldId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="focus:border-accent-primary w-full rounded-md border border-subtle bg-layer-1 px-2 py-1.5 text-13 text-primary outline-none"
@@ -48,6 +51,8 @@ export function ParamInput({ parameter, value, onChange }: Props) {
   if (schema?.type === "boolean") {
     return (
       <select
+        id={fieldId}
+        name={fieldId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="focus:border-accent-primary w-full rounded-md border border-subtle bg-layer-1 px-2 py-1.5 text-13 text-primary outline-none"
@@ -62,6 +67,8 @@ export function ParamInput({ parameter, value, onChange }: Props) {
   if (schema?.type === "integer" || schema?.type === "number") {
     return (
       <Input
+        id={fieldId}
+        name={fieldId}
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -73,6 +80,8 @@ export function ParamInput({ parameter, value, onChange }: Props) {
 
   return (
     <Input
+      id={fieldId}
+      name={fieldId}
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}

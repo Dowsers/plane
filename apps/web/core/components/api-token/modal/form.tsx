@@ -145,6 +145,8 @@ export function CreateApiTokenForm(props: Props) {
               }}
               render={({ field: { value, onChange } }) => (
                 <Input
+                  id="modal-form-title"
+                  name="modal-form-title"
                   type="text"
                   value={value}
                   onChange={onChange}

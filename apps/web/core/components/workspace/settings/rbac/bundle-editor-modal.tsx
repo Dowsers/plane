@@ -153,6 +153,8 @@ export function BundleEditorModal(props: Props) {
           <div className="flex flex-1 flex-col gap-2">
             <span className="text-body-xs-medium text-secondary">{t("common.name")}</span>
             <Input
+              id="bundle-editor-name"
+              name="bundle-editor-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -164,6 +166,8 @@ export function BundleEditorModal(props: Props) {
           <div className="flex flex-1 flex-col gap-2">
             <span className="text-body-xs-medium text-secondary">{t("common.description")}</span>
             <Input
+              id="bundle-editor-description"
+              name="bundle-editor-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -196,6 +200,8 @@ export function BundleEditorModal(props: Props) {
                     >
                       <label className="flex flex-1 items-center gap-2">
                         <input
+                          id={`bundle-permission-${permission.id}`}
+                          name={`bundle-permission-${permission.id}`}
                           type="checkbox"
                           checked={row.included}
                           onChange={() => toggleIncluded(permission.id)}

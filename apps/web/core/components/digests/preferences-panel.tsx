@@ -213,6 +213,8 @@ export const DigestPreferencesPanel = observer(function DigestPreferencesPanel(p
               description=""
               control={
                 <Input
+                  id="preferences-time-of-day"
+                  name="preferences-time-of-day"
                   type="time"
                   inputSize="sm"
                   className="w-32"

@@ -123,6 +123,8 @@ export const ModuleViewHeader = observer(function ModuleViewHeader() {
         >
           <SearchIcon className="h-3.5 w-3.5" />
           <input
+            id="module-view-search-query"
+            name="module-view-search-query"
             ref={inputRef}
             className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
             placeholder={t("common.search.label")}

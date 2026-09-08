@@ -400,6 +400,8 @@ const InstanceSAMLConfigurationDetailPage = observer(function InstanceSAMLConfig
         >
           <div className="flex items-center gap-2">
             <Input
+              id="config-id-page-new-domain"
+              name="config-id-page-new-domain"
               type="text"
               value={newDomain}
               onChange={(e) => setNewDomain(e.target.value)}

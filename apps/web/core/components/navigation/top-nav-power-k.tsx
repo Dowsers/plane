@@ -232,6 +232,8 @@ export const TopNavPowerK = observer(() => {
         >
           <SearchIcon className="mr-2 size-3.5 shrink-0 text-placeholder" />
           <input
+            id="top-nav-power-k-search-term"
+            name="top-nav-power-k-search-term"
             ref={inputRef}
             type="text"
             value={searchTerm}

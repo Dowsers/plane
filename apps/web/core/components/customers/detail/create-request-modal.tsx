@@ -94,6 +94,8 @@ export const CreateCustomerRequestModal = observer(function CreateCustomerReques
         <h3 className="text-16 font-medium">{t("customers.new_request")}</h3>
         <div className="flex flex-col gap-1">
           <Input
+            id="create-request-name"
+            name="create-request-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

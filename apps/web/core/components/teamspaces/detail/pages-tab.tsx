@@ -85,6 +85,8 @@ export const TeamspacePagesTab = observer(function TeamspacePagesTab(props: Prop
       {canModify && (
         <div className="flex items-center gap-2">
           <Input
+            id="pages-tab-new-page-name"
+            name="pages-tab-new-page-name"
             type="text"
             value={newPageName}
             onChange={(e) => setNewPageName(e.target.value)}

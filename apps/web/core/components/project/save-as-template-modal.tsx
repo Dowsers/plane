@@ -58,6 +58,8 @@ export const SaveProjectAsTemplateModal = observer(function SaveProjectAsTemplat
       <div className="flex flex-col gap-4 p-5">
         <h3 className="text-16 font-medium">{t("project_templates.save_as_template")}</h3>
         <Input
+          id="save-as-template-name"
+          name="save-as-template-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}

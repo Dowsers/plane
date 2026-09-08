@@ -114,6 +114,8 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
 
         <div className="flex flex-col gap-3 px-5">
           <Input
+            id="intake-forms-form-name"
+            name="intake-forms-form-name"
             type="text"
             placeholder={t("intake_settings.forms.form_modal.name_placeholder")}
             value={values.name ?? ""}
@@ -191,6 +193,8 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
           </div>
 
           <Input
+            id="intake-forms-form-success-message"
+            name="intake-forms-form-success-message"
             type="text"
             placeholder={t("intake_settings.forms.form_modal.success_message_placeholder")}
             value={values.success_message ?? ""}
@@ -198,6 +202,8 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
             inputSize="sm"
           />
           <Input
+            id="intake-forms-form-redirect-url"
+            name="intake-forms-form-redirect-url"
             type="url"
             placeholder={t("intake_settings.forms.form_modal.redirect_url_placeholder")}
             value={values.redirect_url ?? ""}
@@ -207,6 +213,8 @@ export const IntakeFormFormModal = observer(function IntakeFormFormModal(props: 
           <div className="flex items-center gap-2">
             <span className="text-13 text-secondary">{t("intake_settings.forms.form_modal.rate_limit_label")}</span>
             <Input
+              id="intake-forms-form-rate-limit-per-ip-per-hour"
+              name="intake-forms-form-rate-limit-per-ip-per-hour"
               type="number"
               min={1}
               max={1000}

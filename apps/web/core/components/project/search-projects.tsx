@@ -62,6 +62,8 @@ export const ProjectSearch = observer(function ProjectSearch() {
       >
         <SearchIcon className="h-3.5 w-3.5" />
         <input
+          id="search-projects-search-query"
+          name="search-projects-search-query"
           ref={inputRef}
           className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
           placeholder={t("common.search.label")}

@@ -16,6 +16,7 @@ export function ColorPicker(props: ColorPickerProps) {
   const { value, onChange, className = "" } = props;
   // refs
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const fieldId = React.useId();
 
   // handlers
   const handleOnClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -33,6 +34,8 @@ export function ColorPicker(props: ColorPickerProps) {
       />
       <input
         ref={inputRef}
+        id={fieldId}
+        name={fieldId}
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}

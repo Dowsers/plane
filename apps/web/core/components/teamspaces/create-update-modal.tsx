@@ -90,6 +90,8 @@ export const CreateUpdateTeamspaceModal = observer(function CreateUpdateTeamspac
         </h3>
         <div className="flex flex-col gap-1">
           <Input
+            id="create-update-name"
+            name="create-update-name"
             type="text"
             value={values.name ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}

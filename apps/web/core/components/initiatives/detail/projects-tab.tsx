@@ -147,6 +147,8 @@ export const InitiativeProjectsTab = observer(function InitiativeProjectsTab(pro
                   className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-layer-1"
                 >
                   <input
+                    id={`initiative-project-${projectId}`}
+                    name={`initiative-project-${projectId}`}
                     type="checkbox"
                     checked={isSelected}
                     onChange={(e) =>

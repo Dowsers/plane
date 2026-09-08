@@ -143,6 +143,8 @@ export function SelectDuplicateInboxIssueModal(props: Props) {
             aria-hidden="true"
           />
           <input
+            id="select-duplicate-search-placeholder"
+            name="select-duplicate-search-placeholder"
             type="text"
             className="h-12 w-full border-0 bg-transparent pr-4 pl-11 text-primary outline-none focus:ring-0 sm:text-13"
             placeholder={t("inbox_issue.select_duplicate.search_placeholder")}

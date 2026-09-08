@@ -125,6 +125,7 @@ function ComboboxOptions({
 }: ComboboxOptionsProps) {
   // const [searchQuery, setSearchQuery] = React.useState("");
   const [internalSearchQuery, setInternalSearchQuery] = React.useState("");
+  const searchFieldId = React.useId();
 
   const searchQuery = controlledSearchQuery !== undefined ? controlledSearchQuery : internalSearchQuery;
 
@@ -182,6 +183,8 @@ function ComboboxOptions({
               <div className="relative">
                 <SearchIcon className="absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-placeholder" />
                 <input
+                  id={searchFieldId}
+                  name={searchFieldId}
                   type="text"
                   placeholder={searchPlaceholder}
                   value={searchQuery}

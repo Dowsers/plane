@@ -169,6 +169,8 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
       </div>
       <p className="text-12 text-tertiary">{t("api_explorer.token_panel.setup_description")}</p>
       <Input
+        id="token-bootstrap-value"
+        name="token-bootstrap-value"
         placeholder={t("api_explorer.token_panel.paste_placeholder")}
         value={bootstrapValue}
         onChange={(e) => setBootstrapValue(e.target.value)}
@@ -206,7 +208,13 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
             <span className="text-12 font-medium text-secondary">{t("api_explorer.token_panel.scope")}</span>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-1.5 text-13">
-                <input type="radio" checked={scope === "read_only"} onChange={() => setScope("read_only")} />
+                <input
+                  id="token-scope-read-only"
+                  name="token-scope"
+                  type="radio"
+                  checked={scope === "read_only"}
+                  onChange={() => setScope("read_only")}
+                />
                 {t("api_explorer.token_panel.read_only")}
               </label>
               <Tooltip
@@ -219,6 +227,8 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
                   aria-disabled={!canRequestReadWrite}
                 >
                   <input
+                    id="token-scope-read-write"
+                    name="token-scope"
                     type="radio"
                     checked={scope === "read_write"}
                     disabled={!canRequestReadWrite}
@@ -232,6 +242,8 @@ export function TokenPanel({ workspaceSlug, isAdmin, allowMembersExecute, active
           <div className="flex flex-col gap-1">
             <span className="text-12 font-medium text-secondary">{t("api_explorer.token_panel.lifetime")}</span>
             <Input
+              id="token-ttl-seconds"
+              name="token-ttl-seconds"
               type="number"
               min={60}
               max={3600}

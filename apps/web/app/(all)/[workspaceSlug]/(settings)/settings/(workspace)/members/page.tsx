@@ -129,6 +129,8 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
           <div className="flex items-center gap-1.5 rounded-md border border-subtle bg-surface-1 px-2.5 py-1.5">
             <SearchIcon className="h-3.5 w-3.5 text-placeholder" />
             <input
+              id="members-page-search-query"
+              name="members-page-search-query"
               className="w-full max-w-[234px] border-none bg-transparent text-body-xs-regular outline-none placeholder:text-placeholder"
               placeholder={`${t("search")}...`}
               value={searchQuery}

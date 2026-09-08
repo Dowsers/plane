@@ -98,6 +98,8 @@ export const CyclesViewHeader = observer(function CyclesViewHeader(props: Props)
         >
           <SearchIcon className="h-3.5 w-3.5" />
           <input
+            id="cycles-view-search-query"
+            name="cycles-view-search-query"
             ref={inputRef}
             className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
             placeholder={t("search")}

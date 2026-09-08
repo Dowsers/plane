@@ -33,7 +33,13 @@ export const BulkDeleteIssuesModalItem = observer(function BulkDeleteIssuesModal
       }
     >
       <div className="flex items-center gap-2">
-        <input type="checkbox" checked={canDeleteIssueIds} readOnly />
+        <input
+          id={`bulk-delete-issue-${issue.id}`}
+          name={`bulk-delete-issue-${issue.id}`}
+          type="checkbox"
+          checked={canDeleteIssueIds}
+          readOnly
+        />
         <span
           className="block h-1.5 w-1.5 flex-shrink-0 rounded-full"
           style={{

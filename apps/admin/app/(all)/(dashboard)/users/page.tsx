@@ -97,7 +97,13 @@ const UsersPage = observer(function UsersPage(_props: Route.ComponentProps) {
               again after you leave this page.
             </p>
             <div className="flex items-center gap-2">
-              <Input readOnly value={resetLink} className="w-full text-13" />
+              <Input
+                id="users-page-reset-link"
+                name="users-page-reset-link"
+                readOnly
+                value={resetLink}
+                className="w-full text-13"
+              />
               <Button variant="secondary" size="lg" onClick={handleCopy} prependIcon={<CopyIcon className="size-4" />}>
                 Copy
               </Button>

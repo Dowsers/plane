@@ -210,6 +210,9 @@ export function CustomImageUploader(props: CustomImageUploaderProps) {
 
   return (
     <div
+      // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- must stay a <div> with contentEditable={false}: this is a ProseMirror/Tiptap node view drag-and-drop zone, not a real button
+      role="button"
+      tabIndex={0}
       className={cn(
         "image-upload-component flex cursor-default items-center justify-start gap-2 rounded-lg border border-dashed bg-layer-3 px-2 py-3 text-tertiary transition-all duration-200 ease-in-out",
         {
@@ -234,6 +237,11 @@ export function CustomImageUploader(props: CustomImageUploaderProps) {
           fileInputRef.current?.click();
         }
       }}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !failedToLoadImage && editor.isEditable && !hasDuplicationFailed) {
+          fileInputRef.current?.click();
+        }
+      }}
     >
       <ImageIcon className="size-4" />
       <div className="flex-1 text-14 font-medium">{getDisplayMessage()}</div>
@@ -254,6 +262,8 @@ export function CustomImageUploader(props: CustomImageUploaderProps) {
         </button>
       )}
       <input
+        id="uploader-file"
+        name="uploader-file"
         className="size-0 overflow-hidden"
         ref={fileInputRef}
         hidden

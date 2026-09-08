@@ -116,6 +116,8 @@ export const SCIMProvisioningLog = observer(function SCIMProvisioningLog(props: 
           ))}
         </CustomSelect>
         <Input
+          id="scim-provisioning-log-email-search"
+          name="scim-provisioning-log-email-search"
           type="text"
           value={emailSearch}
           onChange={(e) => setEmailSearch(e.target.value)}

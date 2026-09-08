@@ -145,30 +145,38 @@ export const ProjectAITriageConfigRoot = observer(function ProjectAITriageConfig
     onChange: (value: number) => void,
     autoApply: boolean,
     onAutoApplyChange: (value: boolean) => void
-  ) => (
-    <div className="flex flex-col gap-2 rounded-md border-[0.5px] border-subtle p-3">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-13 font-medium text-primary">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-12 text-tertiary">{t("project_settings.ai_triage.auto_apply")}</span>
-          <ToggleSwitch value={autoApply} onChange={onAutoApplyChange} size="sm" disabled={controlsDisabled} />
+  ) => {
+    const fieldId = `ai-triage-threshold-${label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")}`;
+    return (
+      <div className="flex flex-col gap-2 rounded-md border-[0.5px] border-subtle p-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-13 font-medium text-primary">{label}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-12 text-tertiary">{t("project_settings.ai_triage.auto_apply")}</span>
+            <ToggleSwitch value={autoApply} onChange={onAutoApplyChange} size="sm" disabled={controlsDisabled} />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            id={fieldId}
+            name={fieldId}
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            disabled={controlsDisabled}
+            className="accent-accent-primary h-1.5 w-full flex-1 cursor-pointer disabled:cursor-not-allowed"
+          />
+          <span className="w-10 shrink-0 text-right text-12 text-secondary">{Math.round(value * 100)}%</span>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          disabled={controlsDisabled}
-          className="accent-accent-primary h-1.5 w-full flex-1 cursor-pointer disabled:cursor-not-allowed"
-        />
-        <span className="w-10 shrink-0 text-right text-12 text-secondary">{Math.round(value * 100)}%</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,6 +239,8 @@ export const ProjectAITriageConfigRoot = observer(function ProjectAITriageConfig
             <div className="flex flex-col gap-1">
               <span className="text-13 text-secondary">{t("project_settings.ai_triage.max_labels_suggested")}</span>
               <Input
+                id="ai-triage-config-root-max-labels-suggested"
+                name="ai-triage-config-root-max-labels-suggested"
                 type="number"
                 min={0}
                 value={maxLabelsSuggested}
@@ -242,6 +252,8 @@ export const ProjectAITriageConfigRoot = observer(function ProjectAITriageConfig
             <div className="flex flex-col gap-1">
               <span className="text-13 text-secondary">{t("project_settings.ai_triage.min_historical_issues")}</span>
               <Input
+                id="ai-triage-config-root-min-historical-issues"
+                name="ai-triage-config-root-min-historical-issues"
                 type="number"
                 min={0}
                 value={minHistoricalIssues}

@@ -203,6 +203,8 @@ export const MilestoneDetailRoot = observer(function MilestoneDetailRoot(props: 
                     className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-layer-1"
                   >
                     <input
+                      id={`milestone-issue-${issue.id}`}
+                      name={`milestone-issue-${issue.id}`}
                       type="checkbox"
                       checked={isSelected}
                       onChange={(e) =>

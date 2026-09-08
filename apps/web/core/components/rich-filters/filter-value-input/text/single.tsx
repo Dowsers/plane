@@ -50,6 +50,8 @@ export const TextFilterValueInput = observer(function TextFilterValueInput<P ext
 
   return (
     <Input
+      id="single-local-value"
+      name="single-local-value"
       value={localValue}
       onChange={(event) => setLocalValue(event.target.value)}
       placeholder={config.placeholder ?? EMPTY_FILTER_PLACEHOLDER_TEXT}

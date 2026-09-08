@@ -171,6 +171,8 @@ export function WorkflowTransitionFormModal(props: Props) {
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-1.5 text-13 text-primary">
                   <input
+                    id="transition-from-creation"
+                    name="transition-from"
                     type="radio"
                     checked={state.isFromCreation}
                     onChange={() => setState((prev) => ({ ...prev, isFromCreation: true }))}
@@ -179,6 +181,8 @@ export function WorkflowTransitionFormModal(props: Props) {
                 </label>
                 <label className="flex items-center gap-1.5 text-13 text-primary">
                   <input
+                    id="transition-from-state"
+                    name="transition-from"
                     type="radio"
                     checked={!state.isFromCreation}
                     onChange={() => setState((prev) => ({ ...prev, isFromCreation: false }))}

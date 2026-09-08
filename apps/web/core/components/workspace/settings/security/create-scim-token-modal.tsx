@@ -77,6 +77,8 @@ export function CreateSCIMTokenModal(props: Props) {
           <div className="flex flex-col gap-2">
             <span className="text-body-xs-medium text-secondary">{t("scim.create_token_modal.label")}</span>
             <Input
+              id="create-scim-token-label"
+              name="create-scim-token-label"
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}

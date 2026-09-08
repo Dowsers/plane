@@ -177,6 +177,8 @@ export const PageCommentsGutter = observer(function PageCommentsGutter(props: Pr
           </div>
           <label className="flex items-center gap-1.5 text-11 text-tertiary">
             <input
+              id="gutter-checkbox"
+              name="gutter-checkbox"
               type="checkbox"
               checked={comments.showResolved}
               onChange={(e) => comments.setShowResolved(e.target.checked)}

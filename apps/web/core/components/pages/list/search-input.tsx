@@ -64,6 +64,8 @@ export function PageSearchInput(props: Props) {
       >
         <SearchIcon className="h-3.5 w-3.5" />
         <input
+          id="search-input-search-query"
+          name="search-input-search-query"
           ref={inputRef}
           className="ml-2 w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
           placeholder={t("wiki.list.search_placeholder")}

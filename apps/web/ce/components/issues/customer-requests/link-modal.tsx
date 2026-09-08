@@ -179,6 +179,8 @@ export const LinkCustomerRequestModal = observer(function LinkCustomerRequestMod
             ) : (
               <>
                 <Input
+                  id="link-new-request-name"
+                  name="link-new-request-name"
                   type="text"
                   value={newRequestName}
                   onChange={(e) => setNewRequestName(e.target.value)}

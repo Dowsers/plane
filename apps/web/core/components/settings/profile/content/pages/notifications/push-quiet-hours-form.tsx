@@ -116,6 +116,8 @@ export const PushQuietHoursForm = observer(function PushQuietHoursForm(props: Pr
             description=""
             control={
               <Input
+                id="push-quiet-hours-start"
+                name="push-quiet-hours-start"
                 type="time"
                 inputSize="sm"
                 className="w-32"
@@ -129,6 +131,8 @@ export const PushQuietHoursForm = observer(function PushQuietHoursForm(props: Pr
             description=""
             control={
               <Input
+                id="push-quiet-hours-end"
+                name="push-quiet-hours-end"
                 type="time"
                 inputSize="sm"
                 className="w-32"

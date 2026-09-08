@@ -125,6 +125,8 @@ export const SlackChannelMappingModal = observer(function SlackChannelMappingMod
             </p>
           )}
           <Input
+            id="slack-mapping-channel-id"
+            name="slack-mapping-channel-id"
             type="text"
             placeholder={t("slack_integration.mappings.channel_id_label")}
             value={channelId}
@@ -133,6 +135,8 @@ export const SlackChannelMappingModal = observer(function SlackChannelMappingMod
             disabled={!hasConnection}
           />
           <Input
+            id="slack-mapping-channel-name"
+            name="slack-mapping-channel-name"
             type="text"
             placeholder={t("slack_integration.mappings.channel_name_label")}
             value={channelName}

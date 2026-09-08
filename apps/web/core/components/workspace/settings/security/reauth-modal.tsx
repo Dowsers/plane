@@ -169,6 +169,8 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
             <span className="text-body-xs-medium text-secondary">{t("reauth_modal.password_label")}</span>
             <div className="relative flex items-center rounded-md">
               <Input
+                id="reauth-password"
+                name="reauth-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -216,6 +218,8 @@ export const ReauthModal = observer(function ReauthModal(props: Props) {
               <>
                 <span className="text-body-xs-medium text-secondary">{t("reauth_modal.verification_code_label")}</span>
                 <Input
+                  id="reauth-code"
+                  name="reauth-code"
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}

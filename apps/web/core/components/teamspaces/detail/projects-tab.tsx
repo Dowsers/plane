@@ -151,6 +151,8 @@ export const TeamspaceProjectsTab = observer(function TeamspaceProjectsTab(props
                   className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-layer-1"
                 >
                   <input
+                    id={`teamspace-project-${projectId}`}
+                    name={`teamspace-project-${projectId}`}
                     type="checkbox"
                     checked={isSelected}
                     onChange={(e) =>

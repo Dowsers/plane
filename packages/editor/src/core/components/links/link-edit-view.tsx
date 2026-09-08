@@ -21,10 +21,18 @@ type InputViewProps = {
 };
 
 function InputView({ label, value, placeholder, onChange, autoFocus: _autoFocus }: InputViewProps) {
+  const fieldId = `link-edit-${label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")}`;
   return (
     <div className="flex flex-col gap-1">
-      <label className="inline-block text-11 font-semibold text-placeholder">{label}</label>
+      <label htmlFor={fieldId} className="inline-block text-11 font-semibold text-placeholder">
+        {label}
+      </label>
       <input
+        id={fieldId}
+        name={fieldId}
         placeholder={placeholder}
         onClick={(e) => e.stopPropagation()}
         className="w-[280px] rounded-md border border-strong bg-layer-1 p-2 text-13 text-primary outline-none"

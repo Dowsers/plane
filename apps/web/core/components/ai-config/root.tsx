@@ -507,6 +507,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           <div className="flex flex-col gap-1">
             <span className="text-13 text-secondary">{t("ai.fields.model_name")}</span>
             <Input
+              id="ai-config-root-model-name"
+              name="ai-config-root-model-name"
               value={modelName}
               onChange={(e) => setModelName(e.target.value)}
               placeholder="gpt-4o-mini"
@@ -517,6 +519,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           <div className="flex flex-col gap-1 sm:col-span-2">
             <span className="text-13 text-secondary">{t("ai.fields.api_base_url")}</span>
             <Input
+              id="ai-config-root-api-base-url"
+              name="ai-config-root-api-base-url"
               value={apiBaseUrl}
               onChange={(e) => setApiBaseUrl(e.target.value)}
               placeholder="https://my-self-hosted-endpoint.internal/v1"
@@ -528,6 +532,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           <div className="flex flex-col gap-1 sm:col-span-2">
             <span className="text-13 text-secondary">{t("ai.fields.api_key")}</span>
             <Input
+              id="ai-config-root-api-key"
+              name="ai-config-root-api-key"
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
@@ -632,6 +638,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
           <div className="flex flex-col gap-1 sm:w-1/2">
             <span className="text-13 text-secondary">{t("ai.assistant_settings.max_messages_per_hour")}</span>
             <Input
+              id="ai-config-root-assistant-max-messages-per-hour"
+              name="ai-config-root-assistant-max-messages-per-hour"
               type="number"
               min={0}
               value={assistantMaxMessagesPerHour}
@@ -683,6 +691,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
               <span className="text-12 text-tertiary">{Math.round(duplicateDetectionThreshold * 100)}%</span>
             </div>
             <input
+              id="ai-config-root-duplicate-detection-threshold"
+              name="ai-config-root-duplicate-detection-threshold"
               type="range"
               min={0}
               max={1}
@@ -765,6 +775,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
             <div className="flex flex-col gap-1">
               <span className="text-13 text-secondary">{t("ai.update_draft_settings.max_regenerations")}</span>
               <Input
+                id="ai-config-root-max-regenerations"
+                name="ai-config-root-max-regenerations"
                 type="number"
                 min={1}
                 value={maxRegenerations}
@@ -775,6 +787,8 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
             <div className="flex flex-col gap-1">
               <span className="text-13 text-secondary">{t("ai.update_draft_settings.daily_generation_limit")}</span>
               <Input
+                id="ai-config-root-daily-generation-limit"
+                name="ai-config-root-daily-generation-limit"
                 type="number"
                 min={1}
                 value={dailyGenerationLimit}

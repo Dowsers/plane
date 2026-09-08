@@ -158,6 +158,8 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
         <div className="flex flex-col gap-3 px-5">
           <div className="flex items-center gap-3">
             <Input
+              id="rule-form-name"
+              name="rule-form-name"
               type="text"
               placeholder={t("intake_settings.triage_rules.form_modal.name_placeholder")}
               value={name}
@@ -212,6 +214,8 @@ export const TriageRuleFormModal = observer(function TriageRuleFormModal(props: 
                   </CustomSelect.Option>
                 </CustomSelect>
                 <Input
+                  id="rule-form-condition"
+                  name="rule-form-condition"
                   type="text"
                   placeholder={t("intake_settings.triage_rules.form_modal.value_placeholder")}
                   value={condition.value}

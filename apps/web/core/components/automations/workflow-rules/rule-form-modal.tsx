@@ -163,6 +163,8 @@ export function WorkflowRuleFormModal(props: Props) {
         <div className="flex flex-col gap-4 px-5">
           <div className="flex items-center gap-3">
             <Input
+              id="rule-form-name"
+              name="rule-form-name"
               type="text"
               placeholder={t("workflow_rules.form.rule_name_placeholder")}
               value={state.name}

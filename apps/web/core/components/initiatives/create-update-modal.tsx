@@ -101,6 +101,8 @@ export const CreateUpdateInitiativeModal = observer(function CreateUpdateInitiat
         </h3>
         <div className="flex flex-col gap-1">
           <Input
+            id="create-update-name"
+            name="create-update-name"
             type="text"
             value={values.name ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
@@ -131,6 +133,8 @@ export const CreateUpdateInitiativeModal = observer(function CreateUpdateInitiat
           <div className="flex flex-col gap-1">
             <span className="text-11 text-secondary">{t("initiatives.start_date")}</span>
             <Input
+              id="create-update-start-date"
+              name="create-update-start-date"
               type="date"
               value={values.start_date ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, start_date: e.target.value || null }))}
@@ -140,6 +144,8 @@ export const CreateUpdateInitiativeModal = observer(function CreateUpdateInitiat
           <div className="flex flex-col gap-1">
             <span className="text-11 text-secondary">{t("initiatives.target_date")}</span>
             <Input
+              id="create-update-target-date"
+              name="create-update-target-date"
               type="date"
               value={values.target_date ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, target_date: e.target.value || null }))}

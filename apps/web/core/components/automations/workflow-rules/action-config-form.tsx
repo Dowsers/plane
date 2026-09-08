@@ -138,6 +138,8 @@ export function ActionConfigForm(props: Props) {
           {mode === "relative" ? (
             <div className="flex items-center gap-1.5 text-13 text-secondary">
               <Input
+                id="action-config-days-from-trigger"
+                name="action-config-days-from-trigger"
                 type="number"
                 min={0}
                 inputSize="sm"

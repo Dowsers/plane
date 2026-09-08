@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useId } from "react";
 import { useTranslation } from "@plane/i18n";
 type TEstimateTextInputProps = {
   value?: string;
@@ -15,9 +16,12 @@ export function EstimateTextInput(props: TEstimateTextInputProps) {
 
   // i18n
   const { t } = useTranslation();
+  const fieldId = useId();
 
   return (
     <input
+      id={fieldId}
+      name={fieldId}
       value={value}
       onChange={(e) => handleEstimateInputValue(e.target.value)}
       className="w-full border-none bg-transparent px-3 py-2 text-13 focus:border-0 focus:ring-0 focus:outline-none"

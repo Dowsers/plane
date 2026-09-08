@@ -237,6 +237,8 @@ export function SLAPolicyFormModal(props: Props) {
         <div className="flex flex-col gap-4 px-5">
           <div className="flex items-center gap-3">
             <Input
+              id="policy-form-name"
+              name="policy-form-name"
               type="text"
               placeholder={t("sla_policies.form.name_placeholder")}
               value={state.name}
@@ -267,6 +269,8 @@ export function SLAPolicyFormModal(props: Props) {
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-1.5 text-13 text-primary">
                 <input
+                  id="sla-policy-scope-all"
+                  name="sla-policy-scope"
                   type="radio"
                   checked={state.appliesToAllProjects}
                   onChange={() => setState((prev) => ({ ...prev, appliesToAllProjects: true }))}
@@ -275,6 +279,8 @@ export function SLAPolicyFormModal(props: Props) {
               </label>
               <label className="flex items-center gap-1.5 text-13 text-primary">
                 <input
+                  id="sla-policy-scope-specific"
+                  name="sla-policy-scope"
                   type="radio"
                   checked={!state.appliesToAllProjects}
                   onChange={() => setState((prev) => ({ ...prev, appliesToAllProjects: false }))}
@@ -347,6 +353,8 @@ export function SLAPolicyFormModal(props: Props) {
               <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.response_time")}</span>
               <div className="flex items-center gap-2">
                 <Input
+                  id="policy-form-response-time"
+                  name="policy-form-response-time"
                   type="number"
                   min={0}
                   placeholder={t("sla_policies.form.response_time_placeholder")}
@@ -377,6 +385,8 @@ export function SLAPolicyFormModal(props: Props) {
               <span className="text-13 font-medium text-secondary">{t("sla_policies.fields.resolution_time")}</span>
               <div className="flex items-center gap-2">
                 <Input
+                  id="policy-form-resolution-time"
+                  name="policy-form-resolution-time"
                   type="number"
                   min={0}
                   placeholder={t("sla_policies.form.resolution_time_placeholder")}
@@ -415,6 +425,8 @@ export function SLAPolicyFormModal(props: Props) {
                 {t("sla_policies.form.warning_threshold_percent")}
               </span>
               <Input
+                id="policy-form-warning-threshold-percent"
+                name="policy-form-warning-threshold-percent"
                 type="number"
                 min={1}
                 max={99}
@@ -430,6 +442,8 @@ export function SLAPolicyFormModal(props: Props) {
                 {t("sla_policies.form.critical_threshold_percent")}
               </span>
               <Input
+                id="policy-form-critical-threshold-percent"
+                name="policy-form-critical-threshold-percent"
                 type="number"
                 min={1}
                 max={100}

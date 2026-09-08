@@ -99,6 +99,8 @@ export function LogTimeModal(props: Props) {
           <span className="text-13 font-medium text-secondary">Duration</span>
           <div className="flex items-center gap-2">
             <Input
+              id="create-hours"
+              name="create-hours"
               type="number"
               min={0}
               placeholder="Hours"
@@ -108,6 +110,8 @@ export function LogTimeModal(props: Props) {
               className="flex-1"
             />
             <Input
+              id="create-minutes"
+              name="create-minutes"
               type="number"
               min={0}
               max={59}

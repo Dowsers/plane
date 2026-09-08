@@ -321,6 +321,8 @@ export const CustomizeNavigationDialog = observer(function CustomizeNavigationDi
                         <div className="flex w-full flex-col gap-2 pb-1.5">
                           <label className="w-full text-11 text-secondary">{t("enter_number_of_projects")}</label>
                           <input
+                            id="customize-navigation-dialog-project-count-input"
+                            name="customize-navigation-dialog-project-count-input"
                             type="number"
                             min="1"
                             step="1"

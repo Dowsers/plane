@@ -173,6 +173,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
           <div className="flex flex-col gap-1">
             <span className="text-13 text-secondary">{t("flexible_query.quotas.max_depth")}</span>
             <Input
+              id="flexible-query-root-max-depth"
+              name="flexible-query-root-max-depth"
               type="number"
               min={1}
               value={maxDepth ?? ""}
@@ -184,6 +186,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
           <div className="flex flex-col gap-1">
             <span className="text-13 text-secondary">{t("flexible_query.quotas.max_cost")}</span>
             <Input
+              id="flexible-query-root-max-cost"
+              name="flexible-query-root-max-cost"
               type="number"
               min={1}
               value={maxCost ?? ""}
@@ -195,6 +199,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
           <div className="flex flex-col gap-1">
             <span className="text-13 text-secondary">{t("flexible_query.quotas.timeout_ms")}</span>
             <Input
+              id="flexible-query-root-timeout-ms"
+              name="flexible-query-root-timeout-ms"
               type="number"
               min={1}
               value={timeoutMs ?? ""}
@@ -223,6 +229,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
         <h5 className="text-14 font-medium text-primary">{t("flexible_query.try_it.title")}</h5>
         <p className="text-13 text-tertiary">{t("flexible_query.try_it.description")}</p>
         <Input
+          id="flexible-query-root-api-token"
+          name="flexible-query-root-api-token"
           placeholder={t("flexible_query.try_it.token_placeholder")}
           value={apiToken}
           onChange={(e) => setApiToken(e.target.value)}

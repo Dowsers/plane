@@ -98,6 +98,8 @@ const InstanceAuditLogPage = observer(function InstanceAuditLogPage(_props: Rout
         </div>
         <div className="flex items-center gap-3">
           <Input
+            id="security-page-max-session-timeout"
+            name="security-page-max-session-timeout"
             type="number"
             min={5}
             max={43200}

@@ -80,6 +80,8 @@ export const CreateUpdateTeamModal = observer(function CreateUpdateTeamModal(pro
         <h3 className="text-16 font-medium">{team ? t("teams.update_team") : t("teams.create_team")}</h3>
         <div className="flex flex-col gap-1">
           <Input
+            id="create-update-name"
+            name="create-update-name"
             type="text"
             value={values.name ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}

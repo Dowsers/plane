@@ -110,6 +110,8 @@ export const CreateUpdateCustomerModal = observer(function CreateUpdateCustomerM
         </h3>
         <div className="flex flex-col gap-1">
           <Input
+            id="create-update-name"
+            name="create-update-name"
             type="text"
             value={values.name ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
@@ -128,6 +130,8 @@ export const CreateUpdateCustomerModal = observer(function CreateUpdateCustomerM
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Input
+            id="create-update-contact-name"
+            name="create-update-contact-name"
             type="text"
             value={values.contact_name ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, contact_name: e.target.value }))}
@@ -135,6 +139,8 @@ export const CreateUpdateCustomerModal = observer(function CreateUpdateCustomerM
             className="w-full"
           />
           <Input
+            id="create-update-contact-email"
+            name="create-update-contact-email"
             type="email"
             value={values.contact_email ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, contact_email: e.target.value }))}
@@ -144,6 +150,8 @@ export const CreateUpdateCustomerModal = observer(function CreateUpdateCustomerM
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Input
+            id="create-update-domain"
+            name="create-update-domain"
             type="text"
             value={values.domain ?? ""}
             onChange={(e) => setValues((v) => ({ ...v, domain: e.target.value }))}

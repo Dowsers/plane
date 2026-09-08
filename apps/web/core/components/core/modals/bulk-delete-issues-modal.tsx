@@ -178,6 +178,8 @@ export const BulkDeleteIssuesModal = observer(function BulkDeleteIssuesModal(pro
               aria-hidden="true"
             />
             <input
+              id="bulk-delete-issues-search-placeholder"
+              name="bulk-delete-issues-search-placeholder"
               type="text"
               className="h-12 w-full border-0 bg-transparent pr-4 pl-11 text-primary outline-none focus:ring-0 sm:text-13"
               placeholder={t("bulk_delete_issues_modal.search_placeholder")}

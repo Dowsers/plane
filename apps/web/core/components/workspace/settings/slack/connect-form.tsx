@@ -80,6 +80,8 @@ export const SlackConnectForm = observer(function SlackConnectForm(props: Props)
       </div>
       <div className="flex flex-col gap-2">
         <Input
+          id="connect-bot-token"
+          name="connect-bot-token"
           type="password"
           placeholder={t("slack_integration.connect_form.bot_token_label")}
           value={botToken}
@@ -88,6 +90,8 @@ export const SlackConnectForm = observer(function SlackConnectForm(props: Props)
           autoComplete="off"
         />
         <Input
+          id="connect-signing-secret"
+          name="connect-signing-secret"
           type="password"
           placeholder={t("slack_integration.connect_form.signing_secret_label")}
           value={signingSecret}

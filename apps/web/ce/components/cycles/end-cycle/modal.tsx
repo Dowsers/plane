@@ -112,6 +112,8 @@ export const EndCycleModal = observer(function EndCycleModal(props: Props) {
             <div className="flex items-center gap-2 border-b border-subtle px-5 pb-3">
               <SearchIcon className="h-4 w-4 text-secondary" />
               <input
+                id="modal-search-for-a-cycle"
+                name="modal-search-for-a-cycle"
                 className="text-13 outline-none"
                 placeholder="Search for a cycle..."
                 onChange={(e) => setQuery(e.target.value)}

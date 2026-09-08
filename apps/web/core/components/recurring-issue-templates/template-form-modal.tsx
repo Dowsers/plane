@@ -243,6 +243,8 @@ export function RecurringIssueTemplateFormModal(props: Props) {
         <div className="flex flex-col gap-4 px-5">
           <div className="flex flex-col gap-1">
             <Input
+              id="template-form-name"
+              name="template-form-name"
               type="text"
               placeholder={t("recurring_issue_templates.form_modal.name_placeholder")}
               value={state.name}
@@ -338,6 +340,8 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                 <>
                   <span className="text-13 text-tertiary">{t("recurring_issue_templates.form_modal.every")}</span>
                   <Input
+                    id="template-form-interval"
+                    name="template-form-interval"
                     type="number"
                     min={1}
                     inputSize="sm"
@@ -374,6 +378,8 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-13 text-tertiary">{t("recurring_issue_templates.form_modal.on_day")}</span>
                   <Input
+                    id="template-form-day-of-month"
+                    name="template-form-day-of-month"
                     type="number"
                     min={1}
                     max={31}
@@ -453,6 +459,8 @@ export function RecurringIssueTemplateFormModal(props: Props) {
                     {t("recurring_issue_templates.form_modal.max_occurrences_optional")}
                   </span>
                   <Input
+                    id="template-form-max-occurrences"
+                    name="template-form-max-occurrences"
                     type="number"
                     min={1}
                     inputSize="sm"

@@ -84,6 +84,8 @@ export const TeamspaceViewsTab = observer(function TeamspaceViewsTab(props: Prop
       {canModify && (
         <div className="flex items-center gap-2">
           <Input
+            id="views-tab-new-view-name"
+            name="views-tab-new-view-name"
             type="text"
             value={newViewName}
             onChange={(e) => setNewViewName(e.target.value)}

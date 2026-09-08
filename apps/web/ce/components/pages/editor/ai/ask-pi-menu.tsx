@@ -103,6 +103,8 @@ export function AskPiMenu(props: Props) {
             <Sparkles className="size-3 text-secondary" />
           </span>
           <input
+            id="ask-pi-menu-query"
+            name="ask-pi-menu-query"
             type="text"
             className="w-full border-none bg-transparent text-13 outline-none placeholder:text-placeholder"
             value={query}

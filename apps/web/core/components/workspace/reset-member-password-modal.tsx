@@ -86,7 +86,13 @@ export const ResetMemberPasswordModal = observer(function ResetMemberPasswordMod
                     again after you close this window.
                   </p>
                   <div className="flex items-center gap-2">
-                    <Input readOnly value={resetLink} className="w-full text-13" />
+                    <Input
+                      id="reset-member-password-reset-link"
+                      name="reset-member-password-reset-link"
+                      readOnly
+                      value={resetLink}
+                      className="w-full text-13"
+                    />
                     <Button
                       variant="secondary"
                       size="lg"

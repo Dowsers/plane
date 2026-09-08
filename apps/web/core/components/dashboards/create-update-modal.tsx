@@ -90,6 +90,8 @@ export const CreateUpdateDashboardModal = observer(function CreateUpdateDashboar
           {dashboard ? t("workspace_dashboards.update_dashboard") : t("workspace_dashboards.create_dashboard")}
         </h3>
         <Input
+          id="create-update-name"
+          name="create-update-name"
           type="text"
           value={values.name}
           onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}

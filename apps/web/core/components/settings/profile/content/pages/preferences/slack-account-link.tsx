@@ -168,6 +168,8 @@ export const SlackAccountLinkSettings = observer(function SlackAccountLinkSettin
             </span>
             <div className="flex items-center gap-2">
               <Input
+                id="slack-account-link-code"
+                name="slack-account-link-code"
                 type="text"
                 placeholder={t("account_settings.slack_account_link.verify_placeholder")}
                 value={code}

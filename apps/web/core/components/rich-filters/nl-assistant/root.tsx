@@ -219,6 +219,8 @@ export const NLFilterAssistant = observer(function NLFilterAssistant(props: TNLF
         <div className="shadow-lg absolute top-full left-0 z-20 mt-2 w-[28rem] max-w-[90vw] space-y-3 rounded-lg border border-subtle bg-surface-1 p-3">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <input
+              id="nl-assistant-root-query"
+              name="nl-assistant-root-query"
               ref={inputRef}
               type="text"
               value={query}

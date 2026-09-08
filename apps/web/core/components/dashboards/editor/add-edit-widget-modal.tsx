@@ -276,6 +276,8 @@ export const AddEditWidgetModal = observer(function AddEditWidgetModal(props: Pr
         <div className="flex flex-col gap-1">
           <span className="text-11 text-secondary">{t("workspace_dashboards.widget.title_label")}</span>
           <Input
+            id="add-edit-widget-title"
+            name="add-edit-widget-title"
             type="text"
             value={form.title}
             onChange={(e) => setForm((v) => ({ ...v, title: e.target.value }))}

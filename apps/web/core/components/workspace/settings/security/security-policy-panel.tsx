@@ -195,6 +195,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
         description={t("security_policy_panel.session_timeout.description")}
         control={
           <Input
+            id="security-policy-session-timeout-minutes"
+            name="security-policy-session-timeout-minutes"
             type="number"
             min={SESSION_TIMEOUT_MINUTES_MIN}
             max={SESSION_TIMEOUT_MINUTES_MAX}
@@ -234,6 +236,8 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
           {ALLOWED_AUTH_METHOD_KEYS.map((method) => (
             <label key={method} className="flex items-center gap-2 text-body-xs-regular text-secondary">
               <input
+                id={`auth-method-${method}`}
+                name={`auth-method-${method}`}
                 type="checkbox"
                 checked={draft.allowed_auth_methods.includes(method)}
                 onChange={() => toggleAuthMethod(method)}

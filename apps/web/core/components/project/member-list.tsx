@@ -87,6 +87,8 @@ export const ProjectMemberList = observer(function ProjectMemberList(props: TPro
           <div className="flex items-center justify-start gap-1.5 rounded-md border border-subtle bg-surface-1 px-2 py-1">
             <SearchIcon className="h-3.5 w-3.5" />
             <input
+              id="member-list-search-query"
+              name="member-list-search-query"
               className="w-full max-w-[234px] border-none bg-transparent text-13 placeholder:text-placeholder focus:outline-none"
               placeholder={t("search")}
               value={searchQuery}

@@ -144,11 +144,20 @@ export function RoleEditorModal(props: Props) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex flex-1 flex-col gap-2">
             <span className="text-body-xs-medium text-secondary">{t("name")}</span>
-            <Input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
+            <Input
+              id="role-editor-name"
+              name="role-editor-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full"
+            />
           </div>
           <div className="flex flex-1 flex-col gap-2">
             <span className="text-body-xs-medium text-secondary">{t("description")}</span>
             <Input
+              id="role-editor-description"
+              name="role-editor-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

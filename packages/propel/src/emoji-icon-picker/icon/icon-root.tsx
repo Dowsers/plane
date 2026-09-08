@@ -21,6 +21,7 @@ type IconRootProps = {
 
 export function IconRoot(props: IconRootProps) {
   const { defaultColor, onChange, searchDisabled = false, iconType } = props;
+  const instanceId = React.useId();
   // states
   const [activeColor, setActiveColor] = useState(defaultColor);
   const [showHexInput, setShowHexInput] = useState(false);
@@ -52,6 +53,8 @@ export function IconRoot(props: IconRootProps) {
               <SearchIcon className="absolute bottom-3 left-2.5 h-3.5 w-3.5 text-placeholder" />
 
               <input
+                id={`${instanceId}-search`}
+                name={`${instanceId}-search`}
                 placeholder="Search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -72,6 +75,8 @@ export function IconRoot(props: IconRootProps) {
               <span className="flex-shrink-0 text-11 text-tertiary">HEX</span>
               <span className="-mr-1 flex-shrink-0 text-11 text-secondary">#</span>
               <input
+                id={`${instanceId}-hex`}
+                name={`${instanceId}-hex`}
                 type="text"
                 value={hexValue}
                 onChange={(e) => {

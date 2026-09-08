@@ -52,6 +52,8 @@ export function DeleteTeamspaceConfirmModal(props: Props) {
             <span className="font-medium text-primary">{teamspace.name}</span>
           </p>
           <Input
+            id="delete-confirm-confirm-name"
+            name="delete-confirm-confirm-name"
             type="text"
             value={confirmName}
             onChange={(e) => setConfirmName(e.target.value)}

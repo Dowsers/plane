@@ -91,6 +91,8 @@ export function CreateRoleModal(props: Props) {
         <div className="flex flex-col gap-2">
           <span className="text-body-xs-medium text-secondary">{t("common.name")}</span>
           <Input
+            id="create-role-name"
+            name="create-role-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -104,6 +106,8 @@ export function CreateRoleModal(props: Props) {
         <div className="flex flex-col gap-2">
           <span className="text-body-xs-medium text-secondary">{t("common.description")}</span>
           <Input
+            id="create-role-description"
+            name="create-role-description"
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}

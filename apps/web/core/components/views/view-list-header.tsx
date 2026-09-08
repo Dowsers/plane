@@ -81,6 +81,8 @@ export const ViewListHeader = observer(function ViewListHeader() {
         >
           <SearchIcon className="h-3.5 w-3.5" />
           <input
+            id="view-list-search-query"
+            name="view-list-search-query"
             ref={inputRef}
             className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
             placeholder={t("search")}

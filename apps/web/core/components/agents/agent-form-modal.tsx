@@ -113,6 +113,8 @@ export function AgentFormModal(props: Props) {
         <div className="flex flex-col gap-1">
           <span className="text-13 font-medium text-secondary">{t("display_name")}</span>
           <Input
+            id="agent-form-display-name"
+            name="agent-form-display-name"
             type="text"
             placeholder={t("agents.form.display_name_placeholder")}
             value={state.displayName}

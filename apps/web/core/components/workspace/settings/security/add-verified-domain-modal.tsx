@@ -93,6 +93,8 @@ export function AddVerifiedDomainModal(props: Props) {
             <div className="flex flex-col gap-2">
               <span className="text-body-xs-medium text-secondary">Domain</span>
               <Input
+                id="add-verified-domain-domain"
+                name="add-verified-domain-domain"
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}

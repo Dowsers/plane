@@ -35,12 +35,18 @@ export function LabeledInput(props: {
   disabled?: boolean;
 }) {
   const { label, value, onChange, placeholder, required, type = "text", disabled } = props;
+  const fieldId = `saml-field-${label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")}`;
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-13 font-medium text-tertiary">
+      <label htmlFor={fieldId} className="text-13 font-medium text-tertiary">
         {label} {required && <span className="text-danger-primary">*</span>}
       </label>
       <Input
+        id={fieldId}
+        name={fieldId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

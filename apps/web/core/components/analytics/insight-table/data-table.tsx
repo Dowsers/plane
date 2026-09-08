@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function DataTable<TData, TValue>({ columns, data, searchPlaceholder, actions }: DataTableProps<TData, TValue>) {
+  const searchFieldId = React.useId();
   const [rowSelection, _setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -96,6 +97,8 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder, act
             <SearchIcon className="h-3.5 w-3.5" />
             <input
               ref={inputRef}
+              id={searchFieldId}
+              name={searchFieldId}
               className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
               placeholder={t("search")}
               value={table.getColumn(table.getHeaderGroups()?.[0]?.headers?.[0]?.id)?.getFilterValue() as string}

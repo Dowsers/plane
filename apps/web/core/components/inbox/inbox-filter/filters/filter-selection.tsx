@@ -34,6 +34,8 @@ export const InboxIssueFilterSelection = observer(function InboxIssueFilterSelec
         <div className="flex items-center gap-1.5 rounded-sm border-[0.5px] border-subtle bg-surface-2 px-1.5 py-1 text-11">
           <SearchIcon className="text-placeholder" width={12} height={12} strokeWidth={2} />
           <input
+            id="filter-selection-filters-search-query"
+            name="filter-selection-filters-search-query"
             type="text"
             className="w-full bg-surface-2 outline-none placeholder:text-placeholder"
             placeholder={t("search")}

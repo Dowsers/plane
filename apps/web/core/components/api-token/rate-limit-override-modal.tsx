@@ -167,6 +167,8 @@ export function RequestRateLimitOverrideModal(props: Props) {
           <span className="text-13 font-medium text-secondary">Target rate</span>
           <div className="flex items-center gap-2">
             <Input
+              id="rate-limit-override-e-g-500"
+              name="rate-limit-override-e-g-500"
               type="number"
               min={1}
               placeholder="e.g. 500"

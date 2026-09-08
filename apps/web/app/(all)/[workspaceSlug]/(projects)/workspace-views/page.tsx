@@ -33,6 +33,8 @@ function WorkspaceViewsPage() {
         <div className="flex h-11 w-full items-center gap-2.5 overflow-hidden border-b border-subtle px-5 py-3">
           <SearchIcon className="text-secondary" width={14} height={14} strokeWidth={2} />
           <Input
+            id="workspace-views-page-query"
+            name="workspace-views-page-query"
             className="w-full bg-transparent !p-0 text-11 leading-5 text-secondary placeholder:text-placeholder focus:outline-none"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

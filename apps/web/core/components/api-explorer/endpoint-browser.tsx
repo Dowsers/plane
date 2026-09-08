@@ -40,6 +40,8 @@ export function EndpointBrowser({ endpoints, selectedEndpointId, onSelect }: Pro
       <div className="relative shrink-0">
         <Search className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-tertiary" />
         <input
+          id="endpoint-browser-search"
+          name="endpoint-browser-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("api_explorer.endpoint_browser.search_placeholder")}

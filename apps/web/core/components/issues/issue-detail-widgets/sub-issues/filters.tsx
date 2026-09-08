@@ -63,6 +63,8 @@ export const SubIssueFilters = observer(function SubIssueFilters(props: TSubIssu
             <div className="flex items-center gap-1.5 rounded-sm border-[0.5px] border-subtle bg-surface-2 px-1.5 py-1 text-11">
               <SearchIcon className="text-placeholder" width={12} height={12} strokeWidth={2} />
               <input
+                id="filters-filters-search-query"
+                name="filters-filters-search-query"
                 type="text"
                 className="w-full bg-surface-2 outline-none placeholder:text-placeholder"
                 placeholder={t("common.search.label")}

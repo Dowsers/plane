@@ -76,6 +76,8 @@ export function BubbleMenuLinkSelector(props: Props) {
           })}
         >
           <input
+            id="link-selector-enter-or-paste-a-link"
+            name="link-selector-enter-or-paste-a-link"
             ref={inputRef}
             type="url"
             placeholder="Enter or paste a link"

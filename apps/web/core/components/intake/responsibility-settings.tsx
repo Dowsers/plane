@@ -293,6 +293,8 @@ export const IntakeResponsibilitySettings = observer(function IntakeResponsibili
           description={t("intake_settings.responsibility.escalation.description")}
           control={
             <Input
+              id="responsibility-escalation-timeout-minutes"
+              name="responsibility-escalation-timeout-minutes"
               type="number"
               min={5}
               max={1440}

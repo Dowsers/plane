@@ -105,6 +105,8 @@ export const CustomersListRoot = observer(function CustomersListRoot() {
           <div className="flex items-center gap-1.5 rounded-md border-[0.5px] border-subtle px-2 py-1">
             <Search className="h-3.5 w-3.5 text-tertiary" />
             <input
+              id="customers-root-search"
+              name="customers-root-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("search")}

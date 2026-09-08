@@ -127,6 +127,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           description={t("cycle.auto_schedule.cadence_description")}
           control={
             <Input
+              id="settings-cadence-weeks"
+              name="settings-cadence-weeks"
               type="number"
               min={1}
               max={12}
@@ -163,6 +165,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           description={t("cycle.auto_schedule.cooldown_description")}
           control={
             <Input
+              id="settings-cooldown-days"
+              name="settings-cooldown-days"
               type="number"
               min={0}
               max={14}
@@ -180,6 +184,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           description={t("cycle.auto_schedule.lookahead_description")}
           control={
             <Input
+              id="settings-lookahead-count"
+              name="settings-lookahead-count"
               type="number"
               min={1}
               max={3}
@@ -197,6 +203,8 @@ export const CycleAutoScheduleSettings = observer(function CycleAutoScheduleSett
           description={t("cycle.auto_schedule.naming_template_description")}
           control={
             <Input
+              id="settings-naming-template"
+              name="settings-naming-template"
               type="text"
               inputSize="sm"
               className="w-40"
