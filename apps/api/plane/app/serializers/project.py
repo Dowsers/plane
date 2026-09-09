@@ -10,7 +10,6 @@ import re
 
 # Module imports
 from .base import BaseSerializer, DynamicBaseSerializer
-from django.db.models import Max
 from plane.app.serializers.workspace import WorkspaceLiteSerializer
 from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializer
 from plane.db.models import (
@@ -20,7 +19,6 @@ from plane.db.models import (
     ProjectIdentifier,
     DeployBoard,
     ProjectPublicMember,
-    IssueSequence,
 )
 from plane.utils.content_validator import (
     validate_html_content,
@@ -151,7 +149,7 @@ class ProjectListSerializer(DynamicBaseSerializer):
     members = serializers.SerializerMethodField()
     cover_image_url = serializers.CharField(read_only=True)
     inbox_view = serializers.BooleanField(read_only=True, source="intake_view")
-    next_work_item_sequence = serializers.SerializerMethodField()
+    next_work_item_sequence = serializers.IntegerField(read_only=True)
     initiative_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
     latest_update_status = serializers.CharField(read_only=True, allow_null=True)
 
@@ -165,11 +163,6 @@ class ProjectListSerializer(DynamicBaseSerializer):
                 if member.is_active and is_member_visible(member.member)
             ]
         return []
-
-    def get_next_work_item_sequence(self, obj):
-        """Get the next sequence ID that will be assigned to a new issue"""
-        max_sequence = IssueSequence.objects.filter(project_id=obj.id).aggregate(max_seq=Max("sequence"))["max_seq"]
-        return (max_sequence + 1) if max_sequence else 1
 
     class Meta:
         model = Project

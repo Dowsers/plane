@@ -10,7 +10,7 @@ import json
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Exists, F, OuterRef, Prefetch, Q, Subquery, Count, UUIDField, Value
+from django.db.models import Exists, F, Max, OuterRef, Prefetch, Q, Subquery, Count, UUIDField, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -107,6 +107,7 @@ class ProjectViewSet(BaseViewSet):
                     ]
                 )
             )
+            .annotate(next_work_item_sequence=Coalesce(Max("project_issuesequence__sequence"), Value(0)) + Value(1))
             .prefetch_related(
                 Prefetch(
                     "project_projectmember",
