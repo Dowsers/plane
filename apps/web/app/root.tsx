@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Script from "next/script";
 import { Links, Meta, Outlet, Scripts } from "react-router";
 import type { LinksFunction } from "react-router";
@@ -28,9 +28,12 @@ import { LogoSpinner } from "@/components/common/logo-spinner";
 import { CustomErrorComponent } from "./error";
 import { AppProvider } from "./provider";
 // fonts
+// eslint-disable-next-line import/no-unassigned-import -- required side-effect CSS import for the Inter font face
 import "@fontsource-variable/inter";
 import interVariableWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+// eslint-disable-next-line import/no-unassigned-import -- required side-effect CSS import for the Material Symbols font face
 import "@fontsource/material-symbols-rounded";
+// eslint-disable-next-line import/no-unassigned-import -- required side-effect CSS import for the IBM Plex Mono font face
 import "@fontsource/ibm-plex-mono";
 
 const APP_TITLE = "Plane | Simple, extensible, open-source project management tool.";
@@ -133,10 +136,18 @@ export default function Root() {
 }
 
 export function HydrateFallback() {
+  const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
 
-  // if we are on the server or the theme is not resolved, return an empty div
-  if (typeof window === "undefined" || resolvedTheme === undefined) return <div />;
+  // next-themes can resolve resolvedTheme synchronously on the client (from localStorage),
+  // before hydration finishes, while the server never can. Gating on resolvedTheme directly
+  // makes the server and first client render diverge, causing a hydration mismatch. Gating on
+  // `mounted` instead guarantees both renders start out identical (mounted is always false
+  // until this effect runs post-hydration).
+  useEffect(() => setMounted(true), []);
+
+  // if we haven't mounted yet or the theme is not resolved, return an empty div
+  if (!mounted || resolvedTheme === undefined) return <div />;
 
   return (
     <div className="relative flex h-screen w-full items-center justify-center bg-canvas">
