@@ -95,6 +95,12 @@ export const coreRoutes: RouteConfigEntry[] = [
             "./(all)/[workspaceSlug]/(projects)/teamspaces/(detail)/[teamspaceId]/page.tsx"
           ),
         ]),
+        layout("./(all)/[workspaceSlug]/(projects)/teamspaces/(detail)/[teamspaceId]/views/layout.tsx", [
+          route(
+            ":workspaceSlug/teamspaces/:teamspaceId/views/:viewId",
+            "./(all)/[workspaceSlug]/(projects)/teamspaces/(detail)/[teamspaceId]/views/[viewId]/page.tsx"
+          ),
+        ]),
 
         // Customers (docs/feature-specs/14-pricing-gap-remediation.md,
         // "14b. Customers", feature 3) - a top-level workspace-scoped

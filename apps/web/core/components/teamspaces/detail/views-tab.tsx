@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
+import { Link } from "react-router";
 import useSWR from "swr";
 import { Layers, Trash2 } from "lucide-react";
 // plane imports
@@ -112,9 +113,10 @@ export const TeamspaceViewsTab = observer(function TeamspaceViewsTab(props: Prop
       ) : (
         <div className="flex flex-col gap-2">
           {views.map((view) => (
-            <div
+            <Link
               key={view.id}
-              className="flex items-center justify-between gap-3 rounded-md border-[0.5px] border-subtle p-3"
+              to={`/${workspaceSlug}/teamspaces/${teamspaceId}/views/${view.id}`}
+              className="flex items-center justify-between gap-3 rounded-md border-[0.5px] border-subtle p-3 hover:bg-surface-2"
             >
               <div className="flex min-w-0 flex-grow items-center gap-2">
                 <Layers className="h-4 w-4 flex-shrink-0 text-tertiary" />
@@ -124,11 +126,19 @@ export const TeamspaceViewsTab = observer(function TeamspaceViewsTab(props: Prop
                 {t("teamspaces.views.updated")} {calculateTimeAgo(view.updated_at)}
               </span>
               {canModify && (
-                <button type="button" onClick={() => handleDelete(view.id)} className="flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(view.id);
+                  }}
+                  className="flex-shrink-0"
+                >
                   <Trash2 className="h-3.5 w-3.5 text-tertiary hover:text-danger-primary" />
                 </button>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}
