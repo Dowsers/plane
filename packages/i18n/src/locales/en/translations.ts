@@ -2432,6 +2432,7 @@ export default {
     tabs: {
       overview: "Overview",
       cycles: "Cycles",
+      recurring: "Recurring",
       pages: "Pages",
       views: "Views",
       members: "Members",
@@ -2475,6 +2476,11 @@ export default {
         title: "No cycles yet",
         description: "Cycles from projects attached to this teamspace will show up here.",
       },
+    },
+    recurring: {
+      description:
+        "Templates that automatically create work items on a repeating schedule, across this teamspace's projects.",
+      empty_state: "No recurring templates configured yet in this teamspace's projects.",
     },
     pages: {
       new_page_placeholder: "New page name",

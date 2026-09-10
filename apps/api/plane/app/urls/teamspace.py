@@ -13,6 +13,7 @@ from plane.app.views.workspace.teamspace import (
     WorkspaceTeamspaceCyclesEndpoint,
     WorkspaceTeamspaceRelationsEndpoint,
     WorkspaceTeamspaceStatsEndpoint,
+    WorkspaceTeamspaceRecurringIssueTemplatesEndpoint,
     WorkspaceTeamspacePagesEndpoint,
     WorkspaceTeamspaceViewsEndpoint,
 )
@@ -76,6 +77,11 @@ urlpatterns = [
         "workspaces/<str:slug>/teamspaces/<uuid:teamspace_id>/stats/",
         WorkspaceTeamspaceStatsEndpoint.as_view(),
         name="workspace-teamspace-stats",
+    ),
+    path(
+        "workspaces/<str:slug>/teamspaces/<uuid:teamspace_id>/recurring-issue-templates/",
+        WorkspaceTeamspaceRecurringIssueTemplatesEndpoint.as_view(),
+        name="workspace-teamspace-recurring-issue-templates",
     ),
     # Teamspace Pages (feature 3)
     path(

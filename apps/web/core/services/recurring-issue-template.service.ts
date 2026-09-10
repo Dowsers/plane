@@ -43,6 +43,26 @@ export class RecurringIssueTemplateService extends APIService {
       });
   }
 
+  /** Read-only aggregation across every project attached to the Teamspace
+   * that the requesting user can see (`_accessible_project_ids` on the
+   * backend) - a template still belongs to exactly one project, this just
+   * gives the Teamspace a single place to see all of them. Creation stays
+   * project-scoped: the caller picks one of the Teamspace's projects first,
+   * then uses `create()` above against that project. */
+  async listForTeamspace(
+    workspaceSlug: string,
+    teamspaceId: string,
+    params?: TRecurringIssueTemplateListParams
+  ): Promise<TPaginatedResponse<TRecurringIssueTemplate[]>> {
+    return this.get(`/api/workspaces/${workspaceSlug}/teamspaces/${teamspaceId}/recurring-issue-templates/`, {
+      params,
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async retrieve(workspaceSlug: string, projectId: string, templateId: string): Promise<TRecurringIssueTemplate> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/recurring-issue-templates/${templateId}/`)
       .then((response) => response?.data)

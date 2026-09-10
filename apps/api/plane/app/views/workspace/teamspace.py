@@ -34,6 +34,7 @@ from plane.app.serializers import (
     TeamspaceProjectSerializer,
     TeamspacePageSerializer,
     TeamspaceViewSerializer,
+    RecurringIssueTemplateSerializer,
 )
 from plane.db.models import (
     Cycle,
@@ -41,6 +42,7 @@ from plane.db.models import (
     IssueRelation,
     Page,
     ProjectMember,
+    RecurringIssueTemplate,
     Teamspace,
     TeamspaceMember,
     TeamspaceProject,
@@ -582,6 +584,47 @@ class WorkspaceTeamspaceStatsEndpoint(BaseAPIView):
             data = list(issues.values("project_id", "project__name").annotate(count=Count("id")))
 
         return Response({"group_by": group_by, "results": data}, status=status.HTTP_200_OK)
+
+
+class WorkspaceTeamspaceRecurringIssueTemplatesEndpoint(BaseAPIView):
+    """GET .../teamspaces/<id>/recurring-issue-templates/ - read-only
+    aggregation of `RecurringIssueTemplate` rows across every project
+    attached to the Teamspace (same `_accessible_project_ids` scoping as
+    the other aggregation endpoints above - see spec section 2, exigence
+    6). A recurring template still belongs to exactly one `Project`, never
+    to a Teamspace directly (docs/feature-specs/06-automation-workflow-sla.md
+    section 3, exigence 2: "le template reste rattaché à un seul projet"),
+    and a Teamspace has no notion of a "default project" (`TeamspaceProject`
+    is a plain many-to-many, see its docstring) - so create/update/delete/
+    pause/resume/generate-now all deliberately stay on the existing
+    project-scoped endpoints in `plane/app/views/recurring_issue_template/
+    base.py`. This endpoint only gives a Teamspace a single place to see the
+    templates across all of its projects at once; the frontend's "new
+    template" flow first has the user pick one of the Teamspace's own
+    projects, then opens the normal project-scoped create form against it."""
+
+    permission_classes = [WorkspaceEntityPermission]
+
+    def get(self, request, slug, teamspace_id):
+        try:
+            Teamspace.objects.get(pk=teamspace_id, workspace__slug=slug, deleted_at__isnull=True)
+        except Teamspace.DoesNotExist:
+            return Response({"error": "Teamspace not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        project_ids = _accessible_project_ids(request.user, slug, teamspace_id)
+        if not project_ids:
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
+        templates = (
+            RecurringIssueTemplate.objects.filter(workspace__slug=slug, project_id__in=project_ids)
+            .prefetch_related("labels", "assignees")
+            .order_by("-created_at")
+        )
+        return self.paginate(
+            request=request,
+            queryset=templates,
+            on_results=lambda results: RecurringIssueTemplateSerializer(results, many=True).data,
+        )
 
 
 # ---------------------------------------------------------------------------

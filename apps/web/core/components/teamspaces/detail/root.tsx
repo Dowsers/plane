@@ -9,7 +9,7 @@ import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { Tab } from "@headlessui/react";
-import { CalendarClock, FileText, Layers, ListChecks, RefreshCw } from "lucide-react";
+import { CalendarClock, FileText, Layers, ListChecks, RefreshCw, Repeat } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
@@ -30,18 +30,20 @@ import { TeamspaceMembersTab } from "./members-tab";
 import { TeamspaceOverviewTab } from "./overview-tab";
 import { TeamspacePagesTab } from "./pages-tab";
 import { TeamspaceProjectsTab } from "./projects-tab";
+import { TeamspaceRecurringTemplatesTab } from "./recurring-templates-tab";
 import { TeamspaceViewsTab } from "./views-tab";
 
 type Props = {
   teamspaceId: string;
 };
 
-const TABS = ["overview", "cycles", "pages", "views", "members", "projects", "info"] as const;
+const TABS = ["overview", "cycles", "recurring", "pages", "views", "members", "projects", "info"] as const;
 type TTab = (typeof TABS)[number];
 
 const TAB_ICONS: Record<TTab, React.ComponentType<{ className?: string }>> = {
   overview: ListChecks,
   cycles: RefreshCw,
+  recurring: Repeat,
   pages: FileText,
   views: Layers,
   members: ListChecks,
@@ -187,6 +189,9 @@ export const TeamspaceDetailRoot = observer(function TeamspaceDetailRoot(props: 
           </Tab.Panel>
           <Tab.Panel as="div" className="pt-4">
             <TeamspaceCyclesTab teamspaceId={teamspaceId} />
+          </Tab.Panel>
+          <Tab.Panel as="div" className="pt-4">
+            <TeamspaceRecurringTemplatesTab teamspaceId={teamspaceId} />
           </Tab.Panel>
           <Tab.Panel as="div" className="pt-4">
             <TeamspacePagesTab teamspaceId={teamspaceId} canModify={canModify} />
