@@ -12,6 +12,7 @@ import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { ITeamspace, TTeamspaceWritePayload } from "@plane/types";
 import { Button, EModalPosition, EModalWidth, Input, ModalCore, TextArea } from "@plane/ui";
+import { projectIdentifierSanitizer } from "@plane/utils";
 // hooks
 import { useTeamspace } from "@/hooks/store/use-teamspace";
 
@@ -24,6 +25,7 @@ type Props = {
 const DEFAULTS: TTeamspaceWritePayload = {
   name: "",
   description: "",
+  default_project_identifier: "",
 };
 
 export const CreateUpdateTeamspaceModal = observer(function CreateUpdateTeamspaceModal(props: Props) {
@@ -41,6 +43,7 @@ export const CreateUpdateTeamspaceModal = observer(function CreateUpdateTeamspac
         ? {
             name: teamspace.name,
             description: teamspace.description,
+            default_project_identifier: teamspace.default_project_identifier,
           }
         : DEFAULTS
     );
@@ -55,6 +58,7 @@ export const CreateUpdateTeamspaceModal = observer(function CreateUpdateTeamspac
     const payload: TTeamspaceWritePayload = {
       name: values.name.trim(),
       description: values.description ?? "",
+      default_project_identifier: values.default_project_identifier?.toUpperCase() ?? "",
     };
 
     setIsSubmitting(true);
@@ -97,6 +101,20 @@ export const CreateUpdateTeamspaceModal = observer(function CreateUpdateTeamspac
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
             placeholder={t("teamspaces.name")}
             className="w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Input
+            id="create-update-default-project-identifier"
+            name="create-update-default-project-identifier"
+            type="text"
+            value={values.default_project_identifier ?? ""}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, default_project_identifier: projectIdentifierSanitizer(e.target.value) }))
+            }
+            onBlur={(e) => setValues((v) => ({ ...v, default_project_identifier: e.target.value.toUpperCase() }))}
+            placeholder={t("teamspaces.default_project_identifier")}
+            className="w-full uppercase"
           />
         </div>
         <div className="flex flex-col gap-1">

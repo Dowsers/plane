@@ -380,6 +380,8 @@ export default {
     "Projet créé avec succès. Vous pouvez maintenant commencer à ajouter des éléments de travail.",
   project_name_already_taken: "Le nom du projet est déjà pris.",
   project_identifier_already_taken: "L’identifiant du projet est déjà pris.",
+  must_be_team_lead_to_select_team:
+    "Seul le Lead de l’équipe ou un Admin de l’espace de travail peut la sélectionner pour un nouveau projet.",
   project_cover_image_alt: "Image de couverture du projet",
   name_is_required: "Le nom est requis",
   title_should_be_less_than_255_characters: "Le titre doit faire moins de 255 caractères",
@@ -398,6 +400,8 @@ export default {
   project_description_placeholder: "Entrez la description du projet",
   select_network: "Sélectionner le réseau",
   lead: "Responsable",
+  team: "Équipe",
+  select_team: "Aucune équipe",
   date_range: "Plage de dates",
   private: "Privé",
   public: "Public",
@@ -1836,6 +1840,7 @@ export default {
         company_size: "Taille de l’entreprise",
         url: "URL de l’espace de travail",
         workspace_timezone: "Fuseau horaire de l’espace de travail",
+        default_project_identifier: "ID de projet par défaut",
         update_workspace: "Mettre à jour l’espace de travail",
         delete_workspace: "Supprimer cet espace de travail",
         delete_workspace_description:
@@ -4259,6 +4264,7 @@ export default {
   },
   teamspaces: {
     create_teamspace: "Créer un espace d’équipe",
+    default_project_identifier: "ID de projet par défaut",
     cycles: {
       active: "Actif",
       completed: "Terminé",

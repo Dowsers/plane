@@ -122,7 +122,7 @@ class WorkspaceTeamspacesEndpoint(BaseViewSet):
     def list(self, request, slug):
         """List Teamspaces in workspace (filtered by membership unless ?all=true and Admin)"""
         teamspaces = self.get_queryset()
-        serializer = TeamspaceSerializer(teamspaces, many=True)
+        serializer = TeamspaceSerializer(teamspaces, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, slug):

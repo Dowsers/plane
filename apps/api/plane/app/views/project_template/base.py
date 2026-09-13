@@ -305,6 +305,8 @@ class ProjectTemplateCreateProjectEndpoint(BaseAPIView):
             description=request.data.get("description"),
             logo_props=request.data.get("logo_props"),
             linked_initiative_id=request.data.get("linked_initiative") or template.linked_initiative_id,
+            primary_teamspace_id=request.data.get("primary_teamspace"),
+            request=request,
         )
 
         from plane.app.serializers import ProjectListSerializer

@@ -10,6 +10,7 @@ import re
 
 # Module imports
 from .base import BaseSerializer, DynamicBaseSerializer
+from plane.app.permissions.workspace import Admin as WORKSPACE_ADMIN
 from plane.app.serializers.workspace import WorkspaceLiteSerializer
 from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializer
 from plane.db.models import (
@@ -19,6 +20,10 @@ from plane.db.models import (
     ProjectIdentifier,
     DeployBoard,
     ProjectPublicMember,
+    TeamspaceMember,
+    TeamspaceProject,
+    TEAMSPACE_LEAD,
+    WorkspaceMember,
 )
 from plane.utils.content_validator import (
     validate_html_content,
@@ -73,6 +78,35 @@ class ProjectSerializer(BaseSerializer):
 
         return identifier
 
+    def validate_primary_teamspace(self, value):
+        if value is None:
+            return value
+
+        workspace_id = self.context["workspace_id"]
+        if str(value.workspace_id) != str(workspace_id):
+            raise serializers.ValidationError(detail="TEAM_DOES_NOT_BELONG_TO_WORKSPACE")
+
+        # Only a Teamspace's own Leads and workspace Admins may attach a
+        # new project to it as its `primary_teamspace` - same bar as
+        # attaching an existing project to a team after the fact
+        # (`_can_manage_teamspace` in
+        # apps/api/plane/app/views/workspace/teamspace.py). Re-implemented
+        # here rather than imported, since that module imports from
+        # plane.app.serializers and importing it back here would be a
+        # circular import.
+        request = self.context.get("request")
+        if request is not None:
+            is_workspace_admin = WorkspaceMember.objects.filter(
+                member=request.user, workspace_id=workspace_id, role=WORKSPACE_ADMIN, is_active=True
+            ).exists()
+            is_teamspace_lead = TeamspaceMember.objects.filter(
+                teamspace_id=value.id, member=request.user, role=TEAMSPACE_LEAD, deleted_at__isnull=True
+            ).exists()
+            if not (is_workspace_admin or is_teamspace_lead):
+                raise serializers.ValidationError(detail="MUST_BE_TEAM_LEAD_TO_SET_AS_PRIMARY_TEAM")
+
+        return value
+
     def validate(self, data):
         # Validate description content for security
         if "description_html" in data and data["description_html"]:
@@ -122,6 +156,13 @@ class ProjectSerializer(BaseSerializer):
         project = Project.objects.create(**validated_data, workspace_id=workspace_id)
 
         ProjectIdentifier.objects.create(name=project.identifier, project=project, workspace_id=workspace_id)
+
+        # Keep the single-referent `primary_teamspace` FK and the
+        # many-to-many `TeamspaceProject` pivot in sync: picking a team at
+        # creation time should also make the project show up in that
+        # team's own "Projects" tab, not just silently set the FK.
+        if project.primary_teamspace_id:
+            TeamspaceProject.objects.create(teamspace_id=project.primary_teamspace_id, project=project)
 
         return project
 

@@ -50,6 +50,7 @@ export const CREATE_LABEL_TAB_INDICES = ["name", "color", "cancel", "submit"];
 export const PROJECT_CREATE_TAB_INDICES = [
   "name",
   "identifier",
+  "team",
   "description",
   "network",
   "lead",

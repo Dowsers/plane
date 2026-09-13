@@ -15,7 +15,7 @@ import { EditIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspace } from "@plane/types";
 import { CustomSelect, Input } from "@plane/ui";
-import { cn, copyUrlToClipboard, getFileURL, validateWorkspaceName } from "@plane/utils";
+import { cn, copyUrlToClipboard, getFileURL, projectIdentifierSanitizer, validateWorkspaceName } from "@plane/utils";
 // components
 import { WorkspaceImageUploadModal } from "@/components/core/modals/workspace-image-upload-modal";
 import { TimezoneSelect } from "@/components/global/timezone-select";
@@ -31,6 +31,7 @@ const defaultValues: Partial<IWorkspace> = {
   organization_size: "2-10",
   logo_url: null,
   timezone: "UTC",
+  default_project_identifier: "",
 };
 
 export const WorkspaceDetails = observer(function WorkspaceDetails() {
@@ -64,6 +65,7 @@ export const WorkspaceDetails = observer(function WorkspaceDetails() {
       name: formData.name,
       organization_size: formData.organization_size,
       timezone: formData.timezone,
+      default_project_identifier: formData.default_project_identifier?.toUpperCase(),
     };
 
     try {
@@ -276,6 +278,28 @@ export const WorkspaceDetails = observer(function WorkspaceDetails() {
                   <>
                     <TimezoneSelect value={value} onChange={onChange} disabled={!isAdmin} />
                   </>
+                )}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h4 className="text-body-sm-medium text-tertiary">
+                {t("workspace_settings.settings.general.default_project_identifier")}
+              </h4>
+              <Controller
+                control={control}
+                name="default_project_identifier"
+                render={({ field: { value, onChange } }) => (
+                  <Input
+                    id="default_project_identifier"
+                    name="default_project_identifier"
+                    type="text"
+                    value={value ?? ""}
+                    onChange={(e) => onChange(projectIdentifierSanitizer(e.target.value))}
+                    onBlur={(e) => onChange(e.target.value.toUpperCase())}
+                    placeholder={t("workspace_settings.settings.general.default_project_identifier")}
+                    className="w-full rounded-md uppercase"
+                    disabled={!isAdmin}
+                  />
                 )}
               />
             </div>

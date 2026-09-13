@@ -12,13 +12,23 @@ export interface ITeamspace {
   description: string;
   workspace: string;
   logo_props: TLogoProps;
+  // Default project-identifier prefix seeded into a new project's
+  // `identifier` field when this Teamspace is picked as the project's
+  // `primary_teamspace` at creation time.
+  default_project_identifier: string;
   members_count: number;
   projects_count: number;
+  // The requesting user's own role in this Teamspace (Lead=20/Member=15),
+  // or null if they aren't a member. See `TeamspaceSerializer.get_current_user_role`
+  // (apps/api/plane/app/serializers/teamspace.py).
+  current_user_role: number | null;
   created_at: string;
   updated_at: string;
 }
 
-export type TTeamspaceWritePayload = Partial<Pick<ITeamspace, "name" | "description" | "logo_props">>;
+export type TTeamspaceWritePayload = Partial<
+  Pick<ITeamspace, "name" | "description" | "logo_props" | "default_project_identifier">
+>;
 
 export interface ITeamspaceMember {
   id: string;

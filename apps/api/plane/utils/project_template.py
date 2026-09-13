@@ -287,6 +287,8 @@ def instantiate_project_from_template(
     description=None,
     logo_props=None,
     linked_initiative_id=None,
+    primary_teamspace_id=None,
+    request=None,
 ):
     from plane.app.serializers import ProjectSerializer
     from plane.db.models import ProjectMember, ProjectTemplate
@@ -299,8 +301,11 @@ def instantiate_project_from_template(
             "network": network if network is not None else template.network,
             "description": description if description is not None else template.description,
             "logo_props": logo_props if logo_props is not None else template.logo_props,
+            "primary_teamspace": primary_teamspace_id,
         }
-        serializer = ProjectSerializer(data=project_payload, context={"workspace_id": workspace.id})
+        serializer = ProjectSerializer(
+            data=project_payload, context={"workspace_id": workspace.id, "request": request}
+        )
         serializer.is_valid(raise_exception=True)
         project = serializer.save()
         project.created_from_template = template

@@ -16,8 +16,8 @@ import { useTranslation } from "@plane/i18n";
 import { Logo } from "@plane/propel/emoji-icon-picker";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TTeamspaceWritePayload } from "@plane/types";
-import { Loader, TextArea } from "@plane/ui";
-import { cn } from "@plane/utils";
+import { Input, Loader, TextArea } from "@plane/ui";
+import { cn, projectIdentifierSanitizer } from "@plane/utils";
 // hooks
 import { useAppRouter } from "@/hooks/use-app-router";
 import { useTeamspace } from "@/hooks/store/use-teamspace";
@@ -73,6 +73,7 @@ export const TeamspaceDetailRoot = observer(function TeamspaceDetailRoot(props: 
   const { getTeamspaceById, getTeamspaceMembersById, fetchTeamspaceDetails, updateTeamspace } = useTeamspace();
 
   const [description, setDescription] = useState<string | null>(null);
+  const [defaultProjectIdentifier, setDefaultProjectIdentifier] = useState<string | null>(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
   const { isLoading } = useSWR(
@@ -115,6 +116,13 @@ export const TeamspaceDetailRoot = observer(function TeamspaceDetailRoot(props: 
   const handleDescriptionBlur = () => {
     if (description !== null && description !== teamspace.description) {
       handleFieldChange({ description });
+    }
+  };
+
+  const handleDefaultProjectIdentifierBlur = () => {
+    const upper = defaultProjectIdentifier?.toUpperCase() ?? null;
+    if (upper !== null && upper !== teamspace.default_project_identifier) {
+      handleFieldChange({ default_project_identifier: upper });
     }
   };
 
@@ -205,7 +213,18 @@ export const TeamspaceDetailRoot = observer(function TeamspaceDetailRoot(props: 
           <Tab.Panel as="div" className="pt-4">
             <TeamspaceProjectsTab teamspaceId={teamspaceId} canModify={canModify} />
           </Tab.Panel>
-          <Tab.Panel as="div" className="pt-4">
+          <Tab.Panel as="div" className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-13 font-medium text-secondary">{t("teamspaces.default_project_identifier")}</span>
+              <Input
+                value={defaultProjectIdentifier ?? teamspace.default_project_identifier ?? ""}
+                onChange={(e) => setDefaultProjectIdentifier(projectIdentifierSanitizer(e.target.value))}
+                onBlur={handleDefaultProjectIdentifierBlur}
+                disabled={!canModify}
+                placeholder={t("teamspaces.default_project_identifier")}
+                className="w-full max-w-40 uppercase"
+              />
+            </div>
             <TextArea
               value={description ?? teamspace.description}
               onChange={(e) => setDescription(e.target.value)}

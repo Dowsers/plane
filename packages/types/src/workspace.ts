@@ -82,6 +82,11 @@ export interface IWorkspace {
   // (apps/api/plane/db/models/workspace.py) - purely a frontend gate, the
   // backend's idempotency/delta-sync endpoints work unconditionally.
   is_offline_sync_enabled?: boolean;
+  // Default project-identifier prefix seeded into a new project's
+  // `identifier` field at creation time when the project isn't linked to
+  // a Teamspace. See `Workspace.default_project_identifier`'s own field
+  // comment (apps/api/plane/db/models/workspace.py).
+  default_project_identifier?: string;
   // docs/feature-specs/14-pricing-gap-remediation.md ("14a. Time Tracking
   // and Work Logs", feature 3 "Workflow d'approbation de timesheet",
   // exigence 11) in plane-selfhost - opt-in switch for the timesheet

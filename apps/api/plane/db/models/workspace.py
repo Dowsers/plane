@@ -348,6 +348,16 @@ class Workspace(BaseModel):
     # Workspace field generically (`fields = "__all__"`), so no serializer/
     # view change is needed beyond this field + its migration.
     is_offline_sync_enabled = models.BooleanField(default=False)
+    # Default project-identifier prefix seeded into a new project's
+    # `identifier` field at creation time when the project isn't linked to
+    # a Teamspace (which would take precedence via
+    # `Teamspace.default_project_identifier` instead) - see
+    # `ProjectCommonAttributes` in apps/web for where this and the
+    # teamspace-level default actually get applied. Purely a frontend
+    # prefill value; never itself uniqueness-constrained, since
+    # `Project.identifier`'s own per-workspace uniqueness already forces
+    # disambiguation on the resulting project.
+    default_project_identifier = models.CharField(max_length=20, blank=True, default="")
 
     def __str__(self):
         """Return name of the Workspace"""
@@ -674,6 +684,11 @@ class Teamspace(BaseModel):
     name = models.CharField(max_length=255, verbose_name="Teamspace Name")
     description = models.TextField(verbose_name="Teamspace Description", blank=True)
     logo_props = models.JSONField(default=dict)
+    # Default project-identifier prefix seeded into a new project's
+    # `identifier` field when this Teamspace is picked as the project's
+    # `primary_teamspace` at creation time - takes precedence over the
+    # workspace-level `Workspace.default_project_identifier`.
+    default_project_identifier = models.CharField(max_length=20, blank=True, default="")
 
     def __str__(self):
         """Return name of the teamspace"""

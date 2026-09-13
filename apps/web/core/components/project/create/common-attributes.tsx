@@ -5,18 +5,25 @@
  */
 
 import type { ChangeEvent } from "react";
+import { useParams } from "next/navigation";
 import type { UseFormSetValue } from "react-hook-form";
 import { Controller, useFormContext } from "react-hook-form";
+import useSWR from "swr";
 import { InfoIcon } from "@plane/propel/icons";
 // plane imports
-import { ETabIndices } from "@plane/constants";
+import { ETabIndices, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // ui
 import { Tooltip } from "@plane/propel/tooltip";
-import { Input, TextArea } from "@plane/ui";
+import { CustomSelect, Input, TextArea } from "@plane/ui";
 import { cn, projectIdentifierSanitizer, getTabIndex } from "@plane/utils";
 // plane utils
 // helpers
+import { TEAMSPACE_LEAD } from "@/components/teamspaces/constants";
+// hooks
+import { useTeamspace } from "@/hooks/store/use-teamspace";
+import { useUserPermissions } from "@/hooks/store/user";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 // plane-web types
 import type { TProject } from "@/plane-web/types/projects";
 
@@ -33,10 +40,43 @@ function ProjectCommonAttributes(props: Props) {
   const {
     formState: { errors },
     control,
+    getValues,
   } = useFormContext<TProject>();
 
   const { getIndex } = getTabIndex(ETabIndices.PROJECT_CREATE, isMobile);
   const { t } = useTranslation();
+
+  // Workspace/Team default-identifier prefix (see docs note on default-ID
+  // attribution) - a workspace or team can configure a short code that
+  // seeds new projects' `identifier` at creation, taking precedence over
+  // deriving it from the typed name.
+  const { workspaceSlug } = useParams();
+  const { currentWorkspace } = useWorkspace();
+  const { allowPermissions } = useUserPermissions();
+  const { getTeamspaceIds, getTeamspaceById, fetchTeamspaces } = useTeamspace();
+  useSWR(
+    workspaceSlug ? ["PROJECT_CREATE_TEAMSPACES", workspaceSlug] : null,
+    workspaceSlug ? () => fetchTeamspaces(workspaceSlug.toString()) : null,
+    { revalidateOnFocus: false }
+  );
+  const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
+  const allTeamspaceIds = getTeamspaceIds(workspaceSlug?.toString() ?? "") ?? [];
+  // Only a Teamspace's own Leads (or a workspace Admin) may pick it as a
+  // new project's `primary_teamspace` - same bar enforced server-side in
+  // `ProjectSerializer.validate_primary_teamspace`. `current_user_role` is
+  // returned directly by the teamspace list endpoint so this doesn't need
+  // a separate per-team members fetch.
+  const selectableTeamspaceIds = isWorkspaceAdmin
+    ? allTeamspaceIds
+    : allTeamspaceIds.filter((id) => getTeamspaceById(id)?.current_user_role === TEAMSPACE_LEAD);
+
+  const computeAutoIdentifier = (name: string, teamId: string | null | undefined) => {
+    const teamDefault = teamId ? getTeamspaceById(teamId)?.default_project_identifier : null;
+    const workspaceDefault = currentWorkspace?.default_project_identifier;
+    if (teamDefault) return teamDefault;
+    if (workspaceDefault) return workspaceDefault;
+    return name ? projectIdentifierSanitizer(name) : "";
+  };
 
   const handleNameChange =
     (onChange: (event: ChangeEvent<HTMLInputElement>) => void) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -44,8 +84,7 @@ function ProjectCommonAttributes(props: Props) {
         onChange(e);
         return;
       }
-      if (e.target.value === "") setValue("identifier", "");
-      else setValue("identifier", projectIdentifierSanitizer(e.target.value));
+      setValue("identifier", computeAutoIdentifier(e.target.value, getValues("primary_teamspace")));
       onChange(e);
       handleFormOnChange?.();
     };
@@ -57,6 +96,15 @@ function ProjectCommonAttributes(props: Props) {
     onChange(alphanumericValue);
     handleFormOnChange?.();
   };
+
+  const handleTeamChange = (onChange: (value: string | null) => void) => (teamId: string | null) => {
+    onChange(teamId);
+    if (shouldAutoSyncIdentifier) {
+      setValue("identifier", computeAutoIdentifier(getValues("name") ?? "", teamId));
+    }
+    handleFormOnChange?.();
+  };
+
   return (
     <div className="grid grid-cols-1 gap-x-2 gap-y-3 md:grid-cols-4">
       <div className="md:col-span-3">
@@ -125,6 +173,30 @@ function ProjectCommonAttributes(props: Props) {
           <InfoIcon className="absolute top-2.5 right-2 h-3 w-3 text-placeholder" />
         </Tooltip>
         <span className="text-11 text-danger-primary">{errors?.identifier?.message}</span>
+      </div>
+      <div className="md:col-span-4">
+        <Controller
+          control={control}
+          name="primary_teamspace"
+          render={({ field: { value, onChange } }) => (
+            <CustomSelect
+              value={value ?? null}
+              onChange={handleTeamChange(onChange)}
+              label={value ? (getTeamspaceById(value)?.name ?? t("team")) : t("select_team")}
+              placement="bottom-start"
+              buttonClassName="border border-subtle bg-layer-2 !shadow-none !rounded-md"
+              input
+              tabIndex={getIndex("team")}
+            >
+              <CustomSelect.Option value={null}>{t("select_team")}</CustomSelect.Option>
+              {selectableTeamspaceIds.map((id) => (
+                <CustomSelect.Option key={id} value={id}>
+                  {getTeamspaceById(id)?.name}
+                </CustomSelect.Option>
+              ))}
+            </CustomSelect>
+          )}
+        />
       </div>
       <div className="md:col-span-4">
         <Controller

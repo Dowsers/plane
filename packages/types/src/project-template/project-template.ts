@@ -81,4 +81,5 @@ export type TCreateProjectFromTemplatePayload = {
   description?: string;
   logo_props?: TLogoProps;
   linked_initiative?: string | null;
+  primary_teamspace?: string | null;
 };

@@ -8,12 +8,16 @@
 # SerializerMethodField counts, a *DetailSerializer that nests
 # members/projects.
 
+# Python imports
+import re
+
 # Third party imports
 from rest_framework import serializers
 
 # Module imports
 from plane.db.models import (
     Page,
+    Project,
     Teamspace,
     TeamspaceMember,
     TeamspaceProject,
@@ -25,6 +29,7 @@ from plane.db.models import (
 class TeamspaceSerializer(serializers.ModelSerializer):
     members_count = serializers.SerializerMethodField()
     projects_count = serializers.SerializerMethodField()
+    current_user_role = serializers.SerializerMethodField()
 
     class Meta:
         model = Teamspace
@@ -34,8 +39,10 @@ class TeamspaceSerializer(serializers.ModelSerializer):
             "description",
             "workspace",
             "logo_props",
+            "default_project_identifier",
             "members_count",
             "projects_count",
+            "current_user_role",
             "created_at",
             "updated_at",
         ]
@@ -46,6 +53,27 @@ class TeamspaceSerializer(serializers.ModelSerializer):
 
     def get_projects_count(self, obj):
         return TeamspaceProject.objects.filter(teamspace=obj, deleted_at__isnull=True).count()
+
+    def get_current_user_role(self, obj):
+        """The requesting user's own role in this Teamspace (Lead/Member),
+        or None if they aren't a member - lets the frontend decide, e.g.,
+        whether to offer this team as a project's `primary_teamspace` at
+        creation time (reserved to Leads/workspace Admins), without a
+        separate per-team members fetch."""
+        request = self.context.get("request")
+        if request is None or not getattr(request, "user", None) or request.user.is_anonymous:
+            return None
+        member = TeamspaceMember.objects.filter(
+            teamspace=obj, member=request.user, deleted_at__isnull=True
+        ).first()
+        return member.role if member else None
+
+    def validate_default_project_identifier(self, value):
+        if not value:
+            return value
+        if re.match(Project.FORBIDDEN_IDENTIFIER_CHARS_PATTERN, value):
+            raise serializers.ValidationError(detail="DEFAULT_PROJECT_IDENTIFIER_CANNOT_CONTAIN_SPECIAL_CHARACTERS")
+        return value.strip().upper()
 
 
 class TeamspaceMemberSerializer(serializers.ModelSerializer):

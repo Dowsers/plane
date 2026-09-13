@@ -21,6 +21,7 @@ import { ProjectTemplateGalleryModal } from "@/components/project-templates/gall
 import { getCoverImageType, uploadCoverImage } from "@/helpers/cover-image.helper";
 import { useProject } from "@/hooks/store/use-project";
 import { useProjectTemplate } from "@/hooks/store/use-project-template";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // plane web types
 import type { TProject } from "@/plane-web/types/projects";
@@ -43,13 +44,14 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
   const { t } = useTranslation();
   const { addProjectToFavorites, createProject, updateProject } = useProject();
   const { createProjectFromTemplate } = useProjectTemplate();
+  const { currentWorkspace } = useWorkspace();
   // states
   const [shouldAutoSyncIdentifier, setShouldAutoSyncIdentifier] = useState(true);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<IProjectTemplateListItem | null>(null);
   // form info
   const methods = useForm<TProject>({
-    defaultValues: { ...getProjectFormValues(), ...data },
+    defaultValues: { ...getProjectFormValues(currentWorkspace?.default_project_identifier), ...data },
     reValidateMode: "onChange",
   });
   const { handleSubmit, reset, setValue } = methods;
@@ -105,6 +107,7 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
           network: formData.network,
           description: formData.description,
           logo_props: formData.logo_props,
+          primary_teamspace: formData.primary_teamspace,
         })
       : createProject(workspaceSlug.toString(), formData);
 
@@ -136,8 +139,9 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
 
           const nameError = errorData.name?.includes("PROJECT_NAME_ALREADY_EXIST");
           const identifierError = errorData?.identifier?.includes("PROJECT_IDENTIFIER_ALREADY_EXIST");
+          const teamError = errorData?.primary_teamspace?.includes("MUST_BE_TEAM_LEAD_TO_SET_AS_PRIMARY_TEAM");
 
-          if (nameError || identifierError) {
+          if (nameError || identifierError || teamError) {
             if (nameError) {
               setToast({
                 type: TOAST_TYPE.ERROR,
@@ -151,6 +155,14 @@ export const CreateProjectForm = observer(function CreateProjectForm(props: TCre
                 type: TOAST_TYPE.ERROR,
                 title: t("toast.error"),
                 message: t("project_identifier_already_taken"),
+              });
+            }
+
+            if (teamError) {
+              setToast({
+                type: TOAST_TYPE.ERROR,
+                title: t("toast.error"),
+                message: t("must_be_team_lead_to_select_team"),
               });
             }
           } else {

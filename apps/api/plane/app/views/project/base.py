@@ -276,7 +276,9 @@ class ProjectViewSet(BaseViewSet):
     def create(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
 
-        serializer = ProjectSerializer(data={**request.data}, context={"workspace_id": workspace.id})
+        serializer = ProjectSerializer(
+            data={**request.data}, context={"workspace_id": workspace.id, "request": request}
+        )
         if serializer.is_valid():
             serializer.save()
 

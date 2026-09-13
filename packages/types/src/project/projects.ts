@@ -40,6 +40,12 @@ export interface IPartialProject {
   // apps/api/plane/db/models/project.py's `Project.is_time_tracking_enabled`.
   is_time_tracking_enabled?: boolean;
   project_lead?: IUserLite | string | null;
+  // Single-referent Teamspace picked at creation time, used to seed the
+  // project's default `identifier` prefix. See
+  // `Project.primary_teamspace`'s own field comment
+  // (apps/api/plane/db/models/project.py) - distinct from the project's
+  // general many-to-many Teamspace membership.
+  primary_teamspace?: string | null;
   network?: number;
   health?: TInitiativeHealth | null;
   initiative_ids?: string[];

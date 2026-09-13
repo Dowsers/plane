@@ -118,6 +118,20 @@ class Project(BaseModel):
         on_delete=models.SET_NULL,
         related_name="created_projects",
     )
+    # Single-referent link recording which Teamspace supplied this
+    # project's default identifier prefix at creation time (see
+    # `Teamspace.default_project_identifier`). Deliberately separate from
+    # the many-to-many `TeamspaceProject` pivot (a project may belong to
+    # several teamspaces; this FK only remembers the one team picked in
+    # the creation form, if any) - not touched again after creation even
+    # if the project later joins/leaves other teams via that pivot.
+    primary_teamspace = models.ForeignKey(
+        "db.Teamspace",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="primary_projects",
+    )
     # Structured status update cadence/reminder settings - see
     # docs/feature-specs/03-projects-roadmaps-initiatives.md ("Mises a jour
     # de statut structurees") in plane-selfhost.
