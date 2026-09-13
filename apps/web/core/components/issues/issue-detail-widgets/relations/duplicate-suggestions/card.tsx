@@ -63,7 +63,8 @@ export const DuplicateSuggestionCard = observer(function DuplicateSuggestionCard
   const stateDetails = suggestion.suggested_issue_state_id
     ? getStateById(suggestion.suggested_issue_state_id)
     : undefined;
-  const projectIdentifier = candidateProjectId ? getProjectIdentifierById(candidateProjectId) : undefined;
+  const projectIdentifier =
+    candidateIssue?.sequence_prefix ?? (candidateProjectId ? getProjectIdentifierById(candidateProjectId) : undefined);
 
   const workItemLink = generateWorkItemLink({
     workspaceSlug,

@@ -67,7 +67,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
           <IssueIdentifier
             projectId={workItem.project_id}
             issueTypeId={workItem.type_id}
-            projectIdentifier={workItem.project__identifier}
+            projectIdentifier={workItem.sequence_prefix ?? workItem.project__identifier}
             issueSequenceId={workItem.sequence_id}
             size="xs"
           />{" "}
@@ -85,7 +85,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
         workspaceSlug: workItem?.workspace__slug,
         projectId: workItem?.project_id,
         issueId: workItem?.id,
-        projectIdentifier: workItem.project__identifier,
+        projectIdentifier: workItem.sequence_prefix ?? workItem.project__identifier,
         sequenceId: workItem?.sequence_id,
       }),
     title: "Work items",

@@ -102,7 +102,7 @@ export const IssuePeekOverviewHeader = observer(function IssuePeekOverviewHeader
   // derived values
   const issueDetails = getIssueById(issueId);
   const currentMode = PEEK_OPTIONS.find((m) => m.key === peekMode);
-  const projectIdentifier = getProjectIdentifierById(issueDetails?.project_id);
+  const projectIdentifier = issueDetails?.sequence_prefix ?? getProjectIdentifierById(issueDetails?.project_id);
   const {
     issues: { removeIssue: removeArchivedIssue },
   } = useIssues(EIssuesStoreType.ARCHIVED);

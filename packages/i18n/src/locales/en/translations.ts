@@ -2070,6 +2070,13 @@ export default {
     general: {
       enter_project_id: "Enter project ID",
       please_select_a_timezone: "Please select a timezone",
+      team_prefix_note: "New work items in this project will be numbered under {team} ({prefix}-...).",
+      team_change_confirm: {
+        title: "Change project team",
+        description:
+          "Changing this project's team immediately renumbers all of its existing work items under {team}. Current IDs and any external links to them will stop working. This cannot be undone.",
+        no_team: "no team (workspace default)",
+      },
       archive_project: {
         title: "Archive project",
         description:

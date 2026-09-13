@@ -8,6 +8,7 @@ import random
 from datetime import datetime, timedelta
 
 # Django imports
+from django.db import transaction
 from django.db.models import Max
 
 # Third party imports
@@ -39,6 +40,7 @@ from plane.db.models import (
     IntakeIssue,
 )
 from plane.db.models.intake import SourceType
+from plane.utils.issue_sequencing import assign_next_sequence
 
 
 def create_project(workspace, user_id):
@@ -277,11 +279,6 @@ def create_issues(workspace, project, user_id, issue_count):
 
     issues = []
 
-    # Get the maximum sequence_id
-    last_id = IssueSequence.objects.filter(project=project).aggregate(largest=Max("sequence"))["largest"]
-
-    last_id = 1 if last_id is None else last_id + 1
-
     # Get the maximum sort order
     largest_sort_order = Issue.objects.filter(
         project=project, state_id=states[random.randint(0, len(states) - 1)]
@@ -309,7 +306,6 @@ def create_issues(workspace, project, user_id, issue_count):
                 name=text[:254],
                 description_html=f"<p>{text}</p>",
                 description_stripped=text,
-                sequence_id=last_id,
                 sort_order=largest_sort_order,
                 start_date=start_date,
                 target_date=end_date,
@@ -319,7 +315,14 @@ def create_issues(workspace, project, user_id, issue_count):
         )
 
         largest_sort_order = largest_sort_order + random.randint(0, 1000)
-        last_id = last_id + 1
+
+    # Draw numbers from this project's CURRENT pool (its team's shared
+    # series, or this workspace's default series) - same engine
+    # Issue.save() uses for a single real issue, see
+    # plane.utils.issue_sequencing. Wrapped in its own transaction since
+    # the advisory lock it takes is transaction-scoped.
+    with transaction.atomic():
+        assign_next_sequence(issues, project.primary_teamspace, workspace=workspace)
 
     issues = Issue.objects.bulk_create(issues, ignore_conflicts=True, batch_size=1000)
     # Sequences
@@ -330,6 +333,7 @@ def create_issues(workspace, project, user_id, issue_count):
                 sequence=issue.sequence_id,
                 project=project,
                 workspace=workspace,
+                teamspace=issue.sequence_teamspace,
             )
             for issue in issues
         ],

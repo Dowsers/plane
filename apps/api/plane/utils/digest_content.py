@@ -53,6 +53,7 @@ a free-form structure.
 from django.db.models.functions import Coalesce
 
 from plane.bgtasks.notification_task import extract_comment_mentions
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.db.models import (
     Cycle,
     CycleIssue,
@@ -162,7 +163,7 @@ def _collect_issue_created(project_ids, period_start, period_end):
                 "actor_id": issue.created_by_id,
                 "payload": {
                     "issue_name": issue.name,
-                    "issue_sequence": f"{issue.project.identifier}-{issue.sequence_id}",
+                    "issue_sequence": f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
                     "state_name": issue.state.name if issue.state else None,
                 },
                 "sort_key": issue.created_at,

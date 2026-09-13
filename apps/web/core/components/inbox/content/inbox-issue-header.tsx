@@ -238,7 +238,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
     workspaceSlug: workspaceSlug?.toString(),
     projectId: issue?.project_id,
     issueId: currentInboxIssueId,
-    projectIdentifier: currentProjectDetails?.identifier,
+    projectIdentifier: issue?.sequence_prefix ?? currentProjectDetails?.identifier,
     sequenceId: issue?.sequence_id,
   });
 
@@ -260,7 +260,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
           fetchIssueDetails={false}
           showActionItemsOnUpdate
           modalTitle={t("inbox_issue.actions.move", {
-            value: `${currentProjectDetails?.identifier}-${issue?.sequence_id}`,
+            value: `${issue?.sequence_prefix ?? currentProjectDetails?.identifier}-${issue?.sequence_id}`,
           })}
           primaryButtonText={{
             default: t("add_to_project"),
@@ -296,7 +296,7 @@ export const InboxIssueActionsHeader = observer(function InboxIssueActionsHeader
           )}
           {issue?.project_id && issue.sequence_id && (
             <h3 className="flex-shrink-0 text-14 font-medium text-tertiary">
-              {getProjectById(issue.project_id)?.identifier}-{issue.sequence_id}
+              {issue?.sequence_prefix ?? getProjectById(issue.project_id)?.identifier}-{issue.sequence_id}
             </h3>
           )}
           <InboxIssueStatus inboxIssue={inboxIssue} iconSize={12} />

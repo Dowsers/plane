@@ -11,7 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models, transaction, connection
+from django.db import models, transaction
 from django.db.models.functions import Lower
 from django.utils import timezone
 from django.db.models import Q
@@ -20,10 +20,10 @@ from django import apps
 # Module imports
 from plane.utils.html_processor import strip_tags
 from plane.utils.path_validator import sanitize_filename
+from plane.utils.issue_sequencing import assign_next_sequence
 from plane.db.mixins import SoftDeletionManager
 from plane.utils.exception_logger import log_exception
 from .project import ProjectBaseModel
-from plane.utils.uuid import convert_uuid_to_integer
 from .description import Description
 from plane.db.mixins import ChangeTrackerMixin
 from .state import StateGroup
@@ -156,6 +156,20 @@ class Issue(ProjectBaseModel):
         through_fields=("issue", "assignee"),
     )
     sequence_id = models.IntegerField(default=1, verbose_name="Issue Sequence ID")
+    # Which pool `sequence_id` was drawn from: a specific Teamspace (that
+    # team's shared, cross-project ID series), or null (this workspace's
+    # single shared default pool). Mutable by design - unlike most
+    # "snapshot at creation" fields, this is deliberately kept in sync with
+    # the owning project's CURRENT `primary_teamspace` any time it changes,
+    # via `plane.utils.issue_sequencing.assign_next_sequence` - never derive
+    # this from `project.primary_teamspace` directly on read, always trust
+    # this stored value (a project's team can change without immediately
+    # renumbering every issue if that call is ever skipped, so this field,
+    # not the project's current FK, is the single source of truth for which
+    # prefix a given issue actually displays).
+    sequence_teamspace = models.ForeignKey(
+        "db.Teamspace", null=True, blank=True, on_delete=models.SET_NULL, related_name="pool_issues"
+    )
     labels = models.ManyToManyField("db.Label", blank=True, related_name="labels", through="IssueLabel")
     sort_order = models.FloatField(default=65535)
     completed_at = models.DateTimeField(null=True)
@@ -268,20 +282,16 @@ class Issue(ProjectBaseModel):
 
         if self._state.adding:
             with transaction.atomic():
-                # Create a lock for this specific project using a transaction-level advisory lock
-                # This ensures only one transaction per project can execute this code at a time
-                # The lock is automatically released when the transaction ends
-                lock_key = convert_uuid_to_integer(self.project.id)
+                # Draw the next number from this issue's project's CURRENT
+                # pool (its team's shared series, or this workspace's
+                # shared default series) - see
+                # plane.utils.issue_sequencing.assign_next_sequence. Takes
+                # its own transaction-level advisory lock keyed by the pool
+                # (team or workspace), not the project, since sibling
+                # projects sharing one team pool must serialize against
+                # each other too.
+                assign_next_sequence([self], self.project.primary_teamspace, workspace=self.workspace)
 
-                with connection.cursor() as cursor:
-                    # Get an exclusive transaction-level lock using the project ID as the lock key
-                    cursor.execute("SELECT pg_advisory_xact_lock(%s)", [lock_key])
-
-                # Get the last sequence for the project
-                last_sequence = IssueSequence.objects.filter(project=self.project).aggregate(
-                    largest=models.Max("sequence")
-                )["largest"]
-                self.sequence_id = last_sequence + 1 if last_sequence else 1
                 # Strip the html tags using html parser
                 self.description_stripped = (
                     None
@@ -296,7 +306,12 @@ class Issue(ProjectBaseModel):
 
                 super(Issue, self).save(*args, **kwargs)
 
-                IssueSequence.objects.create(issue=self, sequence=self.sequence_id, project=self.project)
+                IssueSequence.objects.create(
+                    issue=self,
+                    sequence=self.sequence_id,
+                    project=self.project,
+                    teamspace=self.sequence_teamspace,
+                )
         else:
             # Strip the html tags using html parser
             self.description_stripped = (
@@ -696,6 +711,13 @@ class IssueSequence(ProjectBaseModel):
     )
     sequence = models.PositiveBigIntegerField(default=1, db_index=True)
     deleted = models.BooleanField(default=False)
+    # Which pool this ledger row's `sequence` number was drawn from - a
+    # Teamspace, or null for this row's `workspace`'s own shared default
+    # pool (the `workspace` FK already exists via ProjectBaseModel). Mirrors
+    # `Issue.sequence_teamspace` exactly; see that field's comment.
+    teamspace = models.ForeignKey(
+        "db.Teamspace", null=True, blank=True, on_delete=models.SET_NULL, related_name="teamspace_issue_sequences"
+    )
 
     class Meta:
         verbose_name = "Issue Sequence"

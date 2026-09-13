@@ -23,7 +23,12 @@ export const IssueIdentifier = observer(function IssueIdentifier(props: TIssueId
   const isUsingStoreData = "issueId" in props;
   // derived values
   const issue = isUsingStoreData ? getIssueById(props.issueId) : null;
-  const projectIdentifier = isUsingStoreData ? getProjectIdentifierById(projectId) : props.projectIdentifier;
+  // Prefer the issue's own resolved prefix (its team's pool, or this
+  // workspace's default pool) over the project's own `identifier`, which
+  // is never what's actually displayed once an issue has a pool.
+  const projectIdentifier = isUsingStoreData
+    ? (issue?.sequence_prefix ?? getProjectIdentifierById(projectId))
+    : props.projectIdentifier;
   const issueSequenceId = isUsingStoreData ? issue?.sequence_id : props.issueSequenceId;
   const shouldRenderIssueID = displayProperties ? displayProperties.key : true;
 

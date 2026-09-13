@@ -15,6 +15,7 @@ from django.utils import timezone
 
 # Module imports
 from plane.bgtasks.issue_activities_task import issue_activity
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.db.models import (
     Issue,
     IssueAssignee,
@@ -191,7 +192,7 @@ def _check_rate_limit(rule_id):
 def _resolve_template(template, issue, actor):
     """Simple string-replace token resolution, not a templating engine, per
     the feature spec."""
-    identifier = f"{issue.project.identifier}-{issue.sequence_id}"
+    identifier = f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}"
     actor_name = actor.display_name if actor is not None else "Automation"
     text = template or ""
     text = text.replace("{{issue.identifier}}", identifier)

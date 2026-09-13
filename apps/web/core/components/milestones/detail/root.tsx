@@ -160,7 +160,7 @@ export const MilestoneDetailRoot = observer(function MilestoneDetailRoot(props: 
                 className="flex items-center justify-between gap-3 rounded-md border-[0.5px] border-subtle p-2"
               >
                 <Link
-                  href={`/${workspaceSlug}/browse/${project?.identifier}-${issue.sequence_id}/`}
+                  href={`/${workspaceSlug}/browse/${issue.sequence_prefix ?? project?.identifier}-${issue.sequence_id}/`}
                   className="flex flex-grow items-center gap-2 truncate text-13"
                 >
                   {state && (

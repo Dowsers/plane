@@ -23,6 +23,7 @@ from rest_framework.response import Response
 # Module imports
 from .base import BaseAPIView
 from plane.app.serializers.issue import IssueCreateSerializer
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.slack_sync_task import dispatch_slack_channel_notifications
 from plane.db.models import (
@@ -552,7 +553,7 @@ class SlackSlashCommandEndpoint(BaseAPIView):
                 message = post_message(
                     connection.bot_access_token,
                     channel=channel_id,
-                    text=f"Issue created: {issue.name} ({issue.project.identifier}-{issue.sequence_id})",
+                    text=f"Issue created: {issue.name} ({get_issue_sequence_prefix(issue)}-{issue.sequence_id})",
                 )
                 thread_ts = message.get("ts")
             except SlackAPIError as e:
@@ -574,7 +575,7 @@ class SlackSlashCommandEndpoint(BaseAPIView):
             return Response(
                 {
                     "response_type": "ephemeral",
-                    "text": f"Created {issue.project.identifier}-{issue.sequence_id}: {issue.name}",
+                    "text": f"Created {get_issue_sequence_prefix(issue)}-{issue.sequence_id}: {issue.name}",
                 },
                 status=status.HTTP_200_OK,
             )
@@ -877,7 +878,7 @@ class SlackEventsWebhookEndpoint(BaseAPIView):
             message = post_message(
                 connection.bot_access_token,
                 channel=channel_id,
-                text=f"Created {issue.project.identifier}-{issue.sequence_id}: {issue.name}",
+                text=f"Created {get_issue_sequence_prefix(issue)}-{issue.sequence_id}: {issue.name}",
                 thread_ts=ts,
             )
             confirmation_ts = message.get("ts")
@@ -1028,7 +1029,7 @@ class SlackInteractiveWebhookEndpoint(BaseAPIView):
                 connection.bot_access_token,
                 channel=slack_user_id,
                 user=slack_user_id,
-                text=f"Created {issue.project.identifier}-{issue.sequence_id}: {issue.name}",
+                text=f"Created {get_issue_sequence_prefix(issue)}-{issue.sequence_id}: {issue.name}",
             )
         except SlackAPIError as e:
             log_exception(e)

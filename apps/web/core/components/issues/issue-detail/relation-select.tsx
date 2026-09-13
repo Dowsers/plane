@@ -125,7 +125,7 @@ export const IssueRelationSelect = observer(function IssueRelationSelect(props: 
                           workspaceSlug,
                           projectId: projectDetails?.id,
                           issueId: currentIssue.id,
-                          projectIdentifier: projectDetails?.identifier,
+                          projectIdentifier: currentIssue?.sequence_prefix ?? projectDetails?.identifier,
                           sequenceId: currentIssue?.sequence_id,
                         })}
                         target="_blank"

@@ -95,6 +95,7 @@ export type TInboxIssuesQueryParams = {
 export type TInboxDuplicateIssueDetails = {
   id: string;
   sequence_id: string;
+  sequence_prefix?: string | null;
   name: string;
 };
 

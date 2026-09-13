@@ -29,7 +29,7 @@ export function IssueLink(props: TIssueLink) {
     workspaceSlug: activity.workspace_detail?.slug,
     projectId: activity.project,
     issueId: activity.issue,
-    projectIdentifier: activity.project_detail.identifier,
+    projectIdentifier: activity.issue_detail?.sequence_prefix ?? activity.project_detail.identifier,
     sequenceId: activity.issue_detail.sequence_id,
   });
   return (

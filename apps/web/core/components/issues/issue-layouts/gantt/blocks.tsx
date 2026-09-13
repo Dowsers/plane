@@ -124,7 +124,7 @@ export const IssueGanttSidebarBlock = observer(function IssueGanttSidebarBlock(p
 
   // derived values
   const issueDetails = getIssueById(issueId);
-  const projectIdentifier = getProjectIdentifierById(issueDetails?.project_id);
+  const projectIdentifier = issueDetails?.sequence_prefix ?? getProjectIdentifierById(issueDetails?.project_id);
 
   const handleIssuePeekOverview = (e: any) => {
     e.stopPropagation(true);

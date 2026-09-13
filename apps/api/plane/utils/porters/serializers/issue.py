@@ -7,6 +7,7 @@ from rest_framework import serializers
 
 # Module imports
 from plane.app.serializers import IssueSerializer
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 
 class IssueExportSerializer(IssueSerializer):
@@ -66,7 +67,7 @@ class IssueExportSerializer(IssueSerializer):
         ]
 
     def get_identifier(self, obj):
-        return f"{obj.project.identifier}-{obj.sequence_id}"
+        return f"{get_issue_sequence_prefix(obj)}-{obj.sequence_id}"
 
     def get_assignees(self, obj):
         return [u.full_name for u in obj.assignees.all() if u.is_active]
@@ -78,7 +79,7 @@ class IssueExportSerializer(IssueSerializer):
     def get_parent(self, obj):
         if not obj.parent:
             return ""
-        return f"{obj.parent.project.identifier}-{obj.parent.sequence_id}"
+        return f"{get_issue_sequence_prefix(obj.parent)}-{obj.parent.sequence_id}"
 
     def get_labels(self, obj):
         return [
@@ -118,7 +119,7 @@ class IssueExportSerializer(IssueSerializer):
             if rel.related_issue:
                 relations.append({
                     "type": rel.relation_type if hasattr(rel, 'relation_type') else "related",
-                    "issue": f"{rel.related_issue.project.identifier}-{rel.related_issue.sequence_id}",
+                    "issue": f"{get_issue_sequence_prefix(rel.related_issue)}-{rel.related_issue.sequence_id}",
                     "direction": "outgoing"
                 })
 
@@ -127,7 +128,7 @@ class IssueExportSerializer(IssueSerializer):
             if rel.issue:
                 relations.append({
                     "type": rel.relation_type if hasattr(rel, 'relation_type') else "related",
-                    "issue": f"{rel.issue.project.identifier}-{rel.issue.sequence_id}",
+                    "issue": f"{get_issue_sequence_prefix(rel.issue)}-{rel.issue.sequence_id}",
                     "direction": "incoming"
                 })
 

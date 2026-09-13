@@ -109,40 +109,38 @@ def resolve_referenced_issue(repository, identifier, sequence_id):
     """Exigence 11's tenant/sync-scoping choke point - see module
     docstring. Returns `(issue, repository_sync)` or `(None, None)` if
     the reference can't be resolved *for this specific repository* (wrong
-    workspace, project not synced to this repo, or no such issue
-    sequence)."""
-    from plane.db.models import GithubRepositoryProjectSync, Issue, Project
+    workspace, no such issue, or its project isn't synced to this repo).
+
+    `identifier` is resolved against a Teamspace's or the workspace's own
+    shared pool prefix (see plane.utils.issue_identifier_resolver) - a
+    project's own `identifier` is never used to resolve an issue anymore,
+    so the issue is resolved first, and the repo-sync guard below is
+    checked against *that issue's actual project*, not one guessed from
+    the identifier string directly.
+    """
+    from plane.db.models import GithubRepositoryProjectSync, Issue
+    from plane.utils.issue_identifier_resolver import resolve_issue_id_by_identifier
 
     workspace = repository.workspace_connection.workspace
 
-    project = Project.objects.filter(identifier__iexact=identifier, workspace=workspace).first()
-    if project is None:
+    issue_id = resolve_issue_id_by_identifier(workspace.slug, identifier, sequence_id)
+    issue = Issue.objects.filter(id=issue_id).select_related("project").first() if issue_id else None
+    if issue is None:
         log_exception(
-            Exception(
-                f"github_sync: identifier '{identifier}' does not match any project in "
-                f"workspace {workspace.id} (repository {repository.id}) - reference ignored"
-            ),
+            Exception(f"github_sync: no issue {identifier}-{sequence_id} in workspace {workspace.id}"),
             warning=True,
         )
         return None, None
 
     repository_sync = GithubRepositoryProjectSync.objects.filter(
-        repository=repository, project=project, is_active=True
+        repository=repository, project=issue.project, is_active=True
     ).first()
     if repository_sync is None:
         log_exception(
             Exception(
-                f"github_sync: project {project.id} ('{identifier}') is not synced to repository "
+                f"github_sync: project {issue.project_id} ('{identifier}') is not synced to repository "
                 f"{repository.id} - reference ignored (exigence 11)"
             ),
-            warning=True,
-        )
-        return None, None
-
-    issue = Issue.objects.filter(project=project, sequence_id=sequence_id).first()
-    if issue is None:
-        log_exception(
-            Exception(f"github_sync: no issue {identifier}-{sequence_id} in project {project.id}"),
             warning=True,
         )
         return None, None

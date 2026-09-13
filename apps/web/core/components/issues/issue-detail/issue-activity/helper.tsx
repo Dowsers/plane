@@ -51,7 +51,7 @@ export const useWorkItemCommentOperations = (
             workspaceSlug,
             projectId: issueDetails.project_id,
             issueId,
-            projectIdentifier: projectDetails?.identifier,
+            projectIdentifier: issueDetails?.sequence_prefix ?? projectDetails?.identifier,
             sequenceId: issueDetails.sequence_id,
           });
           const commentLink = `${workItemLink}#comment-${id}`;

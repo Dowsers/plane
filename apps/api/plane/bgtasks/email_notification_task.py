@@ -18,6 +18,7 @@ from django.utils import timezone
 
 # Module imports
 from plane.db.models import EmailNotificationLog, Issue, User
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.license.utils.instance_value import get_email_configuration
 from plane.settings.redis import redis_instance
 from plane.utils.email import generate_plain_text_from_html
@@ -231,7 +232,7 @@ def send_email_notification(issue_id, notification_data, receiver_id, email_noti
                             "changes": changes,
                             "issue_details": {
                                 "name": issue.name,
-                                "identifier": f"{issue.project.identifier}-{issue.sequence_id}",
+                                "identifier": f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
                             },
                             "activity_time": str(formatted_time),
                         }
@@ -240,7 +241,7 @@ def send_email_notification(issue_id, notification_data, receiver_id, email_noti
             summary = "Updates were made to the issue by"
 
             # Send the mail
-            subject = f"{issue.project.identifier}-{issue.sequence_id} {remove_unwanted_characters(issue.name)}"
+            subject = f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id} {remove_unwanted_characters(issue.name)}"
             context = {
                 "data": template_data,
                 "summary": summary,

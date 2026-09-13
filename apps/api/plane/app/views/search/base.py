@@ -206,6 +206,8 @@ class GlobalSearchEndpoint(BaseAPIView):
             for sequence_id in sequences:
                 q |= Q(sequence_id=sequence_id)
             q |= Q(project__identifier__icontains=query)
+            q |= Q(sequence_teamspace__default_project_identifier__icontains=query)
+            q |= Q(workspace__default_project_identifier__icontains=query)
             q |= Q(_name_norm__contains=normalized_query)
             q |= Q(_description_norm__contains=normalized_query)
 
@@ -390,7 +392,13 @@ class GlobalSearchEndpoint(BaseAPIView):
         )
 
     def filter_intakes(self, query, slug, project_id, workspace_search, limit, offset):
-        fields = ["name", "sequence_id", "project__identifier"]
+        fields = [
+            "name",
+            "sequence_id",
+            "project__identifier",
+            "sequence_teamspace__default_project_identifier",
+            "workspace__default_project_identifier",
+        ]
         q = Q()
         if query:
             for field in fields:
@@ -817,7 +825,13 @@ class SearchEndpoint(BaseAPIView):
                     response_data["project"] = list(projects)
 
                 elif query_type == "issue":
-                    fields = ["name", "sequence_id", "project__identifier"]
+                    fields = [
+            "name",
+            "sequence_id",
+            "project__identifier",
+            "sequence_teamspace__default_project_identifier",
+            "workspace__default_project_identifier",
+        ]
                     q = Q()
 
                     if query:
@@ -1027,7 +1041,13 @@ class SearchEndpoint(BaseAPIView):
                     response_data["project"] = list(projects)
 
                 elif query_type == "issue":
-                    fields = ["name", "sequence_id", "project__identifier"]
+                    fields = [
+            "name",
+            "sequence_id",
+            "project__identifier",
+            "sequence_teamspace__default_project_identifier",
+            "workspace__default_project_identifier",
+        ]
                     q = Q()
 
                     if query:

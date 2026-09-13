@@ -51,7 +51,7 @@ const KanbanIssueDetailsBlock = observer(function KanbanIssueDetailsBlock(props:
       <WithDisplayPropertiesHOC displayProperties={displayProperties || {}} displayPropertyKey="key">
         <div className="relative">
           <div className="line-clamp-1 text-11 text-tertiary">
-            {project_details?.identifier}-{issue.sequence_id}
+            {issue.sequence_prefix ?? project_details?.identifier}-{issue.sequence_id}
           </div>
         </div>
       </WithDisplayPropertiesHOC>

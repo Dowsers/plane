@@ -116,6 +116,7 @@ export interface ITeamspaceOverdueIssue {
   target_date: string | null;
   project_id: string;
   project_identifier: string;
+  sequence_prefix?: string | null;
   state_group: string | null;
 }
 

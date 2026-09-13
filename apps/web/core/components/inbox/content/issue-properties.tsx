@@ -57,7 +57,7 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
     workspaceSlug: workspaceSlug?.toString(),
     projectId,
     issueId: duplicateIssueDetails?.id,
-    projectIdentifier: currentProjectDetails?.identifier,
+    projectIdentifier: duplicateIssueDetails?.sequence_prefix ?? currentProjectDetails?.identifier,
     sequenceId: duplicateIssueDetails?.sequence_id,
   });
   const DropdownComponent = isIntakeAccepted ? StateDropdown : IntakeStateDropdown;
@@ -203,7 +203,7 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
                 >
                   <Tooltip tooltipContent={`${duplicateIssueDetails?.name}`}>
                     <span className="flex cursor-pointer items-center gap-1 rounded-sm bg-layer-1 px-1.5 py-1 pb-0.5 text-11 text-secondary">
-                      {`${currentProjectDetails?.identifier}-${duplicateIssueDetails?.sequence_id}`}
+                      {`${duplicateIssueDetails?.sequence_prefix ?? currentProjectDetails?.identifier}-${duplicateIssueDetails?.sequence_id}`}
                     </span>
                   </Tooltip>
                 </ControlLink>

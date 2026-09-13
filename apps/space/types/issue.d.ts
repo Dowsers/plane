@@ -45,6 +45,7 @@ export interface IIssue extends Pick<
   | "state_id"
   | "project_id"
   | "sequence_id"
+  | "sequence_prefix"
   | "sort_order"
   | "start_date"
   | "target_date"

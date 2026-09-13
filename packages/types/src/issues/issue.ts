@@ -45,6 +45,13 @@ export enum EIssuesStoreType {
 export type TBaseIssue = {
   id: string;
   sequence_id: number;
+  // The resolved display prefix for this issue's ID - its current Teamspace
+  // pool's prefix, or this workspace's own shared default pool prefix if it
+  // has none. Never a project's own `identifier` - see
+  // apps/api/plane/utils/issue_identifier.py::get_issue_sequence_prefix.
+  // Prefer this over any project-store identifier lookup wherever an
+  // issue's ID is displayed/linked.
+  sequence_prefix?: string | null;
   name: string;
   sort_order: number;
 

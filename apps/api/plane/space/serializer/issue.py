@@ -36,15 +36,20 @@ from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
 )
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 
 class IssueStateFlatSerializer(BaseSerializer):
     state_detail = StateLiteSerializer(read_only=True, source="state")
     project_detail = ProjectLiteSerializer(read_only=True, source="project")
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
-        fields = ["id", "sequence_id", "name", "state_detail", "project_detail"]
+        fields = ["id", "sequence_id", "sequence_prefix", "name", "state_detail", "project_detail"]
 
 
 class LabelSerializer(BaseSerializer):
@@ -59,10 +64,14 @@ class LabelSerializer(BaseSerializer):
 
 class IssueProjectLiteSerializer(BaseSerializer):
     project_detail = ProjectLiteSerializer(source="project", read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
-        fields = ["id", "project_detail", "name", "sequence_id"]
+        fields = ["id", "project_detail", "name", "sequence_id", "sequence_prefix"]
         read_only_fields = fields
 
 
@@ -428,6 +437,10 @@ class IssuePublicSerializer(BaseSerializer):
     module_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
     label_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
     assignee_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -435,6 +448,7 @@ class IssuePublicSerializer(BaseSerializer):
             "id",
             "name",
             "sequence_id",
+            "sequence_prefix",
             "state",
             "project",
             "workspace",

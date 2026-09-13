@@ -41,6 +41,7 @@ export type TIssueEntityData = {
   sequence_id: number;
   project_id: string;
   project_identifier: string;
+  sequence_prefix?: string | null;
   is_epic: boolean;
 };
 

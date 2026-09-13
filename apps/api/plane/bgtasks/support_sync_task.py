@@ -40,6 +40,7 @@ from plane.db.models import (
     SupportTicketSyncState,
 )
 from plane.utils.exception_logger import log_exception
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.utils.support_client import SupportAPIError, reopen_ticket_and_note
 
 _PROVIDER_MAP = {
@@ -68,7 +69,7 @@ def _issue_deep_link(issue):
 
 
 def _note_body(issue, group):
-    identifier = f"{issue.project.identifier}-{issue.sequence_id}"
+    identifier = f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}"
     link = _issue_deep_link(issue)
     verb = "completed" if group == StateGroup.COMPLETED.value else "cancelled"
     # Exigence 12 - minimum content: Plane item id, new state, deep link.

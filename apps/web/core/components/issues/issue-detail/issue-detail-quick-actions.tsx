@@ -61,7 +61,7 @@ export const IssueDetailQuickActions = observer(function IssueDetailQuickActions
   const issue = getIssueById(issueId);
   if (!issue) return <></>;
 
-  const projectIdentifier = getProjectIdentifierById(projectId);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(projectId);
 
   const workItemLink = generateWorkItemLink({
     workspaceSlug: workspaceSlug,

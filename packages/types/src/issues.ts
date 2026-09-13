@@ -93,6 +93,7 @@ export interface IIssueActivity {
     name: string;
     priority: string | null;
     sequence_id: string;
+    sequence_prefix?: string | null;
     type_id: string;
   } | null;
   new_identifier: string | null;

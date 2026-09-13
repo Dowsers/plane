@@ -91,7 +91,7 @@ export const InboxIssueActionsMobileHeader = observer(function InboxIssueActions
 
   if (!issue || !inboxIssue) return null;
 
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
   const workItemLink = generateWorkItemLink({
     workspaceSlug: workspaceSlug?.toString(),

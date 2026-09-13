@@ -37,6 +37,7 @@ export interface IMilestoneIssue {
   id: string;
   name: string;
   sequence_id: number;
+  sequence_prefix?: string | null;
   state_id: string | null;
   priority: string | null;
   project_id: string;

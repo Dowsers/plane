@@ -50,7 +50,7 @@ export const IssueBlock = observer(function IssueBlock(props: IssueBlockProps) {
 
   if (!issue) return null;
 
-  const projectIdentifier = project_details?.identifier;
+  const projectIdentifier = issue.sequence_prefix ?? project_details?.identifier;
 
   return (
     <div

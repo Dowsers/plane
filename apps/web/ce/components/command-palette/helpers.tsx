@@ -46,7 +46,7 @@ export const commandGroups: TCommandGroups = {
         <IssueIdentifier
           projectId={issue.project_id}
           issueTypeId={issue.type_id}
-          projectIdentifier={issue.project__identifier}
+          projectIdentifier={issue.sequence_prefix ?? issue.project__identifier}
           issueSequenceId={issue.sequence_id}
           size="xs"
         />{" "}
@@ -58,7 +58,7 @@ export const commandGroups: TCommandGroups = {
         workspaceSlug: issue?.workspace__slug,
         projectId: issue?.project_id,
         issueId: issue?.id,
-        projectIdentifier: issue.project__identifier,
+        projectIdentifier: issue.sequence_prefix ?? issue.project__identifier,
         sequenceId: issue?.sequence_id,
       }),
     title: "Work items",

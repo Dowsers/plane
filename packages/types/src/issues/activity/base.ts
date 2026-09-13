@@ -33,6 +33,7 @@ export type TIssueActivityProjectDetail = {
 export type TIssueActivityIssueDetail = {
   id: string;
   sequence_id: number;
+  sequence_prefix?: string | null;
   sort_order: boolean;
   name: string;
   description_html: string;

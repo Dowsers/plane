@@ -115,6 +115,7 @@ matching criterion.
 """
 
 from plane.db.models.state import StateGroup
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.utils.exception_logger import log_exception
 
 RESOLVED_STATE_GROUPS = (StateGroup.COMPLETED.value, StateGroup.CANCELLED.value)
@@ -464,7 +465,7 @@ def _resolve_template(template, issue, actor):
     """Mirrors plane/utils/workflow_rule_engine.py::_resolve_template
     exactly - same simple string-replace token vocabulary, not a
     templating engine, per the feature spec."""
-    identifier = f"{issue.project.identifier}-{issue.sequence_id}"
+    identifier = f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}"
     actor_name = actor.display_name if actor is not None else "Automation"
     text = template or ""
     text = text.replace("{{issue.identifier}}", identifier)

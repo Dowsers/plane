@@ -93,36 +93,32 @@ def determine_trigger(action, mr_data, changes=None):
 
 
 def resolve_referenced_issue(repository, identifier, sequence_id):
-    from plane.db.models import Issue, Project
+    """`identifier` is resolved against a Teamspace's or the workspace's
+    own shared pool prefix (see plane.utils.issue_identifier_resolver) - a
+    project's own `identifier` is never used to resolve an issue anymore,
+    so the issue is resolved first, and the cross-tenant guard below is
+    checked against *that issue's actual project*."""
+    from plane.db.models import Issue
+    from plane.utils.issue_identifier_resolver import resolve_issue_id_by_identifier
 
     workspace = repository.workspace_connection.workspace
 
-    project = Project.objects.filter(identifier__iexact=identifier, workspace=workspace).first()
-    if project is None:
+    issue_id = resolve_issue_id_by_identifier(workspace.slug, identifier, sequence_id)
+    issue = Issue.objects.filter(id=issue_id).select_related("project").first() if issue_id else None
+    if issue is None:
         log_exception(
-            Exception(
-                f"gitlab_sync: identifier '{identifier}' does not match any project in "
-                f"workspace {workspace.id} (repository {repository.id}) - reference ignored"
-            ),
+            Exception(f"gitlab_sync: no issue {identifier}-{sequence_id} in workspace {workspace.id}"),
             warning=True,
         )
         return None
 
     connection = getattr(repository, "project_connection", None)
-    if connection is None or connection.project_id != project.id:
+    if connection is None or connection.project_id != issue.project_id:
         log_exception(
             Exception(
                 f"gitlab_sync: repository {repository.id} is not connected to project "
-                f"{project.id} ('{identifier}') - reference ignored (cross-tenant guard)"
+                f"{issue.project_id} ('{identifier}') - reference ignored (cross-tenant guard)"
             ),
-            warning=True,
-        )
-        return None
-
-    issue = Issue.objects.filter(project=project, sequence_id=sequence_id).first()
-    if issue is None:
-        log_exception(
-            Exception(f"gitlab_sync: no issue {identifier}-{sequence_id} in project {project.id}"),
             warning=True,
         )
         return None

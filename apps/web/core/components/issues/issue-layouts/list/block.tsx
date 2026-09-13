@@ -135,7 +135,7 @@ export const IssueBlock = observer(function IssueBlock(props: IssueBlockProps) {
 
   if (!issue) return null;
 
-  const projectIdentifier = getProjectIdentifierById(issue.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
   const isIssueSelected = selectionHelpers.getIsEntitySelected(issue.id);
   const isIssueActive = selectionHelpers.getIsEntityActive(issue.id);
   const isSubIssue = nestingLevel !== 0;

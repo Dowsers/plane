@@ -44,7 +44,7 @@ export const DuplicateCheckCard = observer(function DuplicateCheckCard(props: Pr
   const projectDetails = getProjectById(result.project_id);
   const stateDetails = result.state_id ? getStateById(result.state_id) : undefined;
   const candidateIssue = issuesById[result.issue_id];
-  const projectIdentifier = getProjectIdentifierById(result.project_id);
+  const projectIdentifier = candidateIssue?.sequence_prefix ?? getProjectIdentifierById(result.project_id);
 
   const workItemLink = generateWorkItemLink({
     workspaceSlug,

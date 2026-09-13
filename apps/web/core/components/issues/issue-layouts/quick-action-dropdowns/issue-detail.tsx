@@ -85,7 +85,7 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
   // derived values
   const activeLayout = `${issuesFilter.issueFilters?.displayFilters?.layout} layout`;
   const stateDetails = getStateById(issue.state_id);
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
   // auth
   const isEditingAllowed =
     allowPermissions(

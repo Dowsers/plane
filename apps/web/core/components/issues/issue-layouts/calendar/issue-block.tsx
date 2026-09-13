@@ -55,7 +55,7 @@ export const CalendarIssueBlock = observer(
     const { getProjectIdentifierById } = useProject();
 
     const stateColor = getProjectStates(issue?.project_id)?.find((state) => state?.id == issue?.state_id)?.color || "";
-    const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+    const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
     // handlers
     const handleIssuePeekOverview = (issue: TIssue) => handleRedirection(workspaceSlug.toString(), issue, isMobile);

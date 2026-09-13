@@ -99,7 +99,7 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
     workspaceSlug,
     projectId: issue?.project_id,
     issueId: issue?.id,
-    projectIdentifier: projectDetail?.identifier,
+    projectIdentifier: issue?.sequence_prefix ?? projectDetail?.identifier,
     sequenceId: issue?.sequence_id,
   });
 
@@ -157,7 +157,7 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
                     <IssueIdentifier
                       projectId={projectDetail.id}
                       issueTypeId={issue.type_id}
-                      projectIdentifier={projectDetail.identifier}
+                      projectIdentifier={issue?.sequence_prefix ?? projectDetail.identifier}
                       issueSequenceId={issue.sequence_id}
                       size="xs"
                       variant="secondary"

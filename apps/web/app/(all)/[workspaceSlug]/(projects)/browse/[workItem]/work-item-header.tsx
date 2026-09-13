@@ -53,7 +53,7 @@ export const WorkItemDetailsHeader = observer(function WorkItemDetailsHeader() {
           <Breadcrumbs.Item
             component={
               <BreadcrumbLink
-                label={projectDetails && issueDetails ? `${projectDetails.identifier}-${issueDetails.sequence_id}` : ""}
+                label={projectDetails && issueDetails ? `${issueDetails.sequence_prefix ?? projectDetails.identifier}-${issueDetails.sequence_id}` : ""}
               />
             }
           />

@@ -102,6 +102,7 @@ export type TRecurringGeneratedIssue = {
   start_date: string | null;
   target_date: string | null;
   sequence_id: number;
+  sequence_prefix?: string | null;
   sort_order: number;
   is_draft: boolean;
 };

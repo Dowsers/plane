@@ -13,6 +13,7 @@ from .base import BaseSerializer
 from .user import UserLiteSerializer
 from .project import ProjectLiteSerializer
 from plane.db.models import IssueWorklog, TimesheetPeriod
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 
 class IssueWorklogSerializer(BaseSerializer):
@@ -91,7 +92,7 @@ class IssueWorklogExportSerializer(BaseSerializer):
         read_only_fields = fields
 
     def get_issue_sequence_id(self, obj):
-        return f"{obj.project.identifier}-{obj.issue.sequence_id}"
+        return f"{get_issue_sequence_prefix(obj.issue)}-{obj.issue.sequence_id}"
 
 
 class TimesheetPeriodSerializer(BaseSerializer):

@@ -62,8 +62,12 @@ export class IssueStore implements IIssueStore {
     if (issues && issues.length <= 0) return;
     runInAction(() => {
       issues.forEach((issue) => {
-        // add issue identifier to the issuesIdentifierMap
-        const projectIdentifier = rootStore.projectRoot.project.getProjectIdentifierById(issue?.project_id);
+        // add issue identifier to the issuesIdentifierMap - prefer the
+        // issue's own resolved prefix (team pool, or workspace default
+        // pool) over the project's own identifier, which is never what's
+        // actually displayed once an issue has a pool.
+        const projectIdentifier =
+          issue?.sequence_prefix ?? rootStore.projectRoot.project.getProjectIdentifierById(issue?.project_id);
         const workItemSequenceId = issue?.sequence_id;
         const issueIdentifier = `${projectIdentifier}-${workItemSequenceId}`;
         set(this.issuesIdentifierMap, issueIdentifier, issue.id);

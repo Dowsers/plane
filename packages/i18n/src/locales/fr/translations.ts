@@ -2130,6 +2130,13 @@ export default {
     general: {
       enter_project_id: "Saisissez l’ID du projet",
       please_select_a_timezone: "Veuillez sélectionner un fuseau horaire",
+      team_prefix_note: "Les nouvelles issues de ce projet seront numérotées sous {team} ({prefix}-...).",
+      team_change_confirm: {
+        title: "Changer l’équipe du projet",
+        description:
+          "Changer l’équipe de ce projet renumérote immédiatement toutes ses issues existantes sous {team}. Les ID actuels et tous les liens externes vers eux cesseront de fonctionner. Cette action est irréversible.",
+        no_team: "aucune équipe (préfixe par défaut du workspace)",
+      },
       archive_project: {
         title: "Archiver le projet",
         description:

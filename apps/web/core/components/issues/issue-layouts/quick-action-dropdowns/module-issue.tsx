@@ -57,7 +57,7 @@ export const ModuleIssueQuickActions = observer(function ModuleIssueQuickActions
   const { getProjectIdentifierById } = useProject();
   // derived values
   const stateDetails = getStateById(issue.state_id);
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
   // auth
   const isEditingAllowed =
     allowPermissions([EUserPermissions.ADMIN, EUserPermissions.MEMBER], EUserPermissionsLevel.PROJECT) && !readOnly;

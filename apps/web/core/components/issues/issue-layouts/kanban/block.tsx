@@ -195,7 +195,7 @@ export const KanbanIssueBlock = observer(function KanbanIssueBlock(props: IssueB
   const canEditIssueProperties = canEditProperties(issue?.project_id ?? undefined);
 
   const isDragAllowed = canDragIssuesInCurrentGrouping && !issue?.tempId && canEditIssueProperties;
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
   const workItemLink = generateWorkItemLink({
     workspaceSlug,

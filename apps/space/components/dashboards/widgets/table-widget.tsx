@@ -77,7 +77,7 @@ export function PublicTableWidget({ anchor, widget }: Props) {
             {rows.map((row) => (
               <TableRow key={row.id}>
                 <TableCell className="max-w-[220px] truncate" title={row.name}>
-                  {row.project_detail?.identifier}-{row.sequence_id} {row.name}
+                  {row.sequence_prefix ?? row.project_detail?.identifier}-{row.sequence_id} {row.name}
                 </TableCell>
                 <TableCell>{row.project_detail?.name}</TableCell>
                 <TableCell>

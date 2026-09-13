@@ -7,7 +7,8 @@
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Info } from "lucide-react";
-import { NETWORK_CHOICES } from "@plane/constants";
+import useSWR from "swr";
+import { EUserPermissions, EUserPermissionsLevel, NETWORK_CHOICES } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // plane imports
 import { Button } from "@plane/propel/button";
@@ -17,15 +18,18 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
 import { EFileAssetType } from "@plane/types";
 import type { IProject, IWorkspace } from "@plane/types";
-import { CustomSelect, Input, TextArea } from "@plane/ui";
+import { AlertModalCore, CustomSelect, Input, TextArea } from "@plane/ui";
 import { renderFormattedDate } from "@plane/utils";
 import { CoverImage } from "@/components/common/cover-image";
 import { ImagePickerPopover } from "@/components/core/image-picker-popover";
 import { TimezoneSelect } from "@/components/global";
+import { TEAMSPACE_LEAD } from "@/components/teamspaces/constants";
 // helpers
 import { handleCoverImageChange } from "@/helpers/cover-image.helper";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
+import { useTeamspace } from "@/hooks/store/use-teamspace";
+import { useUserPermissions } from "@/hooks/store/user";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // services
 import { ProjectService } from "@/services/project";
@@ -47,9 +51,17 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
   // states
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingTeamChangePayload, setPendingTeamChangePayload] = useState<Partial<IProject> | null>(null);
   // store hooks
   const { updateProject } = useProject();
   const { isMobile } = usePlatformOS();
+  const { getTeamspaceIds, getTeamspaceById, fetchTeamspaces } = useTeamspace();
+  const { allowPermissions } = useUserPermissions();
+  useSWR(
+    workspaceSlug ? ["PROJECT_SETTINGS_TEAMSPACES", workspaceSlug] : null,
+    workspaceSlug ? () => fetchTeamspaces(workspaceSlug.toString()) : null,
+    { revalidateOnFocus: false }
+  );
 
   // form info
   const {
@@ -70,6 +82,20 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
   // derived values
   const currentNetwork = NETWORK_CHOICES.find((n) => n.key === project?.network);
   const coverImage = watch("cover_image_url");
+  const currentPrimaryTeamspace = watch("primary_teamspace");
+  const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
+  const allTeamspaceIds = getTeamspaceIds(workspaceSlug?.toString() ?? "") ?? [];
+  // Only Leads of the project's CURRENT team (if any) and Leads of a
+  // candidate new team may pick it - mirrors the backend's
+  // `validate_primary_teamspace` bar, which requires Lead-of-old-team AND
+  // Lead-of-new-team (or workspace Admin) when actually changing teams.
+  const selectableTeamspaceIds = isWorkspaceAdmin
+    ? allTeamspaceIds
+    : allTeamspaceIds.filter((id) => getTeamspaceById(id)?.current_user_role === TEAMSPACE_LEAD);
+  const canEditTeam =
+    isWorkspaceAdmin ||
+    !project.primary_teamspace ||
+    getTeamspaceById(project.primary_teamspace)?.current_user_role === TEAMSPACE_LEAD;
 
   useEffect(() => {
     if (project && projectId !== getValues("id")) {
@@ -143,6 +169,22 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
       });
   };
 
+  const proceedWithUpdate = async (payload: Partial<IProject>) => {
+    if (!workspaceSlug) return;
+    if (project.identifier !== payload.identifier)
+      await projectService
+        .checkProjectIdentifierAvailability(workspaceSlug, payload.identifier ?? "")
+        .then(async (res) => {
+          if (res.exists) setError("identifier", { message: t("common.identifier_already_exists") });
+          else await handleUpdateChange(payload);
+          return;
+        });
+    else await handleUpdateChange(payload);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+  };
+
   const onSubmit = async (formData: IProject) => {
     if (!workspaceSlug) return;
     setIsLoading(true);
@@ -154,6 +196,7 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
       health: formData.health,
       logo_props: formData.logo_props,
       timezone: formData.timezone,
+      primary_teamspace: formData.primary_teamspace,
     };
 
     // Handle cover image changes
@@ -179,18 +222,25 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
       return;
     }
 
-    if (project.identifier !== formData.identifier)
-      await projectService
-        .checkProjectIdentifierAvailability(workspaceSlug, payload.identifier ?? "")
-        .then(async (res) => {
-          if (res.exists) setError("identifier", { message: t("common.identifier_already_exists") });
-          else await handleUpdateChange(payload);
-          return;
-        });
-    else await handleUpdateChange(payload);
-    setTimeout(() => {
+    // Changing a project's team immediately renumbers all of its existing
+    // work items into the new pool (or the workspace's default pool) -
+    // destructive to the current IDs/links, so confirm explicitly before
+    // proceeding, same as any other irreversible action in this app.
+    if ((formData.primary_teamspace ?? null) !== (project.primary_teamspace ?? null)) {
+      setPendingTeamChangePayload(payload);
       setIsLoading(false);
-    }, 300);
+      return;
+    }
+
+    await proceedWithUpdate(payload);
+  };
+
+  const confirmTeamChangeAndSubmit = async () => {
+    if (!pendingTeamChangePayload) return;
+    setIsLoading(true);
+    const payload = pendingTeamChangePayload;
+    setPendingTeamChangePayload(null);
+    await proceedWithUpdate(payload);
   };
 
   return (
@@ -360,6 +410,38 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
             </span>
           </div>
           <div className="flex flex-col gap-1">
+            <h4 className="text-13">{t("team")}</h4>
+            <Controller
+              control={control}
+              name="primary_teamspace"
+              render={({ field: { value, onChange } }) => (
+                <CustomSelect
+                  value={value ?? null}
+                  onChange={onChange}
+                  label={value ? (getTeamspaceById(value)?.name ?? t("team")) : t("select_team")}
+                  buttonClassName="!border-subtle !shadow-none font-medium rounded-md"
+                  input
+                  disabled={!isAdmin || !canEditTeam}
+                >
+                  <CustomSelect.Option value={null}>{t("select_team")}</CustomSelect.Option>
+                  {selectableTeamspaceIds.map((id) => (
+                    <CustomSelect.Option key={id} value={id}>
+                      {getTeamspaceById(id)?.name}
+                    </CustomSelect.Option>
+                  ))}
+                </CustomSelect>
+              )}
+            />
+            {currentPrimaryTeamspace && (
+              <p className="text-11 text-tertiary">
+                {t("project_settings.general.team_prefix_note", {
+                  team: getTeamspaceById(currentPrimaryTeamspace)?.name,
+                  prefix: getTeamspaceById(currentPrimaryTeamspace)?.default_project_identifier,
+                })}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
             <h4 className="text-13">{t("workspace_projects.network.label")}</h4>
             <Controller
               name="network"
@@ -447,6 +529,22 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
           </>
         </div>
       </div>
+      <AlertModalCore
+        isOpen={!!pendingTeamChangePayload}
+        handleClose={() => {
+          setPendingTeamChangePayload(null);
+          setIsLoading(false);
+        }}
+        handleSubmit={confirmTeamChangeAndSubmit}
+        isSubmitting={isLoading}
+        variant="danger"
+        title={t("project_settings.general.team_change_confirm.title")}
+        content={t("project_settings.general.team_change_confirm.description", {
+          team: pendingTeamChangePayload?.primary_teamspace
+            ? (getTeamspaceById(pendingTeamChangePayload.primary_teamspace)?.name ?? "")
+            : t("project_settings.general.team_change_confirm.no_team"),
+        })}
+      />
     </form>
   );
 }

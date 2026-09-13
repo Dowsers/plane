@@ -37,6 +37,7 @@ from .cycle import CycleLiteSerializer, CycleSerializer
 from .module import ModuleLiteSerializer, ModuleSerializer
 from .state import StateLiteSerializer
 from .user import UserLiteSerializer
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 # Django imports
 from django.core.exceptions import ValidationError
@@ -66,6 +67,10 @@ class IssueSerializer(BaseSerializer):
     type_id = serializers.PrimaryKeyRelatedField(
         source="type", queryset=IssueType.objects.all(), required=False, allow_null=True
     )
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -328,9 +333,14 @@ class IssueLiteSerializer(BaseSerializer):
     references, and performance-critical operations.
     """
 
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
+
     class Meta:
         model = Issue
-        fields = ["id", "sequence_id", "project_id"]
+        fields = ["id", "sequence_id", "sequence_prefix", "project_id"]
         read_only_fields = fields
 
 
@@ -591,10 +601,14 @@ class IssueRelationSerializer(BaseSerializer):
     id = serializers.UUIDField(source="related_issue.id", read_only=True)
     project_id = serializers.UUIDField(source="related_issue.project_id", read_only=True)
     sequence_id = serializers.IntegerField(source="related_issue.sequence_id", read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
     name = serializers.CharField(source="related_issue.name", read_only=True)
     relation_type = serializers.CharField(read_only=True)
     state_id = serializers.UUIDField(source="related_issue.state.id", read_only=True)
     priority = serializers.CharField(source="related_issue.priority", read_only=True)
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj.related_issue)
 
     class Meta:
         model = IssueRelation
@@ -602,6 +616,7 @@ class IssueRelationSerializer(BaseSerializer):
             "id",
             "project_id",
             "sequence_id",
+            "sequence_prefix",
             "relation_type",
             "name",
             "state_id",
@@ -632,6 +647,7 @@ class RelatedIssueSerializer(BaseSerializer):
     id = serializers.UUIDField(source="issue.id", read_only=True)
     project_id = serializers.PrimaryKeyRelatedField(source="issue.project_id", read_only=True)
     sequence_id = serializers.IntegerField(source="issue.sequence_id", read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
     name = serializers.CharField(source="issue.name", read_only=True)
     type_id = serializers.UUIDField(source="issue.type.id", read_only=True)
     relation_type = serializers.CharField(read_only=True)
@@ -639,12 +655,16 @@ class RelatedIssueSerializer(BaseSerializer):
     state_id = serializers.UUIDField(source="issue.state.id", read_only=True)
     priority = serializers.CharField(source="issue.priority", read_only=True)
 
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj.issue)
+
     class Meta:
         model = IssueRelation
         fields = [
             "id",
             "project_id",
             "sequence_id",
+            "sequence_prefix",
             "relation_type",
             "name",
             "type_id",

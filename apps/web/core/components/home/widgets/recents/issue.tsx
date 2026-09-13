@@ -39,7 +39,7 @@ export const RecentIssue = observer(function RecentIssue(props: BlockProps) {
   const { getProjectIdentifierById } = useProject();
   // derived values
   const issueDetails: TIssueEntityData = activity.entity_data as TIssueEntityData;
-  const projectIdentifier = getProjectIdentifierById(issueDetails?.project_id);
+  const projectIdentifier = issueDetails?.sequence_prefix ?? getProjectIdentifierById(issueDetails?.project_id);
 
   if (!issueDetails) return <></>;
 

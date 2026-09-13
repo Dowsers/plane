@@ -50,7 +50,7 @@ export function IssueLink({ activity }: { activity: IIssueActivity }) {
     workspaceSlug: workspaceSlug?.toString() ?? activity.workspace_detail?.slug,
     projectId: activity?.project,
     issueId: activity?.issue,
-    projectIdentifier: activity?.project_detail?.identifier,
+    projectIdentifier: activity?.issue_detail?.sequence_prefix ?? activity?.project_detail?.identifier,
     sequenceId: activity?.issue_detail?.sequence_id,
   });
 
@@ -67,7 +67,7 @@ export function IssueLink({ activity }: { activity: IIssueActivity }) {
           rel={activity.issue === null ? "" : "noopener noreferrer"}
           className="inline items-center gap-1 font-medium text-primary hover:underline"
         >
-          <span className="whitespace-nowrap">{`${activity.project_detail.identifier}-${activity.issue_detail.sequence_id}`}</span>{" "}
+          <span className="whitespace-nowrap">{`${activity.issue_detail?.sequence_prefix ?? activity.project_detail.identifier}-${activity.issue_detail.sequence_id}`}</span>{" "}
           <span className="font-regular break-all">{activity.issue_detail?.name}</span>
         </a>
       ) : (

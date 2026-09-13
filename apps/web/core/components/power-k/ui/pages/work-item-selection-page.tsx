@@ -125,13 +125,13 @@ export function WorkItemSelectionPage(props: Props) {
           heading="Issues"
           items={issueResults}
           getKey={(issue) => issue.id}
-          getLabel={(issue) => `${issue.project__identifier}-${issue.sequence_id} ${issue.name}`}
+          getLabel={(issue) => `${issue.sequence_prefix ?? issue.project__identifier}-${issue.sequence_id} ${issue.name}`}
           renderItem={(issue) => (
             <div className="flex items-center gap-2">
               {issue.project_id && issue.project__identifier && issue.sequence_id && (
                 <IssueIdentifier
                   projectId={issue.project_id}
-                  projectIdentifier={issue.project__identifier}
+                  projectIdentifier={issue.sequence_prefix ?? issue.project__identifier}
                   issueSequenceId={issue.sequence_id}
                   textContainerClassName="text-13 text-secondary"
                 />
@@ -147,7 +147,7 @@ export function WorkItemSelectionPage(props: Props) {
                 workspaceSlug: workspaceSlug.toString(),
                 projectId: issue.project_id,
                 issueId: issue.id,
-                projectIdentifier: issue.project__identifier,
+                projectIdentifier: issue.sequence_prefix ?? issue.project__identifier,
                 sequenceId: issue.sequence_id,
               })
             );

@@ -73,7 +73,7 @@ export function RecurringIssueTemplateGeneratedIssuesPanel(props: Props) {
                 workspaceSlug,
                 projectId,
                 issueId: issue.id,
-                projectIdentifier,
+                projectIdentifier: issue.sequence_prefix ?? projectIdentifier,
                 sequenceId: issue.sequence_id,
               })}
               target="_blank"
@@ -82,7 +82,7 @@ export function RecurringIssueTemplateGeneratedIssuesPanel(props: Props) {
             >
               <PriorityIcon priority={issue.priority} size={14} />
               <span className="shrink-0 text-caption-sm-regular text-tertiary">
-                {projectIdentifier}-{issue.sequence_id}
+                {issue.sequence_prefix ?? projectIdentifier}-{issue.sequence_id}
               </span>
               <span className="truncate text-13 text-primary">{issue.name}</span>
             </Link>

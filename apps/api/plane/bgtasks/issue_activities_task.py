@@ -16,6 +16,7 @@ from django.utils import timezone
 
 # Module imports
 from plane.app.serializers import IssueActivitySerializer
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.bgtasks.notification_task import notifications
 from plane.db.models import (
     CommentReaction,
@@ -240,10 +241,10 @@ def track_parent(
                 actor_id=actor_id,
                 verb="updated",
                 old_value=(
-                    f"{old_parent.project.identifier}-{old_parent.sequence_id}" if old_parent is not None else ""
+                    f"{get_issue_sequence_prefix(old_parent)}-{old_parent.sequence_id}" if old_parent is not None else ""
                 ),
                 new_value=(
-                    f"{new_parent.project.identifier}-{new_parent.sequence_id}" if new_parent is not None else ""
+                    f"{get_issue_sequence_prefix(new_parent)}-{new_parent.sequence_id}" if new_parent is not None else ""
                 ),
                 field="parent",
                 project_id=project_id,
@@ -1544,7 +1545,7 @@ def create_issue_relation_activity(
                     actor_id=actor_id,
                     verb="updated",
                     old_value="",
-                    new_value=f"{issue.project.identifier}-{issue.sequence_id}",
+                    new_value=f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
                     field=requested_data.get("relation_type"),
                     project_id=project_id,
                     workspace_id=workspace_id,
@@ -1561,7 +1562,7 @@ def create_issue_relation_activity(
                     actor_id=actor_id,
                     verb="updated",
                     old_value="",
-                    new_value=f"{issue.project.identifier}-{issue.sequence_id}",
+                    new_value=f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
                     field=inverse_relation,
                     project_id=project_id,
                     workspace_id=workspace_id,
@@ -1590,7 +1591,7 @@ def delete_issue_relation_activity(
             issue_id=issue_id,
             actor_id=actor_id,
             verb="deleted",
-            old_value=f"{issue.project.identifier}-{issue.sequence_id}",
+            old_value=f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
             new_value="",
             field=requested_data.get("relation_type"),
             project_id=project_id,
@@ -1606,7 +1607,7 @@ def delete_issue_relation_activity(
             issue_id=requested_data.get("related_issue"),
             actor_id=actor_id,
             verb="deleted",
-            old_value=f"{issue.project.identifier}-{issue.sequence_id}",
+            old_value=f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}",
             new_value="",
             field=(
                 "blocking"

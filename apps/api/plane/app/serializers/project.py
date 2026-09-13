@@ -8,6 +8,9 @@ from rest_framework import serializers
 # Python imports
 import re
 
+# Django imports
+from django.db import transaction
+
 # Module imports
 from .base import BaseSerializer, DynamicBaseSerializer
 from plane.app.permissions.workspace import Admin as WORKSPACE_ADMIN
@@ -20,6 +23,8 @@ from plane.db.models import (
     ProjectIdentifier,
     DeployBoard,
     ProjectPublicMember,
+    Issue,
+    IssueSequence,
     TeamspaceMember,
     TeamspaceProject,
     TEAMSPACE_LEAD,
@@ -29,6 +34,7 @@ from plane.utils.content_validator import (
     validate_html_content,
 )
 from plane.utils.agent_actor import agent_role_error, is_member_visible, is_workspace_agent
+from plane.utils.issue_sequencing import assign_next_sequence
 
 
 class ProjectSerializer(BaseSerializer):
@@ -78,32 +84,45 @@ class ProjectSerializer(BaseSerializer):
 
         return identifier
 
-    def validate_primary_teamspace(self, value):
-        if value is None:
-            return value
+    def _is_teamspace_lead_or_workspace_admin(self, request, workspace_id, teamspace_id):
+        if request is None:
+            return True
+        if WorkspaceMember.objects.filter(
+            member=request.user, workspace_id=workspace_id, role=WORKSPACE_ADMIN, is_active=True
+        ).exists():
+            return True
+        return TeamspaceMember.objects.filter(
+            teamspace_id=teamspace_id, member=request.user, role=TEAMSPACE_LEAD, deleted_at__isnull=True
+        ).exists()
 
+    def validate_primary_teamspace(self, value):
         workspace_id = self.context["workspace_id"]
-        if str(value.workspace_id) != str(workspace_id):
+        request = self.context.get("request")
+
+        if value is not None and str(value.workspace_id) != str(workspace_id):
             raise serializers.ValidationError(detail="TEAM_DOES_NOT_BELONG_TO_WORKSPACE")
 
-        # Only a Teamspace's own Leads and workspace Admins may attach a
-        # new project to it as its `primary_teamspace` - same bar as
-        # attaching an existing project to a team after the fact
-        # (`_can_manage_teamspace` in
-        # apps/api/plane/app/views/workspace/teamspace.py). Re-implemented
-        # here rather than imported, since that module imports from
-        # plane.app.serializers and importing it back here would be a
-        # circular import.
-        request = self.context.get("request")
-        if request is not None:
-            is_workspace_admin = WorkspaceMember.objects.filter(
-                member=request.user, workspace_id=workspace_id, role=WORKSPACE_ADMIN, is_active=True
-            ).exists()
-            is_teamspace_lead = TeamspaceMember.objects.filter(
-                teamspace_id=value.id, member=request.user, role=TEAMSPACE_LEAD, deleted_at__isnull=True
-            ).exists()
-            if not (is_workspace_admin or is_teamspace_lead):
-                raise serializers.ValidationError(detail="MUST_BE_TEAM_LEAD_TO_SET_AS_PRIMARY_TEAM")
+        # Joining, changing, or leaving a project's `primary_teamspace` all
+        # require the same bar - Lead of whichever team is actually being
+        # touched (old, new, or both when swapping directly between two
+        # teams), or a workspace Admin. Re-implemented rather than
+        # importing `_can_manage_teamspace`
+        # (apps/api/plane/app/views/workspace/teamspace.py), since that
+        # module imports from plane.app.serializers and importing it back
+        # here would be a circular import.
+        current_teamspace_id = getattr(self.instance, "primary_teamspace_id", None) if self.instance else None
+        new_teamspace_id = value.id if value is not None else None
+        if current_teamspace_id == new_teamspace_id:
+            return value
+
+        if new_teamspace_id is not None and not self._is_teamspace_lead_or_workspace_admin(
+            request, workspace_id, new_teamspace_id
+        ):
+            raise serializers.ValidationError(detail="MUST_BE_TEAM_LEAD_TO_SET_AS_PRIMARY_TEAM")
+        if current_teamspace_id is not None and not self._is_teamspace_lead_or_workspace_admin(
+            request, workspace_id, current_teamspace_id
+        ):
+            raise serializers.ValidationError(detail="MUST_BE_TEAM_LEAD_TO_CHANGE_PRIMARY_TEAM")
 
         return value
 
@@ -163,6 +182,43 @@ class ProjectSerializer(BaseSerializer):
         # team's own "Projects" tab, not just silently set the FK.
         if project.primary_teamspace_id:
             TeamspaceProject.objects.create(teamspace_id=project.primary_teamspace_id, project=project)
+
+        return project
+
+    def update(self, instance, validated_data):
+        old_teamspace_id = instance.primary_teamspace_id
+        team_changed = "primary_teamspace" in validated_data and (
+            (validated_data["primary_teamspace"].id if validated_data["primary_teamspace"] else None)
+            != old_teamspace_id
+        )
+
+        project = super().update(instance, validated_data)
+
+        if team_changed:
+            new_teamspace = project.primary_teamspace
+            if new_teamspace is not None:
+                # Same free pivot-sync as create() - the old team's
+                # TeamspaceProject row (if any) is deliberately left alone,
+                # matching that pivot's documented independence from
+                # `primary_teamspace`.
+                TeamspaceProject.objects.get_or_create(teamspace_id=new_teamspace.id, project=project)
+
+            with transaction.atomic():
+                issues = list(Issue.objects.filter(project=project).order_by("created_at"))
+                assign_next_sequence(issues, new_teamspace, workspace=project.workspace)
+                Issue.objects.bulk_update(issues, ["sequence_id", "sequence_teamspace"])
+                IssueSequence.objects.bulk_create(
+                    [
+                        IssueSequence(
+                            issue=issue,
+                            sequence=issue.sequence_id,
+                            project=project,
+                            workspace=project.workspace,
+                            teamspace=issue.sequence_teamspace,
+                        )
+                        for issue in issues
+                    ]
+                )
 
         return project
 

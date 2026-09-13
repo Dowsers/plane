@@ -210,6 +210,7 @@ export type TDashboardWidgetTableRow = {
   id: string;
   name: string;
   sequence_id: number;
+  sequence_prefix?: string | null;
   project_id: string;
   project_detail: IProjectLite;
   state_id: string;

@@ -86,6 +86,10 @@ from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from .base import BaseAPIView
 from plane.utils.host import base_host
 from plane.utils.issue_relation_mapper import get_actual_relation
+from plane.utils.issue_identifier_resolver import (
+    resolve_issue_id_by_identifier,
+    resolve_issue_project_identifier,
+)
 from plane.bgtasks.webhook_task import model_activity
 from plane.bgtasks.intake_email_task import send_issue_comment_email_reply
 from plane.bgtasks.slack_sync_task import sync_issue_comment_to_slack
@@ -222,19 +226,36 @@ class WorkspaceIssueAPIEndpoint(BaseAPIView):
 
     @property
     def project_identifier(self):
-        return self.kwargs.get("project_identifier", None)
+        # `ProjectEntityPermission` checks membership against this value
+        # via an exact `Project.identifier` match, before this view's own
+        # `get()` ever runs - resolve it to the issue's REAL owning
+        # project's identifier when the raw kwarg is actually a team/
+        # workspace pool code, so that check keeps working unmodified.
+        raw = self.kwargs.get("project_identifier", None)
+        issue_identifier = self.kwargs.get("issue_identifier", None)
+        if raw and issue_identifier:
+            resolved = resolve_issue_project_identifier(self.kwargs.get("slug"), raw, issue_identifier)
+            if resolved:
+                return resolved
+        return raw
 
     def get_queryset(self):
-        return (
-            Issue.issue_objects.annotate(
-                sub_issues_count=Issue.issue_objects.filter(parent=OuterRef("id"))
-                .order_by()
-                .annotate(count=Func(F("id"), function="Count"))
-                .values("count")
+        issue_identifier = self.kwargs.get("issue_identifier", None)
+        qs = Issue.issue_objects.annotate(
+            sub_issues_count=Issue.issue_objects.filter(parent=OuterRef("id"))
+            .order_by()
+            .annotate(count=Func(F("id"), function="Count"))
+            .values("count")
+        ).filter(workspace__slug=self.kwargs.get("slug"))
+        if issue_identifier:
+            issue_id = resolve_issue_id_by_identifier(
+                self.kwargs.get("slug"), self.kwargs.get("project_identifier"), issue_identifier
             )
-            .filter(workspace__slug=self.kwargs.get("slug"))
-            .filter(project__identifier=self.kwargs.get("project_identifier"))
-            .select_related("project")
+            qs = qs.filter(id=issue_id) if issue_id else qs.none()
+        else:
+            qs = qs.filter(project__identifier=self.kwargs.get("project_identifier"))
+        return (
+            qs.select_related("project")
             .select_related("workspace")
             .select_related("state")
             .select_related("parent")
@@ -269,16 +290,15 @@ class WorkspaceIssueAPIEndpoint(BaseAPIView):
         This endpoint provides workspace-level access to work items.
         """
         if issue_identifier and project_identifier:
+            issue_id = resolve_issue_id_by_identifier(slug, project_identifier, issue_identifier)
+            if issue_id is None:
+                raise Issue.DoesNotExist
             issue = Issue.issue_objects.annotate(
                 sub_issues_count=Issue.issue_objects.filter(parent=OuterRef("id"))
                 .order_by()
                 .annotate(count=Func(F("id"), function="Count"))
                 .values("count")
-            ).get(
-                workspace__slug=slug,
-                project__identifier=project_identifier,
-                sequence_id=issue_identifier,
-            )
+            ).get(id=issue_id)
             return Response(
                 IssueSerializer(issue, fields=self.fields, expand=self.expand).data,
                 status=status.HTTP_200_OK,
@@ -2353,7 +2373,13 @@ class IssueSearchEndpoint(BaseAPIView):
             return Response({"issues": []}, status=status.HTTP_200_OK)
 
         # Build search query
-        fields = ["name", "sequence_id", "project__identifier"]
+        fields = [
+            "name",
+            "sequence_id",
+            "project__identifier",
+            "sequence_teamspace__default_project_identifier",
+            "workspace__default_project_identifier",
+        ]
         q = Q()
         for field in fields:
             if field == "sequence_id":

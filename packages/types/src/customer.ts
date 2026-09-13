@@ -42,6 +42,7 @@ export interface ICustomerRequestIssue {
   name: string;
   project_id: string;
   project_identifier: string;
+  sequence_prefix?: string | null;
   state_id: string;
   created_at: string;
   created_by?: string | null;

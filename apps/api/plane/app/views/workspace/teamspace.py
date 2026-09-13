@@ -134,7 +134,7 @@ class WorkspaceTeamspacesEndpoint(BaseViewSet):
             )
 
         workspace = Workspace.objects.get(slug=slug)
-        serializer = TeamspaceSerializer(data=request.data)
+        serializer = TeamspaceSerializer(data=request.data, context={"workspace_id": workspace.id})
         if serializer.is_valid():
             teamspace = serializer.save(workspace=workspace, created_by=request.user)
             # Spec section 1, exigence 4 - a teamspace must always have at
@@ -166,7 +166,9 @@ class WorkspaceTeamspacesEndpoint(BaseViewSet):
                     {"error": "Only workspace admins or teamspace leads can update this teamspace."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-            serializer = TeamspaceSerializer(teamspace, data=request.data, partial=True)
+            serializer = TeamspaceSerializer(
+                teamspace, data=request.data, partial=True, context={"workspace_id": teamspace.workspace_id}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)

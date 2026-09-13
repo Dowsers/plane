@@ -8,7 +8,7 @@ from django.db.models import Max
 from django.db import connection, transaction
 
 # Module imports
-from plane.db.models import Project, Issue, IssueSequence
+from plane.db.models import Teamspace, Workspace, Issue, IssueSequence
 from plane.utils.uuid import convert_uuid_to_integer
 
 
@@ -43,37 +43,50 @@ class Command(BaseCommand):
             if len(identifier) != 2:
                 raise ValueError("Invalid issue identifier format")
 
-            project_identifier = identifier[0]
+            code = identifier[0]
             issue_sequence = self.strict_str_to_int(identifier[1])
 
-            # Fetch the project
-            project = Project.objects.get(identifier__iexact=project_identifier, workspace__slug=workspace_slug)
+            # Resolve `code` to a pool: a Teamspace's shared series first,
+            # then this workspace's own shared default series - a
+            # project's own `identifier` is never used for this anymore.
+            teamspace = Teamspace.objects.filter(
+                default_project_identifier__iexact=code, workspace__slug=workspace_slug
+            ).first()
+            if teamspace is not None:
+                issues = Issue.objects.filter(sequence_teamspace=teamspace, sequence_id=issue_sequence)
+                lock_key = convert_uuid_to_integer(teamspace.id)
+                sequence_filter = {"teamspace": teamspace}
+            else:
+                workspace = Workspace.objects.filter(
+                    slug=workspace_slug, default_project_identifier__iexact=code
+                ).first()
+                if workspace is None:
+                    raise CommandError(f"No team or workspace found with identifier prefix '{code}'")
+                issues = Issue.objects.filter(
+                    sequence_teamspace__isnull=True, workspace=workspace, sequence_id=issue_sequence
+                )
+                lock_key = convert_uuid_to_integer(workspace.id)
+                sequence_filter = {"teamspace__isnull": True, "workspace": workspace}
 
-            # Get the issues
-            issues = Issue.objects.filter(project=project, sequence_id=issue_sequence)
             # Check if there are duplicate issues
             if not issues.count() > 1:
                 raise CommandError("No duplicate issues found with the given identifier")
 
             self.stdout.write(self.style.SUCCESS(f"{issues.count()} issues found with identifier {issue_identifier}"))
             with transaction.atomic():
-                # This ensures only one transaction per project can execute this code at a time
-                lock_key = convert_uuid_to_integer(project.id)
-
-                # Acquire an exclusive lock using the project ID as the lock key
+                # This ensures only one transaction per pool can execute this code at a time
                 with connection.cursor() as cursor:
-                    # Get an exclusive lock using the project ID as the lock key
                     cursor.execute("SELECT pg_advisory_xact_lock(%s)", [lock_key])
 
-                # Get the maximum sequence ID for the project
-                last_sequence = IssueSequence.objects.filter(project=project).aggregate(largest=Max("sequence"))[
+                # Get the maximum sequence ID for the pool
+                last_sequence = IssueSequence.objects.filter(**sequence_filter).aggregate(largest=Max("sequence"))[
                     "largest"
                 ]
 
                 bulk_issues = []
                 bulk_issue_sequences = []
 
-                issue_sequence_map = {isq.issue_id: isq for isq in IssueSequence.objects.filter(project=project)}
+                issue_sequence_map = {isq.issue_id: isq for isq in IssueSequence.objects.filter(**sequence_filter)}
 
                 # change the ids of duplicate issues
                 for index, issue in enumerate(issues[1:]):

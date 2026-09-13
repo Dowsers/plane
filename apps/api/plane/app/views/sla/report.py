@@ -43,6 +43,7 @@ from rest_framework.response import Response
 
 # Module imports
 from plane.app.permissions import ROLE, allow_permission
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.db.models import IssueSLA
 from plane.utils.csv_utils import sanitize_csv_row
 
@@ -130,7 +131,7 @@ class SLAReportEndpoint(BaseAPIView):
         return {
             "id": str(sla.id),
             "issue_id": str(sla.issue_id) if sla.issue_id else None,
-            "issue_identifier": (f"{issue.project.identifier}-{issue.sequence_id}" if has_project else None),
+            "issue_identifier": (f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}" if has_project else None),
             "issue_name": issue.name if issue else None,
             "project_id": str(sla.project_id) if sla.project_id else None,
             "project_name": issue.project.name if has_project else None,
@@ -163,7 +164,7 @@ class SLAReportEndpoint(BaseAPIView):
             has_project = issue is not None and issue.project_id is not None
             yield [
                 str(sla.issue_id) if sla.issue_id else "",
-                f"{issue.project.identifier}-{issue.sequence_id}" if has_project else "",
+                f"{get_issue_sequence_prefix(issue)}-{issue.sequence_id}" if has_project else "",
                 issue.name if issue else "",
                 issue.project.name if has_project else "",
                 sla.sla_policy.name if sla.sla_policy else "",

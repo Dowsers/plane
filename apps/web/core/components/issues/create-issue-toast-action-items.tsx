@@ -34,7 +34,7 @@ export const CreateIssueToastActionItems = observer(function CreateIssueToastAct
 
   // derived values
   const issue = getIssueById(issueId);
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
   if (!issue) return null;
 

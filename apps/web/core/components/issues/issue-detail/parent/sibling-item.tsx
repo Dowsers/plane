@@ -38,7 +38,7 @@ export const IssueParentSiblingItem = observer(function IssueParentSiblingItem(p
     workspaceSlug,
     projectId: issueDetail?.project_id,
     issueId: issueDetail?.id,
-    projectIdentifier: projectDetails?.identifier,
+    projectIdentifier: issueDetail?.sequence_prefix ?? projectDetails?.identifier,
     sequenceId: issueDetail?.sequence_id,
   });
 
@@ -53,7 +53,7 @@ export const IssueParentSiblingItem = observer(function IssueParentSiblingItem(p
             <IssueIdentifier
               projectId={issueDetail.project_id}
               issueTypeId={issueDetail.type_id}
-              projectIdentifier={projectDetails?.identifier}
+              projectIdentifier={issueDetail?.sequence_prefix ?? projectDetails?.identifier}
               issueSequenceId={issueDetail.sequence_id}
               size="xs"
             />

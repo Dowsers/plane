@@ -22,6 +22,7 @@ from plane.db.models import (
     Page,
     Project,
     ProjectMember,
+    Teamspace,
     WorkspaceHomePreference,
     Sticky,
     WorkspaceUserPreference,
@@ -60,6 +61,19 @@ class WorkSpaceSerializer(DynamicBaseSerializer):
             raise serializers.ValidationError(
                 "Slug can only contain letters, numbers, hyphens (-), and underscores (_)"
             )
+        return value
+
+    def validate_default_project_identifier(self, value):
+        if not value:
+            return value
+        if re.match(Project.FORBIDDEN_IDENTIFIER_CHARS_PATTERN, value):
+            raise serializers.ValidationError("DEFAULT_PROJECT_IDENTIFIER_CANNOT_CONTAIN_SPECIAL_CHARACTERS")
+        value = value.strip().upper()
+        workspace = self.instance
+        if workspace is not None and Teamspace.objects.filter(
+            workspace=workspace, default_project_identifier__iexact=value
+        ).exists():
+            raise serializers.ValidationError("DEFAULT_PROJECT_IDENTIFIER_COLLIDES_WITH_TEAM")
         return value
 
     class Meta:

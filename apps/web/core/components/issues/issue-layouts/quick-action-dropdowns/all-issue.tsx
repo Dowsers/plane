@@ -52,7 +52,7 @@ export const AllIssueQuickActions = observer(function AllIssueQuickActions(props
   // derived values
   const stateDetails = getStateById(issue.state_id);
   const isEditingAllowed = !readOnly;
-  const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+  const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
   // auth
   const isArchivingAllowed = handleArchive && isEditingAllowed;
   const isInArchivableGroup = !!stateDetails && ARCHIVABLE_STATE_GROUPS.includes(stateDetails?.group);

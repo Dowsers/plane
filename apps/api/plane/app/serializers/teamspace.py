@@ -22,6 +22,7 @@ from plane.db.models import (
     TeamspaceMember,
     TeamspaceProject,
     TeamspaceView,
+    Workspace,
     TEAMSPACE_LEAD,
 )
 
@@ -73,7 +74,19 @@ class TeamspaceSerializer(serializers.ModelSerializer):
             return value
         if re.match(Project.FORBIDDEN_IDENTIFIER_CHARS_PATTERN, value):
             raise serializers.ValidationError(detail="DEFAULT_PROJECT_IDENTIFIER_CANNOT_CONTAIN_SPECIAL_CHARACTERS")
-        return value.strip().upper()
+        value = value.strip().upper()
+
+        workspace_id = self.context.get("workspace_id") or getattr(self.instance, "workspace_id", None)
+        if workspace_id is not None:
+            if Workspace.objects.filter(id=workspace_id, default_project_identifier__iexact=value).exists():
+                raise serializers.ValidationError(detail="DEFAULT_PROJECT_IDENTIFIER_COLLIDES_WITH_WORKSPACE")
+            other_teamspaces = Teamspace.objects.filter(workspace_id=workspace_id, default_project_identifier__iexact=value)
+            if self.instance is not None:
+                other_teamspaces = other_teamspaces.exclude(pk=self.instance.pk)
+            if other_teamspaces.exists():
+                raise serializers.ValidationError(detail="DEFAULT_PROJECT_IDENTIFIER_COLLIDES_WITH_TEAM")
+
+        return value
 
 
 class TeamspaceMemberSerializer(serializers.ModelSerializer):

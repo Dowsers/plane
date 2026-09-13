@@ -49,6 +49,7 @@ from plane.utils.content_validator import (
     validate_binary_data,
 )
 from plane.utils.label_group import enforce_label_group_exclusivity
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 
 class IssueFlatSerializer(BaseSerializer):
@@ -415,6 +416,7 @@ class IssueRelationSerializer(BaseSerializer):
     id = serializers.UUIDField(source="related_issue.id", read_only=True)
     project_id = serializers.PrimaryKeyRelatedField(source="related_issue.project_id", read_only=True)
     sequence_id = serializers.IntegerField(source="related_issue.sequence_id", read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
     name = serializers.CharField(source="related_issue.name", read_only=True)
     relation_type = serializers.CharField(read_only=True)
     state_id = serializers.UUIDField(source="related_issue.state.id", read_only=True)
@@ -425,12 +427,16 @@ class IssueRelationSerializer(BaseSerializer):
         required=False,
     )
 
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj.related_issue)
+
     class Meta:
         model = IssueRelation
         fields = [
             "id",
             "project_id",
             "sequence_id",
+            "sequence_prefix",
             "relation_type",
             "name",
             "state_id",
@@ -455,6 +461,7 @@ class RelatedIssueSerializer(BaseSerializer):
     id = serializers.UUIDField(source="issue.id", read_only=True)
     project_id = serializers.PrimaryKeyRelatedField(source="issue.project_id", read_only=True)
     sequence_id = serializers.IntegerField(source="issue.sequence_id", read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
     name = serializers.CharField(source="issue.name", read_only=True)
     relation_type = serializers.CharField(read_only=True)
     state_id = serializers.UUIDField(source="issue.state.id", read_only=True)
@@ -465,12 +472,16 @@ class RelatedIssueSerializer(BaseSerializer):
         required=False,
     )
 
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj.issue)
+
     class Meta:
         model = IssueRelation
         fields = [
             "id",
             "project_id",
             "sequence_id",
+            "sequence_prefix",
             "relation_type",
             "name",
             "state_id",
@@ -731,10 +742,14 @@ class IssueCommentSerializer(BaseSerializer):
 class IssueStateFlatSerializer(BaseSerializer):
     state_detail = StateLiteSerializer(read_only=True, source="state")
     project_detail = ProjectLiteSerializer(read_only=True, source="project")
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
-        fields = ["id", "sequence_id", "name", "state_detail", "project_detail"]
+        fields = ["id", "sequence_id", "sequence_prefix", "name", "state_detail", "project_detail"]
 
 
 # Issue Serializer with state details
@@ -746,6 +761,10 @@ class IssueStateSerializer(DynamicBaseSerializer):
     sub_issues_count = serializers.IntegerField(read_only=True)
     attachment_count = serializers.IntegerField(read_only=True)
     link_count = serializers.IntegerField(read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -754,6 +773,10 @@ class IssueStateSerializer(DynamicBaseSerializer):
 
 class IssueIntakeSerializer(DynamicBaseSerializer):
     label_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -762,6 +785,7 @@ class IssueIntakeSerializer(DynamicBaseSerializer):
             "name",
             "priority",
             "sequence_id",
+            "sequence_prefix",
             "project_id",
             "created_at",
             "label_ids",
@@ -783,6 +807,10 @@ class IssueSerializer(DynamicBaseSerializer):
     sub_issues_count = serializers.IntegerField(read_only=True)
     attachment_count = serializers.IntegerField(read_only=True)
     link_count = serializers.IntegerField(read_only=True)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -797,6 +825,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "start_date",
             "target_date",
             "sequence_id",
+            "sequence_prefix",
             "project_id",
             "parent_id",
             "cycle_id",
@@ -864,6 +893,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "start_date": instance.start_date,
             "target_date": instance.target_date,
             "sequence_id": instance.sequence_id,
+            "sequence_prefix": get_issue_sequence_prefix(instance),
             "project_id": instance.project_id,
             "parent_id": instance.parent_id,
             "milestone_id": instance.milestone_id,
@@ -898,6 +928,7 @@ class IssueListDetailSerializer(serializers.Serializer):
                             "id": related_issue.id,
                             "project_id": related_issue.project_id,
                             "sequence_id": related_issue.sequence_id,
+                            "sequence_prefix": get_issue_sequence_prefix(related_issue),
                             "name": related_issue.name,
                             "relation_type": relation.relation_type,
                             "state_id": related_issue.state_id,
@@ -923,6 +954,7 @@ class IssueListDetailSerializer(serializers.Serializer):
                             "id": issue.id,
                             "project_id": issue.project_id,
                             "sequence_id": issue.sequence_id,
+                            "sequence_prefix": get_issue_sequence_prefix(issue),
                             "name": issue.name,
                             "relation_type": relation.relation_type,
                             "state_id": issue.state_id,
@@ -939,9 +971,14 @@ class IssueListDetailSerializer(serializers.Serializer):
 
 
 class IssueLiteSerializer(DynamicBaseSerializer):
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
+
     class Meta:
         model = Issue
-        fields = ["id", "sequence_id", "project_id"]
+        fields = ["id", "sequence_id", "sequence_prefix", "project_id"]
         read_only_fields = fields
 
 
@@ -988,6 +1025,10 @@ class IssuePublicSerializer(BaseSerializer):
     state_detail = StateLiteSerializer(read_only=True, source="state")
     reactions = IssueReactionSerializer(read_only=True, many=True, source="issue_reactions")
     votes = IssueVoteSerializer(read_only=True, many=True)
+    sequence_prefix = serializers.SerializerMethodField()
+
+    def get_sequence_prefix(self, obj):
+        return get_issue_sequence_prefix(obj)
 
     class Meta:
         model = Issue
@@ -996,6 +1037,7 @@ class IssuePublicSerializer(BaseSerializer):
             "name",
             "description_html",
             "sequence_id",
+            "sequence_prefix",
             "state",
             "state_detail",
             "project",

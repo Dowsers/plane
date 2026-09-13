@@ -263,6 +263,10 @@ export interface IWorkspaceIssueSearchResult {
   id: string;
   name: string;
   project__identifier: string;
+  // Resolved display prefix (team pool or workspace default pool) - see
+  // `get_issue_sequence_prefix` (apps/api/plane/utils/issue_identifier.py).
+  // Optional: not every search result payload annotates it yet.
+  sequence_prefix?: string | null;
   project_id: string;
   sequence_id: number;
   workspace__slug: string;

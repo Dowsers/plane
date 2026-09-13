@@ -19,6 +19,7 @@ export type TDeDupeIssue = {
   type_id: string | null;
   project_id: string;
   sequence_id: number;
+  sequence_prefix?: string | null;
   name: string;
   priority: TIssuePriorities;
   state_id: string;

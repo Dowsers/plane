@@ -49,7 +49,7 @@ export const IssueParentDetail = observer(function IssueParentDetail(props: TIss
   // derived values
   const parentIssue = issueMap?.[issue.parent_id || ""] || undefined;
   const isParentEpic = parentIssue?.is_epic;
-  const projectIdentifier = getProjectIdentifierById(parentIssue?.project_id);
+  const projectIdentifier = parentIssue?.sequence_prefix ?? getProjectIdentifierById(parentIssue?.project_id);
 
   const issueParentState = getProjectStates(parentIssue?.project_id)?.find(
     (state) => state?.id === parentIssue?.state_id

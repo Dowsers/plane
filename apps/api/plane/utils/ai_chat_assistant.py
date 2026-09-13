@@ -46,6 +46,7 @@ from uuid import UUID
 from django.utils import timezone
 
 from plane.utils.access_control import can_user_access_object
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.utils.exception_logger import log_exception
 from plane.utils.workspace_ai import get_workspace_llm_chat_response
 
@@ -180,7 +181,7 @@ def _build_issue_context(user, workspace, issue_id) -> str:
         return "(Issue not found.)"
 
     lines = [
-        f"Issue {issue.project.identifier}-{issue.sequence_id}: {issue.name}",
+        f"Issue {get_issue_sequence_prefix(issue)}-{issue.sequence_id}: {issue.name}",
         f"id: {issue.id}",
         f"project_id: {issue.project_id}",
         f"description: {(issue.description_stripped or '')[:2000]}",

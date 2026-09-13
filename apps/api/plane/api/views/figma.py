@@ -18,6 +18,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plane.api.serializers import FigmaFileLinkCreateSerializer, FigmaFileLinkSerializer
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 from plane.app.permissions import ProjectEntityPermission
 from plane.bgtasks.webhook_task import webhook_activity
 from plane.db.models import FigmaFileLink, Issue, IssueActivity
@@ -111,7 +112,7 @@ class FigmaFileLinkListCreateAPIEndpoint(BaseAPIView):
                 figma_node_id=serializer.validated_data.get("figma_node_id"),
                 sync_status_enabled=True,
             ).select_related("issue", "issue__project").first()
-            other = f"{conflict.issue.project.identifier}-{conflict.issue.sequence_id}" if conflict else "another issue"
+            other = f"{get_issue_sequence_prefix(conflict.issue)}-{conflict.issue.sequence_id}" if conflict else "another issue"
             return Response(
                 {"error": f"This frame is already synced with {other}"}, status=status.HTTP_409_CONFLICT
             )
@@ -170,7 +171,7 @@ class FigmaFileLinkDetailAPIEndpoint(BaseAPIView):
                 .first()
             )
             if conflict is not None:
-                other = f"{conflict.issue.project.identifier}-{conflict.issue.sequence_id}"
+                other = f"{get_issue_sequence_prefix(conflict.issue)}-{conflict.issue.sequence_id}"
                 return Response(
                     {"error": f"This frame is already synced with {other}"}, status=status.HTTP_409_CONFLICT
                 )
@@ -212,7 +213,7 @@ class FigmaFileLinkDetailAPIEndpoint(BaseAPIView):
                 .select_related("issue", "issue__project")
                 .first()
             )
-            other = f"{conflict.issue.project.identifier}-{conflict.issue.sequence_id}" if conflict else "another issue"
+            other = f"{get_issue_sequence_prefix(conflict.issue)}-{conflict.issue.sequence_id}" if conflict else "another issue"
             return Response({"error": f"This frame is already synced with {other}"}, status=status.HTTP_409_CONFLICT)
         return Response(FigmaFileLinkSerializer(file_link).data, status=status.HTTP_200_OK)
 

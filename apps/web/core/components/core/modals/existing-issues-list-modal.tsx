@@ -179,7 +179,7 @@ export function ExistingIssuesListModal(props: Props) {
                   <IssueIdentifier
                     projectId={issue.project_id}
                     issueTypeId={issue.type_id}
-                    projectIdentifier={issue.project__identifier}
+                    projectIdentifier={issue.sequence_prefix ?? issue.project__identifier}
                     issueSequenceId={issue.sequence_id}
                     size="xs"
                     variant="secondary"
@@ -284,7 +284,7 @@ export function ExistingIssuesListModal(props: Props) {
                             <IssueIdentifier
                               projectId={issue.project_id}
                               issueTypeId={issue.type_id}
-                              projectIdentifier={issue.project__identifier}
+                              projectIdentifier={issue.sequence_prefix ?? issue.project__identifier}
                               issueSequenceId={issue.sequence_id}
                               size="xs"
                               variant="secondary"
@@ -297,7 +297,7 @@ export function ExistingIssuesListModal(props: Props) {
                             workspaceSlug,
                             projectId: issue?.project_id,
                             issueId: issue?.id,
-                            projectIdentifier: issue.project__identifier,
+                            projectIdentifier: issue.sequence_prefix ?? issue.project__identifier,
                             sequenceId: issue?.sequence_id,
                           })}
                           target="_blank"

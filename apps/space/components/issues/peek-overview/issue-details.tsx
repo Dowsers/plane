@@ -28,7 +28,7 @@ export const PeekOverviewIssueDetails = observer(function PeekOverviewIssueDetai
   return (
     <div className="space-y-2">
       <h6 className="text-14 font-medium text-placeholder">
-        {project_details?.identifier}-{issueDetails?.sequence_id}
+        {issueDetails?.sequence_prefix ?? project_details?.identifier}-{issueDetails?.sequence_id}
       </h6>
       <h4 className="text-20 font-medium break-words">{issueDetails.name}</h4>
       {description && description !== "" && description !== "<p></p>" && (

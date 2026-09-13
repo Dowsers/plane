@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from django.db.models import F, QuerySet
 
 from plane.db.models import CycleIssue, FileAsset
+from plane.utils.issue_identifier import get_issue_sequence_prefix
 
 from .base import (
     DateField,
@@ -120,7 +121,7 @@ class IssueExportSchema(ExportSchema):
     relations = JSONField(label="Relations")
 
     def prepare_id(self, i):
-        return f"{i.project.identifier}-{i.sequence_id}"
+        return f"{get_issue_sequence_prefix(i)}-{i.sequence_id}"
 
     def prepare_state_name(self, i):
         return i.state.name if i.state else None
@@ -187,20 +188,20 @@ class IssueExportSchema(ExportSchema):
     def prepare_parent(self, i):
         if not i.parent:
             return ""
-        return f"{i.parent.project.identifier}-{i.parent.sequence_id}"
+        return f"{get_issue_sequence_prefix(i.parent)}-{i.parent.sequence_id}"
 
     def prepare_relations(self, i):
         # Should show reverse relation as well
         from plane.db.models.issue import IssueRelationChoices
 
         relations = {
-            r.relation_type: f"{r.related_issue.project.identifier}-{r.related_issue.sequence_id}"
+            r.relation_type: f"{get_issue_sequence_prefix(r.related_issue)}-{r.related_issue.sequence_id}"
             for r in i.issue_relation.all()
         }
         reverse_relations = {}
         for relation in i.issue_related.all():
             reverse_relations[IssueRelationChoices._REVERSE_MAPPING[relation.relation_type]] = (
-                f"{relation.issue.project.identifier}-{relation.issue.sequence_id}"
+                f"{get_issue_sequence_prefix(relation.issue)}-{relation.issue.sequence_id}"
             )
         relations.update(reverse_relations)
         return relations

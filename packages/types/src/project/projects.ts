@@ -204,6 +204,7 @@ export interface ISearchIssueResponse {
   name: string;
   project_id: string;
   project__identifier: string;
+  sequence_prefix?: string | null;
   project__name: string;
   sequence_id: number;
   start_date: string | null;

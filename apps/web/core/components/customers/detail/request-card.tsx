@@ -145,7 +145,7 @@ export const CustomerRequestCard = observer(function CustomerRequestCard(props: 
                 workspaceSlug: workspaceSlug?.toString(),
                 projectId: issue.project_id,
                 issueId: issue.issue_id,
-                projectIdentifier: issue.project_identifier,
+                projectIdentifier: issue.sequence_prefix ?? issue.project_identifier,
                 sequenceId: issue.sequence_id,
               })}
               className="truncate text-13 hover:underline"

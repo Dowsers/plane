@@ -31,7 +31,7 @@ const useIssuePeekOverviewRedirection = (isEpic: boolean = false) => {
   ) => {
     if (!issue) return;
     const { project_id, id, archived_at, tempId } = issue;
-    const projectIdentifier = getProjectIdentifierById(issue?.project_id);
+    const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
     const workItemLink = generateWorkItemLink({
       workspaceSlug,

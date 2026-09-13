@@ -183,7 +183,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
     workspaceSlug: workspaceSlug?.toString(),
     projectId: issue?.project_id,
     issueId: issue?.id,
-    projectIdentifier: projectDetails?.identifier,
+    projectIdentifier: issue?.sequence_prefix ?? projectDetails?.identifier,
     sequenceId: issue?.sequence_id,
     isArchived: !!issue?.archived_at,
     isEpic,

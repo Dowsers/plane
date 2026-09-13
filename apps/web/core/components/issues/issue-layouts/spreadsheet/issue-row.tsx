@@ -244,7 +244,7 @@ const IssueRowDetails = observer(function IssueRowDetails(props: IssueRowDetails
   const disableUserActions = !canEditProperties(issueDetail.project_id ?? undefined);
   const subIssuesCount = issueDetail?.sub_issues_count ?? 0;
   const isIssueSelected = selectionHelpers.getIsEntitySelected(issueDetail.id);
-  const projectIdentifier = getProjectIdentifierById(issueDetail.project_id);
+  const projectIdentifier = issueDetail?.sequence_prefix ?? getProjectIdentifierById(issueDetail?.project_id);
 
   const canSelectIssues = !disableUserActions && !selectionHelpers.isSelectionDisabled;
 

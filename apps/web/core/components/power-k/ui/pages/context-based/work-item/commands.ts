@@ -143,7 +143,7 @@ export const usePowerKWorkItemContextBasedCommands = (): TPowerKCommandConfig[] 
   }, [toggleDeleteIssueModal]);
 
   const copyWorkItemIdToClipboard = useCallback(() => {
-    const id = `${projectDetails?.identifier}-${entityDetails?.sequence_id}`;
+    const id = `${entityDetails?.sequence_prefix ?? projectDetails?.identifier}-${entityDetails?.sequence_id}`;
     copyTextToClipboard(id)
       .then(() => {
         setToast({

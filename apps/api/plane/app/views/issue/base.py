@@ -85,6 +85,7 @@ from plane.utils.grouper import (
 from plane.utils.host import base_host
 from plane.utils.idempotency import check_idempotency_key, store_idempotent_response
 from plane.utils.issue_filters import issue_filters
+from plane.utils.issue_identifier_resolver import resolve_issue_id_by_identifier
 from plane.utils.label_group import enforce_label_group_exclusivity
 from plane.utils.order_queryset import order_issue_queryset
 from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPaginator
@@ -250,10 +251,14 @@ class IssueViewSet(BaseViewSet):
         return IssueCreateSerializer if self.action in ["create", "update", "partial_update"] else IssueSerializer
 
     def get_queryset(self):
-        issues = Issue.issue_objects.filter(
-            project_id=self.kwargs.get("project_id"),
-            workspace__slug=self.kwargs.get("slug"),
-        ).distinct()
+        issues = (
+            Issue.issue_objects.filter(
+                project_id=self.kwargs.get("project_id"),
+                workspace__slug=self.kwargs.get("slug"),
+            )
+            .select_related("workspace", "sequence_teamspace")
+            .distinct()
+        )
 
         return issues
 
@@ -1877,8 +1882,17 @@ class IssueDetailIdentifierEndpoint(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Fetch the project
-        project = Project.objects.get(identifier__iexact=project_identifier, workspace__slug=slug)
+        # Resolve the code (a team's pool prefix, or this workspace's own
+        # default pool prefix - a project's own `identifier` is never used
+        # for this) to a specific issue, then its owning project.
+        issue_id = resolve_issue_id_by_identifier(slug, project_identifier, issue_identifier)
+        if issue_id is None:
+            return Response(
+                {"error": "The required object does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        project_id = Issue.objects.filter(id=issue_id).values_list("project_id", flat=True).first()
+        project = Project.objects.get(id=project_id, workspace__slug=slug)
 
         # Check if the user is a member of the project
         if not ProjectMember.objects.filter(
@@ -1920,7 +1934,7 @@ class IssueDetailIdentifierEndpoint(BaseAPIView):
                 .annotate(count=Func(F("id"), function="Count"))
                 .values("count")
             )
-            .filter(sequence_id=issue_identifier)
+            .filter(id=issue_id)
             .annotate(
                 label_ids=Coalesce(
                     ArrayAgg(
