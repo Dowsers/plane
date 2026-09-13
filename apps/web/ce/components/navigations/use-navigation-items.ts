@@ -5,6 +5,7 @@
  */
 
 import { useMemo, useCallback } from "react";
+import { Flag, Rss } from "lucide-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { CycleIcon, IntakeIcon, ModuleIcon, PageIcon, ViewsIcon, WorkItemsIcon } from "@plane/propel/icons";
@@ -61,6 +62,26 @@ export const useNavigationItems = ({
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
         shouldRender: !!project?.module_view,
         sortOrder: 3,
+      },
+      {
+        i18n_key: "sidebar.milestones",
+        key: "milestones",
+        name: "Milestones",
+        href: `/${wsSlug}/projects/${projId}/milestones`,
+        icon: Flag,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 3.5,
+      },
+      {
+        i18n_key: "sidebar.updates",
+        key: "updates",
+        name: "Updates",
+        href: `/${wsSlug}/projects/${projId}/updates`,
+        icon: Rss,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 3.7,
       },
       {
         i18n_key: "sidebar.views",
