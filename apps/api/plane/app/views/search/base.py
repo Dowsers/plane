@@ -49,6 +49,7 @@ from plane.db.models import (
 )
 from plane.db.models.functions import ImmutableConcat, ImmutableUnaccent
 from plane.utils.agent_actor import member_visibility_q
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 # Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
 # plane-selfhost), feature 6 ("Recherche approfondie dans la Command
@@ -233,6 +234,7 @@ class GlobalSearchEndpoint(BaseAPIView):
             "project_id",
             "workspace__slug",
             "description_stripped",
+            sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
         )[offset : offset + limit]
 
         results = []
@@ -431,6 +433,7 @@ class GlobalSearchEndpoint(BaseAPIView):
                 "project__identifier",
                 "project_id",
                 "workspace__slug",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )[offset : offset + limit]
         )
 
@@ -862,6 +865,7 @@ class SearchEndpoint(BaseAPIView):
                             "priority",
                             "state_id",
                             "type_id",
+                            sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
                         )[:count]
                     )
                     response_data["issue"] = list(issues)
@@ -1077,6 +1081,7 @@ class SearchEndpoint(BaseAPIView):
                             "priority",
                             "state_id",
                             "type_id",
+                            sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
                         )[:count]
                     )
                     response_data["issue"] = list(issues)

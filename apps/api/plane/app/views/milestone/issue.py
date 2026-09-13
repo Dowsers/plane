@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from plane.app.permissions import ROLE, allow_permission
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.db.models import Issue, Milestone
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 from ..base import BaseAPIView
 
 
@@ -37,7 +38,9 @@ class MilestoneAvailableIssuesEndpoint(BaseAPIView):
         issues = (
             Issue.issue_objects.filter(workspace__slug=slug, project_id=project_id, milestone_id__isnull=True)
             .order_by("-created_at")
-            .values("id", "name", "sequence_id")[:200]
+            .values("id", "name", "sequence_id",
+    sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
+)[:200]
         )
         return Response(list(issues), status=status.HTTP_200_OK)
 
@@ -72,6 +75,7 @@ class MilestoneIssueViewSet(BaseAPIView):
                 "assignee_ids",
                 "start_date",
                 "target_date",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )
         )
         return Response(list(issues), status=status.HTTP_200_OK)

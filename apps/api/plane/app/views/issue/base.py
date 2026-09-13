@@ -92,6 +92,7 @@ from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPagina
 from plane.utils.sub_issue_automation import handle_sub_issue_automations
 from plane.utils.timezone_converter import user_timezone_converter
 from plane.utils.view_subscriptions import get_subscribed_views_for_issue, issue_matches_view
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 from plane.utils.workflow_transition_engine import (
     create_approval_request,
     evaluate_transition,
@@ -234,6 +235,7 @@ class IssueListEndpoint(BaseAPIView):
                 "is_draft",
                 "archived_at",
                 "deleted_at",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )
             datetime_fields = ["created_at", "updated_at"]
             issues = user_timezone_converter(issues, datetime_fields, request.user.user_timezone)
@@ -559,6 +561,7 @@ class IssueViewSet(BaseViewSet):
                     "is_draft",
                     "archived_at",
                     "deleted_at",
+                    sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
                 )
                 .first()
             )
@@ -1143,7 +1146,9 @@ class IssuePaginatedViewSet(BaseViewSet):
         )
 
     def process_paginated_result(self, fields, results, timezone):
-        paginated_data = results.values(*fields)
+        # Annotated rather than named in `fields`: `sequence_prefix` is
+        # computed from the issue's pool, not stored on the row.
+        paginated_data = results.values(*fields, sequence_prefix=SEQUENCE_PREFIX_ANNOTATION)
 
         # converting the datetime fields in paginated data
         datetime_fields = ["created_at", "updated_at"]

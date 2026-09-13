@@ -34,6 +34,7 @@ from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.duplicate_issue_data_migration_task import duplicate_issue_data_migration_task
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.utils.host import base_host
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 class IssueRelationViewSet(BaseViewSet):
@@ -155,6 +156,10 @@ class IssueRelationViewSet(BaseViewSet):
             )
         ).distinct()
 
+        # `sequence_prefix` is computed, so it must be annotated before
+        # it can be named in the `.values(*fields)` projections below.
+        queryset = queryset.annotate(sequence_prefix=SEQUENCE_PREFIX_ANNOTATION)
+
         # Fields
         fields = [
             "id",
@@ -163,6 +168,7 @@ class IssueRelationViewSet(BaseViewSet):
             "sort_order",
             "priority",
             "sequence_id",
+            "sequence_prefix",
             "project_id",
             "label_ids",
             "assignee_ids",

@@ -28,6 +28,7 @@ from plane.utils.timezone_converter import user_timezone_converter
 from collections import defaultdict
 from plane.utils.host import base_host
 from plane.utils.order_queryset import order_issue_queryset
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 class SubIssuesEndpoint(BaseAPIView):
@@ -165,6 +166,7 @@ class SubIssuesEndpoint(BaseAPIView):
                 "is_draft",
                 "archived_at",
                 "state_group",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )
         )
 

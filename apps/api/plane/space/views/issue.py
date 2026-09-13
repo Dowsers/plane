@@ -68,6 +68,7 @@ from plane.db.models import (
 )
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.utils.issue_filters import issue_filters
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 class ProjectIssuesPublicEndpoint(BaseAPIView):
@@ -767,6 +768,7 @@ class IssueRetrievePublicEndpoint(BaseAPIView):
                 "state__group",
                 "vote_items",
                 "reaction_items",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )
         ).first()
 

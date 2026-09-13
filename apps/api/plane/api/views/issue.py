@@ -175,6 +175,7 @@ from plane.utils.issue_filters import issue_filters
 # silently diverge in bulk-update behavior. See
 # docs/feature-specs/08-api-webhooks-cli.md section 5 in plane-selfhost.
 from plane.app.views.issue.base import bulk_issue_operations
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 def _get_or_create_pending_approval(issue, transition, requested_by):
@@ -2411,6 +2412,7 @@ class IssueSearchEndpoint(BaseAPIView):
             "project__identifier",
             "project_id",
             "workspace__slug",
+            sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
         )[: int(limit)]
 
         return Response({"issues": issue_results}, status=status.HTTP_200_OK)

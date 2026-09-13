@@ -22,6 +22,7 @@ from plane.db.models import (
     ModuleIssue,
     IssueLabel,
 )
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 from typing import Optional, Dict, Tuple, Any, Union, List
 
 
@@ -138,7 +139,10 @@ def issue_on_results(
         original_list.append(sub_group_by)
 
     required_fields.extend(original_list)
-    return list(issues.values(*required_fields))
+    # `sequence_prefix` is computed, not a column, so it has to be
+    # annotated here rather than named in `required_fields` - this is the
+    # projection the paginated work-item list actually goes through.
+    return list(issues.values(*required_fields, sequence_prefix=SEQUENCE_PREFIX_ANNOTATION))
 
 
 def issue_group_values(

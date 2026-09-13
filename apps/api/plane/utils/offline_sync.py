@@ -59,6 +59,7 @@ from plane.db.models import (
     State,
     User,
 )
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 # The full set of entity keys accepted by `entities=` on both endpoints.
 SUPPORTED_ENTITIES = frozenset({"issue", "issue_comment", "cycle", "module", "label", "state", "page"})
@@ -294,6 +295,7 @@ ISSUE_FIELDS = [
     "priority",
     "sort_order",
     "sequence_id",
+    "sequence_prefix",
     "parent_id",
     "start_date",
     "target_date",
@@ -447,6 +449,9 @@ def build_delta_response(slug: str, user: User, since: Optional[str], entities: 
     if "issue" in entities:
         queryset = get_accessible_issue_queryset(slug, user).order_by("updated_at")
         queryset = _annotate_issue_relations(queryset)
+        # `sequence_prefix` is listed in ISSUE_FIELDS but is computed, so
+        # it has to exist as an annotation before the projection runs.
+        queryset = queryset.annotate(sequence_prefix=SEQUENCE_PREFIX_ANNOTATION)
         bucket = _delta_bucket(queryset, ISSUE_FIELDS, since)
         if since:
             bucket["deleted_ids"] = list(

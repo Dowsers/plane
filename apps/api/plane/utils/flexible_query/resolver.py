@@ -58,6 +58,7 @@ from plane.db.models import (
 )
 from plane.utils.exception_logger import log_exception
 from plane.utils.filters import ComplexFilterBackend
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 from . import cost as cost_module
 from .exceptions import FlexibleQueryBranchTimeout, FlexibleQueryError
@@ -168,7 +169,10 @@ def _project(instance, fields):
 
 def _base_queryset(model):
     if model is Issue:
-        return Issue.issue_objects.all()
+        # `sequence_prefix` is exposed as a selectable field but is
+        # computed from the issue's pool, so it only exists once
+        # annotated (_project reads it off the instance with getattr).
+        return Issue.issue_objects.annotate(sequence_prefix=SEQUENCE_PREFIX_ANNOTATION).all()
     return model.objects.all()
 
 

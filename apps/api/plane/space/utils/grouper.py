@@ -22,6 +22,7 @@ from plane.db.models import (
     State,
     WorkspaceMember,
 )
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 def issue_queryset_grouper(
@@ -176,7 +177,7 @@ def issue_on_results(
             filter=Q(issue_reactions__isnull=False, issue_reactions__deleted_at__isnull=True),
             distinct=True,
         ),
-    ).values(*required_fields, "vote_items", "reaction_items")
+    ).values(*required_fields, "vote_items", "reaction_items", sequence_prefix=SEQUENCE_PREFIX_ANNOTATION)
 
     return issues
 

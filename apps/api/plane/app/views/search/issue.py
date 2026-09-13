@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from .base import BaseAPIView
 from plane.db.models import Issue, ProjectMember, IssueRelation
 from plane.utils.issue_search import search_issues
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 class IssueSearchEndpoint(BaseAPIView):
@@ -156,6 +157,7 @@ class IssueSearchEndpoint(BaseAPIView):
                 "state__name",
                 "state__group",
                 "state__color",
+                sequence_prefix=SEQUENCE_PREFIX_ANNOTATION,
             )[:100],
             status=status.HTTP_200_OK,
         )
