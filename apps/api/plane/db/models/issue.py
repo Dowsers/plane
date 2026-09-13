@@ -290,7 +290,11 @@ class Issue(ProjectBaseModel):
                 # (team or workspace), not the project, since sibling
                 # projects sharing one team pool must serialize against
                 # each other too.
-                assign_next_sequence([self], self.project.primary_teamspace, workspace=self.workspace)
+                # `self.workspace` is not populated yet on creation -
+                # ProjectBaseModel.save() derives it from the project only
+                # after this override runs - so read it off the project,
+                # which is always available here (project_id is required).
+                assign_next_sequence([self], self.project.primary_teamspace, workspace=self.project.workspace)
 
                 # Strip the html tags using html parser
                 self.description_stripped = (

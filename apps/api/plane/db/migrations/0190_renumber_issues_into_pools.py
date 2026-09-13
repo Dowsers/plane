@@ -45,11 +45,11 @@ def _renumber_into_pool(issues, teamspace, workspace, Issue, IssueSequence, Issu
         return
 
     if teamspace is not None:
-        last_sequence = IssueSequence.objects.filter(teamspace=teamspace).aggregate(largest=Max("sequence"))[
+        last_sequence = IssueSequence._default_manager.filter(teamspace=teamspace).aggregate(largest=Max("sequence"))[
             "largest"
         ]
     else:
-        last_sequence = IssueSequence.objects.filter(teamspace__isnull=True, workspace=workspace).aggregate(
+        last_sequence = IssueSequence._default_manager.filter(teamspace__isnull=True, workspace=workspace).aggregate(
             largest=Max("sequence")
         )["largest"]
 
@@ -82,8 +82,8 @@ def _renumber_into_pool(issues, teamspace, workspace, Issue, IssueSequence, Issu
             next_sequence += 1
 
         with transaction.atomic():
-            Issue.objects.bulk_update(batch, ["sequence_id", "sequence_teamspace"])
-            IssueSequence.objects.bulk_create(
+            Issue._default_manager.bulk_update(batch, ["sequence_id", "sequence_teamspace"])
+            IssueSequence._default_manager.bulk_create(
                 [
                     IssueSequence(
                         issue_id=issue.id,
@@ -95,7 +95,7 @@ def _renumber_into_pool(issues, teamspace, workspace, Issue, IssueSequence, Issu
                     for issue in batch
                 ]
             )
-            IssueActivity.objects.bulk_create(activities)
+            IssueActivity._default_manager.bulk_create(activities)
 
 
 def renumber_issues_into_pools(apps, schema_editor):
@@ -106,7 +106,7 @@ def renumber_issues_into_pools(apps, schema_editor):
     IssueSequence = apps.get_model("db", "IssueSequence")
     IssueActivity = apps.get_model("db", "IssueActivity")
 
-    for workspace in Workspace.objects.all():
+    for workspace in Workspace._default_manager.all():
         # A blank default pool prefix would produce a bare "-123" display
         # id for every team-less project's issues - fall back to a
         # sanitized workspace slug rather than ship that.
@@ -115,14 +115,14 @@ def renumber_issues_into_pools(apps, schema_editor):
             workspace.default_project_identifier = fallback
             workspace.save(update_fields=["default_project_identifier"])
 
-        projects_by_id = {p.id: p for p in Project.objects.filter(workspace=workspace)}
+        projects_by_id = {p.id: p for p in Project._default_manager.filter(workspace=workspace)}
 
-        for teamspace in Teamspace.objects.filter(workspace=workspace, deleted_at__isnull=True):
+        for teamspace in Teamspace._default_manager.filter(workspace=workspace, deleted_at__isnull=True):
             project_ids = [p.id for p in projects_by_id.values() if p.primary_teamspace_id == teamspace.id]
             if not project_ids:
                 continue
             issues = list(
-                Issue.objects.filter(
+                Issue._default_manager.filter(
                     project_id__in=project_ids, sequence_teamspace__isnull=True, deleted_at__isnull=True
                 ).order_by("created_at")
             )
@@ -133,7 +133,7 @@ def renumber_issues_into_pools(apps, schema_editor):
         no_team_project_ids = [p.id for p in projects_by_id.values() if p.primary_teamspace_id is None]
         if no_team_project_ids:
             issues = list(
-                Issue.objects.filter(
+                Issue._default_manager.filter(
                     project_id__in=no_team_project_ids, sequence_teamspace__isnull=True, deleted_at__isnull=True
                 ).order_by("created_at")
             )
