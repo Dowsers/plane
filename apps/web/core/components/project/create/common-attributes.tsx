@@ -45,7 +45,7 @@ function ProjectCommonAttributes(props: Props) {
         return;
       }
       if (e.target.value === "") setValue("identifier", "");
-      else setValue("identifier", projectIdentifierSanitizer(e.target.value).substring(0, 10));
+      else setValue("identifier", projectIdentifierSanitizer(e.target.value));
       onChange(e);
       handleFormOnChange?.();
     };
@@ -98,10 +98,6 @@ function ProjectCommonAttributes(props: Props) {
             minLength: {
               value: 1,
               message: t("project_id_min_char"),
-            },
-            maxLength: {
-              value: 10,
-              message: t("project_id_max_char"),
             },
           }}
           render={({ field: { value, onChange } }) => (

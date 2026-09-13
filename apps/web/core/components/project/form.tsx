@@ -330,10 +330,6 @@ export function ProjectDetailsForm(props: IProjectDetailsForm) {
                     value: 1,
                     message: t("project_id_min_char"),
                   },
-                  maxLength: {
-                    value: 10,
-                    message: t("project_id_max_char"),
-                  },
                 }}
                 render={({ field: { value, ref } }) => (
                   <Input

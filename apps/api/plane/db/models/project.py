@@ -73,7 +73,7 @@ class Project(BaseModel):
     description_html = models.JSONField(verbose_name="Project Description HTML", blank=True, null=True)
     network = models.PositiveSmallIntegerField(default=2, choices=NETWORK_CHOICES)
     workspace = models.ForeignKey("db.WorkSpace", on_delete=models.CASCADE, related_name="workspace_project")
-    identifier = models.CharField(max_length=12, verbose_name="Project Identifier", db_index=True)
+    identifier = models.TextField(verbose_name="Project Identifier", db_index=True)
     default_assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -420,7 +420,7 @@ class ProjectMember(ProjectBaseModel):
 class ProjectIdentifier(AuditModel):
     workspace = models.ForeignKey("db.Workspace", models.CASCADE, related_name="project_identifiers", null=True)
     project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name="project_identifier")
-    name = models.CharField(max_length=12, db_index=True)
+    name = models.TextField(db_index=True)
 
     class Meta:
         unique_together = ["name", "workspace", "deleted_at"]

@@ -82,7 +82,7 @@ export function registerProjectCommands(program: Command): void {
     .command("create")
     .description("Create a project")
     .requiredOption("--name <name>", "Project name")
-    .requiredOption("--identifier <identifier>", "Short project identifier, e.g. ENG (max 12 chars)")
+    .requiredOption("--identifier <identifier>", "Short project identifier, e.g. ENG")
     .option("--description <text>", "Project description")
     .action(async (options: { name: string; identifier: string; description?: string }, command: Command) => {
       const ctx = buildContext(command);
