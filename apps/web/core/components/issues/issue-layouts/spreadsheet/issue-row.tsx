@@ -193,7 +193,7 @@ const IssueRowDetails = observer(function IssueRowDetails(props: IssueRowDetails
   const [isMenuActive, setIsMenuActive] = useState(false);
   // refs
   const cellRef = useRef(null);
-  const menuActionRef = useRef<HTMLDivElement | null>(null);
+  const menuActionRef = useRef<HTMLButtonElement | null>(null);
   // router
   const { workspaceSlug, projectId } = useParams();
   // hooks
@@ -215,7 +215,8 @@ const IssueRowDetails = observer(function IssueRowDetails(props: IssueRowDetails
   useOutsideClickDetector(menuActionRef, () => setIsMenuActive(false));
 
   const customActionButton = (
-    <div
+    <button
+      type="button"
       ref={menuActionRef}
       className={`flex h-full w-full cursor-pointer items-center rounded-sm p-1 text-placeholder hover:bg-layer-1 ${
         isMenuActive ? "bg-layer-1 text-primary" : "text-secondary"
@@ -223,7 +224,7 @@ const IssueRowDetails = observer(function IssueRowDetails(props: IssueRowDetails
       onClick={() => setIsMenuActive(!isMenuActive)}
     >
       <MoreHorizontal className="h-3.5 w-3.5" />
-    </div>
+    </button>
   );
   if (!issueDetail) return null;
 
@@ -372,6 +373,7 @@ const IssueRowDetails = observer(function IssueRowDetails(props: IssueRowDetails
                 </div>
                 <div
                   className={`opacity-0 transition-opacity group-hover:opacity-100 ${isMenuActive ? "!opacity-100" : ""}`}
+                  role="presentation"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {quickActions({

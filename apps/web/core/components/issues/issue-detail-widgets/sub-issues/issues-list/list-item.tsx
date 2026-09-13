@@ -88,7 +88,7 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
   const displayProperties = subIssueFilters?.displayProperties ?? {};
 
   //
-  const handleIssuePeekOverview = (issue: TIssue) => handleRedirection(workspaceSlug, issue, isMobile);
+  const handleIssuePeekOverview = (issueToOpen: TIssue) => handleRedirection(workspaceSlug, issueToOpen, isMobile);
 
   if (!issue) return <></>;
 
@@ -125,7 +125,8 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
                       <Loader width={14} strokeWidth={2} className="animate-spin" />
                     </div>
                   ) : (
-                    <div
+                    <button
+                      type="button"
                       className="flex h-full w-full cursor-pointer items-center justify-center text-placeholder hover:text-tertiary"
                       onClick={async (e) => {
                         e.preventDefault();
@@ -144,7 +145,7 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
                         })}
                         strokeWidth={2.5}
                       />
-                    </div>
+                    </button>
                   )}
                 </>
               )}
@@ -172,6 +173,7 @@ export const SubIssuesListItem = observer(function SubIssuesListItem(props: Prop
 
             <div
               className="flex-shrink-0 text-13"
+              role="presentation"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

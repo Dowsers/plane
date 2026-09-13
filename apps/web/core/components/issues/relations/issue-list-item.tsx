@@ -83,13 +83,13 @@ export const RelationIssueListItem = observer(function RelationIssueListItem(pro
   });
 
   // handlers
-  const handleIssuePeekOverview = (issue: TIssue) => {
-    if (issue.is_epic) {
+  const handleIssuePeekOverview = (issueToOpen: TIssue) => {
+    if (issueToOpen.is_epic) {
       // open epics in new tab
       window.open(workItemLink, "_blank");
       return;
     }
-    handleRedirection(workspaceSlug, issue, isMobile);
+    handleRedirection(workspaceSlug, issueToOpen, isMobile);
   };
 
   const handleEditIssue = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -150,6 +150,7 @@ export const RelationIssueListItem = observer(function RelationIssueListItem(pro
             </div>
             <div
               className="flex-shrink-0 text-13"
+              role="presentation"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

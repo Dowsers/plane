@@ -71,9 +71,7 @@ export function WorkItemSelectionPage(props: Props) {
         query_type: ["issue"],
         ...(!isWorkspaceLevel && projectId ? { project_id: projectId.toString() } : {}),
       })
-      .then((res) => {
-        setIssueResults(res.issue || []);
-      })
+      .then((res) => setIssueResults(res.issue || []))
       .catch(() => setIssueResults([]));
   }, [debouncedSearchTerm, workspaceSlug, projectId, isWorkspaceLevel]);
 

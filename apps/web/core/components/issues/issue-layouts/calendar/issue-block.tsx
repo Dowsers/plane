@@ -43,7 +43,7 @@ export const CalendarIssueBlock = observer(
     const [isMenuActive, setIsMenuActive] = useState(false);
     // refs
     const blockRef = useRef(null);
-    const menuActionRef = useRef<HTMLDivElement | null>(null);
+    const menuActionRef = useRef<HTMLButtonElement | null>(null);
     // hooks
     const { workspaceSlug } = useParams();
     const { getProjectStates } = useProjectState();
@@ -58,12 +58,14 @@ export const CalendarIssueBlock = observer(
     const projectIdentifier = issue?.sequence_prefix ?? getProjectIdentifierById(issue?.project_id);
 
     // handlers
-    const handleIssuePeekOverview = (issue: TIssue) => handleRedirection(workspaceSlug.toString(), issue, isMobile);
+    const handleIssuePeekOverview = (issueToOpen: TIssue) =>
+      handleRedirection(workspaceSlug.toString(), issueToOpen, isMobile);
 
     useOutsideClickDetector(menuActionRef, () => setIsMenuActive(false));
 
     const customActionButton = (
-      <div
+      <button
+        type="button"
         ref={menuActionRef}
         className={`w-full cursor-pointer rounded-sm p-1 text-placeholder hover:bg-layer-1 ${
           isMenuActive ? "bg-layer-1-active text-primary" : "text-secondary"
@@ -71,7 +73,7 @@ export const CalendarIssueBlock = observer(
         onClick={() => setIsMenuActive(!isMenuActive)}
       >
         <MoreHorizontal className="h-3.5 w-3.5" />
-      </div>
+      </button>
     );
 
     const isMenuActionRefAboveScreenBottom =
@@ -141,6 +143,7 @@ export const CalendarIssueBlock = observer(
                       "hidden group-hover/calendar-block:block": !isMobile,
                       block: isMenuActive,
                     })}
+                    role="presentation"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
