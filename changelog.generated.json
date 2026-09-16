@@ -1,5 +1,179 @@
 [
   {
+    "hash": "121a62a43",
+    "subject": "Expose sequence_prefix on the .values() list projections",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T16:30:27+00:00"
+  },
+  {
+    "hash": "3c006c8b0",
+    "subject": "Restart shared ID pools at 1",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T16:04:21+00:00"
+  },
+  {
+    "hash": "aa55632ba",
+    "subject": "Fix two deploy-blocking bugs in the shared issue-numbering rework",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T15:57:57+00:00"
+  },
+  {
+    "hash": "7cc4b526b",
+    "subject": "Fix pre-existing oxlint warnings in work item display components",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T15:08:33+00:00"
+  },
+  {
+    "hash": "a93dcb758",
+    "subject": "Rework work item IDs to Linear-style shared team/workspace pools",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T14:47:51+00:00"
+  },
+  {
+    "hash": "1e2ff9567",
+    "subject": "Add configurable default project-identifier prefix (workspace/team)",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T10:20:39+00:00"
+  },
+  {
+    "hash": "c241970e5",
+    "subject": "Remove the 10/12-character limit on project identifiers",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T09:00:35+00:00"
+  },
+  {
+    "hash": "b99491709",
+    "subject": "Fix missing project sub-navigation via tab bar and favorites",
+    "author": "QuentinDowsers",
+    "date": "2026-09-13T08:56:34+00:00"
+  },
+  {
+    "hash": "bcfe2fe2b",
+    "subject": "Add teamspace-level view for recurring issue templates",
+    "author": "QuentinDowsers",
+    "date": "2026-09-10T13:04:15+00:00"
+  },
+  {
+    "hash": "ccc70f4f7",
+    "subject": "Register missing route for workspace Page Templates settings page",
+    "author": "QuentinDowsers",
+    "date": "2026-09-10T10:00:41+00:00"
+  },
+  {
+    "hash": "ba5bffa06",
+    "subject": "Make Teamspace views show work items from all the team's projects",
+    "author": "QuentinDowsers",
+    "date": "2026-09-09T15:58:06+00:00"
+  },
+  {
+    "hash": "4bb0926bb",
+    "subject": "Fix crash in root ErrorBoundary from calling useNavigate() outside Router context",
+    "author": "QuentinDowsers",
+    "date": "2026-09-09T13:02:50+00:00"
+  },
+  {
+    "hash": "f370c1e0b",
+    "subject": "Fix N+1 query for next_work_item_sequence in project list API",
+    "author": "QuentinDowsers",
+    "date": "2026-09-09T10:05:33+00:00"
+  },
+  {
+    "hash": "3524b106c",
+    "subject": "Fix hydration mismatch in HydrateFallback caused by next-themes",
+    "author": "QuentinDowsers",
+    "date": "2026-09-09T09:26:32+00:00"
+  },
+  {
+    "hash": "15beaaf1b",
+    "subject": "Fix theme-logo hydration mismatch and emoji-check canvas perf warning",
+    "author": "QuentinDowsers",
+    "date": "2026-09-08T16:34:47+00:00"
+  },
+  {
+    "hash": "6ebd79019",
+    "subject": "Fix unhandled promise rejection on sign-in magic-code request",
+    "author": "QuentinDowsers",
+    "date": "2026-09-08T15:48:52+00:00"
+  },
+  {
+    "hash": "2b675fd45",
+    "subject": "Add id/name to form inputs missing both (Chrome autofill warning)",
+    "author": "QuentinDowsers",
+    "date": "2026-09-08T13:39:29+00:00"
+  },
+  {
+    "hash": "78f369b31",
+    "subject": "Fix oxlint warnings across the monorepo (1090 -> 756)",
+    "author": "QuentinDowsers",
+    "date": "2026-09-07T14:46:44+00:00"
+  },
+  {
+    "hash": "69fa8be60",
+    "subject": "Make teamspace overdue-work-items banner link to the actual issues",
+    "author": "QuentinDowsers",
+    "date": "2026-09-07T13:07:58+00:00"
+  },
+  {
+    "hash": "c1f4734fb",
+    "subject": "Fix home greeting: broken word-concatenation translation and English-only date",
+    "author": "QuentinDowsers",
+    "date": "2026-09-07T12:20:01+00:00"
+  },
+  {
+    "hash": "f650ebdc0",
+    "subject": "Add per-member password reset link action to workspace Members settings",
+    "author": "QuentinDowsers",
+    "date": "2026-09-07T11:53:14+00:00"
+  },
+  {
+    "hash": "472348c38",
+    "subject": "Add god-mode password reset link generation for users",
+    "author": "QuentinDowsers",
+    "date": "2026-09-07T09:26:32+00:00"
+  },
+  {
+    "hash": "dcbde264d",
+    "subject": "Remove the Billing & Plans page from workspace settings",
+    "author": "QuentinDowsers",
+    "date": "2026-09-02T16:00:22+00:00"
+  },
+  {
+    "hash": "eae72f2d8",
+    "subject": "Point support contact links to dev@dowsers.finance",
+    "author": "QuentinDowsers",
+    "date": "2026-09-02T15:41:51+00:00"
+  },
+  {
+    "hash": "f0460ab4f",
+    "subject": "Translate the instance maintenance/startup error message",
+    "author": "QuentinDowsers",
+    "date": "2026-09-02T15:34:05+00:00"
+  },
+  {
+    "hash": "10c5e19e3",
+    "subject": "Replace hardcoded strings with t() calls across 150 components",
+    "author": "QuentinDowsers",
+    "date": "2026-09-02T15:11:47+00:00"
+  },
+  {
+    "hash": "32a69e76d",
+    "subject": "Fix French i18n: load fr/core.ts and backfill 1043 missing translation keys",
+    "author": "QuentinDowsers",
+    "date": "2026-09-01T17:18:24+00:00"
+  },
+  {
+    "hash": "453b106b8",
+    "subject": "Add scripts/update-and-redeploy.sh for changelog + Docker rebuild automation",
+    "author": "QuentinDowsers",
+    "date": "2026-09-01T15:02:47+00:00"
+  },
+  {
+    "hash": "8613cf453",
+    "subject": "Restrict proxy HTTP port to loopback, add Slack app manifest",
+    "author": "QuentinDowsers",
+    "date": "2026-08-31T14:30:06+00:00"
+  },
+  {
     "hash": "b91d08815",
     "subject": "fix(web): replace What's New iframe (sites.plane.so) with git-log changelog",
     "author": "QuentinDowsers",
@@ -424,179 +598,5 @@
     "subject": "Add AI-assisted status update drafting backend, project-scoped v1 (category 9, feature 6)",
     "author": "root",
     "date": "2026-08-18T15:01:39+00:00"
-  },
-  {
-    "hash": "35b8d7e2b",
-    "subject": "Add AI thread summary frontend (category 9, feature 4)",
-    "author": "root",
-    "date": "2026-08-18T12:59:25+00:00"
-  },
-  {
-    "hash": "26e00e137",
-    "subject": "Add AI thread summary backend (category 9, feature 4)",
-    "author": "root",
-    "date": "2026-08-18T09:34:11+00:00"
-  },
-  {
-    "hash": "8f32072cc",
-    "subject": "Add shared per-workspace LLM config foundation (category 9 prerequisite)",
-    "author": "root",
-    "date": "2026-08-17T18:10:18+00:00"
-  },
-  {
-    "hash": "c774ac36c",
-    "subject": "Add first-class agent actor type frontend (category 9, feature 7)",
-    "author": "root",
-    "date": "2026-08-17T15:09:02+00:00"
-  },
-  {
-    "hash": "e59172f45",
-    "subject": "Add first-class agent actor type (category 9, feature 7)",
-    "author": "root",
-    "date": "2026-08-17T14:43:08+00:00"
-  },
-  {
-    "hash": "92d5c38d5",
-    "subject": "Add Category 7 integrations backend: GitHub, GitLab, Slack, Figma, Sentry, support bridge",
-    "author": "root",
-    "date": "2026-08-15T15:10:01+00:00"
-  },
-  {
-    "hash": "a9b79bb5b",
-    "subject": "Add shared encrypted-field and integration-bot foundation (category 7 prerequisite)",
-    "author": "root",
-    "date": "2026-08-10T13:57:27+00:00"
-  },
-  {
-    "hash": "04ae3d83a",
-    "subject": "Add API explorer frontend (category 8, feature 6, frontend half)",
-    "author": "root",
-    "date": "2026-08-10T13:32:30+00:00"
-  },
-  {
-    "hash": "d2b4deb94",
-    "subject": "Add official data-management CLI (category 8, feature 5)",
-    "author": "root",
-    "date": "2026-08-10T12:16:57+00:00"
-  },
-  {
-    "hash": "4b3641056",
-    "subject": "Add flexible query + rate limiting frontend (category 8, features 1+2)",
-    "author": "root",
-    "date": "2026-08-10T12:16:09+00:00"
-  },
-  {
-    "hash": "85c792d96",
-    "subject": "Add API explorer backend (category 8, feature 6, backend half)",
-    "author": "root",
-    "date": "2026-08-10T09:54:43+00:00"
-  },
-  {
-    "hash": "1b294e7e4",
-    "subject": "Add session-authenticated rate-limit override endpoint (category 8, feature 2 follow-up)",
-    "author": "root",
-    "date": "2026-08-07T09:42:00+00:00"
-  },
-  {
-    "hash": "0dff92dac",
-    "subject": "Add session-authenticated flexible query settings endpoint (category 8, feature 1 follow-up)",
-    "author": "root",
-    "date": "2026-08-07T09:36:04+00:00"
-  },
-  {
-    "hash": "1c423e3fc",
-    "subject": "Add API-token bulk issue operations endpoint (category 8, feature 5 backend prerequisite)",
-    "author": "root",
-    "date": "2026-08-07T09:26:27+00:00"
-  },
-  {
-    "hash": "ea007250c",
-    "subject": "Add flexible query layer backend (category 8, feature 1, backend half)",
-    "author": "root",
-    "date": "2026-08-07T09:25:30+00:00"
-  },
-  {
-    "hash": "ee3a4f3ac",
-    "subject": "Add rate limiting tiers backend (category 8, feature 2, backend half)",
-    "author": "root",
-    "date": "2026-08-07T09:23:11+00:00"
-  },
-  {
-    "hash": "0d46c9536",
-    "subject": "Add governed workflows frontend (category 6, feature 4, frontend half)",
-    "author": "root",
-    "date": "2026-08-06T09:39:10+00:00"
-  },
-  {
-    "hash": "d0dfb5091",
-    "subject": "Wire governed workflow gate into real mutation paths, phase 2 of 2 (category 6, feature 4)",
-    "author": "root",
-    "date": "2026-08-05T15:41:27+00:00"
-  },
-  {
-    "hash": "e3e3edde1",
-    "subject": "Add governed workflows engine backend, phase 1 of 2 (category 6, feature 4)",
-    "author": "root",
-    "date": "2026-08-05T14:45:15+00:00"
-  },
-  {
-    "hash": "fa6767862",
-    "subject": "Add SLA policies frontend (category 6, feature 2, frontend half)",
-    "author": "root",
-    "date": "2026-08-05T14:02:14+00:00"
-  },
-  {
-    "hash": "c7df2892a",
-    "subject": "Expose recurring_template on the issue serializer (category 6, feature 3 follow-up)",
-    "author": "root",
-    "date": "2026-08-05T09:58:16+00:00"
-  },
-  {
-    "hash": "c3984b3ca",
-    "subject": "Add recurring issue templates frontend (category 6, feature 3, frontend half)",
-    "author": "root",
-    "date": "2026-08-05T09:49:08+00:00"
-  },
-  {
-    "hash": "38b70a97e",
-    "subject": "Add SLA policies backend (category 6, feature 2, backend half)",
-    "author": "root",
-    "date": "2026-08-05T09:13:35+00:00"
-  },
-  {
-    "hash": "ce97a330d",
-    "subject": "Add automation rule engine frontend (category 6, feature 1, frontend half)",
-    "author": "root",
-    "date": "2026-08-04T14:55:21+00:00"
-  },
-  {
-    "hash": "c39c321a9",
-    "subject": "Add recurring issue templates backend (category 6, feature 3, backend half)",
-    "author": "root",
-    "date": "2026-08-04T14:42:03+00:00"
-  },
-  {
-    "hash": "0759849dd",
-    "subject": "Add automation rule engine backend (category 6, feature 1, backend half)",
-    "author": "root",
-    "date": "2026-08-04T14:03:55+00:00"
-  },
-  {
-    "hash": "d1aca2074",
-    "subject": "Add custom dashboards frontend (category 5, feature 3, frontend half)",
-    "author": "root",
-    "date": "2026-08-04T12:46:55+00:00"
-  },
-  {
-    "hash": "23ea7339f",
-    "subject": "Add custom dashboards backend (category 5, feature 3, backend half)",
-    "author": "root",
-    "date": "2026-08-04T08:43:10+00:00"
-  },
-  {
-    "hash": "8763dcaba",
-    "subject": "Add cross-workspace analytics & percentile reports (category 5, feature 2)",
-    "author": "root",
-    "date": "2026-08-04T08:06:22+00:00"
   }
 ]

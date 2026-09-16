@@ -67,6 +67,16 @@ export default {
   select_or_customize_your_interface_color_scheme: "Select or customize your interface color scheme.",
   timezone_setting: "Current timezone setting.",
   language_setting: "Choose the language used in the user interface.",
+  select_a_language: "Select a language",
+  days_of_week: {
+    sunday: "Sunday",
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+  },
   settings_moved_to_preferences: "Timezone & Language settings have been moved to preferences.",
   go_to_preferences: "Go to preferences",
   theme: "Theme",
@@ -1723,6 +1733,16 @@ export default {
     preferences: {
       heading: "Preferences",
       description: "Customize your app experience the way you work",
+      first_day_of_week: "First day of the week",
+      first_day_of_week_setting: "This will change how all calendars in your app look.",
+      toasts: {
+        timezone_updated: "Timezone updated successfully",
+        timezone_update_failed: "Failed to update timezone",
+        language_updated: "Language updated successfully",
+        language_update_failed: "Failed to update language",
+        first_day_of_week_updated: "First day of the week updated successfully",
+        first_day_of_week_update_failed: "Failed to update the first day of the week",
+      },
     },
     slack_account_link: {
       heading: "Slack account",
@@ -1774,6 +1794,11 @@ export default {
   workspace_settings: {
     label: "Workspace settings",
     page_label: "{workspace} - General settings",
+    categories: {
+      administration: "Administration",
+      features: "Features",
+      developer: "Developer",
+    },
     key_created: "Key created",
     copy_key:
       "Copy and save this secret key in Plane Pages. You can't see this key after you hit Close. A CSV file containing the key has been downloaded.",
@@ -2005,6 +2030,10 @@ export default {
     label: "Profile",
     page_label: "Your work",
     work: "Work",
+    categories: {
+      your_profile: "Your profile",
+      developer: "Developer",
+    },
     details: {
       joined_on: "Joined on",
       time_zone: "Timezone",
@@ -2067,6 +2096,12 @@ export default {
     },
   },
   project_settings: {
+    categories: {
+      general: "General",
+      features: "Features",
+      work_structure: "Work structure",
+      execution: "Execution",
+    },
     general: {
       enter_project_id: "Enter project ID",
       please_select_a_timezone: "Please select a timezone",

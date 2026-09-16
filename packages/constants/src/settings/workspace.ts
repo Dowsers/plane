@@ -20,6 +20,12 @@ export const WORKSPACE_SETTINGS_CATEGORIES: WORKSPACE_SETTINGS_CATEGORY[] = [
   WORKSPACE_SETTINGS_CATEGORY.DEVELOPER,
 ];
 
+export const WORKSPACE_SETTINGS_CATEGORY_I18N_LABELS: Record<WORKSPACE_SETTINGS_CATEGORY, string> = {
+  [WORKSPACE_SETTINGS_CATEGORY.ADMINISTRATION]: "workspace_settings.categories.administration",
+  [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: "workspace_settings.categories.features",
+  [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: "workspace_settings.categories.developer",
+};
+
 export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettingsItem> = {
   general: {
     key: "general",

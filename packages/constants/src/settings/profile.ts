@@ -17,6 +17,11 @@ export const PROFILE_SETTINGS_CATEGORIES: PROFILE_SETTINGS_CATEGORY[] = [
   PROFILE_SETTINGS_CATEGORY.DEVELOPER,
 ];
 
+export const PROFILE_SETTINGS_CATEGORY_I18N_LABELS: Record<PROFILE_SETTINGS_CATEGORY, string> = {
+  [PROFILE_SETTINGS_CATEGORY.YOUR_PROFILE]: "profile.categories.your_profile",
+  [PROFILE_SETTINGS_CATEGORY.DEVELOPER]: "profile.categories.developer",
+};
+
 export const PROFILE_SETTINGS: Record<
   TProfileSettingsTabs,
   {

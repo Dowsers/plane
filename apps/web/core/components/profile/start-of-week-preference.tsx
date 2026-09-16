@@ -7,6 +7,7 @@
 import { observer } from "mobx-react";
 // plane imports
 import { START_OF_THE_WEEK_OPTIONS } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { EStartOfTheWeek } from "@plane/types";
 import { CustomSelect } from "@plane/ui";
@@ -15,21 +16,33 @@ import { SettingsControlItem } from "@/components/settings/control-item";
 // hooks
 import { useUserProfile } from "@/hooks/store/user";
 
-const getStartOfWeekLabel = (startOfWeek: EStartOfTheWeek) =>
-  START_OF_THE_WEEK_OPTIONS.find((option) => option.value === startOfWeek)?.label;
+const getStartOfWeekI18nLabel = (startOfWeek: EStartOfTheWeek) =>
+  START_OF_THE_WEEK_OPTIONS.find((option) => option.value === startOfWeek)?.i18n_label;
 
 export const StartOfWeekPreference = observer(function StartOfWeekPreference(props: {
   option: { title: string; description: string };
 }) {
   // hooks
   const { data: userProfile, updateUserProfile } = useUserProfile();
+  // translation
+  const { t } = useTranslation();
+
+  const selectedI18nLabel = getStartOfWeekI18nLabel(userProfile.start_of_the_week);
 
   const handleStartOfWeekChange = async (val: number) => {
     try {
       await updateUserProfile({ start_of_the_week: val });
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success", message: "First day of the week updated successfully" });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("success"),
+        message: t("account_settings.preferences.toasts.first_day_of_week_updated"),
+      });
     } catch (_error) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Update failed", message: "Please try again later." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("error"),
+        message: t("account_settings.preferences.toasts.first_day_of_week_update_failed"),
+      });
     }
   };
 
@@ -40,7 +53,7 @@ export const StartOfWeekPreference = observer(function StartOfWeekPreference(pro
       control={
         <CustomSelect
           value={userProfile.start_of_the_week}
-          label={getStartOfWeekLabel(userProfile.start_of_the_week)}
+          label={selectedI18nLabel ? t(selectedI18nLabel) : undefined}
           onChange={handleStartOfWeekChange}
           buttonClassName="border border-subtle-1"
           input
@@ -50,7 +63,7 @@ export const StartOfWeekPreference = observer(function StartOfWeekPreference(pro
           <>
             {START_OF_THE_WEEK_OPTIONS.map((day) => (
               <CustomSelect.Option key={day.value} value={day.value}>
-                {day.label}
+                {t(day.i18n_label)}
               </CustomSelect.Option>
             ))}
           </>

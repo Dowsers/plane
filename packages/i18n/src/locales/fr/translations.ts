@@ -1788,6 +1788,16 @@ export default {
     preferences: {
       description: "Personnalisez votre expérience de l’application selon votre façon de travailler",
       heading: "Préférences",
+      first_day_of_week: "Premier jour de la semaine",
+      first_day_of_week_setting: "Cela modifiera l’affichage de tous les calendriers de l’application.",
+      toasts: {
+        timezone_updated: "Fuseau horaire mis à jour avec succès",
+        timezone_update_failed: "Échec de la mise à jour du fuseau horaire",
+        language_updated: "Langue mise à jour avec succès",
+        language_update_failed: "Échec de la mise à jour de la langue",
+        first_day_of_week_updated: "Premier jour de la semaine mis à jour avec succès",
+        first_day_of_week_update_failed: "Échec de la mise à jour du premier jour de la semaine",
+      },
     },
     security: {
       heading: "Sécurité",
@@ -1827,6 +1837,11 @@ export default {
   workspace_settings: {
     label: "Paramètres de l’espace de travail",
     page_label: "{workspace} - Paramètres généraux",
+    categories: {
+      administration: "Administration",
+      features: "Fonctionnalités",
+      developer: "Développeur",
+    },
     key_created: "Clé créée",
     copy_key:
       "Copiez et sauvegardez cette clé secrète dans Plane Pages. Vous ne pourrez plus voir cette clé après avoir cliqué sur Fermer. Un fichier CSV contenant la clé a été téléchargé.",
@@ -2062,6 +2077,10 @@ export default {
     label: "Profil",
     page_label: "Votre travail",
     work: "Travail",
+    categories: {
+      your_profile: "Votre profil",
+      developer: "Développeur",
+    },
     details: {
       joined_on: "Inscrit le",
       time_zone: "Fuseau horaire",
@@ -2127,6 +2146,12 @@ export default {
     },
   },
   project_settings: {
+    categories: {
+      general: "Général",
+      features: "Fonctionnalités",
+      work_structure: "Structure de travail",
+      execution: "Exécution",
+    },
     general: {
       enter_project_id: "Saisissez l’ID du projet",
       please_select_a_timezone: "Veuillez sélectionner un fuseau horaire",
@@ -4154,6 +4179,16 @@ export default {
     },
   },
   timezone_setting: "Paramètre de fuseau horaire actuel.",
+  select_a_language: "Sélectionnez une langue",
+  days_of_week: {
+    sunday: "Dimanche",
+    monday: "Lundi",
+    tuesday: "Mardi",
+    wednesday: "Mercredi",
+    thursday: "Jeudi",
+    friday: "Vendredi",
+    saturday: "Samedi",
+  },
   unpin: "Désépingler",
   sla_policies: {
     delete_confirm: {
