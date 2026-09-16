@@ -160,8 +160,19 @@ def enforce_workspace_session_timeout(request, workspace_slug: str) -> Optional[
     effective_minutes = resolve_effective_session_timeout_minutes(policy)
     now = timezone.now()
 
-    if member.last_workspace_activity_at is not None:
-        idle_for = now - member.last_workspace_activity_at
+    # Refresh unconditionally, before evaluating the timeout, so a
+    # request that trips the timeout below still resets the idle clock as
+    # a side effect - matching this module's own documented guarantee
+    # (see limits section above) that "the very next request... works
+    # again immediately". Without this, a member who ever exceeds the
+    # timeout once would have `last_workspace_activity_at` frozen forever
+    # (this branch would never run again), permanently locking them out of
+    # the workspace regardless of how many times they re-authenticate.
+    previous_activity = member.last_workspace_activity_at
+    WorkspaceMember.objects.filter(pk=member.pk).update(last_workspace_activity_at=now)
+
+    if previous_activity is not None:
+        idle_for = now - previous_activity
         if idle_for > timedelta(minutes=effective_minutes):
             logger.info(
                 "Workspace session timeout: user %s idle for %s in workspace %s (limit %s minutes).",
@@ -175,5 +186,4 @@ def enforce_workspace_session_timeout(request, workspace_slug: str) -> Optional[
                 f"{effective_minutes}-minute limit set by its security policy. Please sign in again."
             )
 
-    WorkspaceMember.objects.filter(pk=member.pk).update(last_workspace_activity_at=now)
     return None
