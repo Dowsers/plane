@@ -12,6 +12,7 @@ import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import type { TPermission, TWorkspaceRole } from "@plane/types";
 import { cn } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // local imports
 import { ConditionBadgeList } from "./condition-badge";
 import { SystemBadge } from "./system-badge";
@@ -33,6 +34,7 @@ type Props = {
  */
 export function RoleListItem(props: Props) {
   const { role, catalogueByKey, onEdit, onDelete } = props;
+  const { t } = useTranslation();
   const [showPermissions, setShowPermissions] = useState(false);
 
   const permissionEntries = sortBy(Object.entries(role.effective_permissions), ([key]) => key);
@@ -45,13 +47,15 @@ export function RoleListItem(props: Props) {
             <h4 className="text-body-sm-medium text-primary">{role.name}</h4>
             {role.is_system && <SystemBadge />}
             <Pill variant={EPillVariant.DEFAULT} size={EPillSize.SM}>
-              {role.member_count} {role.member_count === 1 ? "member" : "members"}
+              {t("member", { count: role.member_count })}
             </Pill>
           </div>
           {role.description && <p className="text-caption-md-regular text-tertiary">{role.description}</p>}
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {role.schemes.length === 0 ? (
-              <span className="text-caption-sm-regular text-placeholder">No bundles attached</span>
+              <span className="text-caption-sm-regular text-placeholder">
+                {t("role_list_item.no_bundles_attached")}
+              </span>
             ) : (
               role.schemes.map((scheme) => (
                 <Pill key={scheme.id} variant={EPillVariant.PRIMARY} size={EPillSize.SM}>
@@ -67,7 +71,7 @@ export function RoleListItem(props: Props) {
             onClick={onEdit}
             className="flex items-center gap-1 rounded-md px-2 py-1 text-caption-md-medium text-secondary hover:bg-layer-1"
           >
-            <Pencil className="size-3.5" /> Edit
+            <Pencil className="size-3.5" /> {t("edit")}
           </button>
           {!role.is_system && (
             <button
@@ -75,7 +79,7 @@ export function RoleListItem(props: Props) {
               onClick={onDelete}
               className="flex items-center gap-1 rounded-md px-2 py-1 text-caption-md-medium text-danger-primary hover:bg-layer-1"
             >
-              <Trash2 className="size-3.5" /> Delete
+              <Trash2 className="size-3.5" /> {t("delete")}
             </button>
           )}
         </div>
@@ -87,14 +91,14 @@ export function RoleListItem(props: Props) {
           className="flex w-fit items-center gap-1 text-caption-sm-medium text-tertiary hover:text-secondary"
         >
           <ChevronDown className={cn("size-3.5 transition-transform", { "-rotate-90": !showPermissions })} />
-          {showPermissions ? "Hide" : "Show"} effective permissions ({permissionEntries.length})
+          {showPermissions
+            ? t("role_list_item.hide_effective_permissions", { count: permissionEntries.length })
+            : t("role_list_item.show_effective_permissions", { count: permissionEntries.length })}
         </Disclosure.Button>
         {showPermissions && (
           <Disclosure.Panel className="mt-2 flex flex-col gap-1.5 rounded-md border border-subtle bg-layer-1 p-3">
             {permissionEntries.length === 0 && (
-              <span className="text-caption-sm-regular text-placeholder">
-                This role grants none of the 5 in-scope permissions.
-              </span>
+              <span className="text-caption-sm-regular text-placeholder">{t("role_list_item.no_permissions")}</span>
             )}
             {permissionEntries.map(([key, conditions]) => (
               <div key={key} className="flex items-center justify-between gap-3">

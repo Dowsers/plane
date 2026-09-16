@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "@plane/i18n";
 // ui
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -30,6 +31,7 @@ export function ArchiveRestoreProjectModal(props: Props) {
   const [isLoading, setIsLoading] = useState(false);
   // store hooks
   const { getProjectById, archiveProject, restoreProject } = useProject();
+  const { t } = useTranslation();
 
   const projectDetails = getProjectById(projectId);
   if (!projectDetails) return null;
@@ -55,7 +57,7 @@ export function ArchiveRestoreProjectModal(props: Props) {
       .catch(() =>
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: "Project could not be archived. Please try again.",
         })
       )
@@ -78,7 +80,7 @@ export function ArchiveRestoreProjectModal(props: Props) {
       .catch(() =>
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: "Project could not be restored. Please try again.",
         })
       )
@@ -103,7 +105,7 @@ export function ArchiveRestoreProjectModal(props: Props) {
           <Button
             variant="primary"
             size="lg"
-            tabIndex={1}
+            tabIndex={0}
             onClick={archive ? handleArchiveProject : handleRestoreProject}
             loading={isLoading}
           >

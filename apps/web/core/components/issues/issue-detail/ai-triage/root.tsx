@@ -132,9 +132,13 @@ export const AITriageSuggestionSection = observer(function AITriageSuggestionSec
     } catch (error: unknown) {
       const err = error as { error?: string; status?: number };
       if (err?.status === 429) {
-        setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.triage.rate_limited") });
+        setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.triage.rate_limited") });
       } else {
-        setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: err?.error ?? t("ai.triage.regenerate_error") });
+        setToast({
+          type: TOAST_TYPE.ERROR,
+          title: t("toast.error"),
+          message: err?.error ?? t("ai.triage.regenerate_error"),
+        });
       }
     }
   };

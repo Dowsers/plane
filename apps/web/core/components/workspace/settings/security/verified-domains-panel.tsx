@@ -9,7 +9,7 @@ import { observer } from "mobx-react";
 import useSWR from "swr";
 import { Plus } from "lucide-react";
 // plane imports
-import { DOMAIN_VERIFICATION_METHOD_LABELS } from "@plane/constants";
+import { DOMAIN_VERIFICATION_METHOD_I18N_LABELS } from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { EmptyStateCompact } from "@plane/propel/empty-state";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -159,7 +159,7 @@ export const VerifiedDomainsPanel = observer(function VerifiedDomainsPanel(props
                 <tr key={domain.id} className="border-b border-subtle-1 last:border-0">
                   <td className="px-3 py-2 whitespace-nowrap text-secondary">{domain.domain}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-tertiary">
-                    {DOMAIN_VERIFICATION_METHOD_LABELS[domain.verification_method]}
+                    {t(DOMAIN_VERIFICATION_METHOD_I18N_LABELS[domain.verification_method])}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span

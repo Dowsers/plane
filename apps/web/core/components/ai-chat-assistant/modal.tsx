@@ -84,7 +84,7 @@ export const AIChatAssistantModal = observer(function AIChatAssistantModal(props
       const err = error as { error?: string };
       const message = err?.error ?? t("ai.chat.create_error");
       setCreateError(message);
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsCreatingNewChat(false);
     }

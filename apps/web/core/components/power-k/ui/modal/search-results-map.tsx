@@ -45,6 +45,7 @@ export type TPowerKSearchResultGroupDetails = {
   // function accepting fewer params is assignable to a type expecting
   // more).
   path: (item: any, projectId: string | undefined, workspaceSlug?: string) => string;
+  // i18n key for the section heading, resolved with `t()` at the render site.
   title: string;
 };
 
@@ -58,7 +59,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     ),
     path: (cycle: IWorkspaceDefaultSearchResult) =>
       `/${cycle?.workspace__slug}/projects/${cycle?.project_id}/cycles/${cycle?.id}`,
-    title: "Cycles",
+    title: "cycles",
   },
   issue: {
     itemName: (workItem: IWorkspaceIssueSearchResult) => (
@@ -88,7 +89,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
         projectIdentifier: workItem.sequence_prefix ?? workItem.project__identifier,
         sequenceId: workItem?.sequence_id,
       }),
-    title: "Work items",
+    title: "issues",
   },
   // Category 12 (docs/feature-specs/12-keyboard-mobile-desktop.md in
   // plane-selfhost), feature 6 ("Recherche approfondie dans la Command
@@ -127,7 +128,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
         projectIdentifier: comment.project__identifier,
         sequenceId: comment?.issue__sequence_id,
       })}#comment-${comment?.comment_id}`,
-    title: "Comments",
+    title: "comments",
   },
   // Category 12, feature 6, exigence 3 - new "Members" category. Visually
   // reuses the leading-avatar convention already established by the
@@ -162,7 +163,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     // views over creating new ones.
     path: (member: IWorkspaceMemberSearchResult, _projectId: string | undefined, workspaceSlug?: string) =>
       `/${workspaceSlug}/profile/${member?.member_id}`,
-    title: "Members",
+    title: "members",
   },
   issue_view: {
     icon: Layers,
@@ -173,7 +174,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     ),
     path: (view: IWorkspaceDefaultSearchResult) =>
       `/${view?.workspace__slug}/projects/${view?.project_id}/views/${view?.id}`,
-    title: "Views",
+    title: "views",
   },
   module: {
     icon: DiceIcon,
@@ -184,7 +185,7 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     ),
     path: (module: IWorkspaceDefaultSearchResult) =>
       `/${module?.workspace__slug}/projects/${module?.project_id}/modules/${module?.id}`,
-    title: "Modules",
+    title: "modules",
   },
   page: {
     icon: FileText,
@@ -208,13 +209,13 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
         ? `/${page?.workspace__slug}/projects/${redirectProjectId}/pages/${page?.id}`
         : `/${page?.workspace__slug}/wiki/${page?.id}`;
     },
-    title: "Pages",
+    title: "pages",
   },
   project: {
     icon: Briefcase,
     itemName: (project: IWorkspaceProjectSearchResult) => project?.name,
     path: (project: IWorkspaceProjectSearchResult) => `/${project?.workspace__slug}/projects/${project?.id}/issues/`,
-    title: "Projects",
+    title: "projects",
   },
   // docs/feature-specs/14-pricing-gap-remediation.md ("14b. Customers",
   // feature 3, exigence 10) in plane-selfhost - new "Customers" category,
@@ -223,13 +224,13 @@ export const POWER_K_SEARCH_RESULTS_GROUPS_MAP: Record<TPowerKSearchResultsKeys,
     icon: Building2,
     itemName: (customer: IWorkspaceCustomerSearchResult) => customer?.name,
     path: (customer: IWorkspaceCustomerSearchResult) => `/${customer?.workspace__slug}/customers/${customer?.id}/`,
-    title: "Customers",
+    title: "customers.label",
   },
   workspace: {
     icon: LayoutGrid,
     itemName: (workspace: IWorkspaceSearchResult) => workspace?.name,
     path: (workspace: IWorkspaceSearchResult) => `/${workspace?.slug}/`,
-    title: "Workspaces",
+    title: "workspaces",
   },
   ...SEARCH_RESULTS_GROUPS_MAP_EXTENDED,
 };

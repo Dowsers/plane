@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import { CircleDashed } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 import { PlusIcon } from "@plane/propel/icons";
 // types
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -60,6 +61,8 @@ export const HeaderGroupByCard = observer(function HeaderGroupByCard(props: IHea
   // states
   const [isOpen, setIsOpen] = useState(false);
   const [openExistingIssueListModal, setOpenExistingIssueListModal] = useState(false);
+  // hooks
+  const { t } = useTranslation();
   // router
   const { workspaceSlug, projectId, moduleId, cycleId } = useParams();
   const storeType = useIssueStoreType();
@@ -80,13 +83,13 @@ export const HeaderGroupByCard = observer(function HeaderGroupByCard(props: IHea
 
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: "Work items added to the cycle successfully.",
       });
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: "Selected work items could not be added to the cycle. Please try again.",
       });
     }
@@ -117,6 +120,15 @@ export const HeaderGroupByCard = observer(function HeaderGroupByCard(props: IHea
         <div
           className="relative flex w-full cursor-pointer flex-row items-center gap-1 overflow-hidden"
           onClick={() => handleCollapsedGroups(groupID)}
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- cannot be a <button>, it wraps interactive content rendered by WorkFlowGroupTree in the enterprise edition
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleCollapsedGroups(groupID);
+            }
+          }}
         >
           <div className="line-clamp-1 inline-block truncate font-medium text-primary">{title}</div>
           <div className="pl-2 text-13 font-medium text-tertiary">{count || 0}</div>
@@ -154,6 +166,15 @@ export const HeaderGroupByCard = observer(function HeaderGroupByCard(props: IHea
               className="flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xs transition-all hover:bg-layer-1"
               onClick={() => {
                 setIsOpen(true);
+              }}
+              // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- kept as a <div> to match its sibling CustomMenu trigger (a <span>) above
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsOpen(true);
+                }
               }}
             >
               <PlusIcon width={14} strokeWidth={2} />

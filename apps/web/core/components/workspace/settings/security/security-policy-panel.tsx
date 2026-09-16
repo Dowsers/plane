@@ -10,8 +10,8 @@ import useSWR from "swr";
 // plane imports
 import {
   ALLOWED_AUTH_METHOD_LABELS,
-  MEMBER_INVITE_RESTRICTION_DESCRIPTIONS,
-  MEMBER_INVITE_RESTRICTION_LABELS,
+  MEMBER_INVITE_RESTRICTION_I18N_DESCRIPTIONS,
+  MEMBER_INVITE_RESTRICTION_I18N_LABELS,
   MEMBER_INVITE_RESTRICTION_OPTIONS,
   SESSION_TIMEOUT_MINUTES_MAX,
   SESSION_TIMEOUT_MINUTES_MIN,
@@ -170,20 +170,20 @@ export const SecurityPolicyPanel = observer(function SecurityPolicyPanel(props: 
 
       <SettingsBoxedControlItem
         title={t("security_policy_panel.invite_restriction.title")}
-        description={MEMBER_INVITE_RESTRICTION_DESCRIPTIONS[draft.member_invite_restriction]}
+        description={t(MEMBER_INVITE_RESTRICTION_I18N_DESCRIPTIONS[draft.member_invite_restriction])}
         control={
           <CustomSelect
             value={draft.member_invite_restriction}
             onChange={(value: TWorkspaceSecurityPolicy["member_invite_restriction"]) =>
               updateDraft({ member_invite_restriction: value })
             }
-            label={MEMBER_INVITE_RESTRICTION_LABELS[draft.member_invite_restriction]}
+            label={t(MEMBER_INVITE_RESTRICTION_I18N_LABELS[draft.member_invite_restriction])}
             disabled={!isOwner || isSaving}
             buttonClassName="border border-subtle bg-layer-2"
           >
             {MEMBER_INVITE_RESTRICTION_OPTIONS.map((option) => (
               <CustomSelect.Option key={option} value={option}>
-                {MEMBER_INVITE_RESTRICTION_LABELS[option]}
+                {t(MEMBER_INVITE_RESTRICTION_I18N_LABELS[option])}
               </CustomSelect.Option>
             ))}
           </CustomSelect>

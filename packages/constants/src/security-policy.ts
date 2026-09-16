@@ -13,16 +13,16 @@
  */
 import type { TAllowedAuthMethod, TDomainVerificationMethod, TMemberInviteRestriction } from "@plane/types";
 
-export const MEMBER_INVITE_RESTRICTION_LABELS: Record<TMemberInviteRestriction, string> = {
-  OWNER_ONLY: "Owner only",
-  ADMINS_AND_ABOVE: "Admins and above (default)",
-  ADMINS_AND_MEMBERS: "Admins and Members",
+export const MEMBER_INVITE_RESTRICTION_I18N_LABELS: Record<TMemberInviteRestriction, string> = {
+  OWNER_ONLY: "security_policy_panel.invite_restriction.options.owner_only.label",
+  ADMINS_AND_ABOVE: "security_policy_panel.invite_restriction.options.admins_and_above.label",
+  ADMINS_AND_MEMBERS: "security_policy_panel.invite_restriction.options.admins_and_members.label",
 };
 
-export const MEMBER_INVITE_RESTRICTION_DESCRIPTIONS: Record<TMemberInviteRestriction, string> = {
-  OWNER_ONLY: "Only the workspace Owner can invite new members.",
-  ADMINS_AND_ABOVE: "Admins (and the Owner) can invite new members.",
-  ADMINS_AND_MEMBERS: "Admins and Members can invite new members.",
+export const MEMBER_INVITE_RESTRICTION_I18N_DESCRIPTIONS: Record<TMemberInviteRestriction, string> = {
+  OWNER_ONLY: "security_policy_panel.invite_restriction.options.owner_only.description",
+  ADMINS_AND_ABOVE: "security_policy_panel.invite_restriction.options.admins_and_above.description",
+  ADMINS_AND_MEMBERS: "security_policy_panel.invite_restriction.options.admins_and_members.description",
 };
 
 export const MEMBER_INVITE_RESTRICTION_OPTIONS: TMemberInviteRestriction[] = [
@@ -38,9 +38,9 @@ export const ALLOWED_AUTH_METHOD_LABELS: Record<TAllowedAuthMethod, string> = {
   GITHUB: "GitHub OAuth",
 };
 
-export const DOMAIN_VERIFICATION_METHOD_LABELS: Record<TDomainVerificationMethod, string> = {
-  DNS_TXT: "DNS TXT record",
-  HTML_FILE: "HTML file upload",
+export const DOMAIN_VERIFICATION_METHOD_I18N_LABELS: Record<TDomainVerificationMethod, string> = {
+  DNS_TXT: "verified_domains_panel.method.dns_txt",
+  HTML_FILE: "verified_domains_panel.method.html_file",
 };
 
 export const DOMAIN_VERIFICATION_METHOD_OPTIONS: TDomainVerificationMethod[] = ["DNS_TXT", "HTML_FILE"];

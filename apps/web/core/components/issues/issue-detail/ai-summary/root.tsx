@@ -125,7 +125,7 @@ export const AISummarySection = observer(function AISummarySection(props: Props)
       mutateSummary(result, { revalidate: false });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("ai.summary.error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsGenerating(false);
     }

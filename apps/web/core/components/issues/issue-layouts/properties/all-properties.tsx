@@ -121,7 +121,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
       // error handling at all before this feature).
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: getIssueUpdateErrorMessage(error, "Unable to update the state of the work item."),
       });
     }

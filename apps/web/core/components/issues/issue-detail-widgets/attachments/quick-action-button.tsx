@@ -10,6 +10,7 @@ import type { FileRejection } from "react-dropzone";
 import { useDropzone } from "react-dropzone";
 import { PlusIcon } from "@plane/propel/icons";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssueServiceType } from "@plane/types";
 // hooks
@@ -32,6 +33,8 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
   const { workspaceSlug, projectId, issueId, customButton, disabled = false, issueServiceType } = props;
   // state
   const [isLoading, setIsLoading] = useState(false);
+  // i18n
+  const { t } = useTranslation();
   // store hooks
   const { setLastWidgetAction, fetchActivities } = useIssueDetail(issueServiceType);
   // file size
@@ -62,7 +65,7 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
           .catch(() => {
             setToast({
               type: TOAST_TYPE.ERROR,
-              title: "Error!",
+              title: t("toast.error"),
               message: "File could not be attached. Try uploading again.",
             });
           })
@@ -76,7 +79,7 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
 
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message:
           totalAttachedFiles > 1
             ? "Only one file can be uploaded at a time."
@@ -84,7 +87,7 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
       });
       return;
     },
-    [attachmentOperations, maxFileSize, workspaceSlug, handleFetchPropertyActivities, setLastWidgetAction]
+    [attachmentOperations, maxFileSize, workspaceSlug, handleFetchPropertyActivities, setLastWidgetAction, t]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -99,6 +102,15 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
       onClick={(e) => {
         // TODO: Remove extra div and move event propagation to button
         e.stopPropagation();
+      }}
+      // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- cannot be a <button>, it wraps a nested <button> from react-dropzone's getRootProps
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }}
     >
       <button {...getRootProps()} type="button" disabled={disabled}>

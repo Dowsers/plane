@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 // ui
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { EModalPosition, EModalWidth, ModalCore } from "@plane/ui";
@@ -24,6 +25,8 @@ type Props = {
 
 export function ArchiveModuleModal(props: Props) {
   const { workspaceSlug, projectId, moduleId, isOpen, handleClose } = props;
+  // i18n
+  const { t } = useTranslation();
   // router
   const router = useAppRouter();
   // states
@@ -54,7 +57,7 @@ export function ArchiveModuleModal(props: Props) {
       .catch(() =>
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: "Module could not be archived. Please try again.",
         })
       )
@@ -72,7 +75,7 @@ export function ArchiveModuleModal(props: Props) {
           <Button variant="secondary" size="lg" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="lg" tabIndex={1} onClick={handleArchiveModule} loading={isArchiving}>
+          <Button variant="primary" size="lg" onClick={handleArchiveModule} loading={isArchiving}>
             {isArchiving ? "Archiving" : "Archive"}
           </Button>
         </div>

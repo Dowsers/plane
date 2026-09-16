@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 // ui
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { EModalPosition, EModalWidth, ModalCore } from "@plane/ui";
@@ -24,6 +25,7 @@ type Props = {
 
 export function ArchiveCycleModal(props: Props) {
   const { workspaceSlug, projectId, cycleId, isOpen, handleClose } = props;
+  const { t } = useTranslation();
   // router
   const router = useAppRouter();
   // states
@@ -54,7 +56,7 @@ export function ArchiveCycleModal(props: Props) {
       .catch(() => {
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: "Cycle could not be archived. Please try again.",
         });
       })
@@ -72,7 +74,7 @@ export function ArchiveCycleModal(props: Props) {
           <Button variant="secondary" size="lg" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="lg" tabIndex={1} onClick={handleArchiveCycle} loading={isArchiving}>
+          <Button variant="primary" size="lg" tabIndex={0} onClick={handleArchiveCycle} loading={isArchiving}>
             {isArchiving ? "Archiving" : "Archive"}
           </Button>
         </div>

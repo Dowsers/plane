@@ -50,9 +50,17 @@ function WikiWorkspaceSettingsPage() {
     if (!workspaceSlug) return;
     try {
       await updateWorkspace(workspaceSlug.toString(), { wiki_root_creation_role: value });
-      setToast({ type: TOAST_TYPE.SUCCESS, title: t("toast.success"), message: "Wiki settings updated." });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: t("wiki.toast.settings_update_success"),
+      });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "Something went wrong. Please try again." });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("something_went_wrong_please_try_again"),
+      });
     }
   };
 
@@ -67,7 +75,7 @@ function WikiWorkspaceSettingsPage() {
         <SettingsHeading title={t("wiki.settings.title")} description={t("wiki.settings.description")} />
         <SettingsControlItem
           title={t("wiki.settings.root_creation_role_label")}
-          description="Sub-folders and pages created inside an existing folder are not affected by this setting."
+          description={t("wiki.settings.root_creation_role_description")}
           control={
             <CustomSelect
               value={rootCreationRole}

@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/ui";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 // services
@@ -48,6 +49,7 @@ type Props = {
  */
 export function WorkflowTransitionApprovalActions(props: Props) {
   const { workspaceSlug, projectId, approvalRequestId, onDecided } = props;
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState<"approve" | "reject" | null>(null);
 
   const decide = async (decision: "approve" | "reject") => {
@@ -63,7 +65,7 @@ export function WorkflowTransitionApprovalActions(props: Props) {
       onDecided();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to record your decision.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSubmitting(null);
     }

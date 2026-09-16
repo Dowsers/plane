@@ -11,6 +11,7 @@ import { EmojiReactionGroup, EmojiReactionPicker } from "@plane/propel/emoji-rea
 import type { EmojiReactionType } from "@plane/propel/emoji-reaction";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { cn, groupReactions } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useUser } from "@/hooks/store/user";
@@ -39,6 +40,8 @@ type Props = {
  */
 export const PageReactions = observer(function PageReactions(props: Props) {
   const { page, className } = props;
+  // i18n
+  const { t } = useTranslation();
   // states
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   // store hooks
@@ -60,15 +63,15 @@ export const PageReactions = observer(function PageReactions(props: Props) {
         try {
           await createReaction(reaction);
           setToast({
-            title: "Success!",
+            title: t("toast.success"),
             type: TOAST_TYPE.SUCCESS,
-            message: "Reaction created successfully",
+            message: t("page_reactions.create_success"),
           });
         } catch (_error) {
           setToast({
-            title: "Error!",
+            title: t("toast.error"),
             type: TOAST_TYPE.ERROR,
-            message: "Reaction creation failed",
+            message: t("page_reactions.create_error"),
           });
         }
       },
@@ -77,15 +80,15 @@ export const PageReactions = observer(function PageReactions(props: Props) {
           if (!currentUser?.id) throw new Error("Missing fields");
           await removeReaction(reaction, currentUser.id);
           setToast({
-            title: "Success!",
+            title: t("toast.success"),
             type: TOAST_TYPE.SUCCESS,
-            message: "Reaction removed successfully",
+            message: t("page_reactions.remove_success"),
           });
         } catch (_error) {
           setToast({
-            title: "Error!",
+            title: t("toast.error"),
             type: TOAST_TYPE.ERROR,
-            message: "Reaction remove failed",
+            message: t("page_reactions.remove_error"),
           });
         }
       },
@@ -94,7 +97,7 @@ export const PageReactions = observer(function PageReactions(props: Props) {
         else await pageReactionOperations.create(reaction);
       },
     }),
-    [createReaction, removeReaction, currentUser, userReactions]
+    [createReaction, removeReaction, currentUser, userReactions, t]
   );
 
   const getReactionUsers = (reaction: string): string[] => {

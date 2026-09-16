@@ -80,7 +80,7 @@ export const AITriageAppliedBadge = observer(function AITriageAppliedBadge(props
         });
       }
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.triage.undo_error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.triage.undo_error") });
     }
   };
 

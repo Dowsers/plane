@@ -1,5 +1,17 @@
 [
   {
+    "hash": "7ee1aea4a",
+    "subject": "Translate hardcoded settings/preferences strings to i18n keys",
+    "author": "QuentinDowsers",
+    "date": "2026-09-16T09:10:09+00:00"
+  },
+  {
+    "hash": "bc7bab8bd",
+    "subject": "Fix permanent workspace lockout in idle-session timeout",
+    "author": "QuentinDowsers",
+    "date": "2026-09-16T09:07:39+00:00"
+  },
+  {
     "hash": "121a62a43",
     "subject": "Expose sequence_prefix on the .values() list projections",
     "author": "QuentinDowsers",
@@ -586,17 +598,5 @@
     "subject": "Add shared issue-embeddings pipeline, pure-Python + external-API (category 9 prerequisite)",
     "author": "root",
     "date": "2026-08-18T17:44:14+00:00"
-  },
-  {
-    "hash": "13a47a394",
-    "subject": "Add AI-assisted status update drafting frontend, project-scoped v1 (category 9, feature 6)",
-    "author": "root",
-    "date": "2026-08-18T15:19:13+00:00"
-  },
-  {
-    "hash": "50b9854d4",
-    "subject": "Add AI-assisted status update drafting backend, project-scoped v1 (category 9, feature 6)",
-    "author": "root",
-    "date": "2026-08-18T15:01:39+00:00"
   }
 ]

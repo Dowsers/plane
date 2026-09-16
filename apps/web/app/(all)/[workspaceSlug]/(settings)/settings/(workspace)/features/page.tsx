@@ -88,7 +88,7 @@ function FeaturesPage() {
       setToast({
         type: TOAST_TYPE.ERROR,
         title: t("toast.error"),
-        message: "Something went wrong while updating timesheet approvals. Please try again.",
+        message: t("timesheets.settings.toast_error"),
       });
     }
   };

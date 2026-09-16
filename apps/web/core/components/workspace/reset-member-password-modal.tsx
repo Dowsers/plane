@@ -48,7 +48,7 @@ export const ResetMemberPasswordModal = observer(function ResetMemberPasswordMod
       const err = error as { error?: string };
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: err?.error || t("something_went_wrong_please_try_again"),
       });
     } finally {

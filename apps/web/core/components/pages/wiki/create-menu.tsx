@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { ChevronDown, FileText, FolderPlus, Plus } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { CustomMenu } from "@plane/ui";
@@ -32,6 +33,7 @@ export const WikiCreateMenu = observer(function WikiCreateMenu(props: Props) {
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   // store hooks
   const { createPage } = usePageStore(EPageStoreType.WORKSPACE);
+  const { t } = useTranslation();
 
   const handleCreatePage = async () => {
     setIsCreatingPage(true);
@@ -41,7 +43,7 @@ export const WikiCreateMenu = observer(function WikiCreateMenu(props: Props) {
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: error?.error || "The page could not be created. Please try again.",
       });
     } finally {

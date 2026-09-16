@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { APITokenService } from "@plane/services";
 import type { IApiToken } from "@plane/types";
@@ -28,6 +29,7 @@ const apiTokenService = new APITokenService();
 
 export function CreateApiTokenModal(props: Props) {
   const { isOpen, onClose } = props;
+  const { t } = useTranslation();
   // states
   const [neverExpires, setNeverExpires] = useState<boolean>(false);
   const [generatedToken, setGeneratedToken] = useState<IApiToken | null | undefined>(null);
@@ -69,11 +71,12 @@ export function CreateApiTokenModal(props: Props) {
           },
           false
         );
+        return;
       })
       .catch((err) => {
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: err.message || err.detail,
         });
 

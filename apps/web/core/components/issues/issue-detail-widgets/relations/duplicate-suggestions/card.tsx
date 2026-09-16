@@ -80,7 +80,11 @@ export const DuplicateSuggestionCard = observer(function DuplicateSuggestionCard
       await issueDuplicateSuggestionService.dismiss(workspaceSlug, projectId, issueId, suggestion.id);
       onResolved(suggestion.id, false);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("issue_duplicate_suggestions.action_error") });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("issue_duplicate_suggestions.action_error"),
+      });
     } finally {
       setPendingAction(null);
     }
@@ -94,7 +98,11 @@ export const DuplicateSuggestionCard = observer(function DuplicateSuggestionCard
       });
       onResolved(suggestion.id, true);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("issue_duplicate_suggestions.action_error") });
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("toast.error"),
+        message: t("issue_duplicate_suggestions.action_error"),
+      });
     } finally {
       setPendingAction(null);
     }

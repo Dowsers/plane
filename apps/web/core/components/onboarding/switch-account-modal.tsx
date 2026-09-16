@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { useTheme } from "next-themes";
 import { ArrowRightLeft } from "lucide-react";
 import { Dialog, Transition } from "@headlessui/react";
+import { useTranslation } from "@plane/i18n";
 // ui
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -32,6 +33,8 @@ export function SwitchAccountModal(props: Props) {
 
   const { setTheme } = useTheme();
 
+  const { t } = useTranslation();
+
   const handleClose = () => {
     setSwitchingAccount(false);
     onClose();
@@ -45,11 +48,12 @@ export function SwitchAccountModal(props: Props) {
         setTheme("system");
         router.push("/");
         handleClose();
+        return;
       })
       .catch(() =>
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: "Failed to sign out. Please try again.",
         })
       )

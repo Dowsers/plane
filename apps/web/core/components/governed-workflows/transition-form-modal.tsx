@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TWorkflowTransition, TWorkflowTransitionPayload } from "@plane/types";
 import { Button, Checkbox, EModalPosition, EModalWidth, ModalCore } from "@plane/ui";
@@ -71,6 +72,7 @@ const defaultState = () => ({
  */
 export function WorkflowTransitionFormModal(props: Props) {
   const { isOpen, handleClose, workspaceSlug, projectId, transition, onSaved } = props;
+  const { t } = useTranslation();
   const [state, setState] = useState(defaultState());
   const [isSaving, setIsSaving] = useState(false);
 
@@ -107,7 +109,7 @@ export function WorkflowTransitionFormModal(props: Props) {
   const handleSave = async () => {
     const validationError = validate();
     if (validationError) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: validationError });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: validationError });
       return;
     }
     const toState = state.toState;
@@ -148,7 +150,7 @@ export function WorkflowTransitionFormModal(props: Props) {
       handleClose();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to save the workflow transition.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSaving(false);
     }

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TPageCollection } from "@plane/types";
@@ -41,6 +42,7 @@ export const DeleteCollectionModal = observer(function DeleteCollectionModal(pro
   const router = useAppRouter();
   // store hooks
   const { removeCollection } = usePageCollectionStore();
+  const { t } = useTranslation();
 
   const handleClose = () => {
     setCascade(false);
@@ -51,13 +53,13 @@ export const DeleteCollectionModal = observer(function DeleteCollectionModal(pro
     setIsDeleting(true);
     try {
       await removeCollection(workspaceSlug, collection.id, cascade);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Folder deleted successfully." });
+      setToast({ type: TOAST_TYPE.SUCCESS, title: t("toast.success"), message: "Folder deleted successfully." });
       handleClose();
       router.push(`/${workspaceSlug}/wiki`);
     } catch (error: any) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: error?.error || "The folder could not be deleted. Please try again.",
       });
     } finally {

@@ -64,14 +64,14 @@ export const AIChangeProposalCard = (props: Props) => {
       await onResolve(proposal.id, action);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: action === "approve" ? t("ai.proposals.approve_success") : t("ai.proposals.reject_success"),
       });
     } catch (error: unknown) {
       const err = error as { error?: string; status?: number };
       const message = err?.error ?? t("ai.proposals.resolve_error");
       setLocalError(message);
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     }
   };
 

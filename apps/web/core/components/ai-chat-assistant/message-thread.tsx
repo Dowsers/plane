@@ -90,7 +90,7 @@ export const AIChatMessageThread = (props: Props) => {
           : err?.status === 429
             ? t("ai.chat.rate_limited")
             : (err?.error ?? t("ai.chat.send_error"));
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     }
   };
 

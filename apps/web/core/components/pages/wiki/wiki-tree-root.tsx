@@ -10,6 +10,7 @@ import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element
 import { ChevronDown } from "lucide-react";
 // plane imports
 import { cn } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // hooks
 import { useAppRouter } from "@/hooks/use-app-router";
 // plane web hooks
@@ -37,6 +38,8 @@ type Props = {
  */
 export const WikiTreeRoot = observer(function WikiTreeRoot(props: Props) {
   const { workspaceSlug } = props;
+  // i18n
+  const { t } = useTranslation();
   // states
   const [isArchivedOpen, setIsArchivedOpen] = useState(false);
   const [instructionOnRoot, setInstructionOnRoot] = useState(false);
@@ -114,7 +117,7 @@ export const WikiTreeRoot = observer(function WikiTreeRoot(props: Props) {
         {rootPageIds.length > 0 && (
           <>
             <div className="mt-2 flex items-center gap-1.5 px-2 py-1 text-11 font-medium text-placeholder">
-              No folder
+              {t("wiki.no_folder")}
             </div>
             {rootPageIds.map((pageId, index) => {
               const page = getPageById(pageId);
@@ -133,7 +136,7 @@ export const WikiTreeRoot = observer(function WikiTreeRoot(props: Props) {
         )}
 
         {rootCollectionIds.length === 0 && rootPageIds.length === 0 && (
-          <p className="px-2 py-1.5 text-13 text-placeholder">No pages or folders yet.</p>
+          <p className="px-2 py-1.5 text-13 text-placeholder">{t("wiki.tree_empty")}</p>
         )}
       </div>
 
@@ -145,7 +148,7 @@ export const WikiTreeRoot = observer(function WikiTreeRoot(props: Props) {
             className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-13 font-medium text-tertiary hover:bg-layer-1-hover"
           >
             <ChevronDown className={cn("size-3.5 transition-transform", { "-rotate-90": !isArchivedOpen })} />
-            Archived ({archivedPageIds.length})
+            {t("wiki.archived")} ({archivedPageIds.length})
           </button>
           {isArchivedOpen && <WikiArchivedSection workspaceSlug={workspaceSlug} pageIds={archivedPageIds} />}
         </div>

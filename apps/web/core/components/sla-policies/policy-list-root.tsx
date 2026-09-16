@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import useSWR, { mutate } from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TSLAPolicy } from "@plane/types";
 import { Button, Loader } from "@plane/ui";
@@ -49,6 +50,7 @@ export function SLAPolicyListRoot(props: Props) {
   const { workspaceSlug } = props;
   const [editingPolicy, setEditingPolicy] = useState<TSLAPolicy | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const { t } = useTranslation();
 
   const { data: policies, isLoading } = useSWR(POLICIES_KEY(workspaceSlug), () => slaPolicyService.list(workspaceSlug));
 
@@ -67,7 +69,7 @@ export function SLAPolicyListRoot(props: Props) {
       ]);
       refresh();
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Unable to reorder policies." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "Unable to reorder policies." });
     }
   };
 

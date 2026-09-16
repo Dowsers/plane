@@ -7,6 +7,7 @@
 import { useRef } from "react";
 import { observer } from "mobx-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 // types
 import type { IIssueDisplayProperties, TIssue } from "@plane/types";
@@ -27,6 +28,8 @@ type Props = {
 
 export const IssueColumn = observer(function IssueColumn(props: Props) {
   const { displayProperties, issueDetail, disableUserActions, property, updateIssue } = props;
+  // i18n
+  const { t } = useTranslation();
   // router
   const tableCellRef = useRef<HTMLTableCellElement | null>(null);
 
@@ -49,7 +52,7 @@ export const IssueColumn = observer(function IssueColumn(props: Props) {
       // rejection with nothing shown to the user.
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: getIssueUpdateErrorMessage(error, "Unable to update the work item."),
       });
     }

@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import useSWR, { mutate } from "swr";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TTimesheetPeriod } from "@plane/types";
 import { Button } from "@plane/ui";
@@ -69,6 +70,7 @@ type Props = {
  */
 export const MyTimesheet = observer(function MyTimesheet(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   const { data: currentUser } = useUser();
   const { joinedProjectIds, getProjectById } = useProject();
   const [filters, setFilters] = useState<TTimesheetFilters>({ group_by: "project" });
@@ -115,7 +117,7 @@ export const MyTimesheet = observer(function MyTimesheet(props: Props) {
       refreshPeriods();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to submit the timesheet for approval.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setSubmittingProjectId(null);
     }

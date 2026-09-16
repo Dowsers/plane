@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import { CheckCircle } from "lucide-react";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Tooltip } from "@plane/propel/tooltip";
@@ -57,6 +58,7 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
   // store hooks
   const { config } = useInstance();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
 
   const isUserAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
   const { isMobile } = usePlatformOS();
@@ -92,13 +94,14 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
           title: "Deleted successfully!",
           message: `${integration.title} integration deleted successfully.`,
         });
+        return;
       })
       .catch(() => {
         setDeletingIntegration(false);
 
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "Error!",
+          title: t("toast.error"),
           message: `${integration.title} integration could not be deleted. Please try again.`,
         });
       });

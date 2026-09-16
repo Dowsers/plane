@@ -56,7 +56,7 @@ export const AIConversationSidebar = (props: Props) => {
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);

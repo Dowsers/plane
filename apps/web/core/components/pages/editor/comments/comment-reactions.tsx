@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
+import { useTranslation } from "@plane/i18n";
 import { stringToEmoji } from "@plane/propel/emoji-icon-picker";
 import { EmojiReactionGroup, EmojiReactionPicker } from "@plane/propel/emoji-reaction";
 import type { EmojiReactionType } from "@plane/propel/emoji-reaction";
@@ -42,6 +43,7 @@ export const PageCommentReactions = observer(function PageCommentReactions(props
   // store hooks
   const { data: currentUser } = useUser();
   const { getUserDetails } = useMember();
+  const { t } = useTranslation();
   // derived values
   const { reactions } = comment;
 
@@ -58,7 +60,7 @@ export const PageCommentReactions = observer(function PageCommentReactions(props
         try {
           await page.comments.createReaction(comment.id, reaction);
         } catch (_error) {
-          setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Reaction creation failed" });
+          setToast({ title: t("toast.error"), type: TOAST_TYPE.ERROR, message: "Reaction creation failed" });
         }
       },
       remove: async (reaction: string) => {
@@ -66,7 +68,7 @@ export const PageCommentReactions = observer(function PageCommentReactions(props
           if (!currentUser?.id) throw new Error("Missing fields");
           await page.comments.removeReaction(comment.id, reaction, currentUser.id);
         } catch (_error) {
-          setToast({ title: "Error!", type: TOAST_TYPE.ERROR, message: "Reaction remove failed" });
+          setToast({ title: t("toast.error"), type: TOAST_TYPE.ERROR, message: "Reaction remove failed" });
         }
       },
       react: async (reaction: string) => {

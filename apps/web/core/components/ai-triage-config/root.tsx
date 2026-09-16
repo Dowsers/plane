@@ -92,7 +92,7 @@ export const ProjectAITriageConfigRoot = observer(function ProjectAITriageConfig
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasLoaded(true);
@@ -121,10 +121,14 @@ export const ProjectAITriageConfigRoot = observer(function ProjectAITriageConfig
         ai_triage_min_historical_issues: minHistoricalIssues,
       });
       setConfig(updated);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: t("project_settings.ai_triage.save_success") });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: t("project_settings.ai_triage.save_success"),
+      });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("ai.toast.error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSaving(false);
     }

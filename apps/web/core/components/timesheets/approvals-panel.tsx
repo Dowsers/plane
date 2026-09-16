@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import useSWR, { mutate } from "swr";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { EPillSize, EPillVariant, Pill } from "@plane/propel/pill";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TTimesheetPeriod } from "@plane/types";
@@ -50,6 +51,7 @@ type Props = {
  */
 export const TimesheetApprovalsPanel = observer(function TimesheetApprovalsPanel(props: Props) {
   const { workspaceSlug } = props;
+  const { t } = useTranslation();
   const { joinedProjectIds, getProjectById } = useProject();
   const { allowPermissions } = useUserPermissions();
   const { data: currentUser } = useUser();
@@ -102,7 +104,7 @@ export const TimesheetApprovalsPanel = observer(function TimesheetApprovalsPanel
       refresh();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to approve the timesheet period.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setActingOn(null);
     }

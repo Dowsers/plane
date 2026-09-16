@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 import { Ellipsis, Repeat } from "lucide-react";
 // plane imports
 import { ARCHIVABLE_STATE_GROUPS, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssue, TRecurringIssueTemplate } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
@@ -66,6 +67,8 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
     toggleArchiveIssueModal,
     isPeekMode = false,
   } = props;
+  // i18n
+  const { t } = useTranslation();
   // router
   const { workspaceSlug } = useParams();
   // states
@@ -156,7 +159,7 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
     } catch (error: unknown) {
       const message =
         (error as { error?: string })?.error ?? "Unable to convert this work item into a recurring template.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsConvertingToRecurring(false);
     }
@@ -288,7 +291,7 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
           onSaved={(saved) => {
             setToast({
               type: TOAST_TYPE.SUCCESS,
-              title: "Success!",
+              title: t("toast.success"),
               message: saved.is_active
                 ? `"${saved.name}" is now generating work items on a schedule.`
                 : `"${saved.name}" was saved as a draft recurring template.`,

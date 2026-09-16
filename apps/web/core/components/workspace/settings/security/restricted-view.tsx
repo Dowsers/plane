@@ -5,6 +5,7 @@
  */
 
 import { ShieldCheck } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 
 /**
  * Category 11 (docs/feature-specs/11-admin-security-sso.md in
@@ -19,16 +20,14 @@ import { ShieldCheck } from "lucide-react";
  * exists and knows whom to ask.
  */
 export function RestrictedToOwnerView() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-subtle bg-layer-2 px-6 py-16 text-center">
       <div className="grid size-12 place-items-center rounded-full bg-layer-3">
         <ShieldCheck className="size-5 text-tertiary" />
       </div>
-      <h4 className="text-body-sm-medium text-primary">Reserved for the workspace Owner</h4>
-      <p className="max-w-md text-body-xs-regular text-tertiary">
-        Security settings and the audit log are reserved for the workspace Owner. Contact the current Owner if you need
-        access.
-      </p>
+      <h4 className="text-body-sm-medium text-primary">{t("restricted_to_owner_view.title")}</h4>
+      <p className="max-w-md text-body-xs-regular text-tertiary">{t("restricted_to_owner_view.description")}</p>
     </div>
   );
 }

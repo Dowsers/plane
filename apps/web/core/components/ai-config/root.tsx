@@ -173,7 +173,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasLoaded(true);
@@ -196,7 +196,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasDuplicateDetectionLoaded(true);
@@ -217,7 +217,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("digest.admin.error") });
       })
       .finally(() => {
         if (!cancelled) setHasDigestSettingsLoaded(true);
@@ -239,7 +239,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasAssistantConfigLoaded(true);
@@ -266,10 +266,10 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       });
       setConfig(updated);
       setApiKey("");
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: t("ai.toast.save_success") });
+      setToast({ type: TOAST_TYPE.SUCCESS, title: t("toast.success"), message: t("ai.toast.save_success") });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("ai.toast.error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSaving(false);
     }
@@ -302,7 +302,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
     try {
       await updateWorkspace(workspaceSlug, { is_ai_summary_enabled: value });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsTogglingSummary(false);
     }
@@ -314,7 +314,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
     try {
       await updateWorkspace(workspaceSlug, { is_ai_update_draft_enabled: value });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsTogglingUpdateDraft(false);
     }
@@ -326,7 +326,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
     try {
       await updateWorkspace(workspaceSlug, { is_ai_triage_enabled: value });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsTogglingTriage(false);
     }
@@ -341,9 +341,13 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
         max_ai_update_regenerations: maxRegenerations,
         ai_update_daily_generation_limit: dailyGenerationLimit,
       });
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: t("ai.update_draft_settings.save_success") });
+      setToast({
+        type: TOAST_TYPE.SUCCESS,
+        title: t("toast.success"),
+        message: t("ai.update_draft_settings.save_success"),
+      });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsSavingUpdateDraftSettings(false);
     }
@@ -358,7 +362,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       });
       setDuplicateDetectionConfig(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsTogglingDuplicateDetection(false);
     }
@@ -375,11 +379,11 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       setDuplicateDetectionConfig(updated);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: t("ai.duplicate_detection_settings.save_success"),
       });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsSavingDuplicateDetectionSettings(false);
     }
@@ -394,7 +398,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       });
       setDigestSettings(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("digest.admin.error") });
     } finally {
       setIsTogglingDigestFeature(false);
     }
@@ -409,7 +413,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       });
       setDigestSettings(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("digest.admin.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("digest.admin.error") });
     } finally {
       setIsTogglingDigestLlmEnrichment(false);
     }
@@ -424,7 +428,7 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       });
       setAssistantConfig(updated);
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsTogglingAssistant(false);
     }
@@ -440,11 +444,11 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       setAssistantConfig(updated);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: t("ai.assistant_settings.save_success"),
       });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
     } finally {
       setIsSavingAssistantSettings(false);
     }
@@ -463,12 +467,12 @@ export const AIConfigSettingsRoot = observer(function AIConfigSettingsRoot(props
       await duplicateDetectionConfigService.triggerBackfill(workspaceSlug);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: t("ai.duplicate_detection_settings.backfill_started"),
       });
     } catch (error: unknown) {
       const err = error as { error?: string };
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: err?.error ?? t("ai.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: err?.error ?? t("ai.toast.error") });
     } finally {
       setIsBackfilling(false);
     }

@@ -79,7 +79,7 @@ export const ProjectDuplicateDetectionConfigRoot = observer(function ProjectDupl
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("ai.toast.error") });
+        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("ai.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasLoaded(true);
@@ -102,12 +102,12 @@ export const ProjectDuplicateDetectionConfigRoot = observer(function ProjectDupl
       setConfig(updated);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: t("project_settings.ai_duplicate_detection.save_success"),
       });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("ai.toast.error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSaving(false);
     }

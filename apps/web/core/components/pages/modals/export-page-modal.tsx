@@ -11,6 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useParams } from "react-router";
 // plane editor
 import type { EditorRefApi } from "@plane/editor";
+import { useTranslation } from "@plane/i18n";
 // plane ui
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -118,6 +119,8 @@ export function ExportPageModal(props: Props) {
   const [isExporting, setIsExporting] = useState(false);
   // params
   const { workspaceSlug, projectId } = useParams();
+  // i18n
+  const { t } = useTranslation();
   // form info
   const { control, reset, watch } = useForm<TFormValues>({
     defaultValues,
@@ -186,7 +189,7 @@ export function ExportPageModal(props: Props) {
       }
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: "Page exported successfully.",
       });
       handleClose();
@@ -194,7 +197,7 @@ export function ExportPageModal(props: Props) {
       console.error("Error in exporting page:", error);
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: "Page could not be exported. Please try again later.",
       });
     } finally {

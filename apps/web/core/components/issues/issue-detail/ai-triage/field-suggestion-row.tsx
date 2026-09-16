@@ -94,7 +94,7 @@ export const AITriageFieldSuggestionRow = observer(function AITriageFieldSuggest
       if (action === "accept") await issueOperations.fetch(workspaceSlug, projectId, issueId, false);
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("ai.triage.resolve_error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsResolving(null);
     }

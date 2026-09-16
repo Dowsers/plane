@@ -14,6 +14,7 @@ import type { TSearchEntityRequestPayload, TWebhookConnectionQueryParams } from 
 import { EFileAssetType } from "@plane/types";
 // plane utils
 import { cn } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // components
 import { LogoSpinner } from "@/components/common/logo-spinner";
 import { PageHead } from "@/components/core/page-title";
@@ -53,6 +54,8 @@ function WikiPageDetailsPage({ params }: Route.ComponentProps) {
   // router
   const router = useAppRouter();
   const { workspaceSlug, pageId } = params;
+  // i18n
+  const { t } = useTranslation();
   // store hooks
   const { createPage, fetchPageDetails } = usePageStore(storeType);
   const page = usePage({
@@ -162,12 +165,10 @@ function WikiPageDetailsPage({ params }: Route.ComponentProps) {
   if (pageDetailsError || !canCurrentUserAccessPage)
     return (
       <div className="flex h-full w-full flex-col items-center justify-center">
-        <h3 className="text-center text-16 font-semibold">Page not found</h3>
-        <p className="mt-3 text-center text-13 text-secondary">
-          The page you are trying to access doesn{"'"}t exist or you don{"'"}t have permission to view it.
-        </p>
+        <h3 className="text-center text-16 font-semibold">{t("wiki.page_not_found.title")}</h3>
+        <p className="mt-3 text-center text-13 text-secondary">{t("wiki.page_not_found.description")}</p>
         <Link href={`/${workspaceSlug}/wiki`} className={cn(getButtonStyling("secondary", "base"), "mt-5")}>
-          View the Wiki
+          {t("wiki.page_not_found.cta")}
         </Link>
       </div>
     );

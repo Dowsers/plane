@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { Button, EModalPosition, EModalWidth, ModalCore, TextArea } from "@plane/ui";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 
@@ -26,6 +27,7 @@ type Props = {
  */
 export function TimesheetRejectModal(props: Props) {
   const { isOpen, handleClose, onConfirm } = props;
+  const { t } = useTranslation();
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +39,7 @@ export function TimesheetRejectModal(props: Props) {
   const handleSubmit = async () => {
     const trimmed = reason.trim();
     if (!trimmed) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "A rejection reason is required." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "A rejection reason is required." });
       return;
     }
     setIsSubmitting(true);
@@ -46,7 +48,7 @@ export function TimesheetRejectModal(props: Props) {
       resetAndClose();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to reject the timesheet period.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSubmitting(false);
     }

@@ -69,7 +69,8 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
         return;
       })
       .catch(() => {
-        if (!cancelled) setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("flexible_query.toast.error") });
+        if (!cancelled)
+          setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("flexible_query.toast.error") });
       })
       .finally(() => {
         if (!cancelled) setHasLoadedQuotas(true);
@@ -86,7 +87,7 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
     try {
       await updateWorkspace(workspaceSlug, { is_flexible_query_enabled: !currentWorkspace.is_flexible_query_enabled });
     } catch {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: t("flexible_query.toast.error") });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("flexible_query.toast.error") });
     } finally {
       setIsTogglingEnabled(false);
     }
@@ -111,7 +112,7 @@ export const FlexibleQuerySettingsRoot = observer(function FlexibleQuerySettings
       });
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? t("flexible_query.toast.error");
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSavingQuotas(false);
     }

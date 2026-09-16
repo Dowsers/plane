@@ -12,6 +12,7 @@ import { ArrowUpToLine, Briefcase, Clipboard, History } from "lucide-react";
 import { WikiIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { ToggleSwitch } from "@plane/ui";
+import { useTranslation } from "@plane/i18n";
 // hooks
 import { useAppRouter } from "@/hooks/use-app-router";
 import { usePageConvertToWikiOperation } from "@/hooks/use-page-convert-operations";
@@ -35,6 +36,8 @@ type Props = {
 
 export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: Props) {
   const { page, storeType } = props;
+  // i18n
+  const { t } = useTranslation();
   // states
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isMoveToProjectModalOpen, setIsMoveToProjectModalOpen] = useState(false);
@@ -67,7 +70,7 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
           action: () => handleFullWidth(!isFullWidth),
           customContent: (
             <>
-              Full width
+              {t("page_actions.full_width")}
               <ToggleSwitch value={isFullWidth} onChange={() => {}} />
             </>
           ),
@@ -78,7 +81,7 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
           action: () => handleStickyToolbar(!isStickyToolbarEnabled),
           customContent: (
             <>
-              Sticky toolbar
+              {t("page_actions.sticky_toolbar")}
               <ToggleSwitch value={isStickyToolbarEnabled} onChange={() => {}} />
             </>
           ),
@@ -92,11 +95,11 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
             editorRef.copyMarkdownToClipboard();
             setToast({
               type: TOAST_TYPE.SUCCESS,
-              title: "Success!",
-              message: "Markdown copied to clipboard.",
+              title: t("toast.success"),
+              message: t("page_actions.markdown_copied_message"),
             });
           },
-          title: "Copy markdown",
+          title: t("common.actions.copy_markdown"),
           icon: Clipboard,
           shouldRender: true,
         },
@@ -111,14 +114,14 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
             });
             router.push(updatedRoute);
           },
-          title: "Version history",
+          title: t("page_actions.version_history"),
           icon: History,
           shouldRender: true,
         },
         {
           key: "export",
           action: () => setIsExportModalOpen(true),
-          title: "Export",
+          title: t("export"),
           icon: ArrowUpToLine,
           shouldRender: true,
         },
@@ -131,14 +134,14 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
         {
           key: "move-to-wiki",
           action: moveToWiki,
-          title: "Move to Wiki",
+          title: t("wiki.move_to_wiki"),
           icon: WikiIcon,
           shouldRender: storeType === EPageStoreType.PROJECT && canCurrentUserEditPage && !isConverting,
         },
         {
           key: "move-to-project",
           action: () => setIsMoveToProjectModalOpen(true),
-          title: "Move to project",
+          title: t("wiki.move_to_project"),
           icon: Briefcase,
           shouldRender: storeType === EPageStoreType.WORKSPACE && canCurrentUserEditPage,
         },
@@ -158,6 +161,7 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
       canCurrentUserEditPage,
       moveToWiki,
       isConverting,
+      t,
     ]
   );
 

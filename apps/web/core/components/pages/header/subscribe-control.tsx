@@ -13,6 +13,7 @@ import { Tooltip } from "@plane/propel/tooltip";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { Avatar, AvatarGroup } from "@plane/ui";
 import { cn, getFileURL } from "@plane/utils";
+import { useTranslation } from "@plane/i18n";
 // hooks
 import { useUser } from "@/hooks/store/user";
 // store
@@ -47,6 +48,8 @@ type Props = {
  */
 export const PageSubscribeControl = observer(function PageSubscribeControl({ page }: Props) {
   const { isSubscribed, subscribers, subscribe, unsubscribe } = page;
+  // i18n
+  const { t } = useTranslation();
   // store hooks
   const { data: currentUser } = useUser();
 
@@ -61,22 +64,22 @@ export const PageSubscribeControl = observer(function PageSubscribeControl({ pag
         await unsubscribe();
         setToast({
           type: TOAST_TYPE.SUCCESS,
-          title: "Unsubscribed",
-          message: "You will no longer be notified about this page.",
+          title: t("page_subscribe_control.unsubscribed_title"),
+          message: t("page_subscribe_control.unsubscribed_message"),
         });
       } else {
         await subscribe();
         setToast({
           type: TOAST_TYPE.SUCCESS,
-          title: "Subscribed",
-          message: "You will be notified about changes to this page.",
+          title: t("page_subscribe_control.subscribed_title"),
+          message: t("page_subscribe_control.subscribed_message"),
         });
       }
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: "Your subscription to this page could not be updated. Please try again.",
+        title: t("toast.error"),
+        message: t("page_subscribe_control.error_message"),
       });
     }
   };
@@ -94,13 +97,20 @@ export const PageSubscribeControl = observer(function PageSubscribeControl({ pag
           ))}
         </AvatarGroup>
       )}
-      <Tooltip tooltipContent={isSubscribed ? "Unsubscribe" : "Subscribe"} position="bottom">
+      <Tooltip
+        tooltipContent={isSubscribed ? t("common.actions.unsubscribe") : t("common.actions.subscribe")}
+        position="bottom"
+      >
         <IconButton
           variant="ghost"
           size="lg"
           icon={Bell}
           onClick={handleToggle}
-          aria-label={isSubscribed ? "Unsubscribe from this page" : "Subscribe to this page"}
+          aria-label={
+            isSubscribed
+              ? t("page_subscribe_control.unsubscribe_aria_label")
+              : t("page_subscribe_control.subscribe_aria_label")
+          }
           className={cn(isSubscribed && "text-accent-primary [&_svg]:fill-current")}
         />
       </Tooltip>

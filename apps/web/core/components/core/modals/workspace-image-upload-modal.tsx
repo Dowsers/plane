@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 // plane imports
 import { ACCEPTED_AVATAR_IMAGE_MIME_TYPES_FOR_REACT_DROPZONE, MAX_FILE_SIZE } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { UserCirclePropertyIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -34,6 +35,7 @@ const fileService = new FileService();
 
 export const WorkspaceImageUploadModal = observer(function WorkspaceImageUploadModal(props: Props) {
   const { handleRemove, isOpen, onClose, onSuccess, value } = props;
+  const { t } = useTranslation();
   // states
   const [image, setImage] = useState<File | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -79,7 +81,7 @@ export const WorkspaceImageUploadModal = observer(function WorkspaceImageUploadM
       console.log("error", error);
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error",
+        title: t("error"),
         message: error.error || "Something went wrong",
       });
     } finally {
@@ -130,7 +132,7 @@ export const WorkspaceImageUploadModal = observer(function WorkspaceImageUploadM
                   </button>
                   <img
                     src={image ? URL.createObjectURL(image) : value ? getFileURL(value) : ""}
-                    alt="image"
+                    alt=""
                     className="absolute top-0 left-0 h-full w-full rounded-md object-cover"
                   />
                 </>

@@ -76,7 +76,7 @@ export const TimesheetExportButton = observer(function TimesheetExportButton(pro
       void mutate(WORKLOG_EXPORTS_KEY(workspaceSlug));
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to start the export.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsTriggering(false);
     }

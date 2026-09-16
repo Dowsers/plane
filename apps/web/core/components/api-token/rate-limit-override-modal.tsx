@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { mutate } from "swr";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IApiToken } from "@plane/types";
 import { Button, CustomSelect, EModalPosition, EModalWidth, Input, ModalCore, TextArea } from "@plane/ui";
@@ -44,6 +45,7 @@ type Props = {
  */
 export function RequestRateLimitOverrideModal(props: Props) {
   const { isOpen, onClose, token } = props;
+  const { t } = useTranslation();
   // store hooks
   const { workspaces } = useWorkspace();
   const { allowPermissions, fetchUserWorkspaceInfo } = useUserPermissions();
@@ -103,15 +105,15 @@ export function RequestRateLimitOverrideModal(props: Props) {
   const handleSubmit = async () => {
     const parsedValue = Number(value);
     if (!workspaceSlug) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Select a workspace first." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "Select a workspace first." });
       return;
     }
     if (!value || Number.isNaN(parsedValue) || parsedValue <= 0) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "Enter a positive target rate." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "Enter a positive target rate." });
       return;
     }
     if (!reason.trim()) {
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message: "A reason is required for traceability." });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: "A reason is required for traceability." });
       return;
     }
 
@@ -122,11 +124,11 @@ export function RequestRateLimitOverrideModal(props: Props) {
         reason: reason.trim(),
       });
       await mutate(API_TOKENS_LIST);
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "Success!", message: "Rate limit override applied." });
+      setToast({ type: TOAST_TYPE.SUCCESS, title: t("toast.success"), message: "Rate limit override applied." });
       handleClose();
     } catch (error: unknown) {
       const message = (error as { error?: string })?.error ?? "Unable to apply the rate limit override.";
-      setToast({ type: TOAST_TYPE.ERROR, title: "Error!", message });
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message });
     } finally {
       setIsSubmitting(false);
     }

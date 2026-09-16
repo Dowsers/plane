@@ -1841,6 +1841,8 @@ export default {
       },
       members: {
         title: "Members",
+        agents_tab: "Agents",
+        roles_tab: "Roles",
         add_member: "Add member",
         pending_invites: "Pending invites",
         invitations_sent_successfully: "Invitations sent successfully",
@@ -2005,6 +2007,9 @@ export default {
         set_date: "Set date",
         expires_at: "Expires {date} at {time}",
       },
+      security: {
+        title: "Security",
+      },
     },
     empty_state: {
       api_tokens: {
@@ -2123,6 +2128,9 @@ export default {
         description:
           "When deleting a project, all of the data and resources within that project will be permanently removed and cannot be recovered.",
         button: "Delete my project",
+        tooltip_owner: "You can delete this project as its Project Owner.",
+        tooltip_admin: "You can delete this project as a workspace Admin.",
+        tooltip_restricted: "Reserved for the Project Owner or a workspace Admin.",
       },
       toast: {
         success: "Project updated successfully",
@@ -2629,11 +2637,14 @@ export default {
       title: "Timesheet approvals",
       description:
         "Require team members to submit their logged time for a period before it counts as final, and let the project lead or a workspace Admin approve or reject it.",
+      toast_error: "Something went wrong while updating timesheet approvals. Please try again.",
     },
   },
   project_templates: {
     label: "Project templates",
     save_as_template: "Save as template",
+    save_as_template_description:
+      "Capture this project's states, labels, and members as a reusable template for future projects.",
     use_template: "Use template",
     start_from_scratch: "Start from scratch",
     start_from_template: "Start from a template",
@@ -4154,6 +4165,12 @@ export default {
   wiki: {
     label: "Wiki",
     no_folder: "No folder",
+    tree_empty: "No pages or folders yet.",
+    page_not_found: {
+      title: "Page not found",
+      description: "The page you are trying to access doesn't exist or you don't have permission to view it.",
+      cta: "View the Wiki",
+    },
     archived: "Archived",
     new_page: "New page",
     new_folder: "New folder",
@@ -4208,11 +4225,14 @@ export default {
       convert_to_project_success: "Page moved to the project.",
       convert_error: "The page could not be moved. Please try again.",
       max_depth_error: "Folders can only be nested 3 levels deep.",
+      settings_update_success: "Wiki settings updated.",
     },
     settings: {
       title: "Wiki",
       description: "Control who can create folders and pages at the top level of the workspace Wiki.",
       root_creation_role_label: "Who can create at the Wiki root",
+      root_creation_role_description:
+        "Sub-folders and pages created inside an existing folder are not affected by this setting.",
       root_creation_role_admin: "Admins only",
       root_creation_role_member: "Admins and Members",
     },
@@ -4265,6 +4285,32 @@ export default {
       select_project_placeholder: "Select a project",
     },
   },
+  page_actions: {
+    lock: "Lock",
+    unlock: "Unlock",
+    make_private: "Make private",
+    make_public: "Make public",
+    move: "Move",
+    full_width: "Full width",
+    sticky_toolbar: "Sticky toolbar",
+    version_history: "Version history",
+    markdown_copied_message: "Markdown copied to clipboard.",
+  },
+  page_reactions: {
+    create_success: "Reaction created successfully",
+    create_error: "Reaction creation failed",
+    remove_success: "Reaction removed successfully",
+    remove_error: "Reaction remove failed",
+  },
+  page_subscribe_control: {
+    unsubscribed_title: "Unsubscribed",
+    unsubscribed_message: "You will no longer be notified about this page.",
+    subscribed_title: "Subscribed",
+    subscribed_message: "You will be notified about changes to this page.",
+    error_message: "Your subscription to this page could not be updated. Please try again.",
+    unsubscribe_aria_label: "Unsubscribe from this page",
+    subscribe_aria_label: "Subscribe to this page",
+  },
   project_members: {
     full_name: "Full name",
     display_name: "Display name",
@@ -4273,6 +4319,10 @@ export default {
     role: "Role",
   },
   power_k: {
+    search: {
+      loading_more_results: "Loading more results…",
+      view_all_results: "View all results",
+    },
     contextual_actions: {
       work_item: {
         title: "Work item actions",
@@ -5366,6 +5416,20 @@ export default {
     },
     invite_restriction: {
       title: "Who can invite members",
+      options: {
+        owner_only: {
+          label: "Owner only",
+          description: "Only the workspace Owner can invite new members.",
+        },
+        admins_and_above: {
+          label: "Admins and above (default)",
+          description: "Admins (and the Owner) can invite new members.",
+        },
+        admins_and_members: {
+          label: "Admins and Members",
+          description: "Admins and Members can invite new members.",
+        },
+      },
     },
     session_timeout: {
       title: "Session idle timeout",
@@ -5404,6 +5468,10 @@ export default {
       status: "Status",
       verified_at: "Verified at",
     },
+    method: {
+      dns_txt: "DNS TXT record",
+      html_file: "HTML file upload",
+    },
     status_verified: "Verified",
     status_pending: "Pending",
     verify_now: "Verify now",
@@ -5412,6 +5480,69 @@ export default {
       content:
         "Are you sure you want to remove this verified domain? Any SSO enforcement relying on it will stop applying.",
     },
+  },
+  add_verified_domain_modal: {
+    title: "Add a verified domain",
+    description: "Prove ownership of an email domain before you can enforce SSO-only login for it.",
+    method_label: "Verification method",
+    verify_heading: "Verify {domain}",
+    dns_instructions:
+      'Add the following TXT record on your domain\'s DNS, then come back and hit "Verify now" on the list.',
+    html_instructions: 'Publish the following file on your domain, then come back and hit "Verify now" on the list.',
+    record_type: "Record type",
+    record_name: "Record name",
+    record_value: "Record value",
+    file_path_label: "File path (served over HTTPS or HTTP)",
+    file_content_label: "File content (plain text)",
+    done: "Done",
+    toast: {
+      add_failed_title: "Could not add domain",
+      copied_title: "Copied",
+      copied_message: "Copied to clipboard.",
+    },
+  },
+  security_settings: {
+    security_policy: {
+      title: "Security policy",
+      description_owner: "Configure sign-in and session rules for this workspace.",
+      description_non_owner:
+        "Sign-in and session rules for this workspace - read-only, reserved for the workspace Owner.",
+    },
+    verified_domains: {
+      title: "Verified domains",
+      description: "Prove ownership of an email domain to enforce SSO-only login for it.",
+    },
+    audit_log: {
+      title: "Audit log",
+      description: "Audit log of sensitive workspace actions - reserved for the workspace Owner.",
+    },
+    scim_provisioning: {
+      title: "SCIM Provisioning",
+      description: "Connect an identity provider to automatically create, update, and deactivate members.",
+    },
+  },
+  restricted_to_owner_view: {
+    title: "Reserved for the workspace Owner",
+    description:
+      "Security settings and the audit log are reserved for the workspace Owner. Contact the current Owner if you need access.",
+  },
+  generated_scim_token_details: {
+    title: "SCIM token generated",
+    description:
+      "Copy this token now - it won't be shown again. Paste both values below into your identity provider's SCIM connection settings.",
+    base_url: "Base URL",
+    base_url_copied_message: "Base URL copied to clipboard.",
+    copy_base_url: "Copy Base URL",
+    bearer_token: "Bearer token",
+    token_copied_message: "Token copied to clipboard.",
+    copy_token: "Copy token",
+    copied_title: "Copied",
+  },
+  role_list_item: {
+    no_bundles_attached: "No bundles attached",
+    show_effective_permissions: "Show effective permissions ({count})",
+    hide_effective_permissions: "Hide effective permissions ({count})",
+    no_permissions: "This role grants none of the 5 in-scope permissions.",
   },
   transfer_ownership_modal: {
     toast: {

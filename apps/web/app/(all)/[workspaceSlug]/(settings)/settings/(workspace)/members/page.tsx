@@ -73,7 +73,7 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
 
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
+        title: t("toast.success"),
         message: t("workspace_settings.settings.members.invitations_sent_successfully"),
       });
     } catch (error: unknown) {
@@ -84,7 +84,7 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
       }
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
+        title: t("toast.error"),
         message: `${message ?? t("something_went_wrong_please_try_again")}`,
       });
 
@@ -176,8 +176,8 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as string)}>
           <Tabs.List>
             <Tabs.Trigger value={TAB_MEMBERS}>{t("workspace_settings.settings.members.title")}</Tabs.Trigger>
-            <Tabs.Trigger value={TAB_AGENTS}>Agents</Tabs.Trigger>
-            <Tabs.Trigger value={TAB_ROLES}>Roles</Tabs.Trigger>
+            <Tabs.Trigger value={TAB_AGENTS}>{t("workspace_settings.settings.members.agents_tab")}</Tabs.Trigger>
+            <Tabs.Trigger value={TAB_ROLES}>{t("workspace_settings.settings.members.roles_tab")}</Tabs.Trigger>
             <Tabs.Indicator />
           </Tabs.List>
           <Tabs.Content value={TAB_MEMBERS} className="pt-4">

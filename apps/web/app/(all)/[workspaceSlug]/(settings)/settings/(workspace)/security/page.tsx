@@ -7,6 +7,7 @@
 import { observer } from "mobx-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 // components
 import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view";
 import { PageHead } from "@/components/core/page-title";
@@ -60,11 +61,14 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
   const { workspaceUserInfo, allowPermissions, workspaceInfoBySlug } = useUserPermissions();
   const { currentWorkspace } = useWorkspace();
   const { config } = useInstance();
+  const { t } = useTranslation();
 
   // derived values
   const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
   const isOwner = Boolean(workspaceInfoBySlug(workspaceSlug)?.is_owner);
-  const pageTitle = currentWorkspace?.name ? `${currentWorkspace.name} - Security` : undefined;
+  const pageTitle = currentWorkspace?.name
+    ? `${currentWorkspace.name} - ${t("workspace_settings.settings.security.title")}`
+    : undefined;
   const isScimEnabled = Boolean(config?.is_scim_enabled);
 
   if (workspaceUserInfo && !isWorkspaceAdmin) {
@@ -77,11 +81,11 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
       <div className="flex w-full flex-col gap-y-10">
         <div className="flex flex-col gap-y-4">
           <SettingsHeading
-            title="Security policy"
+            title={t("security_settings.security_policy.title")}
             description={
               isOwner
-                ? "Configure sign-in and session rules for this workspace."
-                : "Sign-in and session rules for this workspace - read-only, reserved for the workspace Owner."
+                ? t("security_settings.security_policy.description_owner")
+                : t("security_settings.security_policy.description_non_owner")
             }
           />
           <SecurityPolicyPanel workspaceSlug={workspaceSlug} isOwner={isOwner} />
@@ -89,16 +93,16 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-y-4">
           <SettingsHeading
-            title="Verified domains"
-            description="Prove ownership of an email domain to enforce SSO-only login for it."
+            title={t("security_settings.verified_domains.title")}
+            description={t("security_settings.verified_domains.description")}
           />
           <VerifiedDomainsPanel workspaceSlug={workspaceSlug} isOwner={isOwner} />
         </div>
 
         <div className="flex flex-col gap-y-4">
           <SettingsHeading
-            title="Audit log"
-            description="Audit log of sensitive workspace actions - reserved for the workspace Owner."
+            title={t("security_settings.audit_log.title")}
+            description={t("security_settings.audit_log.description")}
           />
           {isOwner ? <WorkspaceSecurityAuditLog workspaceSlug={workspaceSlug} /> : <RestrictedToOwnerView />}
         </div>
@@ -106,8 +110,8 @@ function SecuritySettingsPage({ params }: Route.ComponentProps) {
         {isScimEnabled && (
           <div className="flex flex-col gap-y-4">
             <SettingsHeading
-              title="SCIM Provisioning"
-              description="Connect an identity provider to automatically create, update, and deactivate members."
+              title={t("security_settings.scim_provisioning.title")}
+              description={t("security_settings.scim_provisioning.description")}
             />
             <SCIMProvisioningPanel workspaceSlug={workspaceSlug} />
           </div>

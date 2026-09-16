@@ -1885,6 +1885,8 @@ export default {
       },
       members: {
         title: "Membres",
+        agents_tab: "Agents",
+        roles_tab: "Rôles",
         add_member: "Ajouter un membre",
         pending_invites: "Invitations en attente",
         invitations_sent_successfully: "Invitations envoyées avec succès",
@@ -2052,6 +2054,9 @@ export default {
         set_date: "Définir la date",
         expires_at: "Expire le {date} à {time}",
       },
+      security: {
+        title: "Sécurité",
+      },
     },
     empty_state: {
       api_tokens: {
@@ -2172,6 +2177,9 @@ export default {
         title: "Supprimer le projet",
         description:
           "Lors de la suppression d’un projet, toutes les données et ressources de ce projet seront définitivement supprimées et ne pourront pas être récupérées.",
+        tooltip_owner: "Vous pouvez supprimer ce projet en tant que propriétaire du projet.",
+        tooltip_admin: "Vous pouvez supprimer ce projet en tant qu’administrateur de l’espace de travail.",
+        tooltip_restricted: "Réservé au propriétaire du projet ou à un administrateur de l’espace de travail.",
         button: "Supprimer mon projet",
       },
       toast: {
@@ -3281,6 +3289,8 @@ export default {
     labels_count: "{count} étiquettes",
     name: "Nom du modèle",
     save_as_template: "Enregistrer comme modèle",
+    save_as_template_description:
+      "Capturez les états, étiquettes et membres de ce projet sous forme de modèle réutilisable pour de futurs projets.",
     settings: {
       description:
         "Des plans réutilisables (états, étiquettes, membres, éléments de travail de départ) pour vos nouveaux projets.",
@@ -3504,11 +3514,19 @@ export default {
     new_folder: "Nouveau dossier",
     new_page: "Nouvelle page",
     no_folder: "Aucun dossier",
+    tree_empty: "Aucune page ou dossier pour le moment.",
+    page_not_found: {
+      title: "Page introuvable",
+      description: "La page que vous essayez d'ouvrir n'existe pas ou vous n'avez pas la permission de la consulter.",
+      cta: "Voir le Wiki",
+    },
     rename_folder: "Renommer le dossier",
     search_badge: "Wiki",
     settings: {
       description: "Contrôlez qui peut créer des dossiers et des pages à la racine du Wiki de l’espace de travail.",
       root_creation_role_admin: "Administrateurs uniquement",
+      root_creation_role_description:
+        "Les sous-dossiers et les pages créés à l’intérieur d’un dossier existant ne sont pas affectés par ce paramètre.",
       root_creation_role_label: "Qui peut créer du contenu à la racine du Wiki",
       root_creation_role_member: "Administrateurs et membres",
       title: "Wiki",
@@ -3524,6 +3542,7 @@ export default {
       max_depth_error: "Les dossiers ne peuvent être imbriqués que sur 3 niveaux maximum.",
       page_move_error: "La page n’a pas pu être déplacée. Veuillez réessayer.",
       page_move_success: "Page déplacée avec succès.",
+      settings_update_success: "Paramètres du Wiki mis à jour.",
     },
     comments: {
       anchor_not_found: "Texte d'ancrage introuvable dans le document :",
@@ -3572,6 +3591,32 @@ export default {
       move_button: "Déplacer",
       select_project_placeholder: "Sélectionner un projet",
     },
+  },
+  page_actions: {
+    lock: "Verrouiller",
+    unlock: "Déverrouiller",
+    make_private: "Rendre privée",
+    make_public: "Rendre publique",
+    move: "Déplacer",
+    full_width: "Pleine largeur",
+    sticky_toolbar: "Barre d'outils fixe",
+    version_history: "Historique des versions",
+    markdown_copied_message: "Markdown copié dans le presse-papiers.",
+  },
+  page_reactions: {
+    create_success: "Réaction ajoutée avec succès",
+    create_error: "Échec de l'ajout de la réaction",
+    remove_success: "Réaction supprimée avec succès",
+    remove_error: "Échec de la suppression de la réaction",
+  },
+  page_subscribe_control: {
+    unsubscribed_title: "Désabonné",
+    unsubscribed_message: "Vous ne recevrez plus de notifications pour cette page.",
+    subscribed_title: "Abonné",
+    subscribed_message: "Vous recevrez des notifications pour les modifications de cette page.",
+    error_message: "Votre abonnement à cette page n'a pas pu être mis à jour. Veuillez réessayer.",
+    unsubscribe_aria_label: "Se désabonner de cette page",
+    subscribe_aria_label: "S'abonner à cette page",
   },
   workspace_dashboards: {
     create_dashboard: "Nouveau tableau de bord",
@@ -3715,6 +3760,10 @@ export default {
     },
   },
   power_k: {
+    search: {
+      loading_more_results: "Chargement de plus de résultats…",
+      view_all_results: "Voir tous les résultats",
+    },
     account_actions: {
       sign_out: "Se déconnecter",
       workspace_invites: "Invitations à l’espace de travail",
@@ -4176,6 +4225,8 @@ export default {
       description:
         "Exigez que les membres de l’équipe soumettent leur temps enregistré pour une période avant qu’il ne soit considéré comme définitif, et laissez le chef de projet ou un administrateur de l’espace de travail l’approuver ou le rejeter.",
       title: "Validation des feuilles de temps",
+      toast_error:
+        "Une erreur s’est produite lors de la mise à jour de la validation des feuilles de temps. Veuillez réessayer.",
     },
   },
   timezone_setting: "Paramètre de fuseau horaire actuel.",
@@ -5619,6 +5670,20 @@ export default {
     },
     invite_restriction: {
       title: "Qui peut inviter des membres",
+      options: {
+        owner_only: {
+          label: "Proprietaire uniquement",
+          description: "Seul le proprietaire de l'espace de travail peut inviter de nouveaux membres.",
+        },
+        admins_and_above: {
+          label: "Administrateurs et plus (par defaut)",
+          description: "Les administrateurs (et le proprietaire) peuvent inviter de nouveaux membres.",
+        },
+        admins_and_members: {
+          label: "Administrateurs et membres",
+          description: "Les administrateurs et les membres peuvent inviter de nouveaux membres.",
+        },
+      },
     },
     session_timeout: {
       title: "Delai d'inactivite de session",
@@ -5659,6 +5724,10 @@ export default {
       status: "Statut",
       verified_at: "Verifie le",
     },
+    method: {
+      dns_txt: "Enregistrement DNS TXT",
+      html_file: "Televersement de fichier HTML",
+    },
     status_verified: "Verifie",
     status_pending: "En attente",
     verify_now: "Verifier maintenant",
@@ -5667,6 +5736,73 @@ export default {
       content:
         "Etes-vous sur de vouloir supprimer ce domaine verifie ? Toute application du SSO qui en depend cessera de s'appliquer.",
     },
+  },
+  add_verified_domain_modal: {
+    title: "Ajouter un domaine verifie",
+    description:
+      "Prouvez la propriete d'un domaine de messagerie avant de pouvoir y forcer la connexion via SSO uniquement.",
+    method_label: "Methode de verification",
+    verify_heading: "Verifier {domain}",
+    dns_instructions:
+      'Ajoutez l\'enregistrement TXT suivant sur le DNS de votre domaine, puis revenez cliquer sur "Verifier maintenant" dans la liste.',
+    html_instructions:
+      'Publiez le fichier suivant sur votre domaine, puis revenez cliquer sur "Verifier maintenant" dans la liste.',
+    record_type: "Type d'enregistrement",
+    record_name: "Nom de l'enregistrement",
+    record_value: "Valeur de l'enregistrement",
+    file_path_label: "Chemin du fichier (servi via HTTPS ou HTTP)",
+    file_content_label: "Contenu du fichier (texte brut)",
+    done: "Termine",
+    toast: {
+      add_failed_title: "Impossible d'ajouter le domaine",
+      copied_title: "Copie",
+      copied_message: "Copie dans le presse-papiers.",
+    },
+  },
+  security_settings: {
+    security_policy: {
+      title: "Politique de securite",
+      description_owner: "Configurez les regles de connexion et de session pour cet espace de travail.",
+      description_non_owner:
+        "Regles de connexion et de session pour cet espace de travail - lecture seule, reservees au proprietaire de l'espace de travail.",
+    },
+    verified_domains: {
+      title: "Domaines verifies",
+      description: "Prouvez la propriete d'un domaine de messagerie pour y forcer la connexion via SSO uniquement.",
+    },
+    audit_log: {
+      title: "Journal d'audit",
+      description:
+        "Journal d'audit des actions sensibles de l'espace de travail - reserve au proprietaire de l'espace de travail.",
+    },
+    scim_provisioning: {
+      title: "Provisionnement SCIM",
+      description:
+        "Connectez un fournisseur d'identite pour creer, mettre a jour et desactiver automatiquement les membres.",
+    },
+  },
+  restricted_to_owner_view: {
+    title: "Reserve au proprietaire de l'espace de travail",
+    description:
+      "Les parametres de securite et le journal d'audit sont reserves au proprietaire de l'espace de travail. Contactez le proprietaire actuel si vous avez besoin d'y acceder.",
+  },
+  generated_scim_token_details: {
+    title: "Jeton SCIM genere",
+    description:
+      "Copiez ce jeton maintenant - il ne sera plus affiche par la suite. Collez les deux valeurs ci-dessous dans les parametres de connexion SCIM de votre fournisseur d'identite.",
+    base_url: "URL de base",
+    base_url_copied_message: "URL de base copiee dans le presse-papiers.",
+    copy_base_url: "Copier l'URL de base",
+    bearer_token: "Jeton Bearer",
+    token_copied_message: "Jeton copie dans le presse-papiers.",
+    copy_token: "Copier le jeton",
+    copied_title: "Copie",
+  },
+  role_list_item: {
+    no_bundles_attached: "Aucun lot associe",
+    show_effective_permissions: "Afficher les permissions effectives ({count})",
+    hide_effective_permissions: "Masquer les permissions effectives ({count})",
+    no_permissions: "Ce role n'accorde aucune des 5 permissions concernees.",
   },
   transfer_ownership_modal: {
     toast: {

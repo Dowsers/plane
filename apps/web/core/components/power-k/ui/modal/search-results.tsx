@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 // plane imports
 import { POWER_K_SEARCH_RESULTS_PAGE_SIZE } from "@plane/constants";
 import type { IWorkspaceSearchResults } from "@plane/types";
+import { useTranslation } from "@plane/i18n";
 // components
 import type { TPowerKSearchResultsKeys } from "@/components/power-k/core/types";
 // hooks
@@ -44,6 +45,8 @@ const getResultItemId = (item: any): string => item.id ?? item.comment_id ?? ite
 
 export const PowerKModalSearchResults = observer(function PowerKModalSearchResults(props: Props) {
   const { closePalette, results, onViewAllResults, expandedCategories, loadingCategory } = props;
+  // i18n
+  const { t } = useTranslation();
   // router
   const router = useAppRouter();
   const { projectId: routerProjectId, workspaceSlug: routerWorkspaceSlug } = useParams();
@@ -77,7 +80,7 @@ export const PowerKModalSearchResults = observer(function PowerKModalSearchResul
         const isLoadingMore = loadingCategory === typedKey;
 
         return (
-          <Command.Group key={key} heading={currentSection.title}>
+          <Command.Group key={key} heading={t(currentSection.title)}>
             {section.map((item) => {
               const itemId = getResultItemId(item);
               let value = `${key}-${itemId}`;
@@ -117,7 +120,7 @@ export const PowerKModalSearchResults = observer(function PowerKModalSearchResul
             {canShowViewAll && (
               <PowerKModalCommandItem
                 key={`${key}-view-all`}
-                label={isLoadingMore ? "Loading more results…" : "View all results"}
+                label={isLoadingMore ? t("power_k.search.loading_more_results") : t("power_k.search.view_all_results")}
                 iconNode={<ChevronRight className="size-3.5 shrink-0 text-tertiary" />}
                 isDisabled={isLoadingMore}
                 onSelect={() => onViewAllResults(typedKey)}

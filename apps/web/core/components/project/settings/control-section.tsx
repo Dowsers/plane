@@ -67,7 +67,7 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
   // two statuses.
   const isProjectOwner = Boolean(currentUser && getProjectMemberDetails(currentUser.id, projectId)?.is_owner);
   const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE, workspaceSlug);
-  const restrictionTooltip = "Reserved for the Project Owner or a workspace Admin.";
+  const restrictionTooltip = t("project_settings.general.delete_project.tooltip_restricted");
 
   return (
     <div className="mt-10">
@@ -98,7 +98,7 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
         <SettingsBoxedControlItem
           className="rounded-b-none border-0 border-b"
           title={t("project_templates.save_as_template")}
-          description="Capture this project's states, labels, and members as a reusable template for future projects."
+          description={t("project_templates.save_as_template_description")}
           control={
             <Button variant="secondary" onClick={() => setSaveAsTemplate(true)}>
               {t("project_templates.save_as_template")}
@@ -109,7 +109,7 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
         <SettingsBoxedControlItem
           className="rounded-none border-0 border-b"
           title={t("archive")}
-          description="Archiving a project will unlist your project from your side navigation although you will still be able to access it from your projects page. You can restore the project or delete it whenever you want."
+          description={t("project_settings.general.archive_project.description")}
           control={
             <Button variant="secondary" onClick={() => setArchiveProject(true)}>
               {t("archive")}
@@ -125,9 +125,9 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
               <Tooltip
                 tooltipContent={
                   isProjectOwner
-                    ? "You can delete this project as its Project Owner."
+                    ? t("project_settings.general.delete_project.tooltip_owner")
                     : isWorkspaceAdmin
-                      ? "You can delete this project as a workspace Admin."
+                      ? t("project_settings.general.delete_project.tooltip_admin")
                       : restrictionTooltip
                 }
               >
@@ -135,7 +135,7 @@ export const GeneralProjectSettingsControlSection = observer(function GeneralPro
               </Tooltip>
             </span>
           }
-          description="When deleting a project, all of the data and resources within that project will be permanently removed and cannot be recovered."
+          description={t("project_settings.general.delete_project.description")}
           control={
             <Button
               variant="error-outline"
