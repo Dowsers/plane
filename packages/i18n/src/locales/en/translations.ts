@@ -3379,6 +3379,7 @@ export default {
   milestones: {
     label: "Milestones",
     create_milestone: "Create milestone",
+    create_new: "Create new milestone",
     update_milestone: "Update milestone",
     name: "Name",
     description: "Description",

@@ -9,15 +9,20 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import { usePopper } from "react-popper";
-import { Flag } from "lucide-react";
+import { Flag, Plus } from "lucide-react";
 import { Combobox } from "@headlessui/react";
 // plane imports
+import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "@plane/propel/icons";
+import type { IMilestone } from "@plane/types";
 import { ComboDropDown } from "@plane/ui";
 import { cn } from "@plane/utils";
+// components
+import { CreateUpdateMilestoneModal } from "@/components/milestones/create-update-modal";
 // hooks
 import { useMilestone } from "@/hooks/store/use-milestone";
+import { useUserPermissions } from "@/hooks/store/user";
 import { useDropdown } from "@/hooks/use-dropdown";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // local imports
@@ -60,9 +65,11 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
   const { t } = useTranslation();
   const { workspaceSlug } = useParams();
   const { getProjectMilestoneIds, getMilestoneById, fetchMilestones } = useMilestone();
+  const { allowPermissions } = useUserPermissions();
   const { isMobile } = usePlatformOS();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -93,6 +100,21 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
 
   const dropdownOnChange = (val: string | null) => {
     onChange(val);
+    handleClose();
+  };
+
+  const canCreateMilestone =
+    !!projectId &&
+    allowPermissions(
+      [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+      EUserPermissionsLevel.PROJECT,
+      workspaceSlug?.toString(),
+      projectId
+    );
+
+  const handleCreateMilestone = (createdMilestone: IMilestone) => {
+    onChange(createdMilestone.id);
+    setIsCreateModalOpen(false);
     handleClose();
   };
 
@@ -161,89 +183,114 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
   );
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- same pattern as CycleDropdown/PriorityDropdown; Combobox's own Input/Options provide the actual interactive semantics
-    <ComboDropDown
-      as="div"
-      ref={dropdownRef}
-      className={cn("h-full", className)}
-      value={value}
-      onChange={dropdownOnChange}
-      disabled={disabled}
-      onKeyDown={handleKeyDown}
-      button={comboButton}
-      renderByDefault={renderByDefault}
-    >
-      {isOpen && (
-        <Combobox.Options className="fixed z-10" static>
-          <div
-            className="my-1 w-48 rounded-sm border-[0.5px] border-strong bg-surface-1 px-2 py-2.5 text-11 shadow-raised-200 focus:outline-none"
-            ref={setPopperElement}
-            style={styles.popper}
-            {...attributes.popper}
-          >
-            <div className="flex items-center gap-1.5 rounded-sm border border-subtle bg-surface-2 px-2">
-              <SearchIcon className="h-3.5 w-3.5 text-placeholder" strokeWidth={1.5} />
-              <Combobox.Input
-                as="input"
-                ref={inputRef}
-                className="w-full bg-transparent py-1 text-11 text-secondary placeholder:text-placeholder focus:outline-none"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("common.search.label")}
-                onKeyDown={(e) => {
-                  if (query !== "" && e.key === "Escape") {
-                    e.stopPropagation();
-                    setQuery("");
-                  }
-                }}
-              />
-            </div>
-            <div className="mt-2 max-h-48 space-y-1 overflow-y-scroll">
-              <Combobox.Option
-                value={null}
-                className={({ active, selected }) =>
-                  cn(
-                    "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
-                    active ? "bg-layer-transparent-hover" : "",
-                    selected ? "text-primary" : "text-secondary"
-                  )
-                }
-              >
-                {({ selected }) => (
-                  <>
-                    <span className="flex-grow truncate">{t("milestones.no_milestone")}</span>
-                    {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
-                  </>
-                )}
-              </Combobox.Option>
-              {options.length > 0 ? (
-                options.map((option) => (
-                  <Combobox.Option
-                    key={option.value}
-                    value={option.value}
-                    className={({ active, selected }) =>
-                      cn(
-                        "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
-                        active ? "bg-layer-transparent-hover" : "",
-                        selected ? "text-primary" : "text-secondary"
-                      )
+    <>
+      {canCreateMilestone && (
+        <CreateUpdateMilestoneModal
+          isOpen={isCreateModalOpen}
+          handleClose={() => setIsCreateModalOpen(false)}
+          milestone={null}
+          workspaceSlug={workspaceSlug?.toString()}
+          projectId={projectId}
+          onCreated={handleCreateMilestone}
+        />
+      )}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- same pattern as CycleDropdown/PriorityDropdown; Combobox's own Input/Options provide the actual interactive semantics */}
+      <ComboDropDown
+        as="div"
+        ref={dropdownRef}
+        className={cn("h-full", className)}
+        value={value}
+        onChange={dropdownOnChange}
+        disabled={disabled}
+        onKeyDown={handleKeyDown}
+        button={comboButton}
+        renderByDefault={renderByDefault}
+      >
+        {isOpen && (
+          <Combobox.Options className="fixed z-10" static>
+            <div
+              className="my-1 w-48 rounded-sm border-[0.5px] border-strong bg-surface-1 px-2 py-2.5 text-11 shadow-raised-200 focus:outline-none"
+              ref={setPopperElement}
+              style={styles.popper}
+              {...attributes.popper}
+            >
+              <div className="flex items-center gap-1.5 rounded-sm border border-subtle bg-surface-2 px-2">
+                <SearchIcon className="h-3.5 w-3.5 text-placeholder" strokeWidth={1.5} />
+                <Combobox.Input
+                  as="input"
+                  ref={inputRef}
+                  className="w-full bg-transparent py-1 text-11 text-secondary placeholder:text-placeholder focus:outline-none"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("common.search.label")}
+                  onKeyDown={(e) => {
+                    if (query !== "" && e.key === "Escape") {
+                      e.stopPropagation();
+                      setQuery("");
                     }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="flex-grow truncate">{option.content}</span>
-                        {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
-                      </>
-                    )}
-                  </Combobox.Option>
-                ))
-              ) : (
-                <p className="px-1.5 py-1 text-placeholder italic">{t("common.search.no_matches_found")}</p>
+                  }}
+                />
+              </div>
+              <div className="mt-2 max-h-48 space-y-1 overflow-y-scroll">
+                <Combobox.Option
+                  value={null}
+                  className={({ active, selected }) =>
+                    cn(
+                      "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
+                      active ? "bg-layer-transparent-hover" : "",
+                      selected ? "text-primary" : "text-secondary"
+                    )
+                  }
+                >
+                  {({ selected }) => (
+                    <>
+                      <span className="flex-grow truncate">{t("milestones.no_milestone")}</span>
+                      {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
+                    </>
+                  )}
+                </Combobox.Option>
+                {options.length > 0 ? (
+                  options.map((option) => (
+                    <Combobox.Option
+                      key={option.value}
+                      value={option.value}
+                      className={({ active, selected }) =>
+                        cn(
+                          "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
+                          active ? "bg-layer-transparent-hover" : "",
+                          selected ? "text-primary" : "text-secondary"
+                        )
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <span className="flex-grow truncate">{option.content}</span>
+                          {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
+                        </>
+                      )}
+                    </Combobox.Option>
+                  ))
+                ) : (
+                  <p className="px-1.5 py-1 text-placeholder italic">{t("common.search.no_matches_found")}</p>
+                )}
+              </div>
+              {canCreateMilestone && (
+                <button
+                  type="button"
+                  className="mt-1 flex w-full items-center gap-2 rounded-sm px-1 py-1.5 text-secondary select-none hover:bg-layer-transparent-hover"
+                  onClick={() => {
+                    handleClose();
+                    setIsCreateModalOpen(true);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="flex-grow truncate text-left">{t("milestones.create_new")}</span>
+                </button>
               )}
             </div>
-          </div>
-        </Combobox.Options>
-      )}
-    </ComboDropDown>
+          </Combobox.Options>
+        )}
+      </ComboDropDown>
+    </>
   );
 });

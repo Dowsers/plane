@@ -4455,6 +4455,7 @@ export default {
   milestones: {
     add_issues: "Ajouter des éléments de travail",
     create_milestone: "Créer un jalon",
+    create_new: "Créer un nouveau jalon",
     delete_confirm: {
       description:
         "Êtes-vous sûr de vouloir supprimer ce jalon ? Les éléments de travail liés seront détachés, pas supprimés.",

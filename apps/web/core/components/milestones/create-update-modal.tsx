@@ -19,6 +19,9 @@ type Props = {
   isOpen: boolean;
   handleClose: () => void;
   milestone: IMilestone | null;
+  workspaceSlug?: string;
+  projectId?: string;
+  onCreated?: (milestone: IMilestone) => void;
 };
 
 const DEFAULTS: TMilestoneWritePayload = {
@@ -28,8 +31,10 @@ const DEFAULTS: TMilestoneWritePayload = {
 };
 
 export const CreateUpdateMilestoneModal = observer(function CreateUpdateMilestoneModal(props: Props) {
-  const { isOpen, handleClose, milestone } = props;
-  const { workspaceSlug, projectId } = useParams();
+  const { isOpen, handleClose, milestone, onCreated } = props;
+  const routeParams = useParams();
+  const workspaceSlug = props.workspaceSlug ?? routeParams.workspaceSlug?.toString();
+  const projectId = props.projectId ?? routeParams.projectId?.toString();
   const { t } = useTranslation();
   const { createMilestone, updateMilestone } = useMilestone();
 
@@ -59,19 +64,20 @@ export const CreateUpdateMilestoneModal = observer(function CreateUpdateMileston
     setIsSubmitting(true);
     try {
       if (milestone) {
-        await updateMilestone(workspaceSlug.toString(), projectId.toString(), milestone.id, payload);
+        await updateMilestone(workspaceSlug, projectId, milestone.id, payload);
         setToast({
           type: TOAST_TYPE.SUCCESS,
           title: t("toast.success"),
           message: t("milestones.toast.update_success"),
         });
       } else {
-        await createMilestone(workspaceSlug.toString(), projectId.toString(), payload);
+        const created = await createMilestone(workspaceSlug, projectId, payload);
         setToast({
           type: TOAST_TYPE.SUCCESS,
           title: t("toast.success"),
           message: t("milestones.toast.create_success"),
         });
+        onCreated?.(created);
       }
       handleClose();
     } catch (error: any) {
