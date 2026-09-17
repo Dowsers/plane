@@ -164,7 +164,7 @@ export const AIChatMessageThread = (props: Props) => {
               mode === "propose" ? "ai.chat.composer_placeholder_propose" : "ai.chat.composer_placeholder_ask"
             )}
             textAreaSize="sm"
-            className="max-h-32 flex-1"
+            className="vertical-scrollbar scrollbar-xs max-h-32 flex-1"
             disabled={isSending}
           />
           <button
