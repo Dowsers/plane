@@ -46,6 +46,7 @@ export function AuthInput({
           {...props}
           type={inputType}
           autoComplete={autoComplete}
+          ignorePasswordManagers={false}
           className={cn(
             "h-6 w-full rounded-md border-none p-0 disable-autofill-style placeholder:text-14 placeholder:text-placeholder",
             {

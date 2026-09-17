@@ -42,6 +42,11 @@ const TextArea = React.forwardRef(function TextArea(
       name={name}
       ref={textAreaRef}
       value={value}
+      data-1p-ignore
+      data-lpignore="true"
+      data-bwignore
+      data-form-type="other"
+      data-protonpass-ignore
       className={cn(
         "no-scrollbar w-full bg-layer-2 placeholder-(--text-color-placeholder) outline-none",
         {

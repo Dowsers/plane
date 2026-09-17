@@ -13,6 +13,15 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   inputSize?: "xs" | "sm" | "md";
   hasError?: boolean;
   className?: string;
+  /**
+   * Most Inputs on this app are plain-data fields (a name, a title, an
+   * identifier...) that password managers nonetheless keep flagging as
+   * username fields - `autoComplete="off"` alone doesn't stop this, browsers
+   * and extensions deliberately ignore it once they've heuristically decided
+   * a field looks like a credential. Defaults to true (ignored); set to
+   * false for fields that should keep normal autofill, e.g. real auth forms.
+   */
+  ignorePasswordManagers?: boolean;
 }
 
 const Input = React.forwardRef(function Input(props: InputProps, ref: React.ForwardedRef<HTMLInputElement>) {
@@ -25,6 +34,7 @@ const Input = React.forwardRef(function Input(props: InputProps, ref: React.Forw
     hasError = false,
     className = "",
     autoComplete = "off",
+    ignorePasswordManagers = true,
     ...rest
   } = props;
 
@@ -49,6 +59,13 @@ const Input = React.forwardRef(function Input(props: InputProps, ref: React.Forw
         className
       )}
       autoComplete={autoComplete}
+      {...(ignorePasswordManagers && {
+        "data-1p-ignore": true,
+        "data-lpignore": "true",
+        "data-bwignore": true,
+        "data-form-type": "other",
+        "data-protonpass-ignore": true,
+      })}
       {...rest}
     />
   );
