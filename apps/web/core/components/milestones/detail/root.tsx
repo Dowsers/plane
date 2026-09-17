@@ -16,7 +16,7 @@ import { useTranslation } from "@plane/i18n";
 import { PriorityIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssuePriorities } from "@plane/types";
-import { Button, EModalPosition, EModalWidth, Loader, ModalCore } from "@plane/ui";
+import { Button, EModalPosition, EModalWidth, Loader, ModalCore, TextArea } from "@plane/ui";
 import { renderFormattedDate } from "@plane/utils";
 // hooks
 import { useMilestone } from "@/hooks/store/use-milestone";
@@ -137,7 +137,13 @@ export const MilestoneDetailRoot = observer(function MilestoneDetailRoot(props: 
         <MilestoneQuickActions milestone={milestone} />
       </div>
 
-      {milestone.description && <p className="text-13 text-secondary">{milestone.description}</p>}
+      {milestone.description && (
+        <TextArea
+          className="ring-none !m-0 max-h-max w-full resize-none !border-0 bg-transparent !p-0 text-13 leading-5 text-secondary outline-none"
+          value={milestone.description}
+          disabled
+        />
+      )}
 
       <div className="flex items-center justify-between border-b border-subtle pb-2">
         <h3 className="text-14 font-medium">{t("milestones.label")}</h3>

@@ -16,7 +16,7 @@ import { EmptyStateDetailed } from "@plane/propel/empty-state";
 import { LinkIcon } from "@plane/propel/icons";
 import { Tooltip } from "@plane/propel/tooltip";
 import type { TDashboardWidget } from "@plane/types";
-import { Loader } from "@plane/ui";
+import { Loader, TextArea } from "@plane/ui";
 // hooks
 import { useCustomDashboard } from "@/hooks/store/use-custom-dashboard";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
@@ -80,7 +80,13 @@ export const DashboardEditorRoot = observer(function DashboardEditorRoot(props: 
       <div className="flex flex-shrink-0 items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="truncate text-18 font-medium">{dashboard.name}</h2>
-          {dashboard.description && <p className="truncate text-13 text-secondary">{dashboard.description}</p>}
+          {dashboard.description && (
+            <TextArea
+              className="ring-none !m-0 max-h-max w-full resize-none !border-0 bg-transparent !p-0 text-13 leading-5 text-secondary outline-none"
+              value={dashboard.description}
+              disabled
+            />
+          )}
         </div>
         {canEdit ? (
           <div className="flex flex-shrink-0 items-center gap-2">

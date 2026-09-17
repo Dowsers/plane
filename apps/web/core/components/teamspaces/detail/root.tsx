@@ -145,7 +145,13 @@ export const TeamspaceDetailRoot = observer(function TeamspaceDetailRoot(props: 
         <TeamspaceQuickActions teamspace={teamspace} onDeleted={() => router.push(`/${workspaceSlug}/teamspaces/`)} />
       </div>
 
-      {teamspace.description && <p className="text-13 text-secondary">{teamspace.description}</p>}
+      {teamspace.description && (
+        <TextArea
+          className="ring-none !m-0 max-h-max w-full resize-none !border-0 bg-transparent !p-0 text-13 leading-5 text-secondary outline-none"
+          value={teamspace.description}
+          disabled
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-3 text-13 text-secondary">
         <span>

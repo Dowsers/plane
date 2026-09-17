@@ -14,7 +14,7 @@ import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { ICustomerRequest, ISearchIssueResponse } from "@plane/types";
-import { AlertModalCore } from "@plane/ui";
+import { AlertModalCore, TextArea } from "@plane/ui";
 import { generateWorkItemLink } from "@plane/utils";
 // components
 import { ExistingIssuesListModal } from "@/components/core/modals/existing-issues-list-modal";
@@ -132,7 +132,13 @@ export const CustomerRequestCard = observer(function CustomerRequestCard(props: 
         )}
       </div>
 
-      {request.description && <p className="text-13 text-secondary">{request.description}</p>}
+      {request.description && (
+        <TextArea
+          className="ring-none !m-0 max-h-max w-full resize-none !border-0 bg-transparent !p-0 text-13 leading-5 text-secondary outline-none"
+          value={request.description}
+          disabled
+        />
+      )}
 
       <div className="mt-1 flex flex-col gap-1.5">
         {(request.issues ?? []).map((issue) => (

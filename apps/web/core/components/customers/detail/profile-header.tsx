@@ -10,6 +10,7 @@ import { Mail, Globe, User } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import type { ICustomer } from "@plane/types";
+import { TextArea } from "@plane/ui";
 // components
 import { CreateUpdateCustomerModal } from "@/components/customers/create-update-modal";
 import { CustomerQuickActions } from "@/components/customers/quick-actions";
@@ -50,7 +51,13 @@ export const CustomerProfileHeader = observer(function CustomerProfileHeader(pro
         <CustomerQuickActions customer={customer} />
       </div>
 
-      {customer.description && <p className="text-13 text-secondary">{customer.description}</p>}
+      {customer.description && (
+        <TextArea
+          className="ring-none !m-0 max-h-max w-full resize-none !border-0 bg-transparent !p-0 text-13 leading-5 text-secondary outline-none"
+          value={customer.description}
+          disabled
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-4 text-13 text-secondary">
         {customer.contact_name && (
