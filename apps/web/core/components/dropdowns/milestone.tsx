@@ -19,6 +19,7 @@ import type { IMilestone } from "@plane/types";
 import { ComboDropDown } from "@plane/ui";
 import { cn } from "@plane/utils";
 // components
+import { ScrollingText } from "@/components/common/scrolling-text";
 import { CreateUpdateMilestoneModal } from "@/components/milestones/create-update-modal";
 // hooks
 import { useMilestone } from "@/hooks/store/use-milestone";
@@ -125,12 +126,7 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
       return {
         value: milestoneId,
         query: milestone?.name ?? "",
-        content: (
-          <div className="flex items-center gap-2">
-            <Flag className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="flex-grow truncate">{milestone?.name}</span>
-          </div>
-        ),
+        name: milestone?.name,
       };
     })
     .filter((option) => (query === "" ? true : option.query.toLowerCase().includes(query.toLowerCase())));
@@ -171,7 +167,9 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
           >
             {!hideIcon && <Flag className="h-3 w-3 flex-shrink-0" />}
             {BUTTON_VARIANTS_WITH_TEXT.includes(buttonVariant) && (!!selectedName || !!placeholder) && (
-              <span className="max-w-40 truncate">{selectedName ?? placeholder}</span>
+              <ScrollingText className="max-w-40" title={selectedName ?? undefined}>
+                {selectedName ?? placeholder}
+              </ScrollingText>
             )}
             {dropdownArrow && (
               <ChevronDownIcon className={cn("h-2.5 w-2.5 flex-shrink-0", dropdownArrowClassName)} aria-hidden="true" />
@@ -262,9 +260,15 @@ export const MilestoneDropdown = observer(function MilestoneDropdown(props: Prop
                         )
                       }
                     >
-                      {({ selected }) => (
+                      {({ active, selected }) => (
                         <>
-                          <span className="flex-grow truncate">{option.content}</span>
+                          <span className="flex flex-grow items-center gap-2 overflow-hidden">
+                            <Flag className="h-3.5 w-3.5 flex-shrink-0" />
+                            {/* the combobox highlights rows without focusing them, so drive it from `active` */}
+                            <ScrollingText className="flex-grow" active={active}>
+                              {option.name}
+                            </ScrollingText>
+                          </span>
                           {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
                         </>
                       )}
