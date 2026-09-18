@@ -5,6 +5,7 @@
  */
 
 import { observer } from "mobx-react";
+import { Flag } from "lucide-react";
 // i18n
 import { useTranslation } from "@plane/i18n";
 // ui icons
@@ -45,6 +46,7 @@ import { IssueWorklogProperty } from "@/plane-web/components/issues/worklog/prop
 import type { TIssueOperations } from "../issue-detail";
 import { IssueCycleSelect } from "../issue-detail/cycle-select";
 import { IssueLabel } from "../issue-detail/label";
+import { IssueMilestoneSelect } from "../issue-detail/milestone-select";
 import { IssueModuleSelect } from "../issue-detail/module-select";
 
 interface IPeekOverviewProperties {
@@ -239,6 +241,17 @@ export const PeekOverviewProperties = observer(function PeekOverviewProperties(p
             />
           </SidebarPropertyListItem>
         )}
+
+        <SidebarPropertyListItem icon={Flag} label={t("milestones.label")}>
+          <IssueMilestoneSelect
+            className="h-7.5 w-full grow"
+            workspaceSlug={workspaceSlug}
+            projectId={projectId}
+            issueId={issueId}
+            issueOperations={issueOperations}
+            disabled={disabled}
+          />
+        </SidebarPropertyListItem>
 
         <SidebarPropertyListItem icon={ParentPropertyIcon} label={t("common.parent")}>
           <IssueParentSelectRoot
