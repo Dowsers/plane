@@ -5,7 +5,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   BarChart as CoreBarChart,
   Bar,
@@ -47,6 +47,11 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
   // states
   const [activeBar, setActiveBar] = useState<string | null>(null);
   const [activeLegend, setActiveLegend] = useState<string | null>(null);
+  // Which stack segment a click landed on, if any. Each bar's own handler runs
+  // first (it is the inner element, so it bubbles up to the chart's), stashes
+  // its key here, and the chart-level handler below reads and clears it. A
+  // click on the column's empty space never sets it, so it stays undefined.
+  const clickedBarKeyRef = useRef<T | null>(null);
 
   // derived values
   const { stackKeys, stackLabels } = useMemo(() => {
@@ -114,10 +119,17 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
           className="[&_path]:transition-opacity [&_path]:duration-200"
           onMouseEnter={() => setActiveBar(bar.key)}
           onMouseLeave={() => setActiveBar(null)}
+          onClick={
+            onCategoryClick
+              ? () => {
+                  clickedBarKeyRef.current = bar.key;
+                }
+              : undefined
+          }
           fill={getBarColor(data, bar.key)}
         />
       )),
-    [activeLegend, stackKeys, bars, getBarColor, data]
+    [activeLegend, stackKeys, bars, getBarColor, data, onCategoryClick]
   );
 
   return (
@@ -140,7 +152,9 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
             onCategoryClick
               ? (state: any) => {
                   const clickedPayload = state?.activePayload?.[0]?.payload;
-                  if (clickedPayload) onCategoryClick(clickedPayload);
+                  const clickedBarKey = clickedBarKeyRef.current;
+                  clickedBarKeyRef.current = null;
+                  if (clickedPayload) onCategoryClick(clickedPayload, clickedBarKey ?? undefined);
                 }
               : undefined
           }

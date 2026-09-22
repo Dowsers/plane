@@ -90,8 +90,12 @@ export type TBarChartProps<K extends string, T extends string> = TAxisChartProps
    * a handful of pixels tall, which makes the shape itself an unusable target.
    * Omit to leave the chart non-interactive - it only takes a pointer cursor
    * when this is set.
+   *
+   * `barKey` is the stack segment the click actually landed on, or undefined
+   * when it landed on the column's empty space - letting a caller refine on the
+   * segment while keeping the whole column clickable.
    */
-  onCategoryClick?: (payload: TChartData<K, T>) => void;
+  onCategoryClick?: (payload: TChartData<K, T>, barKey?: T) => void;
 };
 
 // ============================================================

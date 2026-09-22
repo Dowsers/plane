@@ -44,6 +44,18 @@ const FILTER_CONDITION_BY_GROUP: Record<"priority" | "due_date" | "start_date", 
   start_date: "start_date__exact",
 };
 
+/**
+ * Stack segment -> the state groups it counts, mirroring how the overview
+ * endpoint splits them: `completed` is the single group, `pending` is
+ * everything that is neither completed nor cancelled. Clicking a segment
+ * narrows the destination view to that state on top of the column's own group;
+ * clicking the column's empty space stays unnarrowed.
+ */
+const STATE_GROUPS_BY_SEGMENT: Record<"pending" | "completed", string[]> = {
+  pending: ["backlog", "unstarted", "started"],
+  completed: ["completed"],
+};
+
 const SUMMARY_ROWS: {
   key: "backlog" | "unstarted" | "started" | "completed" | "cancelled" | "no_due_date";
   label: string;
@@ -107,11 +119,13 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
   // all-work-items view, pre-filtered on that group. Note the scope widens:
   // that view spans every project in the workspace, not just this teamspace's.
   const handleCategoryClick = useCallback(
-    (payload: TChartData<string, string>) => {
+    (payload: TChartData<string, string>, barKey?: string) => {
       const rawValue = rawValueByName[String(payload?.name)];
       // A null group ("no due date", "no start date") has no value to filter on.
       if (rawValue == null || !workspaceSlug) return;
       const params = new URLSearchParams({ [FILTER_CONDITION_BY_GROUP[groupBy]]: rawValue });
+      const stateGroups = barKey ? STATE_GROUPS_BY_SEGMENT[barKey as "pending" | "completed"] : undefined;
+      if (stateGroups) params.set("state_group__in", stateGroups.join(","));
       router.push(`/${workspaceSlug.toString()}/workspace-views/all-issues/?${params.toString()}`);
     },
     [router, workspaceSlug, groupBy, rawValueByName]

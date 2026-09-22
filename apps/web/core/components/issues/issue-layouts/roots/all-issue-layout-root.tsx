@@ -93,6 +93,14 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
     return filtersFromRoute;
   }, [searchParams]);
 
+  // A deep link's filters win over the view's saved ones - arriving on
+  // `?priority__in=urgent` has to show urgent work items, not whatever the
+  // view was last saved with. Seeds both the filter UI (via
+  // `initialWorkItemFilters`) and the store the work item fetch reads from
+  // (via `fetchFilters`) - seeding only the former leaves the filter showing
+  // in the UI while the fetched results ignore it.
+  const routeFilterExpression = useMemo(() => buildRouteFilterExpression(routeFilters), [routeFilters]);
+
   // Determine initial work item filters based on view type and availability
   const initialWorkItemFilters = useMemo(() => {
     if (!globalViewId) return undefined;
@@ -102,18 +110,13 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
 
     if (!isStaticView && !hasViewDetails) return undefined;
 
-    // A deep link's filters win over the view's saved ones - arriving on
-    // `?priority__in=urgent` has to show urgent work items, not whatever the
-    // view was last saved with.
-    const routeFilterExpression = buildRouteFilterExpression(routeFilters);
-
     return {
       displayFilters: workItemFilters?.displayFilters,
       displayProperties: workItemFilters?.displayProperties,
       kanbanFilters: workItemFilters?.kanbanFilters,
       richFilters: routeFilterExpression ?? viewDetails?.rich_filters ?? {},
     };
-  }, [globalViewId, viewDetails, workItemFilters, routeFilters]);
+  }, [globalViewId, viewDetails, workItemFilters, routeFilterExpression]);
 
   // Custom hooks
   useWorkspaceIssueProperties(workspaceSlug);
@@ -136,12 +139,17 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
 
   // Fetch issues
   const { isLoading: issuesLoading } = useSWR(
-    workspaceSlug && globalViewId ? `WORKSPACE_GLOBAL_VIEW_ISSUES_${workspaceSlug}_${globalViewId}` : null,
+    workspaceSlug && globalViewId
+      ? // Keyed on the route filters too, so landing on the same view with a
+        // different `?priority__in=` refetches instead of serving the previous
+        // group's results.
+        `WORKSPACE_GLOBAL_VIEW_ISSUES_${workspaceSlug}_${globalViewId}_${searchParams.toString()}`
+      : null,
     async () => {
       if (workspaceSlug && globalViewId) {
         clear();
         toggleLoading(true);
-        await fetchFilters(workspaceSlug, globalViewId);
+        await fetchFilters(workspaceSlug, globalViewId, routeFilterExpression);
         await fetchIssues(workspaceSlug, globalViewId, groupedIssueIds ? "mutation" : "init-loader", {
           canGroup: false,
           perPageCount: 100,

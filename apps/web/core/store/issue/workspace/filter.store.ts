@@ -36,7 +36,11 @@ export type TBaseFilterStore = IBaseIssueFilterStore & IIssueFilterHelperStore;
 
 export interface IWorkspaceIssuesFilter extends TBaseFilterStore {
   // fetch action
-  fetchFilters: (workspaceSlug: string, viewId: string) => Promise<void>;
+  fetchFilters: (
+    workspaceSlug: string,
+    viewId: string,
+    routeRichFilters?: TWorkItemFilterExpression | undefined
+  ) => Promise<void>;
   updateFilterExpression: (workspaceSlug: string, viewId: string, filters: TWorkItemFilterExpression) => Promise<void>;
   updateFilters: (
     workspaceSlug: string,
@@ -149,7 +153,18 @@ export class WorkspaceIssuesFilter extends IssueFilterHelperStore implements IWo
     }
   );
 
-  fetchFilters = async (workspaceSlug: string, viewId: TWorkspaceFilters) => {
+  /**
+   * `routeRichFilters` - filters parsed off the URL by a deep link. They take
+   * precedence over whatever the view carries: a static view never populates
+   * `richFilters` at all (the branch below is skipped and `undefined` is
+   * written), so without this an arriving `?priority__in=urgent` would be
+   * wiped here before `fetchIssues` ever reads it.
+   */
+  fetchFilters = async (
+    workspaceSlug: string,
+    viewId: TWorkspaceFilters,
+    routeRichFilters?: TWorkItemFilterExpression | undefined
+  ) => {
     let richFilters: TWorkItemFilterExpression;
     let displayFilters: IIssueDisplayFilterOptions;
     let displayProperties: IIssueDisplayProperties;
@@ -171,13 +186,17 @@ export class WorkspaceIssuesFilter extends IssueFilterHelperStore implements IWo
 
     // Get the view details if the view is not a static view
     if (STATIC_VIEW_TYPES.includes(viewId) === false) {
-      const _filters = await this.issueFilterService.getViewDetails(workspaceSlug, viewId);
-      richFilters = _filters?.rich_filters;
-      displayFilters = this.computedDisplayFilters(_filters?.display_filters, {
+      const _viewFilters = await this.issueFilterService.getViewDetails(workspaceSlug, viewId);
+      richFilters = _viewFilters?.rich_filters;
+      displayFilters = this.computedDisplayFilters(_viewFilters?.display_filters, {
         layout: EIssueLayoutTypes.SPREADSHEET,
         order_by: "-created_at",
       });
-      displayProperties = this.computedDisplayProperties(_filters?.display_properties);
+      displayProperties = this.computedDisplayProperties(_viewFilters?.display_properties);
+    }
+
+    if (routeRichFilters) {
+      richFilters = routeRichFilters;
     }
 
     // override existing order by if ordered by manual sort_order
