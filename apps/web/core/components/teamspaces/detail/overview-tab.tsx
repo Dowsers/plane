@@ -4,9 +4,9 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { AlertTriangle } from "lucide-react";
 // plane imports
@@ -32,6 +32,18 @@ const GROUP_BY_OPTIONS: { key: "priority" | "due_date" | "start_date"; label: st
   { key: "start_date", label: "Start date" },
 ];
 
+/**
+ * Chart grouping -> the `<property>__<operator>` filter condition key used as
+ * the query param, which the all-work-items view parses straight back into a
+ * filter expression (see all-issue-layout-root). Dates group on an exact value,
+ * priority on a set - matching what `nl_filter_parser` emits for each.
+ */
+const FILTER_CONDITION_BY_GROUP: Record<"priority" | "due_date" | "start_date", string> = {
+  priority: "priority__in",
+  due_date: "target_date__exact",
+  start_date: "start_date__exact",
+};
+
 const SUMMARY_ROWS: {
   key: "backlog" | "unstarted" | "started" | "completed" | "cancelled" | "no_due_date";
   label: string;
@@ -48,6 +60,7 @@ const SUMMARY_ROWS: {
 export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props: Props) {
   const { teamspaceId } = props;
   const { workspaceSlug } = useParams();
+  const router = useRouter();
   const { t } = useTranslation();
   const { getTeamspaceOverviewById, fetchTeamspaceOverview } = useTeamspace();
 
@@ -72,6 +85,36 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
         completed: Number(row.completed ?? 0),
       })),
     [overview?.progress_chart, groupField, t]
+  );
+
+  // `name` is the *display* label - a null group renders as a translated
+  // "None" - so the unmodified group value is kept aside, keyed by that label.
+  // It can't ride along on the chart row itself: `BarChart` is memo-wrapped, so
+  // its props resolve to `TBarChartProps<string, string>` and every row value
+  // has to be a `string | number`.
+  const rawValueByName: Record<string, string | null> = useMemo(
+    () =>
+      Object.fromEntries(
+        (overview?.progress_chart ?? []).map((row) => [
+          row[groupField] != null ? String(row[groupField]) : t("common.none"),
+          row[groupField] != null ? String(row[groupField]) : null,
+        ])
+      ),
+    [overview?.progress_chart, groupField, t]
+  );
+
+  // Clicking a bar leaves the teamspace for the workspace-wide all-work-items
+  // view, pre-filtered on the clicked group. Note the scope widens: that view
+  // spans every project in the workspace, not just this teamspace's.
+  const handleBarClick = useCallback(
+    (payload: TChartData<string, string>) => {
+      const rawValue = rawValueByName[String(payload?.name)];
+      // A null group ("no due date", "no start date") has no value to filter on.
+      if (rawValue == null || !workspaceSlug) return;
+      const params = new URLSearchParams({ [FILTER_CONDITION_BY_GROUP[groupBy]]: rawValue });
+      router.push(`/${workspaceSlug.toString()}/workspace-views/all-issues/?${params.toString()}`);
+    },
+    [router, workspaceSlug, groupBy, rawValueByName]
   );
 
   const bars: TBarItem<"pending" | "completed">[] = [
@@ -170,6 +213,7 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
                 margin={{ bottom: 30 }}
                 xAxis={{ key: "name", label: GROUP_BY_OPTIONS.find((o) => o.key === groupBy)?.label, dy: 20 }}
                 yAxis={{ key: "pending", label: t("teamspaces.overview.work_items_count"), offset: -50, dx: -20 }}
+                onBarClick={handleBarClick}
               />
             ) : (
               <p className="py-8 text-center text-13 text-secondary">{t("teamspaces.overview.no_progress_data")}</p>

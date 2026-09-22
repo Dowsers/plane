@@ -84,6 +84,12 @@ export type TBarItem<T extends string> = {
 export type TBarChartProps<K extends string, T extends string> = TAxisChartProps<K, T> & {
   bars: TBarItem<T>[];
   barSize?: number;
+  /**
+   * Called when a bar segment is clicked, with the row behind it and the key of
+   * the clicked stack segment. Omit to leave the chart non-interactive - bars
+   * only take a pointer cursor when this is set.
+   */
+  onBarClick?: (payload: TChartData<K, T>, barKey: T) => void;
 };
 
 // ============================================================

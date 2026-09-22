@@ -12,8 +12,8 @@ import useSWR from "swr";
 import { GLOBAL_VIEW_TRACKER_ELEMENTS, ISSUE_DISPLAY_FILTERS_BY_PAGE } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { EmptyStateDetailed } from "@plane/propel/empty-state";
-import type { EIssueLayoutTypes } from "@plane/types";
-import { EIssuesStoreType, STATIC_VIEW_TYPES } from "@plane/types";
+import type { EIssueLayoutTypes, TWorkItemFilterExpression } from "@plane/types";
+import { EIssuesStoreType, LOGICAL_OPERATOR, STATIC_VIEW_TYPES, WORK_ITEM_FILTER_PROPERTY_KEYS } from "@plane/types";
 // assets
 // components
 import { IssuePeekOverview } from "@/components/issues/peek-overview";
@@ -31,6 +31,35 @@ type Props = {
   isDefaultView: boolean;
   isLoading?: boolean;
   toggleLoading: (value: boolean) => void;
+};
+
+/**
+ * Builds a filter expression out of `<property>__<operator>` query params, e.g.
+ * `?priority__in=urgent,high` or `?target_date__exact=2025-01-30`. Lets another
+ * surface deep-link into this view pre-filtered (the teamspace overview chart
+ * does, on bar click).
+ *
+ * Params that aren't a valid condition key over a known work item filter
+ * property are skipped, so unrelated ones (peek ids, tracking) pass through
+ * without reaching - and being logged as invalid by - the filter adapter.
+ * Comma-separated lists are left as-is: the adapter splits them itself for
+ * multi-value operators.
+ */
+const buildRouteFilterExpression = (routeFilters: { [key: string]: string }): TWorkItemFilterExpression | undefined => {
+  const conditions = Object.entries(routeFilters).flatMap(([key, value]) => {
+    const separatorIndex = key.lastIndexOf("__");
+    // Mirrors the adapter's own condition-key validation: a non-empty property
+    // before the separator and a non-empty operator after it.
+    if (separatorIndex <= 0 || separatorIndex === key.length - 2) return [];
+    const property = key.slice(0, separatorIndex);
+    const isKnownProperty =
+      WORK_ITEM_FILTER_PROPERTY_KEYS.includes(property as (typeof WORK_ITEM_FILTER_PROPERTY_KEYS)[number]) ||
+      property.startsWith("customproperty_");
+    if (!isKnownProperty || !value) return [];
+    return [{ [key]: value }];
+  });
+
+  return conditions.length > 0 ? ({ [LOGICAL_OPERATOR.AND]: conditions } as TWorkItemFilterExpression) : undefined;
 };
 
 export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Props) {
@@ -54,6 +83,16 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
   const viewDetails = globalViewId ? getViewDetailsById(globalViewId) : undefined;
   const workItemFilters = globalViewId ? filters?.[globalViewId] : undefined;
   const activeLayout: EIssueLayoutTypes | undefined = workItemFilters?.displayFilters?.layout;
+
+  // Route filters
+  const routeFilters: { [key: string]: string } = useMemo(() => {
+    const filtersFromRoute: { [key: string]: string } = {};
+    searchParams.forEach((value: string, key: string) => {
+      filtersFromRoute[key] = value;
+    });
+    return filtersFromRoute;
+  }, [searchParams]);
+
   // Determine initial work item filters based on view type and availability
   const initialWorkItemFilters = useMemo(() => {
     if (!globalViewId) return undefined;
@@ -63,22 +102,21 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
 
     if (!isStaticView && !hasViewDetails) return undefined;
 
+    // A deep link's filters win over the view's saved ones - arriving on
+    // `?priority__in=urgent` has to show urgent work items, not whatever the
+    // view was last saved with.
+    const routeFilterExpression = buildRouteFilterExpression(routeFilters);
+
     return {
       displayFilters: workItemFilters?.displayFilters,
       displayProperties: workItemFilters?.displayProperties,
       kanbanFilters: workItemFilters?.kanbanFilters,
-      richFilters: viewDetails?.rich_filters ?? {},
+      richFilters: routeFilterExpression ?? viewDetails?.rich_filters ?? {},
     };
-  }, [globalViewId, viewDetails, workItemFilters]);
+  }, [globalViewId, viewDetails, workItemFilters, routeFilters]);
 
   // Custom hooks
   useWorkspaceIssueProperties(workspaceSlug);
-
-  // Route filters
-  const routeFilters: { [key: string]: string } = {};
-  searchParams.forEach((value: string, key: string) => {
-    routeFilters[key] = value;
-  });
 
   // Fetch next pages callback
   const fetchNextPages = useCallback(() => {
