@@ -51,6 +51,7 @@ from plane.db.models import (
     WorkspaceMember,
     TEAMSPACE_LEAD,
 )
+from plane.utils.issue_identifier import SEQUENCE_PREFIX_ANNOTATION
 
 
 def _is_workspace_admin(user, slug):
@@ -421,6 +422,11 @@ class WorkspaceTeamspaceOverdueIssuesEndpoint(BaseAPIView):
             )
             .exclude(state__group__in=["completed", "cancelled"])
             .select_related("project", "state")
+            # `sequence_id` is pool-scoped since the Linear-style ID rework,
+            # so it only forms a valid display code (and a resolvable
+            # /browse/ link) when paired with the pool's prefix - never with
+            # the project's own identifier. See plane.utils.issue_identifier.
+            .annotate(sequence_prefix=SEQUENCE_PREFIX_ANNOTATION)
             .order_by("target_date")
         )
 
@@ -429,6 +435,7 @@ class WorkspaceTeamspaceOverdueIssuesEndpoint(BaseAPIView):
                 "id": str(issue.id),
                 "name": issue.name,
                 "sequence_id": issue.sequence_id,
+                "sequence_prefix": issue.sequence_prefix,
                 "priority": issue.priority,
                 "target_date": issue.target_date,
                 "project_id": str(issue.project_id),

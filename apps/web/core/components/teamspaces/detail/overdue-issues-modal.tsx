@@ -63,13 +63,15 @@ export function TeamspaceOverdueIssuesModal(props: Props) {
                   workspaceSlug: workspaceSlug?.toString(),
                   projectId: issue.project_id,
                   issueId: issue.id,
-                  projectIdentifier: issue.sequence_prefix ?? issue.project_identifier,
+                  // Pool prefix only - a project's own identifier never forms
+                  // a resolvable /browse/ code (plane.utils.issue_identifier).
+                  projectIdentifier: issue.sequence_prefix,
                   sequenceId: issue.sequence_id,
                 })}
                 className="flex items-center gap-3 rounded-md px-2 py-2 text-13 hover:bg-layer-1"
               >
                 <span className="flex-shrink-0 text-secondary">
-                  {issue.sequence_prefix ?? issue.project_identifier}-{issue.sequence_id}
+                  {issue.sequence_prefix}-{issue.sequence_id}
                 </span>
                 {issue.state_group && (
                   <StateGroupIcon stateGroup={issue.state_group as TStateGroups} className="size-3 flex-shrink-0" />
