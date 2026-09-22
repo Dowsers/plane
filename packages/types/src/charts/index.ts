@@ -85,11 +85,13 @@ export type TBarChartProps<K extends string, T extends string> = TAxisChartProps
   bars: TBarItem<T>[];
   barSize?: number;
   /**
-   * Called when a bar segment is clicked, with the row behind it and the key of
-   * the clicked stack segment. Omit to leave the chart non-interactive - bars
-   * only take a pointer cursor when this is set.
+   * Called when a category column is clicked, with the row behind it. The hit
+   * area is the whole column band, not the drawn bar: a stacked segment can be
+   * a handful of pixels tall, which makes the shape itself an unusable target.
+   * Omit to leave the chart non-interactive - it only takes a pointer cursor
+   * when this is set.
    */
-  onBarClick?: (payload: TChartData<K, T>, barKey: T) => void;
+  onCategoryClick?: (payload: TChartData<K, T>) => void;
 };
 
 // ============================================================

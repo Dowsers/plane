@@ -42,7 +42,7 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
     customTicks,
     showTooltip = true,
     customTooltipContent,
-    onBarClick,
+    onCategoryClick,
   } = props;
   // states
   const [activeBar, setActiveBar] = useState<string | null>(null);
@@ -111,16 +111,13 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
             const node = shapeVariant(shapeProps, bar, stackKeys);
             return React.isValidElement(node) ? node : <>{node}</>;
           }}
-          className={`[&_path]:transition-opacity [&_path]:duration-200 ${onBarClick ? "[&_path]:cursor-pointer" : ""}`}
+          className="[&_path]:transition-opacity [&_path]:duration-200"
           onMouseEnter={() => setActiveBar(bar.key)}
           onMouseLeave={() => setActiveBar(null)}
-          // recharts hands the row back on `payload`; the segment's own key is
-          // `bar.key`, which the event payload doesn't carry.
-          onClick={onBarClick ? (entry: any) => onBarClick(entry?.payload, bar.key) : undefined}
           fill={getBarColor(data, bar.key)}
         />
       )),
-    [activeLegend, stackKeys, bars, getBarColor, data, onBarClick]
+    [activeLegend, stackKeys, bars, getBarColor, data]
   );
 
   return (
@@ -135,7 +132,18 @@ export const BarChart = React.memo(function BarChart<K extends string, T extends
             left: margin?.left === undefined ? 20 : margin.left,
           }}
           barSize={barSize}
-          className="recharts-wrapper"
+          className={`recharts-wrapper ${onCategoryClick ? "cursor-pointer" : ""}`}
+          // Chart-level rather than per-`Bar`: this fires anywhere in the
+          // hovered column, so a 10px-tall stacked segment is still reachable.
+          // `activePayload` carries the row the pointer is over.
+          onClick={
+            onCategoryClick
+              ? (state: any) => {
+                  const clickedPayload = state?.activePayload?.[0]?.payload;
+                  if (clickedPayload) onCategoryClick(clickedPayload);
+                }
+              : undefined
+          }
         >
           <CartesianGrid stroke="var(--border-color-subtle)" vertical={false} />
           <XAxis

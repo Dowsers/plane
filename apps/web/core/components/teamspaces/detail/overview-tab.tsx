@@ -103,10 +103,10 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
     [overview?.progress_chart, groupField, t]
   );
 
-  // Clicking a bar leaves the teamspace for the workspace-wide all-work-items
-  // view, pre-filtered on the clicked group. Note the scope widens: that view
-  // spans every project in the workspace, not just this teamspace's.
-  const handleBarClick = useCallback(
+  // Clicking a column leaves the teamspace for the workspace-wide
+  // all-work-items view, pre-filtered on that group. Note the scope widens:
+  // that view spans every project in the workspace, not just this teamspace's.
+  const handleCategoryClick = useCallback(
     (payload: TChartData<string, string>) => {
       const rawValue = rawValueByName[String(payload?.name)];
       // A null group ("no due date", "no start date") has no value to filter on.
@@ -213,7 +213,7 @@ export const TeamspaceOverviewTab = observer(function TeamspaceOverviewTab(props
                 margin={{ bottom: 30 }}
                 xAxis={{ key: "name", label: GROUP_BY_OPTIONS.find((o) => o.key === groupBy)?.label, dy: 20 }}
                 yAxis={{ key: "pending", label: t("teamspaces.overview.work_items_count"), offset: -50, dx: -20 }}
-                onBarClick={handleBarClick}
+                onCategoryClick={handleCategoryClick}
               />
             ) : (
               <p className="py-8 text-center text-13 text-secondary">{t("teamspaces.overview.no_progress_data")}</p>
