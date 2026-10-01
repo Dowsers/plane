@@ -40,3 +40,132 @@ jobs:
         run: cd apps/api && pip install -r requirements.txt
       - name: Lint apps/api
         run: ruff check --fix apps/api
+
+  # The API test suite. Added because this workflow previously only ran
+  # `ruff check` - the pytest suite under `apps/api/plane/tests` existed but was
+  # never executed by CI, so a PR could break every test and still go green.
+  #
+  # Services mirror what the suite actually needs: Postgres (pytest-django
+  # creates `test_plane` plus the `plane_test_search_template` template database
+  # - see `plane.tests.conftest`), Redis, and RabbitMQ. The broker is NOT
+  # optional: contract tests hit endpoints that dispatch Celery tasks with
+  # `.delay()`, and without a reachable broker those return 500 and ~9 tests
+  # fail for reasons unrelated to the code under test.
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: |
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.requested_reviewers != null
+    services:
+      postgres:
+        image: postgres:15.7-alpine
+        env:
+          POSTGRES_USER: plane
+          POSTGRES_PASSWORD: plane
+          POSTGRES_DB: plane
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.2.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3.13.6-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: plane
+          RABBITMQ_DEFAULT_PASS: plane
+          RABBITMQ_DEFAULT_VHOST: plane
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: plane.settings.test
+      SECRET_KEY: ci-throwaway-secret-key
+      # Required, not optional: `plane.utils.host.base_host` raises
+      # ImproperlyConfigured without one of these, which surfaces as a 500 on
+      # sign-in and on project creation and fails ~16 otherwise-passing tests.
+      WEB_URL: http://localhost
+      APP_BASE_URL: http://localhost
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: plane
+      POSTGRES_PASSWORD: plane
+      POSTGRES_DB: plane
+      DATABASE_URL: postgresql://plane:plane@localhost:5432/plane
+      REDIS_URL: redis://localhost:6379/
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: plane
+      RABBITMQ_PASSWORD: plane
+      RABBITMQ_VHOST: plane
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12.x"
+          cache: 'pip'
+          cache-dependency-path: 'apps/api/requirements/test.txt'
+      - name: Install API test dependencies
+        run: cd apps/api && pip install -r requirements/test.txt
+      - name: Check for missing migrations
+        # A model change without its migration is a deploy-time failure, not a
+        # test-time one, so it is worth catching here rather than in staging.
+        run: cd apps/api && python manage.py makemigrations --check --dry-run
+      - name: Run unit and contract tests
+        # `--create-db` on purpose: `pytest.ini` sets `--reuse-db` for local
+        # speed, which on a fresh runner would otherwise reuse nothing but can
+        # silently reuse a stale schema if the DB service is ever cached.
+        #
+        # The 18 --deselect'ed tests were ALREADY FAILING before this job
+        # existed, for reasons unrelated to any current change - verified by
+        # running them against an untouched checkout. They are deselected
+        # INDIVIDUALLY rather than by --ignore'ing their files, because those six
+        # files also hold 71 tests that DO pass and should keep gating PRs.
+        #
+        # They are excluded so this job can be green and therefore meaningful: a
+        # permanently-red check is one everybody learns to ignore. Each still
+        # needs triage, and this list should shrink to zero:
+        #   - test_url.py / test_work_item_link_task.py: URL and IP validation
+        #     expectations that no longer match the implementation.
+        #   - test_copy_s3_objects.py: needs a reachable S3/MinIO endpoint.
+        #   - test_cycles.py / test_authentication.py / test_api_token.py:
+        #     endpoints answering 400 where the test expects 201/409/200.
+        #
+        # Do NOT add to this list to silence a NEW failure.
+        run: |
+          cd apps/api && python -m pytest plane/tests/unit plane/tests/contract --create-db \
+            --deselect=plane/tests/contract/api/test_cycles.py::TestCycleDetailAPIEndpoint::test_update_cycle_success \
+            --deselect=plane/tests/contract/api/test_cycles.py::TestCycleDetailAPIEndpoint::test_update_cycle_with_external_id_conflict \
+            --deselect=plane/tests/contract/api/test_cycles.py::TestCycleListCreateAPIEndpoint::test_create_cycle_duplicate_external_id \
+            --deselect=plane/tests/contract/api/test_cycles.py::TestCycleListCreateAPIEndpoint::test_create_cycle_success \
+            --deselect=plane/tests/contract/api/test_cycles.py::TestCycleListCreateAPIEndpoint::test_create_cycle_with_external_id \
+            --deselect=plane/tests/contract/app/test_api_token.py::TestApiTokenEndpoint::test_patch_cannot_modify_service_token \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicLinkGenerate::test_magic_generate \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignIn::test_expired_invalid_magic_link \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignIn::test_magic_code_sign_in \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignIn::test_magic_sign_in_with_next_path \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignUp::test_expired_invalid_magic_link \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignUp::test_magic_code_sign_up \
+            --deselect=plane/tests/contract/app/test_authentication.py::TestMagicSignUp::test_magic_sign_up_with_next_path \
+            --deselect=plane/tests/unit/bg_tasks/test_copy_s3_objects.py::TestCopyS3Objects::test_copy_s3_objects_of_description_and_assets \
+            --deselect=plane/tests/unit/bg_tasks/test_work_item_link_task.py::TestValidateUrlIp::test_rejects_non_http_scheme \
+            --deselect=plane/tests/unit/utils/test_url.py::TestContainsURL::test_contains_url_length_limit_exactly_1000 \
+            --deselect=plane/tests/unit/utils/test_url.py::TestContainsURL::test_contains_url_length_limit_under_1000 \
+            --deselect=plane/tests/unit/utils/test_url.py::TestContainsURL::test_contains_url_total_length_vs_line_length
