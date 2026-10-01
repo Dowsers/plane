@@ -13,6 +13,7 @@ import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { GANTT_TIMELINE_TYPE } from "@plane/types";
 // components
 import { ProjectAccessRestriction } from "@/components/auth-screens/project/project-access-restriction";
+import { InspectionBlockedScreen, InspectionNonComplianceBanner } from "@/components/inspection";
 import {
   PROJECT_DETAILS,
   PROJECT_ME_INFORMATION,
@@ -36,6 +37,7 @@ import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
 import { useProjectView } from "@/hooks/store/use-project-view";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
+import { useInspectionObligations } from "@/hooks/use-inspection-obligations";
 import { useTimeLineChart } from "@/hooks/use-timeline-chart";
 
 interface IProjectAuthWrapper {
@@ -51,7 +53,7 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
   const [isJoiningProject, setIsJoiningProject] = useState(false);
   // store hooks
   const { fetchUserProjectInfo, allowPermissions, getProjectRoleByWorkspaceSlugAndProjectId } = useUserPermissions();
-  const { fetchProjectDetails } = useProject();
+  const { fetchProjectDetails, currentProjectDetails } = useProject();
   const { joinProject } = useUserPermissions();
   const { fetchAllCycles } = useCycle();
   const { fetchModulesSlim, fetchModules } = useModule();
@@ -136,6 +138,18 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     revalidateOnFocus: false,
   });
 
+  // Inspection compliance obligations of the CURRENT user on this project.
+  // Gated on the project's own `is_inspection_enabled` flag (exposed by the
+  // generic project serializer) so an ordinary project costs zero extra
+  // requests. The endpoint behind this hook is on the enforcement gate's
+  // exemption list, so it keeps answering even for a fully blocked member.
+  const {
+    data: inspectionData,
+    outstanding: inspectionOutstanding,
+    blocked: inspectionBlocked,
+    refresh: refreshInspection,
+  } = useInspectionObligations(workspaceSlug, projectId, Boolean(currentProjectDetails?.is_inspection_enabled));
+
   // handle join project
   const handleJoinProject = () => {
     setIsJoiningProject(true);
@@ -157,5 +171,40 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     );
   }
 
-  return <>{children}</>;
+  // Inspection compliance (ISO/IEC 17020 §4.1/§4.2). Checked here, after the
+  // membership gate above, because this is the one wrapper every project
+  // sub-route passes through - and because the backend blocks READS as well as
+  // writes once a grace period elapses, so without this the sibling useSWR calls
+  // would just surface a wall of 403s with no way forward.
+  //
+  // Replacing the subtree (rather than overlaying a modal) mirrors
+  // `ProjectAccessRestriction` above: a modal would imply something usable sits
+  // behind it, and here nothing does. The banner, by contrast, is additive -
+  // during the grace period the project is fully usable.
+  if (inspectionBlocked.length > 0) {
+    return (
+      <InspectionBlockedScreen
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
+        projectName={currentProjectDetails?.name}
+        blocked={inspectionBlocked}
+        onSigned={refreshInspection}
+      />
+    );
+  }
+
+  return (
+    <>
+      {inspectionOutstanding.length > 0 ? (
+        <InspectionNonComplianceBanner
+          workspaceSlug={workspaceSlug}
+          projectId={projectId}
+          outstanding={inspectionOutstanding}
+          gracePeriodDays={inspectionData?.inspection_grace_period_days ?? 7}
+          onSigned={refreshInspection}
+        />
+      ) : null}
+      {children}
+    </>
+  );
 });

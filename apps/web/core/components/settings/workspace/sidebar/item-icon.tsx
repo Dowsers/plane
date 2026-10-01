@@ -11,6 +11,7 @@ import {
   Braces,
   Building,
   Compass,
+  FileSignature,
   KeyRound,
   LayoutTemplate,
   ShieldCheck,
@@ -41,4 +42,5 @@ export const WORKSPACE_SETTINGS_ICONS: Record<TWorkspaceSettingsTabs, LucideIcon
   security: ShieldCheck,
   "permission-bundles": KeyRound,
   slack: Slack,
+  "inspection-documents": FileSignature,
 };

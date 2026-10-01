@@ -5,7 +5,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Bot, Copy, GitBranch, Repeat, Sparkles, Timer, Users, Zap } from "lucide-react";
+import { Bot, Copy, GitBranch, Repeat, ShieldCheck, Sparkles, Timer, Users, Zap } from "lucide-react";
 // plane imports
 import type { ISvgIcons } from "@plane/propel/icons";
 import {
@@ -40,4 +40,5 @@ export const PROJECT_SETTINGS_ICONS: Record<TProjectSettingsTabs, LucideIcon | R
   ai_triage: Sparkles,
   ai_duplicate_detection: Copy,
   ai_assistant: Bot,
+  inspection: ShieldCheck,
 };

@@ -9,6 +9,7 @@ export * from "./agent";
 export * from "./ai";
 export * from "./ai-chat";
 export * from "./ai-triage-config";
+export * from "./inspection";
 export * from "./analytics";
 export * from "./api-explorer";
 export * from "./api_token";

@@ -428,6 +428,11 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/settings/security",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/security/page.tsx"
           ),
+          // Workspace-default inspection documents (ISO/IEC 17020 §4.1/§4.2)
+          route(
+            ":workspaceSlug/settings/inspection-documents",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/inspection-documents/page.tsx"
+          ),
           route(
             ":workspaceSlug/settings/permission-bundles",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/permission-bundles/page.tsx"
@@ -527,6 +532,11 @@ export const coreRoutes: RouteConfigEntry[] = [
             route(
               ":workspaceSlug/settings/projects/:projectId/ai-assistant",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/ai-assistant/page.tsx"
+            ),
+            // Project Inspection compliance (ISO/IEC 17020 §4.1/§4.2)
+            route(
+              ":workspaceSlug/settings/projects/:projectId/inspection",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/inspection/page.tsx"
             ),
           ]),
         ]),

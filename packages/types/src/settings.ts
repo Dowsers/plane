@@ -32,7 +32,8 @@ export type TWorkspaceSettingsTabs =
   | "wiki"
   | "security"
   | "permission-bundles"
-  | "slack";
+  | "slack"
+  | "inspection-documents";
 export type TWorkspaceSettingsItem = {
   key: TWorkspaceSettingsTabs;
   i18n_label: string;
@@ -58,7 +59,8 @@ export type TProjectSettingsTabs =
   | "governed_workflows"
   | "ai_triage"
   | "ai_duplicate_detection"
-  | "ai_assistant";
+  | "ai_assistant"
+  | "inspection";
 export type TProjectSettingsItem = {
   key: TProjectSettingsTabs;
   i18n_label: string;

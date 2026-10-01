@@ -7,6 +7,7 @@
 import type { TLogoProps } from "../common";
 import type { TUserPermissions } from "../enums";
 import type { TInitiativeHealth } from "../initiative";
+import type { TInspectionMode } from "../inspection";
 import type { TIssuePriorities } from "../issues";
 import type { TProjectUpdateCadence, TProjectUpdateStatus } from "../project-update";
 import type { TStateGroups } from "../state";
@@ -92,6 +93,20 @@ export interface IProject extends IPartialProject {
   // docs/feature-specs/05-insights-analytics.md ("Graphiques de
   // progression cycle/projet") in plane-selfhost.
   velocity_window_size?: number;
+  // Inspection compliance (ISO/IEC 17020 §4.1 impartiality / §4.2
+  // confidentiality) - flat fields on `Project`, returned by the generic
+  // project serializer (`fields = "__all__"`). Only
+  // `is_inspection_enabled` is read outside the dedicated settings tab: the
+  // project shell uses it to decide whether to fetch the current user's
+  // signature obligations at all, so an ordinary project costs no extra
+  // request. See `plane.db.models.inspection` and
+  // `plane.utils.inspection_compliance`.
+  is_inspection_enabled?: boolean;
+  inspection_mode?: TInspectionMode;
+  inspection_enabled_at?: string | null;
+  inspection_grace_period_days?: number;
+  inspection_enforcement_paused?: boolean;
+  inspection_review_manager?: string | null;
 }
 
 export type TProjectAnalyticsCountParams = {

@@ -167,6 +167,19 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
     access: [EUserWorkspaceRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/slack/`,
   },
+  "inspection-documents": {
+    key: "inspection-documents",
+    i18n_label: "workspace_settings.settings.inspection_documents.title",
+    href: `/settings/inspection-documents`,
+    // Inspection compliance (ISO/IEC 17020 §4.1/§4.2) - the workspace-wide
+    // DEFAULT document templates every inspection project inherits. The
+    // per-project override lives in that project's own "Inspection" settings
+    // tab instead. Admin-only at this nav gate, matching the backend's
+    // `WorkspaceInspectionTemplateEndpoint` (Admin for every verb including
+    // read).
+    access: [EUserWorkspaceRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/inspection-documents/`,
+  },
   "permission-bundles": {
     key: "permission-bundles",
     i18n_label: "permission_bundles.settings.title",
@@ -201,6 +214,7 @@ export const GROUPED_WORKSPACE_SETTINGS: Record<WORKSPACE_SETTINGS_CATEGORY, TWo
     WORKSPACE_SETTINGS["slack"],
     WORKSPACE_SETTINGS["security"],
     WORKSPACE_SETTINGS["permission-bundles"],
+    WORKSPACE_SETTINGS["inspection-documents"],
   ],
   [WORKSPACE_SETTINGS_CATEGORY.FEATURES]: [WORKSPACE_SETTINGS["features"], WORKSPACE_SETTINGS["wiki"]],
   [WORKSPACE_SETTINGS_CATEGORY.DEVELOPER]: [

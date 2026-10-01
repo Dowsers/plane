@@ -169,6 +169,18 @@ export const PROJECT_SETTINGS: Record<TProjectSettingsTabs, TProjectSettingsItem
     access: [EUserProjectRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/ai-assistant/`,
   },
+  inspection: {
+    key: "inspection",
+    i18n_label: "project_settings.inspection.label",
+    href: `/inspection`,
+    // `ProjectInspectionConfigEndpoint` / `ProjectInspectionComplianceEndpoint`
+    // (apps/api/plane/app/views/inspection.py) are Admin-only for every verb,
+    // including read - matching the sibling `ai_triage`/`governed_workflows`
+    // tabs' own gating. Members never see this tab; their side of the feature is
+    // the non-compliance banner and the signing screen, not a settings page.
+    access: [EUserProjectRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/inspection/`,
+  },
 };
 
 export const PROJECT_SETTINGS_FLAT_MAP: TProjectSettingsItem[] = Object.values(PROJECT_SETTINGS);
@@ -195,5 +207,6 @@ export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjec
     PROJECT_SETTINGS["ai_triage"],
     PROJECT_SETTINGS["ai_duplicate_detection"],
     PROJECT_SETTINGS["ai_assistant"],
+    PROJECT_SETTINGS["inspection"],
   ],
 };
