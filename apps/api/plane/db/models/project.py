@@ -266,6 +266,56 @@ class Project(BaseModel):
     # on locally when the workspace admin has it off).
     is_ai_assistant_enabled = models.BooleanField(null=True, blank=True, default=None)
 
+    # --- Inspection compliance (ISO/IEC 17020 §4.1 impartiality / §4.2
+    # confidentiality) - marks this project as an audit/evaluation engagement
+    # whose active members must sign an impartiality declaration and an NDA.
+    # See plane.db.models.inspection for the evidentiary models and
+    # plane.utils.inspection_compliance for the enforcement gate.
+    #
+    # Flat fields here rather than a satellite "ProjectInspectionSettings",
+    # matching the is_ai_triage_enabled convention documented above: these are
+    # switches on the project, with no lifecycle of their own. (The things that
+    # DO have their own lifecycle - versioned documents, signatures, per-member
+    # grace clocks - are satellites in plane.db.models.inspection.)
+    #
+    # A plain False-defaulting boolean, NOT the nullable tri-state used by the
+    # AI settings above: there is no workspace-level master switch to inherit
+    # from here, so a third "inherit" state would be meaningless.
+    is_inspection_enabled = models.BooleanField(default=False)
+    INSPECTION_MODE_CHOICES = (
+        ("MANUAL", "Manual"),
+        ("SEMI_AUTOMATIC", "Semi-automatic"),
+        ("FULLY_AUTOMATIC", "Fully automatic"),
+    )
+    # Recorded, displayed, filterable and exported in the compliance
+    # dashboard, but deliberately drives NO logic in this iteration - the
+    # signature obligations are identical in all three modes until the
+    # business defines otherwise.
+    inspection_mode = models.CharField(
+        max_length=20, choices=INSPECTION_MODE_CHOICES, default="MANUAL"
+    )
+    inspection_enabled_at = models.DateTimeField(null=True, blank=True)
+    # Days a member gets, from when their obligation is first observed, before
+    # the gate starts blocking them. Reminders go out during this window.
+    inspection_grace_period_days = models.PositiveSmallIntegerField(default=7)
+    # Per-project escape hatch: keeps the obligations, the reminders and the
+    # dashboard, but stops the gate from blocking anyone. One of the three
+    # independent ways out of a lockout (the others being the always-exempt
+    # inspection-config route and the instance-wide
+    # ENABLE_INSPECTION_ENFORCEMENT switch).
+    inspection_enforcement_paused = models.BooleanField(default=False)
+    # Who reviews impartiality declarations and records the risk level and
+    # mitigation measures (§4.1 asks for a named responsible person, not just
+    # "an admin"). Falls back to any project Admin when unset. Same shape as
+    # `update_owner` above.
+    inspection_review_manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="inspection_projects_reviewed",
+    )
+
     def __init__(self, *args, **kwargs):
         # Track if timezone is provided, if so, don't override it with the workspace timezone when saving
         self.is_timezone_provided = kwargs.get("timezone") is not None

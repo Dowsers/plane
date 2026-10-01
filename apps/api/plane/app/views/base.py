@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # Third part imports
 from rest_framework import status
-from rest_framework.exceptions import APIException, NotAuthenticated
+from rest_framework.exceptions import APIException, NotAuthenticated, PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,6 +29,7 @@ from plane.authentication.session import BaseSessionAuthentication
 from plane.utils.exception_logger import log_exception
 from plane.utils.paginator import BasePaginator
 from plane.utils.core.mixins import ReadReplicaControlMixin
+from plane.utils.inspection_compliance import enforce_inspection_compliance
 from plane.utils.session_activity import enforce_workspace_session_timeout
 
 
@@ -71,6 +72,23 @@ class TimezoneMixin:
                             "detail": error,
                         }
                     )
+
+            # Inspection compliance (ISO/IEC 17020 §4.1/§4.2) - same single
+            # choke point as the session timeout above. `PermissionDenied`
+            # (403), deliberately NOT the `NotAuthenticated` (401) used just
+            # above: `apps/web/core/services/api.service.ts` hard-redirects to
+            # the login page on any 401 other than REAUTH_REQUIRED, which
+            # would throw the user out of the app instead of showing them the
+            # signing screen. A 403 passes through that interceptor untouched,
+            # so the frontend guard can catch `error_code` and render the
+            # signing flow in place. See
+            # `plane.utils.inspection_compliance` for the gate's own design,
+            # its exemption list and why it fails OPEN.
+            project_id = kwargs.get("project_id")
+            if project_id:
+                payload = enforce_inspection_compliance(request, project_id)
+                if payload:
+                    raise PermissionDenied(detail=payload)
         else:
             timezone.deactivate()
 

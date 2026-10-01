@@ -445,6 +445,17 @@ from .issue_triage_suggestion import (
 )
 
 from .ai_triage_config import ProjectAITriageConfigEndpoint, WorkspaceAITriageConfigEndpoint
+from .inspection import (
+    InspectionTemplateVersionEndpoint,
+    InspectionTemplateVersionPublishEndpoint,
+    ProjectInspectionComplianceEndpoint,
+    ProjectInspectionConfigEndpoint,
+    ProjectInspectionMeEndpoint,
+    ProjectInspectionReviewEndpoint,
+    ProjectInspectionSignEndpoint,
+    ProjectInspectionTemplateEndpoint,
+    WorkspaceInspectionTemplateEndpoint,
+)
 
 from .issue_duplicate_suggestion import (
     IssueDuplicateCheckEndpoint,

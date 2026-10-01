@@ -114,6 +114,17 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.sla_task.recalculate_sla_statuses_task",
         "schedule": crontab(minute="*/5"),
     },
+    # Inspection compliance reminders (ISO/IEC 17020 §4.1/§4.2) - see
+    # `plane.bgtasks.inspection_reminder_task` for the cadence, which is driven
+    # by each obligation row rather than by this schedule: running daily does
+    # NOT mean a daily email (48h throttle, capped at 4 during the grace
+    # period, one blocked email on the transition, weekly nudges after).
+    # UTC 06:30 - a free slot, after the 00:00-04:00 daily cleanup sweeps and
+    # early enough to land before a European working day.
+    "check-every-day-for-inspection-signature-reminders": {
+        "task": "plane.bgtasks.inspection_reminder_task.send_inspection_signature_reminders",
+        "schedule": crontab(hour=6, minute=30),
+    },
     # Category 7 integration event log retention (Sentry, exigence 8) -
     # see docs/feature-specs/07-integrations-git.md in plane-selfhost.
     "check-every-day-to-delete-integration-event-logs": {

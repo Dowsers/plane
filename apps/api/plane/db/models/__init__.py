@@ -24,6 +24,17 @@ from .exporter import ExporterHistory
 from .idempotency import IdempotencyKey
 from .importer import Importer
 from .initiative import Initiative, InitiativeProject, InitiativeActivity
+from .inspection import (
+    DEFAULT_IMPARTIALITY_QUESTIONNAIRE,
+    InspectionDocumentKind,
+    InspectionDocumentTemplate,
+    InspectionDocumentTemplateVersion,
+    InspectionObligation,
+    InspectionQuestionCategory,
+    InspectionReviewStatus,
+    InspectionRiskLevel,
+    InspectionSignature,
+)
 from .intake import Intake, IntakeIssue, IntakeResponsibilitySetting, IntakeRotationMember, IntakeForm
 from .milestone import Milestone
 from .project_update import ProjectUpdate, ProjectUpdateReminder, AIGenerationStatus

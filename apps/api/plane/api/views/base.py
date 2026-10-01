@@ -26,6 +26,7 @@ from plane.api.middleware.api_authentication import APIKeyAuthentication
 from plane.api.rate_limit import ApiKeyRateThrottle, TieredSlidingWindowRateThrottle
 from plane.db.models import APIToken
 from plane.utils.exception_logger import log_exception
+from plane.utils.inspection_compliance import enforce_inspection_compliance
 from plane.utils.paginator import BasePaginator
 from plane.utils.core.mixins import ReadReplicaControlMixin
 
@@ -88,6 +89,26 @@ class TimezoneMixin:
         super().initial(request, *args, **kwargs)
         if request.user.is_authenticated:
             timezone.activate(zoneinfo.ZoneInfo(request.user.user_timezone))
+            # Inspection compliance (ISO/IEC 17020 §4.1/§4.2) - the SAME gate
+            # the internal app API applies in `plane.app.views.base.
+            # TimezoneMixin.initial()`. Without it here, an API token was a
+            # complete bypass of the feature: a token holder could read and
+            # write an inspection project's work items having signed nothing,
+            # which makes the whole control unpresentable to an accreditation
+            # assessor.
+            #
+            # Placed in this shared mixin (which both `BaseAPIView` and
+            # `BaseViewSet` below inherit) rather than duplicated into their
+            # two `initial()` overrides the way `APITokenScopePermission.
+            # enforce` is: that one is duplicated because it must observe the
+            # outcome of each view's own `permission_classes`, whereas this
+            # gate has no such ordering requirement and benefits from living
+            # in exactly one place.
+            project_id = kwargs.get("project_id")
+            if project_id:
+                payload = enforce_inspection_compliance(request, project_id)
+                if payload:
+                    raise PermissionDenied(detail=payload)
         else:
             timezone.deactivate()
 

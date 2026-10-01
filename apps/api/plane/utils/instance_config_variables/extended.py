@@ -114,4 +114,28 @@ extended_config_variables = [
         "category": "PUSH_NOTIFICATIONS",
         "is_encrypted": False,
     },
+    # Inspection compliance (ISO/IEC 17020 §4.1/§4.2) - instance-wide kill
+    # switch for the ENFORCEMENT half of the feature, same "0"/"1"
+    # string-boolean shape as `ENABLE_SCIM`/`PUSH_NOTIFICATIONS_ENABLED`
+    # above, read via `plane.utils.inspection_compliance.
+    # is_instance_enforcement_enabled` on every project-scoped request.
+    #
+    # Defaults OFF, and more deliberately than its siblings: this gate can deny
+    # READS of a project, so it must never switch itself on during an upgrade.
+    # With it off, flagging a project as an inspection still records
+    # obligations, shows the non-compliance banner and sends reminders - it
+    # simply blocks nobody. Turning it on is a conscious act, and the one
+    # instance-wide way back out of a lockout.
+    #
+    # This entry alone only seeds the key on a genuinely FRESH instance
+    # (`configure_instance` runs `get_or_create`) - for already-deployed
+    # instances see the accompanying data migration
+    # `plane.license.migrations.0013_enable_inspection_enforcement_config`,
+    # matching `ENABLE_SCIM`'s own precedent.
+    {
+        "key": "ENABLE_INSPECTION_ENFORCEMENT",
+        "value": os.environ.get("ENABLE_INSPECTION_ENFORCEMENT", "0"),
+        "category": "SECURITY",
+        "is_encrypted": False,
+    },
 ]

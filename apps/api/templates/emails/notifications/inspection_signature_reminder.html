@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Documents d'inspection à signer</title>
+    <style>
+      body,
+      table,
+      td,
+      p {
+        margin: 0;
+        padding: 0;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          width: 100% !important;
+        }
+
+        .email-content {
+          padding: 24px 20px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      background-color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #1f1f1f;
+    "
+  >
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td align="center" style="padding: 24px 12px;">
+          <table
+            role="presentation"
+            class="email-container"
+            width="600"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 8px;"
+          >
+            <tr>
+              <td class="email-content" style="padding: 32px;">
+                <h1
+                  style="
+                    margin: 0 0 12px;
+                    font-size: 22px;
+                    line-height: 1.35;
+                    font-weight: 600;
+                    color: #111111;
+                  "
+                >
+                  Documents d'inspection à signer
+                </h1>
+
+                <p style="margin: 0 0 16px;">
+                  Bonjour {{first_name}},
+                </p>
+
+                <p style="margin: 0 0 16px;">
+                  Vous êtes membre actif d'un ou plusieurs projets d'inspection.
+                  Avant de pouvoir y travailler, vous devez signer les documents
+                  ci-dessous. Cette exigence découle des exigences
+                  d'impartialité (§4.1) et de confidentialité (§4.2) de la norme
+                  ISO/IEC 17020.
+                </p>
+
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  style="margin: 0 0 20px; font-size: 14px;"
+                >
+                  <tr>
+                    <td
+                      style="
+                        padding: 8px 10px;
+                        background-color: #f3f3f3;
+                        border: 1px solid #e9e9e9;
+                        font-weight: 600;
+                      "
+                    >
+                      Projet
+                    </td>
+                    <td
+                      style="
+                        padding: 8px 10px;
+                        background-color: #f3f3f3;
+                        border: 1px solid #e9e9e9;
+                        font-weight: 600;
+                      "
+                    >
+                      Document
+                    </td>
+                    <td
+                      style="
+                        padding: 8px 10px;
+                        background-color: #f3f3f3;
+                        border: 1px solid #e9e9e9;
+                        font-weight: 600;
+                      "
+                    >
+                      Échéance
+                    </td>
+                  </tr>
+                  {% for document in documents %}
+                  <tr>
+                    <td style="padding: 8px 10px; border: 1px solid #e9e9e9;">
+                      {{document.project_name}}
+                    </td>
+                    <td style="padding: 8px 10px; border: 1px solid #e9e9e9;">
+                      {{document.document}}
+                    </td>
+                    <td style="padding: 8px 10px; border: 1px solid #e9e9e9;">
+                      {{document.deadline|date:"d/m/Y"}}{% if document.is_overdue %}
+                      <strong style="color: #b91c1c;">(dépassée)</strong>{% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </table>
+
+                {% if enforcement_on %}
+                <p
+                  style="
+                    margin: 0 0 16px;
+                    padding: 12px 14px;
+                    background-color: #fff7ed;
+                    border: 1px solid #fed7aa;
+                    border-radius: 6px;
+                    font-size: 14px;
+                  "
+                >
+                  Passé l'échéance, votre accès au projet concerné sera suspendu
+                  jusqu'à la signature. Vous pourrez toujours accéder à l'écran
+                  de signature.
+                </p>
+                {% endif %}
+
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5f5e5e;">
+                  Ouvrez le projet concerné dans Plane : la bannière en haut de
+                  page vous mènera directement aux documents à signer.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
