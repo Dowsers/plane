@@ -27,6 +27,28 @@ import { enTranslations, locales } from "@plane/i18n";
 
 const frTranslations = (await locales.fr.translations()).default;
 
+/** Every locale the app ships, loaded once. */
+const ALL_LOCALES: [string, unknown][] = await Promise.all(
+  Object.keys(locales).map(async (code) => {
+    const loader = (locales as Record<string, { translations: () => Promise<{ default: unknown }> }>)[code];
+    return [code, (await loader.translations()).default] as [string, unknown];
+  })
+);
+
+/** Key groups the EVALUATOR sees - banner, blocking screen, signing modal, their
+ * own signed-documents page. These are translated into every locale, because the
+ * evaluators are the broad population. The admin-only groups (config, workspace
+ * document editor, compliance table, review) stay en/fr like the rest of the
+ * admin surface, and fall back to English per key. */
+const EVALUATOR_GROUPS = new Set(["kind", "answer", "category", "banner", "blocked", "sign", "risk"]);
+
+const isEvaluatorKey = (key: string): boolean => {
+  if (key.startsWith("inspection.my_signatures.")) return true;
+  if (!key.startsWith("project_settings.inspection.")) return false;
+  const group = key.slice("project_settings.inspection.".length).split(".")[0];
+  return EVALUATOR_GROUPS.has(group);
+};
+
 const WEB_ROOT = path.resolve(__dirname, "..");
 
 const SOURCES = [
@@ -126,5 +148,41 @@ describe("inspection i18n keys", () => {
       return JSON.stringify(en) !== JSON.stringify(fr);
     });
     expect(mismatched, `placeholder mismatch: ${mismatched.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("evaluator-facing keys in every locale", () => {
+  /** The admin surface may fall back to English, but what an evaluator reads
+   * while signing a legal undertaking should be in their own language. */
+  const evaluatorKeys = KEYS.filter(isEvaluatorKey);
+
+  it("finds the evaluator subset (guards against a broken filter)", () => {
+    expect(evaluatorKeys.length).toBeGreaterThan(40);
+  });
+
+  it.each(ALL_LOCALES)("%s resolves every evaluator key", (_code, translations) => {
+    const missing = evaluatorKeys.filter((key) => resolve(translations, key) === null);
+    expect(missing, `missing: ${missing.join(", ")}`).toEqual([]);
+  });
+
+  it.each(ALL_LOCALES)("%s uses single-brace placeholders", (_code, translations) => {
+    const offenders = evaluatorKeys.filter((key) => /\{\{/.test(resolve(translations, key) ?? ""));
+    expect(offenders, `double-brace: ${offenders.join(", ")}`).toEqual([]);
+  });
+
+  it.each(ALL_LOCALES)("%s keeps the same placeholders as English", (_code, translations) => {
+    // A dropped `{days}` renders literally, and only for speakers of that one
+    // language - exactly the kind of thing nobody notices in review.
+    const mismatched = evaluatorKeys.filter(
+      (key) =>
+        JSON.stringify(placeholders(resolve(translations, key))) !==
+        JSON.stringify(placeholders(resolve(enTranslations, key)))
+    );
+    expect(mismatched, `placeholder mismatch: ${mismatched.join(", ")}`).toEqual([]);
+  });
+
+  it("English carries every key, evaluator or admin, since it is the fallback", () => {
+    const missing = KEYS.filter((key) => resolve(enTranslations, key) === null);
+    expect(missing, `missing from the fallback locale: ${missing.join(", ")}`).toEqual([]);
   });
 });

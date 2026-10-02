@@ -1827,7 +1827,89 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "İmzaladığım belgeler",
+      description:
+        "Tüm çalışma alanları ve projelerde imzaladığınız bütün denetim taahhütleri, kanıt niteliğindeki PDF kopyasıyla birlikte.",
+      empty: "Henüz hiçbir denetim belgesi imzalamadınız.",
+      document: "Belge",
+      project: "Proje",
+      signed_at: "İmzalanma tarihi",
+      status: "Durum",
+      download: "PDF",
+      accepted: "Geçerli",
+      pending_review: "İnceleme bekliyor",
+      rejected: "Reddedildi",
+      risk: "Kabul edildi — tarafsızlık riski: {risk}",
+      download_error: "PDF indirilemedi.",
+      pdf_notice:
+        "Her PDF, metni imzaladığınız şekliyle birebir yeniden üretir ve ardından imza kanıtını içerir: tarih, e-posta adresi, IP adresi ve belge özeti.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Tarafsızlık beyanı",
+        confidentiality: "Gizlilik sözleşmesi (NDA)",
+        ethics_charter: "Görev etik ilkeleri",
+      },
+      risk: {
+        none: "Tespit edilen risk yok",
+        low: "Düşük",
+        medium: "Orta",
+        high: "Yüksek",
+      },
+      category: {
+        personal_conflicts: "I. Kişisel çıkar çatışmaları",
+        professional_commitments: "II. Mesleki taahhütler",
+        analysis_objectivity: "III. Analizin nesnelliği",
+        ethical_conduct: "IV. Etik davranış",
+        final_declaration: "V. Nihai beyan",
+      },
+      answer: {
+        yes: "Evet",
+        no: "Hayır",
+        true: "Doğru",
+        false: "Yanlış",
+      },
+      banner: {
+        next: "İmzalanacak sonraki belge: {document}. Yükümlülüğünüzün başlangıcından itibaren {days} gününüz var.",
+        followed_by: "({count} belge daha gelecek.)",
+        message: "İmzalamanız gerekiyor: {documents}. Yükümlülüğünüzün başlangıcından itibaren {days} gününüz var.",
+        awaiting_review: "Beyanınız kaydedildi ve proje sorumlusunun incelemesini bekliyor.",
+        action: "Şimdi imzala",
+      },
+      blocked: {
+        title: "İmza gerekli",
+        this_project: "bu proje",
+        description:
+          "{project} projesine erişiminiz, bu denetim görevinin gerektirdiği belgeleri imzalayana kadar askıya alınmıştır.",
+        to_sign: "İmzalanacak belgeler",
+        sign_now: "İmzala",
+        locked: "Önce bir öncekini imzalayın",
+        awaiting_review:
+          "Beyanınız kaydedildi. Erişiminiz yeniden açılmadan önce bir sorumlunun incelemesi gereken bir husus bildirdiniz.",
+        refused: "Beyanınız reddedildi. Proje sorumlusuyla iletişime geçin.",
+      },
+      sign: {
+        version: "Sürüm {version}",
+        name_label: "İmzalamak için adınızı ve soyadınızı yazın",
+        name_placeholder: "SOYAD Ad",
+        evidence_notice: "Tarih, e-posta adresiniz, IP adresiniz ve belgenin özeti imzanızla birlikte kaydedilir.",
+        remaining: "Yanıtlanacak {count} soru kaldı",
+        submit: "İmzala",
+        success_title: "Belge imzalandı",
+        success_message: "İmzanız kaydedildi.",
+        pending_review_title: "Beyan kaydedildi",
+        pending_review_message:
+          "İnceleme gerektiren bir husus bildirdiniz. Erişiminiz yeniden açılmadan önce bir sorumlunun bunu değerlendirmesi gerekir.",
+        error_message: "İmza kaydedilemedi.",
+        pdf_failed_title: "İmza kaydedildi",
+        pdf_failed_message:
+          "İmzanız kaydedildi ancak PDF kopyası indirilemedi. İmzaladığım belgeler bölümünden alabilirsiniz.",
+      },
+    },
     general: {
       enter_project_id: "Proje ID girin",
       please_select_a_timezone: "Lütfen bir saat dilimi seçin",

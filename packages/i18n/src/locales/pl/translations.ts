@@ -1817,7 +1817,90 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Moje podpisane dokumenty",
+      description:
+        "Wszystkie zobowiązania inspekcyjne, które podpisałeś, we wszystkich przestrzeniach roboczych i projektach, wraz z dowodową kopią PDF.",
+      empty: "Nie podpisałeś jeszcze żadnego dokumentu inspekcyjnego.",
+      document: "Dokument",
+      project: "Projekt",
+      signed_at: "Podpisano",
+      status: "Status",
+      download: "PDF",
+      accepted: "Ważny",
+      pending_review: "Oczekuje na przegląd",
+      rejected: "Odrzucony",
+      risk: "Zaakceptowano — ryzyko dla bezstronności: {risk}",
+      download_error: "Nie udało się pobrać pliku PDF.",
+      pdf_notice:
+        "Każdy plik PDF odtwarza tekst dokładnie w formie, w jakiej go podpisałeś, a następnie dowód podpisu: datę, adres e-mail, adres IP i sumę kontrolną dokumentu.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Oświadczenie o bezstronności",
+        confidentiality: "Umowa o zachowaniu poufności (NDA)",
+        ethics_charter: "Karta etyczna misji",
+      },
+      risk: {
+        none: "Brak zidentyfikowanego ryzyka",
+        low: "Niskie",
+        medium: "Średnie",
+        high: "Wysokie",
+      },
+      category: {
+        personal_conflicts: "I. Osobiste konflikty interesów",
+        professional_commitments: "II. Zobowiązania zawodowe",
+        analysis_objectivity: "III. Obiektywność analizy",
+        ethical_conduct: "IV. Postawa etyczna",
+        final_declaration: "V. Oświadczenie końcowe",
+      },
+      answer: {
+        yes: "Tak",
+        no: "Nie",
+        true: "Prawda",
+        false: "Fałsz",
+      },
+      banner: {
+        next: "Następny dokument do podpisania: {document}. Masz {days} dni od początku swojego zobowiązania.",
+        followed_by: "(dalej {count}.)",
+        message: "Musisz podpisać: {documents}. Masz {days} dni od początku swojego zobowiązania.",
+        awaiting_review: "Twoje oświadczenie zostało zarejestrowane i oczekuje na przegląd przez kierownika projektu.",
+        action: "Podpisz teraz",
+      },
+      blocked: {
+        title: "Wymagany podpis",
+        this_project: "ten projekt",
+        description:
+          "Dostęp do {project} jest zawieszony do momentu podpisania dokumentów wymaganych przez tę misję inspekcyjną.",
+        to_sign: "Dokumenty do podpisania",
+        sign_now: "Podpisz",
+        locked: "Najpierw podpisz poprzedni",
+        awaiting_review:
+          "Twoje oświadczenie jest zarejestrowane. Wskazuje element, który kierownik musi zbadać przed przywróceniem dostępu.",
+        refused: "Twoje oświadczenie zostało odrzucone. Skontaktuj się z kierownikiem projektu.",
+      },
+      sign: {
+        version: "Wersja {version}",
+        name_label: "Wpisz imię i nazwisko, aby podpisać",
+        name_placeholder: "NAZWISKO Imię",
+        evidence_notice:
+          "Data, Twój adres e-mail, Twój adres IP i suma kontrolna dokumentu są rejestrowane wraz z podpisem.",
+        remaining: "Pozostało {count} pytanie(ń)",
+        submit: "Podpisz",
+        success_title: "Dokument podpisany",
+        success_message: "Twój podpis został zarejestrowany.",
+        pending_review_title: "Oświadczenie zarejestrowane",
+        pending_review_message:
+          "Zgłosiłeś element wymagający przeglądu. Kierownik musi go ocenić przed przywróceniem dostępu.",
+        error_message: "Nie udało się zarejestrować podpisu.",
+        pdf_failed_title: "Podpis zarejestrowany",
+        pdf_failed_message:
+          "Twój podpis jest zapisany, ale kopia PDF nie została pobrana. Możesz ją uzyskać w Moje podpisane dokumenty.",
+      },
+    },
     general: {
       enter_project_id: "Wpisz ID projektu",
       please_select_a_timezone: "Wybierz strefę czasową",

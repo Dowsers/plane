@@ -1828,7 +1828,90 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Dokumen yang saya tanda tangani",
+      description:
+        "Semua komitmen inspeksi yang telah Anda tanda tangani, di seluruh ruang kerja dan proyek, beserta salinan PDF sebagai bukti.",
+      empty: "Anda belum menandatangani dokumen inspeksi apa pun.",
+      document: "Dokumen",
+      project: "Proyek",
+      signed_at: "Ditandatangani pada",
+      status: "Status",
+      download: "PDF",
+      accepted: "Berlaku",
+      pending_review: "Menunggu peninjauan",
+      rejected: "Ditolak",
+      risk: "Diterima — risiko ketidakberpihakan: {risk}",
+      download_error: "PDF tidak dapat diunduh.",
+      pdf_notice:
+        "Setiap PDF menampilkan teks tepat seperti yang Anda tanda tangani, diikuti bukti tanda tangan: tanggal, alamat email, alamat IP, dan sidik dokumen.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Pernyataan ketidakberpihakan",
+        confidentiality: "Perjanjian kerahasiaan (NDA)",
+        ethics_charter: "Piagam etika misi",
+      },
+      risk: {
+        none: "Tidak ada risiko teridentifikasi",
+        low: "Rendah",
+        medium: "Sedang",
+        high: "Tinggi",
+      },
+      category: {
+        personal_conflicts: "I. Konflik kepentingan pribadi",
+        professional_commitments: "II. Komitmen profesional",
+        analysis_objectivity: "III. Objektivitas analisis",
+        ethical_conduct: "IV. Perilaku etis",
+        final_declaration: "V. Pernyataan akhir",
+      },
+      answer: {
+        yes: "Ya",
+        no: "Tidak",
+        true: "Benar",
+        false: "Salah",
+      },
+      banner: {
+        next: "Dokumen berikutnya untuk ditandatangani: {document}. Anda punya {days} hari sejak kewajiban Anda dimulai.",
+        followed_by: "({count} lagi menyusul.)",
+        message: "Anda harus menandatangani: {documents}. Anda punya {days} hari sejak kewajiban Anda dimulai.",
+        awaiting_review: "Pernyataan Anda telah dicatat dan menunggu peninjauan oleh penanggung jawab proyek.",
+        action: "Tanda tangani sekarang",
+      },
+      blocked: {
+        title: "Tanda tangan diperlukan",
+        this_project: "proyek ini",
+        description:
+          "Akses ke {project} ditangguhkan sampai Anda menandatangani dokumen yang diwajibkan oleh misi inspeksi ini.",
+        to_sign: "Dokumen untuk ditandatangani",
+        sign_now: "Tanda tangani",
+        locked: "Tanda tangani yang sebelumnya dahulu",
+        awaiting_review:
+          "Pernyataan Anda telah dicatat. Ada hal yang harus ditinjau penanggung jawab sebelum akses Anda dipulihkan.",
+        refused: "Pernyataan Anda ditolak. Hubungi penanggung jawab proyek.",
+      },
+      sign: {
+        version: "Versi {version}",
+        name_label: "Ketik nama lengkap Anda untuk menandatangani",
+        name_placeholder: "NAMA KELUARGA Nama",
+        evidence_notice:
+          "Tanggal, alamat email Anda, alamat IP Anda, dan sidik dokumen dicatat bersama tanda tangan Anda.",
+        remaining: "{count} pertanyaan belum dijawab",
+        submit: "Tanda tangani",
+        success_title: "Dokumen ditandatangani",
+        success_message: "Tanda tangan Anda telah dicatat.",
+        pending_review_title: "Pernyataan dicatat",
+        pending_review_message:
+          "Anda mengungkapkan hal yang memerlukan peninjauan. Penanggung jawab harus menilainya sebelum akses Anda dipulihkan.",
+        error_message: "Tanda tangan tidak dapat dicatat.",
+        pdf_failed_title: "Tanda tangan dicatat",
+        pdf_failed_message:
+          "Tanda tangan Anda tersimpan, tetapi salinan PDF gagal diunduh. Anda dapat mengambilnya dari Dokumen yang saya tanda tangani.",
+      },
+    },
     general: {
       enter_project_id: "Masukkan ID proyek",
       please_select_a_timezone: "Silakan pilih zona waktu",

@@ -1832,7 +1832,91 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "I miei documenti firmati",
+      description:
+        "Tutti gli impegni di ispezione che hai firmato, in tutti gli spazi di lavoro e progetti, con la relativa copia PDF probatoria.",
+      empty: "Non hai ancora firmato alcun documento di ispezione.",
+      document: "Documento",
+      project: "Progetto",
+      signed_at: "Firmato il",
+      status: "Stato",
+      download: "PDF",
+      accepted: "Valido",
+      pending_review: "In attesa di revisione",
+      rejected: "Rifiutato",
+      risk: "Accettato — rischio per l'imparzialità: {risk}",
+      download_error: "Non è stato possibile scaricare il PDF.",
+      pdf_notice:
+        "Ogni PDF riproduce il testo esattamente come l'hai firmato, seguito dalla prova di firma: data, indirizzo email, indirizzo IP e impronta del documento.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Dichiarazione di imparzialità",
+        confidentiality: "Accordo di riservatezza (NDA)",
+        ethics_charter: "Carta etica della missione",
+      },
+      risk: {
+        none: "Nessun rischio identificato",
+        low: "Basso",
+        medium: "Medio",
+        high: "Alto",
+      },
+      category: {
+        personal_conflicts: "I. Conflitti di interesse personali",
+        professional_commitments: "II. Impegni professionali",
+        analysis_objectivity: "III. Obiettività dell'analisi",
+        ethical_conduct: "IV. Condotta etica",
+        final_declaration: "V. Dichiarazione finale",
+      },
+      answer: {
+        yes: "Sì",
+        no: "No",
+        true: "Vero",
+        false: "Falso",
+      },
+      banner: {
+        next: "Prossimo documento da firmare: {document}. Hai {days} giorni dall'inizio del tuo obbligo.",
+        followed_by: "({count} altri a seguire.)",
+        message: "Devi firmare: {documents}. Hai {days} giorni dall'inizio del tuo obbligo.",
+        awaiting_review:
+          "La tua dichiarazione è stata registrata e attende la revisione del responsabile del progetto.",
+        action: "Firma ora",
+      },
+      blocked: {
+        title: "Firma richiesta",
+        this_project: "questo progetto",
+        description:
+          "L'accesso a {project} è sospeso fino alla firma dei documenti richiesti da questa missione di ispezione.",
+        to_sign: "Documenti da firmare",
+        sign_now: "Firma",
+        locked: "Firma prima il precedente",
+        awaiting_review:
+          "La tua dichiarazione è registrata. Segnala un elemento che un responsabile deve esaminare prima del ripristino del tuo accesso.",
+        refused: "La tua dichiarazione è stata rifiutata. Contatta il responsabile del progetto.",
+      },
+      sign: {
+        version: "Versione {version}",
+        name_label: "Digita nome e cognome per firmare",
+        name_placeholder: "COGNOME Nome",
+        evidence_notice:
+          "La data, il tuo indirizzo email, il tuo indirizzo IP e un'impronta del documento sono registrati con la tua firma.",
+        remaining: "{count} domanda(e) ancora da compilare",
+        submit: "Firma",
+        success_title: "Documento firmato",
+        success_message: "La tua firma è stata registrata.",
+        pending_review_title: "Dichiarazione registrata",
+        pending_review_message:
+          "Hai dichiarato un elemento che richiede una revisione. Un responsabile deve valutarlo prima del ripristino del tuo accesso.",
+        error_message: "Non è stato possibile registrare la firma.",
+        pdf_failed_title: "Firma registrata",
+        pdf_failed_message:
+          "La tua firma è salvata, ma la copia PDF non è stata scaricata. Puoi recuperarla da I miei documenti firmati.",
+      },
+    },
     general: {
       enter_project_id: "Inserisci l'ID del progetto",
       please_select_a_timezone: "Seleziona un fuso orario",

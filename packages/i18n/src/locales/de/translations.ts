@@ -1835,7 +1835,90 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Meine signierten Dokumente",
+      description:
+        "Alle Inspektionsverpflichtungen, die Sie signiert haben, über alle Workspaces und Projekte hinweg, mit der jeweiligen PDF-Nachweiskopie.",
+      empty: "Sie haben noch kein Inspektionsdokument signiert.",
+      document: "Dokument",
+      project: "Projekt",
+      signed_at: "Signiert am",
+      status: "Status",
+      download: "PDF",
+      accepted: "Gültig",
+      pending_review: "Prüfung ausstehend",
+      rejected: "Abgelehnt",
+      risk: "Angenommen — Unparteilichkeitsrisiko: {risk}",
+      download_error: "Das PDF konnte nicht heruntergeladen werden.",
+      pdf_notice:
+        "Jedes PDF gibt den Text genau so wieder, wie Sie ihn signiert haben, gefolgt vom Signaturnachweis: Datum, E-Mail-Adresse, IP-Adresse und Dokument-Prüfsumme.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Unparteilichkeitserklärung",
+        confidentiality: "Vertraulichkeitsvereinbarung (NDA)",
+        ethics_charter: "Ethikcharta der Mission",
+      },
+      risk: {
+        none: "Kein erkanntes Risiko",
+        low: "Niedrig",
+        medium: "Mittel",
+        high: "Hoch",
+      },
+      category: {
+        personal_conflicts: "I. Persönliche Interessenkonflikte",
+        professional_commitments: "II. Berufliche Verpflichtungen",
+        analysis_objectivity: "III. Objektivität der Analyse",
+        ethical_conduct: "IV. Ethisches Verhalten",
+        final_declaration: "V. Abschließende Erklärung",
+      },
+      answer: {
+        yes: "Ja",
+        no: "Nein",
+        true: "Wahr",
+        false: "Falsch",
+      },
+      banner: {
+        next: "Nächstes zu signierendes Dokument: {document}. Sie haben {days} Tage ab Beginn Ihrer Verpflichtung.",
+        followed_by: "({count} weitere folgen.)",
+        message: "Sie müssen signieren: {documents}. Sie haben {days} Tage ab Beginn Ihrer Verpflichtung.",
+        awaiting_review: "Ihre Erklärung wurde erfasst und wartet auf die Prüfung durch die Projektleitung.",
+        action: "Jetzt signieren",
+      },
+      blocked: {
+        title: "Signatur erforderlich",
+        this_project: "dieses Projekt",
+        description:
+          "Der Zugriff auf {project} ist gesperrt, bis Sie die für diese Inspektionsmission erforderlichen Dokumente signiert haben.",
+        to_sign: "Zu signierende Dokumente",
+        sign_now: "Signieren",
+        locked: "Signieren Sie zuerst das vorherige",
+        awaiting_review:
+          "Ihre Erklärung wurde erfasst. Sie enthält einen Punkt, den eine Führungskraft prüfen muss, bevor Ihr Zugriff wiederhergestellt wird.",
+        refused: "Ihre Erklärung wurde abgelehnt. Wenden Sie sich an die Projektleitung.",
+      },
+      sign: {
+        version: "Version {version}",
+        name_label: "Geben Sie Ihren vollständigen Namen ein, um zu signieren",
+        name_placeholder: "NACHNAME Vorname",
+        evidence_notice:
+          "Datum, Ihre E-Mail-Adresse, Ihre IP-Adresse und eine Prüfsumme des Dokuments werden mit Ihrer Signatur erfasst.",
+        remaining: "Noch {count} Frage(n) zu beantworten",
+        submit: "Signieren",
+        success_title: "Dokument signiert",
+        success_message: "Ihre Signatur wurde erfasst.",
+        pending_review_title: "Erklärung erfasst",
+        pending_review_message:
+          "Sie haben einen prüfungsbedürftigen Punkt offengelegt. Eine Führungskraft muss ihn bewerten, bevor Ihr Zugriff wiederhergestellt wird.",
+        error_message: "Die Signatur konnte nicht erfasst werden.",
+        pdf_failed_title: "Signatur erfasst",
+        pdf_failed_message:
+          "Ihre Signatur ist gespeichert, aber die PDF-Kopie konnte nicht heruntergeladen werden. Sie können sie unter Meine signierten Dokumente abrufen.",
+      },
+    },
     general: {
       enter_project_id: "Geben Sie eine Projekt-ID ein",
       please_select_a_timezone: "Bitte wählen Sie eine Zeitzone aus",

@@ -1814,7 +1814,89 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Moje podepsané dokumenty",
+      description:
+        "Všechny inspekční závazky, které jste podepsali, ve všech pracovních prostorech a projektech, s průkazní kopií PDF.",
+      empty: "Dosud jste nepodepsali žádný inspekční dokument.",
+      document: "Dokument",
+      project: "Projekt",
+      signed_at: "Podepsáno",
+      status: "Stav",
+      download: "PDF",
+      accepted: "Platné",
+      pending_review: "Čeká na posouzení",
+      rejected: "Zamítnuto",
+      risk: "Přijato — riziko pro nestrannost: {risk}",
+      download_error: "PDF nelze stáhnout.",
+      pdf_notice:
+        "Každé PDF reprodukuje text přesně tak, jak jste jej podepsali, následovaný průkazem podpisu: datum, e-mailová adresa, IP adresa a kontrolní součet dokumentu.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Prohlášení o nestrannosti",
+        confidentiality: "Dohoda o mlčenlivosti (NDA)",
+        ethics_charter: "Etický kodex misie",
+      },
+      risk: {
+        none: "Žádné zjištěné riziko",
+        low: "Nízké",
+        medium: "Střední",
+        high: "Vysoké",
+      },
+      category: {
+        personal_conflicts: "I. Osobní konflikty zájmů",
+        professional_commitments: "II. Profesní závazky",
+        analysis_objectivity: "III. Objektivita analýzy",
+        ethical_conduct: "IV. Etické chování",
+        final_declaration: "V. Závěrečné prohlášení",
+      },
+      answer: {
+        yes: "Ano",
+        no: "Ne",
+        true: "Pravda",
+        false: "Nepravda",
+      },
+      banner: {
+        next: "Další dokument k podpisu: {document}. Máte {days} dní od začátku své povinnosti.",
+        followed_by: "(dále {count}.)",
+        message: "Musíte podepsat: {documents}. Máte {days} dní od začátku své povinnosti.",
+        awaiting_review: "Vaše prohlášení bylo zaznamenáno a čeká na posouzení vedoucím projektu.",
+        action: "Podepsat nyní",
+      },
+      blocked: {
+        title: "Vyžadován podpis",
+        this_project: "tento projekt",
+        description: "Přístup k {project} je pozastaven, dokud nepodepíšete dokumenty vyžadované touto inspekční misí.",
+        to_sign: "Dokumenty k podpisu",
+        sign_now: "Podepsat",
+        locked: "Nejprve podepište předchozí",
+        awaiting_review:
+          "Vaše prohlášení je zaznamenáno. Uvádí skutečnost, kterou musí vedoucí posoudit před obnovením vašeho přístupu.",
+        refused: "Vaše prohlášení bylo zamítnuto. Kontaktujte vedoucího projektu.",
+      },
+      sign: {
+        version: "Verze {version}",
+        name_label: "Pro podpis zadejte své jméno a příjmení",
+        name_placeholder: "PŘÍJMENÍ Jméno",
+        evidence_notice:
+          "Datum, vaše e-mailová adresa, vaše IP adresa a kontrolní součet dokumentu se zaznamenávají s vaším podpisem.",
+        remaining: "Zbývá odpovědět na {count} otázku(y)",
+        submit: "Podepsat",
+        success_title: "Dokument podepsán",
+        success_message: "Váš podpis byl zaznamenán.",
+        pending_review_title: "Prohlášení zaznamenáno",
+        pending_review_message:
+          "Uvedli jste skutečnost vyžadující posouzení. Vedoucí ji musí vyhodnotit před obnovením vašeho přístupu.",
+        error_message: "Podpis nelze zaznamenat.",
+        pdf_failed_title: "Podpis zaznamenán",
+        pdf_failed_message:
+          "Váš podpis je uložen, ale kopii PDF nelze stáhnout. Můžete ji získat v Moje podepsané dokumenty.",
+      },
+    },
     general: {
       enter_project_id: "Zadejte ID projektu",
       please_select_a_timezone: "Vyberte časové pásmo",

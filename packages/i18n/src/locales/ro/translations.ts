@@ -1833,7 +1833,90 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Documentele mele semnate",
+      description:
+        "Toate angajamentele de inspecție pe care le-ați semnat, în toate spațiile de lucru și proiectele, cu copia PDF probatorie.",
+      empty: "Nu ați semnat încă niciun document de inspecție.",
+      document: "Document",
+      project: "Proiect",
+      signed_at: "Semnat la",
+      status: "Stare",
+      download: "PDF",
+      accepted: "Valid",
+      pending_review: "În așteptarea revizuirii",
+      rejected: "Respins",
+      risk: "Acceptat — risc pentru imparțialitate: {risk}",
+      download_error: "PDF-ul nu a putut fi descărcat.",
+      pdf_notice:
+        "Fiecare PDF reproduce textul exact așa cum l-ați semnat, urmat de dovada semnăturii: data, adresa de e-mail, adresa IP și amprenta documentului.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Declarație de imparțialitate",
+        confidentiality: "Acord de confidențialitate (NDA)",
+        ethics_charter: "Carta etică a misiunii",
+      },
+      risk: {
+        none: "Niciun risc identificat",
+        low: "Scăzut",
+        medium: "Mediu",
+        high: "Ridicat",
+      },
+      category: {
+        personal_conflicts: "I. Conflicte de interese personale",
+        professional_commitments: "II. Angajamente profesionale",
+        analysis_objectivity: "III. Obiectivitatea analizei",
+        ethical_conduct: "IV. Conduită etică",
+        final_declaration: "V. Declarație finală",
+      },
+      answer: {
+        yes: "Da",
+        no: "Nu",
+        true: "Adevărat",
+        false: "Fals",
+      },
+      banner: {
+        next: "Următorul document de semnat: {document}. Aveți {days} zile de la începutul obligației.",
+        followed_by: "({count} urmează.)",
+        message: "Trebuie să semnați: {documents}. Aveți {days} zile de la începutul obligației.",
+        awaiting_review: "Declarația dvs. a fost înregistrată și așteaptă revizuirea responsabilului de proiect.",
+        action: "Semnați acum",
+      },
+      blocked: {
+        title: "Semnătură necesară",
+        this_project: "acest proiect",
+        description:
+          "Accesul la {project} este suspendat până la semnarea documentelor cerute de această misiune de inspecție.",
+        to_sign: "Documente de semnat",
+        sign_now: "Semnați",
+        locked: "Semnați mai întâi pe cel precedent",
+        awaiting_review:
+          "Declarația dvs. este înregistrată. Semnalează un element pe care un responsabil trebuie să îl examineze înainte de restabilirea accesului.",
+        refused: "Declarația dvs. a fost respinsă. Contactați responsabilul de proiect.",
+      },
+      sign: {
+        version: "Versiunea {version}",
+        name_label: "Introduceți numele complet pentru a semna",
+        name_placeholder: "NUME Prenume",
+        evidence_notice:
+          "Data, adresa dvs. de e-mail, adresa IP și o amprentă a documentului sunt înregistrate împreună cu semnătura.",
+        remaining: "{count} întrebare(ări) rămase",
+        submit: "Semnați",
+        success_title: "Document semnat",
+        success_message: "Semnătura dvs. a fost înregistrată.",
+        pending_review_title: "Declarație înregistrată",
+        pending_review_message:
+          "Ați declarat un element care necesită revizuire. Un responsabil trebuie să îl evalueze înainte de restabilirea accesului.",
+        error_message: "Semnătura nu a putut fi înregistrată.",
+        pdf_failed_title: "Semnătură înregistrată",
+        pdf_failed_message:
+          "Semnătura dvs. este salvată, dar copia PDF nu a putut fi descărcată. O puteți obține din Documentele mele semnate.",
+      },
+    },
     general: {
       enter_project_id: "Introdu ID-ul proiectului",
       please_select_a_timezone: "Te rugăm să selectezi un fus orar",

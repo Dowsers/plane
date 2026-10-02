@@ -1828,7 +1828,89 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Tài liệu tôi đã ký",
+      description:
+        "Tất cả các cam kết thanh tra bạn đã ký, trên mọi không gian làm việc và dự án, kèm bản sao PDF làm bằng chứng.",
+      empty: "Bạn chưa ký tài liệu thanh tra nào.",
+      document: "Tài liệu",
+      project: "Dự án",
+      signed_at: "Ngày ký",
+      status: "Trạng thái",
+      download: "PDF",
+      accepted: "Hợp lệ",
+      pending_review: "Đang chờ xét duyệt",
+      rejected: "Bị từ chối",
+      risk: "Đã chấp nhận — rủi ro về tính khách quan: {risk}",
+      download_error: "Không tải được tệp PDF.",
+      pdf_notice:
+        "Mỗi tệp PDF tái hiện chính xác văn bản bạn đã ký, kèm bằng chứng ký: ngày, địa chỉ email, địa chỉ IP và mã kiểm tra tài liệu.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Tuyên bố về tính khách quan",
+        confidentiality: "Thỏa thuận bảo mật (NDA)",
+        ethics_charter: "Quy tắc đạo đức của nhiệm vụ",
+      },
+      risk: {
+        none: "Không phát hiện rủi ro",
+        low: "Thấp",
+        medium: "Trung bình",
+        high: "Cao",
+      },
+      category: {
+        personal_conflicts: "I. Xung đột lợi ích cá nhân",
+        professional_commitments: "II. Cam kết nghề nghiệp",
+        analysis_objectivity: "III. Tính khách quan của phân tích",
+        ethical_conduct: "IV. Hành vi đạo đức",
+        final_declaration: "V. Tuyên bố cuối cùng",
+      },
+      answer: {
+        yes: "Có",
+        no: "Không",
+        true: "Đúng",
+        false: "Sai",
+      },
+      banner: {
+        next: "Tài liệu cần ký tiếp theo: {document}. Bạn có {days} ngày kể từ khi nghĩa vụ bắt đầu.",
+        followed_by: "(còn {count} tài liệu nữa.)",
+        message: "Bạn phải ký: {documents}. Bạn có {days} ngày kể từ khi nghĩa vụ bắt đầu.",
+        awaiting_review: "Tuyên bố của bạn đã được ghi nhận và đang chờ người phụ trách dự án xét duyệt.",
+        action: "Ký ngay",
+      },
+      blocked: {
+        title: "Cần có chữ ký",
+        this_project: "dự án này",
+        description:
+          "Quyền truy cập vào {project} bị tạm ngưng cho đến khi bạn ký các tài liệu mà nhiệm vụ thanh tra này yêu cầu.",
+        to_sign: "Tài liệu cần ký",
+        sign_now: "Ký",
+        locked: "Hãy ký tài liệu trước đó",
+        awaiting_review:
+          "Tuyên bố của bạn đã được ghi nhận. Có một nội dung người phụ trách phải xem xét trước khi quyền truy cập được phục hồi.",
+        refused: "Tuyên bố của bạn bị từ chối. Hãy liên hệ người phụ trách dự án.",
+      },
+      sign: {
+        version: "Phiên bản {version}",
+        name_label: "Nhập họ và tên của bạn để ký",
+        name_placeholder: "HỌ Tên",
+        evidence_notice: "Ngày, địa chỉ email, địa chỉ IP của bạn và mã kiểm tra tài liệu được ghi lại cùng chữ ký.",
+        remaining: "Còn {count} câu hỏi chưa trả lời",
+        submit: "Ký",
+        success_title: "Đã ký tài liệu",
+        success_message: "Chữ ký của bạn đã được ghi nhận.",
+        pending_review_title: "Đã ghi nhận tuyên bố",
+        pending_review_message:
+          "Bạn đã khai báo một nội dung cần xét duyệt. Người phụ trách phải đánh giá trước khi quyền truy cập được phục hồi.",
+        error_message: "Không ghi nhận được chữ ký.",
+        pdf_failed_title: "Đã ghi nhận chữ ký",
+        pdf_failed_message:
+          "Chữ ký của bạn đã được lưu, nhưng không tải được bản PDF. Bạn có thể lấy lại trong Tài liệu tôi đã ký.",
+      },
+    },
     general: {
       enter_project_id: "Nhập ID dự án",
       please_select_a_timezone: "Vui lòng chọn múi giờ",

@@ -1840,7 +1840,90 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Meus documentos assinados",
+      description:
+        "Todos os compromissos de inspeção que você assinou, em todos os espaços de trabalho e projetos, com sua cópia PDF probatória.",
+      empty: "Você ainda não assinou nenhum documento de inspeção.",
+      document: "Documento",
+      project: "Projeto",
+      signed_at: "Assinado em",
+      status: "Status",
+      download: "PDF",
+      accepted: "Válido",
+      pending_review: "Aguardando revisão",
+      rejected: "Recusado",
+      risk: "Aceito — risco para a imparcialidade: {risk}",
+      download_error: "Não foi possível baixar o PDF.",
+      pdf_notice:
+        "Cada PDF reproduz o texto exatamente como você o assinou, seguido da prova de assinatura: data, endereço de e-mail, endereço IP e impressão do documento.",
+    },
+  },
   project_settings: {
+    inspection: {
+      kind: {
+        impartiality: "Declaração de imparcialidade",
+        confidentiality: "Acordo de confidencialidade (NDA)",
+        ethics_charter: "Carta de ética da missão",
+      },
+      risk: {
+        none: "Nenhum risco identificado",
+        low: "Baixo",
+        medium: "Médio",
+        high: "Alto",
+      },
+      category: {
+        personal_conflicts: "I. Conflitos de interesse pessoais",
+        professional_commitments: "II. Compromissos profissionais",
+        analysis_objectivity: "III. Objetividade da análise",
+        ethical_conduct: "IV. Conduta ética",
+        final_declaration: "V. Declaração final",
+      },
+      answer: {
+        yes: "Sim",
+        no: "Não",
+        true: "Verdadeiro",
+        false: "Falso",
+      },
+      banner: {
+        next: "Próximo documento a assinar: {document}. Você tem {days} dias a partir do início da sua obrigação.",
+        followed_by: "({count} a seguir.)",
+        message: "Você deve assinar: {documents}. Você tem {days} dias a partir do início da sua obrigação.",
+        awaiting_review: "Sua declaração foi registrada e aguarda a revisão do responsável do projeto.",
+        action: "Assinar agora",
+      },
+      blocked: {
+        title: "Assinatura necessária",
+        this_project: "este projeto",
+        description:
+          "O acesso a {project} está suspenso até que você assine os documentos exigidos por esta missão de inspeção.",
+        to_sign: "Documentos a assinar",
+        sign_now: "Assinar",
+        locked: "Assine o anterior primeiro",
+        awaiting_review:
+          "Sua declaração foi registrada. Ela aponta um elemento que um responsável deve examinar antes de restabelecer seu acesso.",
+        refused: "Sua declaração foi recusada. Entre em contato com o responsável do projeto.",
+      },
+      sign: {
+        version: "Versão {version}",
+        name_label: "Digite seu nome completo para assinar",
+        name_placeholder: "SOBRENOME Nome",
+        evidence_notice:
+          "A data, seu endereço de e-mail, seu endereço IP e uma impressão do documento são registrados com sua assinatura.",
+        remaining: "{count} pergunta(s) restante(s)",
+        submit: "Assinar",
+        success_title: "Documento assinado",
+        success_message: "Sua assinatura foi registrada.",
+        pending_review_title: "Declaração registrada",
+        pending_review_message:
+          "Você declarou um elemento que exige revisão. Um responsável deve avaliá-lo antes de restabelecer seu acesso.",
+        error_message: "Não foi possível registrar a assinatura.",
+        pdf_failed_title: "Assinatura registrada",
+        pdf_failed_message:
+          "Sua assinatura está salva, mas a cópia PDF não pôde ser baixada. Você pode obtê-la em Meus documentos assinados.",
+      },
+    },
     general: {
       enter_project_id: "Inserir ID do projeto",
       please_select_a_timezone: "Por favor, selecione um fuso horário",
