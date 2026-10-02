@@ -15,6 +15,7 @@ import type {
   TInspectionSignature,
   TInspectionTemplate,
   TInspectionTemplateVersion,
+  TMyInspectionSignature,
   TProjectInspectionConfig,
   TProjectInspectionConfigPayload,
   TProjectInspectionMe,
@@ -212,6 +213,52 @@ export class InspectionService extends APIService {
 
   async getCompliance(workspaceSlug: string, projectId: string): Promise<TInspectionCompliance> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/inspection/compliance/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  // --- The evidentiary PDF and the signer's own record
+
+  /** Fetches the PDF as a blob and hands the browser a download.
+   *
+   * Done here rather than with a plain `<a href>` because the endpoint is
+   * session-authenticated and returns `Content-Disposition` - an anchor would
+   * work, but it bypasses this service's error handling, so a 403 would silently
+   * navigate to a JSON error page instead of surfacing as a rejected promise.
+   */
+  async downloadSignaturePdf(
+    workspaceSlug: string,
+    projectId: string,
+    signatureId: string,
+    fallbackFilename = "document.pdf"
+  ): Promise<void> {
+    const response = await this.get(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/inspection/declarations/${signatureId}/pdf/`,
+      { responseType: "blob" }
+    ).catch((error) => {
+      throw error?.response?.data;
+    });
+
+    // Prefer the server's own filename: it encodes project, kind, version and
+    // date, so a folder of downloads stays sortable.
+    const disposition: string = response?.headers?.["content-disposition"] ?? "";
+    const matched = /filename="?([^";]+)"?/.exec(disposition);
+    const filename = matched?.[1] ?? fallbackFilename;
+
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    window.document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  async listMySignatures(): Promise<TMyInspectionSignature[]> {
+    return this.get("/api/users/me/inspection-signatures/")
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

@@ -16,6 +16,7 @@ import { Button, CustomSelect, Input, Loader, ToggleSwitch } from "@plane/ui";
 import { InspectionService } from "@/services/inspection.service";
 // local imports
 import { InspectionComplianceTable } from "./compliance-table";
+import { MyInspectionSignatures } from "./my-signatures";
 import { INSPECTION_MODE_I18N } from "./constants";
 
 const inspectionService = new InspectionService();
@@ -211,6 +212,15 @@ export const ProjectInspectionConfigRoot = observer(function ProjectInspectionCo
           </Button>
         </div>
       </div>
+
+      {/* The admin's own copies, right where they configure the engagement -
+          the cross-workspace record lives under account settings. */}
+      {config?.is_inspection_enabled ? (
+        <div className="space-y-2">
+          <h4 className="text-base font-medium text-primary">{t("inspection.my_signatures.title")}</h4>
+          <MyInspectionSignatures projectId={projectId} />
+        </div>
+      ) : null}
 
       {config?.is_inspection_enabled ? (
         <InspectionComplianceTable

@@ -10,3 +10,6 @@ freezegun==1.2.2
 coverage==7.2.7
 httpx==0.24.1
 requests==2.33.0
+# Text extraction, so the inspection PDF tests can assert that nothing was
+# dropped from a signed document - see plane/tests/unit/utils/test_inspection_pdf.py.
+pypdf==6.1.1

@@ -57,6 +57,13 @@ export const PROFILE_SETTINGS: Record<
     key: "api-tokens",
     i18n_label: "profile.actions.api-tokens",
   },
+  // The evaluator's own record of signed inspection undertakings (ISO/IEC 17020
+  // §4.1/§4.2), with the evidentiary PDF for each. Under the account rather than
+  // a workspace so it survives leaving one.
+  "inspection-documents": {
+    key: "inspection-documents",
+    i18n_label: "inspection.my_signatures.title",
+  },
 };
 
 export const PROFILE_SETTINGS_TABS: TProfileSettingsTabs[] = Object.keys(PROFILE_SETTINGS) as TProfileSettingsTabs[];
@@ -71,6 +78,7 @@ export const GROUPED_PROFILE_SETTINGS: Record<
     PROFILE_SETTINGS["notifications"],
     PROFILE_SETTINGS["security"],
     PROFILE_SETTINGS["activity"],
+    PROFILE_SETTINGS["inspection-documents"],
     // Category 11 (docs/feature-specs/11-admin-security-sso.md in
     // plane-selfhost), feature 4, user story 5 - read-only "my effective
     // permissions" summary, workspace-scoped (see the tab's own root

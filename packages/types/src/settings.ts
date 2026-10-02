@@ -15,7 +15,8 @@ export type TProfileSettingsTabs =
   | "notifications"
   | "security"
   | "api-tokens"
-  | "permissions";
+  | "permissions"
+  | "inspection-documents";
 
 export type TWorkspaceSettingsTabs =
   | "general"

@@ -57,7 +57,8 @@ const collectKeys = (): string[] => {
       // `t("some.key")` call sites.
       for (const match of contents.matchAll(/\bt\(\s*"([^"]+)"/g)) keys.add(match[1]);
       // Keys held in the constants maps rather than passed to t() inline.
-      for (const match of contents.matchAll(/"((?:project_settings|workspace_settings)\.[\w.]+)"/g)) keys.add(match[1]);
+      for (const match of contents.matchAll(/"((?:project_settings|workspace_settings|inspection)\.[\w.]+)"/g))
+        keys.add(match[1]);
     }
   }
   // eslint-disable-next-line unicorn/no-array-sort

@@ -22,6 +22,7 @@ import hashlib
 from django.db import transaction
 from django.db.models import Max, Prefetch
 from django.utils import timezone
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -50,6 +51,7 @@ from plane.utils.inspection_compliance import (
     signed_kinds,
     unmet_prerequisites,
 )
+from plane.utils.inspection_pdf import build_signature_pdf, signature_pdf_filename
 from plane.utils.inspection_questionnaire import evaluate_answers
 from plane.utils.ip_address import get_client_ip
 
@@ -653,5 +655,99 @@ class ProjectInspectionComplianceEndpoint(BaseAPIView):
                 "required_kinds": list(applicable.keys()),
                 "members": rows,
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+class InspectionSignaturePDFEndpoint(BaseAPIView):
+    """`GET .../projects/<project_id>/inspection/declarations/<pk>/pdf/`
+
+    The downloadable evidentiary copy: the text as signed plus the signature
+    evidence (see `plane.utils.inspection_pdf`).
+
+    Visible to the SIGNER themselves, and to anyone entitled to review on this
+    project (the designated manager, or a project Admin). A plain Member must not
+    be able to read a colleague's impartiality disclosures - those name family
+    ties and financial interests, so the narrower read is the correct one here
+    even though it costs an extra check.
+
+    EXEMPT from the enforcement gate: a member who is blocked for not having
+    signed everything must still be able to download what they HAVE signed.
+    """
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    def get(self, request, slug, project_id, pk):
+        signature = (
+            InspectionSignature.objects.filter(project_id=project_id, pk=pk)
+            .select_related("project", "member", "reviewed_by", "template_version", "template_version__template")
+            .first()
+        )
+        if signature is None:
+            return Response({"error": "No such signature."}, status=status.HTTP_404_NOT_FOUND)
+
+        is_signer = signature.member_id == request.user.id
+        if not is_signer:
+            project = Project.objects.get(workspace__slug=slug, pk=project_id)
+            may_review = project.inspection_review_manager_id == request.user.id or ProjectMember.objects.filter(
+                project_id=project_id, member_id=request.user.id, role=ROLE.ADMIN.value, is_active=True
+            ).exists()
+            if not may_review:
+                return Response(
+                    {"error": "You may only download your own signed documents."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # The reader's own language for the labels; the document text itself is
+        # never translated - see `plane.utils.inspection_pdf`.
+        language = getattr(getattr(request.user, "profile", None), "language", None)
+        pdf = build_signature_pdf(signature, language=language)
+
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{signature_pdf_filename(signature)}"'
+        response["Content-Length"] = str(len(pdf))
+        return response
+
+
+class MyInspectionSignaturesEndpoint(BaseAPIView):
+    """`GET /users/me/inspection-signatures/`
+
+    The signer's own personal record, across every workspace and project they
+    have ever signed for. Deliberately NOT workspace-scoped: an evaluator needs
+    one place to retrieve their own undertakings, including for an engagement
+    whose workspace they have since left.
+
+    No `allow_permission` decorator because there is nothing to authorise beyond
+    being signed in - the queryset is filtered to `request.user` and can return
+    nobody else's rows. Being user-scoped also puts it outside the enforcement
+    gate entirely (no `project_id` in the URL), so it keeps working for a member
+    blocked on some project.
+    """
+
+    def get(self, request):
+        signatures = (
+            InspectionSignature.objects.filter(member_id=request.user.id)
+            .select_related("project", "project__workspace", "template_version")
+            .order_by("-signed_at")
+        )
+
+        return Response(
+            [
+                {
+                    "id": str(signature.id),
+                    "kind": signature.kind,
+                    "signed_at": signature.signed_at,
+                    "version": signature.template_version.version,
+                    "review_status": signature.review_status,
+                    "risk_level": signature.risk_level,
+                    "declared_conflicts": signature.declared_conflicts,
+                    "document_checksum": signature.document_checksum,
+                    "project_id": str(signature.project_id),
+                    "project_name": signature.project.name,
+                    "project_identifier": signature.project.identifier,
+                    "workspace_slug": signature.project.workspace.slug,
+                    "workspace_name": signature.project.workspace.name,
+                }
+                for signature in signatures
+            ],
             status=status.HTTP_200_OK,
         )

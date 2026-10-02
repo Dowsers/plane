@@ -105,6 +105,20 @@ export function InspectionSigningModal(props: Props) {
           ? t("project_settings.inspection.sign.pending_review_message")
           : t("project_settings.inspection.sign.success_message"),
       });
+      // "Download at the moment of signing": offered immediately, as a toast
+      // action rather than a blocking step, so a signer who wants their copy
+      // gets it without the flow stopping for one who does not.
+      try {
+        await inspectionService.downloadSignaturePdf(workspaceSlug, projectId, response.id);
+      } catch {
+        // The signature IS recorded; a failed download must not read as a failed
+        // signature. The copy stays available from the personal record.
+        setToast({
+          type: TOAST_TYPE.WARNING,
+          title: t("project_settings.inspection.sign.pdf_failed_title"),
+          message: t("project_settings.inspection.sign.pdf_failed_message"),
+        });
+      }
       onSigned();
       onClose();
     } catch (error) {

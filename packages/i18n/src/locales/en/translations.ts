@@ -2132,6 +2132,26 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "My signed documents",
+      description:
+        "Every inspection undertaking you have signed, across all workspaces and projects, with its evidentiary PDF copy.",
+      empty: "You have not signed any inspection document yet.",
+      document: "Document",
+      project: "Project",
+      signed_at: "Signed on",
+      status: "Status",
+      download: "PDF",
+      accepted: "Valid",
+      pending_review: "Awaiting review",
+      rejected: "Refused",
+      risk: "Accepted — impartiality risk: {risk}",
+      download_error: "The PDF could not be downloaded.",
+      pdf_notice:
+        "Each PDF reproduces the text exactly as you signed it, followed by the signature evidence: date, email address, IP address and document checksum.",
+    },
+  },
   project_settings: {
     categories: {
       general: "General",
@@ -2454,6 +2474,9 @@ export default {
         pending_review_message:
           "You disclosed an element requiring review. A manager must assess it before your access is restored.",
         error_message: "The signature could not be recorded.",
+        pdf_failed_title: "Signature recorded",
+        pdf_failed_message:
+          "Your signature is saved, but the PDF copy could not be downloaded. You can retrieve it from My signed documents.",
       },
       review: {
         title: "Review an impartiality declaration",

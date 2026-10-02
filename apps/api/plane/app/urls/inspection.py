@@ -14,6 +14,7 @@ exempt name resolves to a route registered here or elsewhere.
 from django.urls import path
 
 from plane.app.views.inspection import (
+    InspectionSignaturePDFEndpoint,
     InspectionTemplateVersionEndpoint,
     InspectionTemplateVersionPublishEndpoint,
     ProjectInspectionComplianceEndpoint,
@@ -21,6 +22,7 @@ from plane.app.views.inspection import (
     ProjectInspectionMeEndpoint,
     ProjectInspectionReviewEndpoint,
     ProjectInspectionSignEndpoint,
+    MyInspectionSignaturesEndpoint,
     ProjectInspectionTemplateEndpoint,
     WorkspaceInspectionTemplateEndpoint,
 )
@@ -87,6 +89,20 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/inspection/declarations/<uuid:pk>/review/",
         ProjectInspectionReviewEndpoint.as_view(),
         name="project-inspection-review",
+    ),
+    # --- The downloadable evidentiary copy. EXEMPT: a member blocked for an
+    # unsigned document must still be able to download what they HAVE signed.
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/inspection/declarations/<uuid:pk>/pdf/",
+        InspectionSignaturePDFEndpoint.as_view(),
+        name="project-inspection-pdf",
+    ),
+    # --- The signer's own cross-workspace record. User-scoped, so outside the
+    # gate entirely (no project_id in the URL).
+    path(
+        "users/me/inspection-signatures/",
+        MyInspectionSignaturesEndpoint.as_view(),
+        name="my-inspection-signatures",
     ),
     # --- Admin compliance dashboard. EXEMPT: an Admin needs this read
     # precisely when people are blocked.

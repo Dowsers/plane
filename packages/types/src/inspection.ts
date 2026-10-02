@@ -181,3 +181,23 @@ export type TInspectionReviewPayload = {
   mitigation_measures?: string;
   review_notes?: string;
 };
+
+/** One row of the signer's own cross-workspace record, from
+ * `GET /users/me/inspection-signatures/`. Deliberately flat and
+ * workspace-labelled: it is read outside any workspace context, so each row has
+ * to carry enough to name where it came from. */
+export type TMyInspectionSignature = {
+  id: string;
+  kind: TInspectionDocumentKind;
+  signed_at: string;
+  version: number;
+  review_status: TInspectionReviewStatus;
+  risk_level: TInspectionRiskLevel | null;
+  declared_conflicts: boolean;
+  document_checksum: string;
+  project_id: string;
+  project_name: string;
+  project_identifier: string;
+  workspace_slug: string;
+  workspace_name: string;
+};

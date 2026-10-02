@@ -94,3 +94,9 @@ opentelemetry-exporter-otlp==1.28.1
 drf-spectacular==0.28.0
 # html sanitizer
 nh3==0.2.18
+# PDF generation for signed inspection documents (ISO/IEC 17020 §4.1/§4.2) -
+# see plane/utils/inspection_pdf.py. A pure-Python wheel with no system
+# libraries, unlike WeasyPrint which needs cairo/pango in the image; its
+# Platypus layer is what gives flowing text, page breaks and tables for a
+# twelve-article legal document.
+reportlab==5.0.1

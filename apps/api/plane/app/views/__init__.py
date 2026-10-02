@@ -446,6 +446,7 @@ from .issue_triage_suggestion import (
 
 from .ai_triage_config import ProjectAITriageConfigEndpoint, WorkspaceAITriageConfigEndpoint
 from .inspection import (
+    InspectionSignaturePDFEndpoint,
     InspectionTemplateVersionEndpoint,
     InspectionTemplateVersionPublishEndpoint,
     ProjectInspectionComplianceEndpoint,
@@ -453,6 +454,7 @@ from .inspection import (
     ProjectInspectionMeEndpoint,
     ProjectInspectionReviewEndpoint,
     ProjectInspectionSignEndpoint,
+    MyInspectionSignaturesEndpoint,
     ProjectInspectionTemplateEndpoint,
     WorkspaceInspectionTemplateEndpoint,
 )

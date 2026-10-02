@@ -2182,6 +2182,26 @@ export default {
       },
     },
   },
+  inspection: {
+    my_signatures: {
+      title: "Mes documents signés",
+      description:
+        "Tous les engagements d’inspection que vous avez signés, tous workspaces et projets confondus, avec leur copie PDF probante.",
+      empty: "Vous n’avez encore signé aucun document d’inspection.",
+      document: "Document",
+      project: "Projet",
+      signed_at: "Signé le",
+      status: "Statut",
+      download: "PDF",
+      accepted: "Valide",
+      pending_review: "En attente de revue",
+      rejected: "Refusé",
+      risk: "Accepté — risque pour l’impartialité : {risk}",
+      download_error: "Le PDF n’a pas pu être téléchargé.",
+      pdf_notice:
+        "Chaque PDF reproduit le texte exactement tel que vous l’avez signé, suivi de la preuve de signature : date, adresse email, adresse IP et empreinte du document.",
+    },
+  },
   project_settings: {
     categories: {
       general: "Général",
@@ -2567,6 +2587,9 @@ export default {
         pending_review_message:
           "Vous avez déclaré un élément nécessitant une revue. Un responsable doit l’apprécier avant le rétablissement de votre accès.",
         error_message: "La signature n’a pas pu être enregistrée.",
+        pdf_failed_title: "Signature enregistrée",
+        pdf_failed_message:
+          "Votre signature est bien enregistrée, mais la copie PDF n’a pas pu être téléchargée. Vous pourrez la récupérer depuis Mes documents signés.",
       },
       review: {
         title: "Revue d’une déclaration d’impartialité",

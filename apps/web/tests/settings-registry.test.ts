@@ -21,8 +21,10 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  GROUPED_PROFILE_SETTINGS,
   GROUPED_PROJECT_SETTINGS,
   GROUPED_WORKSPACE_SETTINGS,
+  PROFILE_SETTINGS,
   PROJECT_SETTINGS,
   WORKSPACE_SETTINGS,
 } from "@plane/constants";
@@ -35,7 +37,8 @@ import path from "path";
  * keys is enough for what this guards - that no tab is missing an icon. */
 const iconKeys = (relative: string): Set<string> => {
   const source = fs.readFileSync(path.resolve(__dirname, "..", relative), "utf8");
-  const body = source.slice(source.indexOf("_SETTINGS_ICONS"), source.lastIndexOf("};"));
+  const marker = source.includes("_SETTINGS_ICONS") ? "_SETTINGS_ICONS" : "ICONS: Record";
+  const body = source.slice(source.indexOf(marker), source.indexOf("};", source.indexOf(marker)));
   return new Set([...body.matchAll(/^\s{2}"?([\w-]+)"?:/gm)].map((match) => match[1]));
 };
 
@@ -93,5 +96,29 @@ describe("inspection tabs are registered", () => {
     expect(
       flatten(GROUPED_WORKSPACE_SETTINGS).some((item) => (item as { key: string }).key === "inspection-documents")
     ).toBe(true);
+  });
+});
+
+describe("profile settings registry", () => {
+  /** A third registry with the same multi-edit hazard: the union, the entry, the
+   * grouped map and an icon record in `profile/sidebar/item-categories.tsx`.
+   * Only the first and last are type-checked. */
+  const entries = Object.values(PROFILE_SETTINGS) as { key: string }[];
+
+  it("every entry appears in the grouped map", () => {
+    const groupedKeys = new Set(flatten(GROUPED_PROFILE_SETTINGS).map((item) => item.key));
+    const missing = entries.map((entry) => entry.key).filter((key) => !groupedKeys.has(key));
+    expect(missing, `not reachable in the sidebar: ${missing.join(", ")}`).toEqual([]);
+  });
+
+  it("every entry has an icon", () => {
+    const icons = iconKeys("core/components/settings/profile/sidebar/item-categories.tsx");
+    const missing = entries.map((entry) => entry.key).filter((key) => !icons.has(key));
+    expect(missing).toEqual([]);
+  });
+
+  it("registers the signed-documents tab", () => {
+    expect(PROFILE_SETTINGS["inspection-documents"]?.i18n_label).toBe("inspection.my_signatures.title");
+    expect(flatten(GROUPED_PROFILE_SETTINGS).some((item) => item.key === "inspection-documents")).toBe(true);
   });
 });

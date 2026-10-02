@@ -116,6 +116,9 @@ EXEMPT_URL_NAMES = frozenset(
         # obligation must not become a deadlock.
         "project-inspection-review",
         "project-inspection-compliance",
+        # The evidentiary PDF: a blocked member must still be able to
+        # download the documents they have already signed.
+        "project-inspection-pdf",
         # Membership. One name covers list/retrieve/create/update/destroy AND
         # `members/leave/` (all three patterns share it), so leaving a project
         # is always possible and the signing UI can render who else is on it.
