@@ -8,6 +8,7 @@ export * from "./blocked-screen";
 export * from "./compliance-table";
 export * from "./config-root";
 export * from "./constants";
+export * from "./document-body";
 export * from "./non-compliance-banner";
 export * from "./review-modal";
 export * from "./signing-modal";

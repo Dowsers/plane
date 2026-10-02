@@ -14,6 +14,7 @@ import { cn } from "@plane/utils";
 import { InspectionService } from "@/services/inspection.service";
 // local imports
 import { INSPECTION_CATEGORY_I18N, INSPECTION_CATEGORY_ORDER, INSPECTION_KIND_I18N } from "./constants";
+import { InspectionDocumentBody } from "./document-body";
 
 const inspectionService = new InspectionService();
 
@@ -163,12 +164,10 @@ export function InspectionSigningModal(props: Props) {
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-          {/* Verbatim document text - never translated, see this file's docstring. */}
-          {document.body ? (
-            <div className="text-sm rounded border border-subtle bg-surface-2 p-4 leading-relaxed whitespace-pre-wrap text-secondary">
-              {document.body}
-            </div>
-          ) : null}
+          {/* Rendered, not printed raw: these bodies are Markdown legal texts. The
+              wording itself is still verbatim from the backend and never
+              translated - see InspectionDocumentBody. */}
+          {document.body ? <InspectionDocumentBody body={document.body} /> : null}
 
           {questionsByCategory.map(([category, questions]) => (
             <div key={category || "uncategorised"} className="space-y-3">
