@@ -191,10 +191,12 @@ def outstanding_kinds(project, member_id) -> list:
     is nothing to sign yet) or when the member holds a signature against that
     exact version whose review verdict is satisfying.
     """
-    from plane.db.models import InspectionDocumentKind, InspectionSignature
+    from plane.db.models import INSPECTION_SIGNING_ORDER, InspectionSignature
 
     outstanding = []
-    for kind in InspectionDocumentKind.values:
+    # Iterated in signing order, so callers that render or pick "the next one"
+    # inherit the sequence without having to know it.
+    for kind in INSPECTION_SIGNING_ORDER:
         version = resolve_applicable_version(project, kind)
         if version is None:
             continue
@@ -232,6 +234,75 @@ def ensure_obligations(project, member_id, kinds) -> list:
     return obligations
 
 
+def signed_kinds(project, member_id) -> set:
+    """Kinds this member has SIGNED on this project, whatever the review verdict.
+
+    Distinct from "satisfied" on purpose - see `INSPECTION_SIGNING_ORDER` for why
+    the sequence advances on signature rather than on a manager's verdict.
+    """
+    from plane.db.models import InspectionSignature
+
+    return set(
+        InspectionSignature.objects.filter(project_id=project.id, member_id=member_id).values_list(
+            "kind", flat=True
+        )
+    )
+
+
+def unmet_prerequisites(project, member_id, kind) -> list:
+    """Kinds that must be signed before `kind` may be, in signing order.
+
+    Only counts prerequisites that actually HAVE a published version: if the
+    charter was never published it cannot be a precondition for anything, or
+    enabling inspection with a partial document set would wedge every evaluator.
+    """
+    from plane.db.models import INSPECTION_SIGNING_ORDER
+
+    if kind not in INSPECTION_SIGNING_ORDER:
+        return []
+
+    already_signed = signed_kinds(project, member_id)
+    missing = []
+    for predecessor in INSPECTION_SIGNING_ORDER[: INSPECTION_SIGNING_ORDER.index(kind)]:
+        if predecessor in already_signed:
+            continue
+        if resolve_applicable_version(project, predecessor) is None:
+            continue
+        missing.append(predecessor)
+    return missing
+
+
+def next_signable_kind(project, member_id):
+    """The one kind this member may sign RIGHT NOW, or `None`.
+
+    Three conditions, and the third is easy to miss: the kind must be outstanding,
+    have no unmet predecessor, and not already carry a signature against the
+    version currently in force. Without that last one an impartiality declaration
+    sitting at PENDING review would be offered again - it is outstanding (PENDING
+    does not discharge it) and its predecessor is signed - and `sign/` would
+    answer 409. Tested by `test_a_pending_review_still_unlocks_the_next_document`.
+
+    Note this is keyed on the APPLICABLE version, not on "ever signed": once a
+    revised version is published and requires re-signature, the kind becomes
+    signable again, which is the whole point of republication.
+    """
+    from plane.db.models import InspectionSignature
+
+    for kind in outstanding_kinds(project, member_id):
+        if unmet_prerequisites(project, member_id, kind):
+            continue
+        version = resolve_applicable_version(project, kind)
+        if version is None:
+            continue
+        if InspectionSignature.objects.filter(
+            project_id=project.id, member_id=member_id, template_version_id=version.id
+        ).exists():
+            # Signed, just not discharged - waiting on a manager, not on them.
+            continue
+        return kind
+    return None
+
+
 def clear_block_if_satisfied(project, member_id) -> None:
     """Clear `blocked_since` for any kind this member no longer owes.
 
@@ -246,10 +317,10 @@ def clear_block_if_satisfied(project, member_id) -> None:
     Three call sites rather than a signal, matching this fork's convention; see
     `InspectionObligation`'s docstring.
     """
-    from plane.db.models import InspectionDocumentKind, InspectionObligation
+    from plane.db.models import INSPECTION_SIGNING_ORDER, InspectionObligation
 
     still_owed = set(outstanding_kinds(project, member_id))
-    satisfied = [kind for kind in InspectionDocumentKind.values if kind not in still_owed]
+    satisfied = [kind for kind in INSPECTION_SIGNING_ORDER if kind not in still_owed]
     if not satisfied:
         return
 

@@ -2422,6 +2422,8 @@ export default {
         false: "False",
       },
       banner: {
+        next: "Next document to sign: {document}. You have {days} days from the start of your obligation.",
+        followed_by: "({count} more to follow.)",
         message: "You must sign: {documents}. You have {days} days from the start of your obligation.",
         awaiting_review: "Your declaration has been recorded and is awaiting review by the project manager.",
         action: "Sign now",
@@ -2433,6 +2435,7 @@ export default {
           "Access to {project} is suspended until you have signed the documents required for this inspection engagement.",
         to_sign: "Documents to sign",
         sign_now: "Sign",
+        locked: "Sign the previous one first",
         awaiting_review:
           "Your declaration has been recorded. It discloses something that a manager must review before your access is restored.",
         refused: "Your declaration was refused. Contact the project manager.",

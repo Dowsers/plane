@@ -704,3 +704,91 @@ class TestGateThroughRealUrls:
         )
 
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.contract
+class TestSigningOrderThroughHttp:
+    """Charter, then impartiality, then NDA - refused server-side, not just
+    hidden in the UI, so the stored evidence genuinely reflects the sequence."""
+
+    @pytest.mark.django_db
+    def test_me_lists_documents_in_signing_order_with_their_blockers(
+        self, session_client, workspace, admin_project
+    ):
+        for kind in InspectionDocumentKind.values:
+            _published(workspace, kind)
+
+        body = session_client.get(_me_url(workspace.slug, admin_project.id)).json()
+
+        assert [doc["kind"] for doc in body["documents"]] == [
+            "ETHICS_CHARTER",
+            "IMPARTIALITY",
+            "CONFIDENTIALITY",
+        ]
+        by_kind = {doc["kind"]: doc for doc in body["documents"]}
+        assert by_kind["ETHICS_CHARTER"]["blocked_by"] == []
+        assert by_kind["IMPARTIALITY"]["blocked_by"] == ["ETHICS_CHARTER"]
+        assert by_kind["CONFIDENTIALITY"]["blocked_by"] == ["ETHICS_CHARTER", "IMPARTIALITY"]
+        assert all(doc["is_signed"] is False for doc in body["documents"])
+
+    @pytest.mark.django_db
+    def test_signing_the_nda_first_is_refused(self, session_client, workspace, admin_project):
+        for kind in InspectionDocumentKind.values:
+            _published(workspace, kind)
+        nda = InspectionDocumentTemplateVersion.objects.get(
+            template__kind=InspectionDocumentKind.CONFIDENTIALITY
+        )
+
+        response = session_client.post(
+            _sign_url(workspace.slug, admin_project.id),
+            {"template_version_id": str(nda.id), "signature_name": "Q"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["error_code"] == "INSPECTION_OUT_OF_ORDER"
+        assert response.json()["blocked_by"] == ["ETHICS_CHARTER", "IMPARTIALITY"]
+
+    @pytest.mark.django_db
+    def test_the_full_sequence_in_order_is_accepted(self, session_client, workspace, admin_project):
+        _published(workspace, InspectionDocumentKind.ETHICS_CHARTER)
+        _published(
+            workspace,
+            InspectionDocumentKind.IMPARTIALITY,
+            schema=[dict(q) for q in DEFAULT_IMPARTIALITY_QUESTIONNAIRE],
+        )
+        _published(workspace, InspectionDocumentKind.CONFIDENTIALITY)
+        versions = {
+            v.template.kind: v
+            for v in InspectionDocumentTemplateVersion.objects.select_related("template").all()
+        }
+
+        for kind in ("ETHICS_CHARTER", "IMPARTIALITY", "CONFIDENTIALITY"):
+            payload = {"template_version_id": str(versions[kind].id), "signature_name": "Q"}
+            if kind == "IMPARTIALITY":
+                payload["questionnaire_answers"] = _clean_answers()
+            response = session_client.post(
+                _sign_url(workspace.slug, admin_project.id), payload, format="json"
+            )
+            assert response.status_code == status.HTTP_201_CREATED, f"{kind}: {response.json()}"
+
+        assert InspectionSignature.objects.filter(project=admin_project).count() == 3
+
+    @pytest.mark.django_db
+    def test_an_unpublished_charter_does_not_block_the_rest(
+        self, session_client, workspace, admin_project
+    ):
+        """A partially published document set must not wedge every evaluator
+        behind a document that does not exist yet."""
+        _published(workspace, InspectionDocumentKind.CONFIDENTIALITY)
+        nda = InspectionDocumentTemplateVersion.objects.get(
+            template__kind=InspectionDocumentKind.CONFIDENTIALITY
+        )
+
+        response = session_client.post(
+            _sign_url(workspace.slug, admin_project.id),
+            {"template_version_id": str(nda.id), "signature_name": "Q"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED

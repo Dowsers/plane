@@ -17,6 +17,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from plane.db.models import (
+    INSPECTION_SIGNING_ORDER,
     InspectionDocumentKind,
     InspectionDocumentTemplate,
     InspectionDocumentTemplateVersion,
@@ -67,6 +68,20 @@ class TestInspectionDocumentKind:
         accepted; this kind is what makes a specific charter VERSION signable,
         which a self-declared checkbox can never evidence."""
         assert InspectionDocumentKind.ETHICS_CHARTER in InspectionDocumentKind
+
+
+@pytest.mark.unit
+class TestInspectionSigningOrder:
+    """The business-mandated sequence, stated once and asserted here."""
+
+    def test_order_is_charter_then_impartiality_then_nda(self):
+        assert INSPECTION_SIGNING_ORDER == ("ETHICS_CHARTER", "IMPARTIALITY", "CONFIDENTIALITY")
+
+    def test_order_covers_every_kind_exactly_once(self):
+        # A kind missing from the order would silently never be sequenced; a
+        # duplicate would make `.index()` lie about its position.
+        assert sorted(INSPECTION_SIGNING_ORDER) == sorted(InspectionDocumentKind.values)
+        assert len(set(INSPECTION_SIGNING_ORDER)) == len(INSPECTION_SIGNING_ORDER)
 
 
 @pytest.mark.unit

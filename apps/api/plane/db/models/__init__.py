@@ -26,6 +26,7 @@ from .importer import Importer
 from .initiative import Initiative, InitiativeProject, InitiativeActivity
 from .inspection import (
     DEFAULT_IMPARTIALITY_QUESTIONNAIRE,
+    INSPECTION_SIGNING_ORDER,
     InspectionDocumentKind,
     InspectionDocumentTemplate,
     InspectionDocumentTemplateVersion,

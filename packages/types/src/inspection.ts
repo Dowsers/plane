@@ -113,6 +113,14 @@ export type TInspectionMyDocument = {
   signature: TInspectionSignature | null;
   obligation_started_at: string | null;
   blocked_since: string | null;
+  /** Kinds that must be signed before this one, in signing order. Computed
+   * server-side so the UI never re-derives the sequence and cannot drift from
+   * what `sign/` will actually accept. Empty means signable now. */
+  blocked_by: TInspectionDocumentKind[];
+  /** Whether a signature already exists against the version in force. A document
+   * can be signed yet still outstanding - an impartiality declaration awaiting
+   * managerial review is exactly that. */
+  is_signed: boolean;
 };
 
 export type TProjectInspectionMe = {

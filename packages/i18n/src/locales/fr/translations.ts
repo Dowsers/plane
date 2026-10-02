@@ -2534,6 +2534,8 @@ export default {
         false: "Faux",
       },
       banner: {
+        next: "Document suivant à signer : {document}. Vous disposez de {days} jours à compter du début de votre obligation.",
+        followed_by: "({count} autre(s) ensuite.)",
         message:
           "Vous devez signer : {documents}. Vous disposez de {days} jours à compter du début de votre obligation.",
         awaiting_review: "Votre déclaration est enregistrée et attend la revue du responsable du projet.",
@@ -2546,6 +2548,7 @@ export default {
           "L’accès à {project} est suspendu jusqu’à la signature des documents exigés par cette mission d’inspection.",
         to_sign: "Documents à signer",
         sign_now: "Signer",
+        locked: "Signez le précédent d’abord",
         awaiting_review:
           "Votre déclaration est enregistrée. Elle signale un élément qu’un responsable doit examiner avant le rétablissement de votre accès.",
         refused: "Votre déclaration a été refusée. Contactez le responsable du projet.",

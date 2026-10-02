@@ -34,6 +34,7 @@ from plane.app.serializers.inspection import (
 )
 from plane.db.models import (
     DEFAULT_IMPARTIALITY_QUESTIONNAIRE,
+    INSPECTION_SIGNING_ORDER,
     InspectionDocumentKind,
     InspectionDocumentTemplate,
     InspectionDocumentTemplateVersion,
@@ -43,7 +44,12 @@ from plane.db.models import (
     ProjectMember,
     Workspace,
 )
-from plane.utils.inspection_compliance import clear_block_if_satisfied, resolve_applicable_version
+from plane.utils.inspection_compliance import (
+    clear_block_if_satisfied,
+    resolve_applicable_version,
+    signed_kinds,
+    unmet_prerequisites,
+)
 from plane.utils.inspection_questionnaire import evaluate_answers
 from plane.utils.ip_address import get_client_ip
 
@@ -356,7 +362,10 @@ class ProjectInspectionMeEndpoint(BaseAPIView):
         project = Project.objects.get(workspace__slug=slug, pk=project_id)
 
         documents = []
-        for kind in InspectionDocumentKind.values:
+        # Signing order, not enum order: the charter is accepted first, then the
+        # impartiality declaration, then the NDA. See INSPECTION_SIGNING_ORDER.
+        already_signed = signed_kinds(project, request.user.id)
+        for kind in INSPECTION_SIGNING_ORDER:
             version = resolve_applicable_version(project, kind)
             if version is None:
                 continue
@@ -382,6 +391,10 @@ class ProjectInspectionMeEndpoint(BaseAPIView):
                     "signature": InspectionSignatureSerializer(signature).data if signature else None,
                     "obligation_started_at": obligation.obligation_started_at if obligation else None,
                     "blocked_since": obligation.blocked_since if obligation else None,
+                    # Computed server-side so the UI never has to re-derive the
+                    # sequence and cannot drift from what `sign/` will accept.
+                    "blocked_by": unmet_prerequisites(project, request.user.id, kind),
+                    "is_signed": kind in already_signed,
                 }
             )
 
@@ -447,6 +460,20 @@ class ProjectInspectionSignEndpoint(BaseAPIView):
         ).exists():
             return Response(
                 {"error": "You have already signed this version."}, status=status.HTTP_409_CONFLICT
+            )
+
+        # The documents are signed in a fixed order (charter, then impartiality,
+        # then NDA). Enforced here and not only in the UI, so the stored evidence
+        # genuinely reflects that sequence rather than merely suggesting it.
+        prerequisites = unmet_prerequisites(project, request.user.id, kind)
+        if prerequisites:
+            return Response(
+                {
+                    "error": "Sign the preceding documents first.",
+                    "error_code": "INSPECTION_OUT_OF_ORDER",
+                    "blocked_by": prerequisites,
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         evaluation = evaluate_answers(version.questionnaire_schema, request.data.get("questionnaire_answers"))
@@ -574,7 +601,7 @@ class ProjectInspectionComplianceEndpoint(BaseAPIView):
         project = Project.objects.get(workspace__slug=slug, pk=project_id)
 
         applicable = {}
-        for kind in InspectionDocumentKind.values:
+        for kind in INSPECTION_SIGNING_ORDER:
             version = resolve_applicable_version(project, kind)
             if version is not None:
                 applicable[kind] = version

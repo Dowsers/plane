@@ -78,6 +78,33 @@ class InspectionDocumentKind(models.TextChoices):
     ETHICS_CHARTER = "ETHICS_CHARTER", "Mission ethics charter"
 
 
+# The order in which an evaluator signs, as decided by the business: the ethics
+# charter first, then the impartiality declaration, then the NDA. It is a real
+# sequence, not a display preference - the signing endpoint refuses a document
+# whose predecessors are unsigned - because the charter frames the ethical
+# commitment the impartiality declaration is then made under, and the
+# confidentiality undertaking comes last once the evaluator is confirmed on the
+# engagement.
+#
+# Declared explicitly rather than by reordering the enum above: the enum defines
+# WHICH documents exist and its member order is incidental (reordering it would
+# also churn every `choices` in a migration for no behavioural reason), whereas
+# this is a business rule that deserves to be stated and tested on its own.
+# `test_inspection_models` asserts it covers the enum exactly.
+#
+# Sequencing is keyed on "has signed", NOT on "review accepted". An impartiality
+# declaration that discloses a conflict sits at `PENDING` until a manager rules
+# on it; gating the NDA on that verdict would let one disclosure freeze an
+# evaluator's onboarding for as long as nobody reviews it. Review acceptance
+# remains what grants ACCESS (see `SATISFYING_REVIEW_STATUSES`) - it is simply
+# not what unlocks the next signature.
+INSPECTION_SIGNING_ORDER = (
+    InspectionDocumentKind.ETHICS_CHARTER.value,
+    InspectionDocumentKind.IMPARTIALITY.value,
+    InspectionDocumentKind.CONFIDENTIALITY.value,
+)
+
+
 class InspectionQuestionCategory(models.TextChoices):
     """The five sections of the impartiality questionnaire. Carried per
     question in `questionnaire_schema` so the signed record reproduces the

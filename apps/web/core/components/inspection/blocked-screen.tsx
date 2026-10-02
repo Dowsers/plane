@@ -18,6 +18,8 @@ type Props = {
   projectId: string;
   projectName?: string;
   blocked: TInspectionMyDocument[];
+  /** The only document signable right now - see the banner's own note. */
+  nextSignable: TInspectionMyDocument | undefined;
   onSigned: () => void;
 };
 
@@ -36,11 +38,11 @@ type Props = {
  * something usable behind it, and here there is not.
  */
 export function InspectionBlockedScreen(props: Props) {
-  const { workspaceSlug, projectId, projectName, blocked, onSigned } = props;
+  const { workspaceSlug, projectId, projectName, blocked, nextSignable, onSigned } = props;
   const { t } = useTranslation();
   const [activeDocument, setActiveDocument] = useState<TInspectionMyDocument | null>(null);
 
-  const unsigned = blocked.filter((document) => !document.signature);
+  const unsigned = blocked.filter((document) => !document.is_signed);
   const awaitingReview = blocked.filter((document) => document.signature?.review_status === "PENDING");
   const refused = blocked.filter((document) => document.signature?.review_status === "REJECTED");
 
@@ -67,17 +69,33 @@ export function InspectionBlockedScreen(props: Props) {
                 {t("project_settings.inspection.blocked.to_sign")}
               </p>
               <ul className="space-y-2">
-                {unsigned.map((document) => (
-                  <li key={document.kind} className="flex items-center justify-between gap-3">
-                    <span className="text-sm flex items-center gap-2 text-primary">
-                      <FileSignature className="size-4 text-tertiary" />
-                      {t(INSPECTION_KIND_I18N[document.kind])}
-                    </span>
-                    <Button variant="primary" size="sm" onClick={() => setActiveDocument(document)}>
-                      {t("project_settings.inspection.blocked.sign_now")}
-                    </Button>
-                  </li>
-                ))}
+                {unsigned.map((document, index) => {
+                  const isNext = document.kind === nextSignable?.kind;
+                  return (
+                    <li key={document.kind} className="flex items-center justify-between gap-3">
+                      <span className="text-sm flex items-center gap-2 text-primary">
+                        {/* The order is fixed, so numbering it is honest rather
+                            than decorative: step 2 genuinely cannot precede 1. */}
+                        <span className="text-tertiary tabular-nums">{index + 1}.</span>
+                        {isNext ? (
+                          <FileSignature className="size-4 text-tertiary" />
+                        ) : (
+                          <Lock className="size-4 text-tertiary" />
+                        )}
+                        <span className={isNext ? undefined : "text-tertiary"}>
+                          {t(INSPECTION_KIND_I18N[document.kind])}
+                        </span>
+                      </span>
+                      {isNext ? (
+                        <Button variant="primary" size="sm" onClick={() => setActiveDocument(document)}>
+                          {t("project_settings.inspection.blocked.sign_now")}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-tertiary">{t("project_settings.inspection.blocked.locked")}</span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : null}

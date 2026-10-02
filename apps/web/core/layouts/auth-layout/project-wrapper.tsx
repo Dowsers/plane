@@ -147,6 +147,7 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     data: inspectionData,
     outstanding: inspectionOutstanding,
     blocked: inspectionBlocked,
+    nextSignable: inspectionNextSignable,
     refresh: refreshInspection,
   } = useInspectionObligations(workspaceSlug, projectId, Boolean(currentProjectDetails?.is_inspection_enabled));
 
@@ -188,6 +189,7 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
         projectId={projectId}
         projectName={currentProjectDetails?.name}
         blocked={inspectionBlocked}
+        nextSignable={inspectionNextSignable}
         onSigned={refreshInspection}
       />
     );
@@ -200,6 +202,7 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
           workspaceSlug={workspaceSlug}
           projectId={projectId}
           outstanding={inspectionOutstanding}
+          nextSignable={inspectionNextSignable}
           gracePeriodDays={inspectionData?.inspection_grace_period_days ?? 7}
           onSigned={refreshInspection}
         />

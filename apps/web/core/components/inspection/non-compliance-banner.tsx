@@ -17,6 +17,10 @@ type Props = {
   workspaceSlug: string;
   projectId: string;
   outstanding: TInspectionMyDocument[];
+  /** The only document signable right now - documents are signed in a fixed
+   * order and the server refuses out-of-order attempts, so offering a choice
+   * would just produce a 409. */
+  nextSignable: TInspectionMyDocument | undefined;
   gracePeriodDays: number;
   onSigned: () => void;
 };
@@ -31,36 +35,43 @@ type Props = {
  * outcome the grace period exists to avoid.
  */
 export function InspectionNonComplianceBanner(props: Props) {
-  const { workspaceSlug, projectId, outstanding, gracePeriodDays, onSigned } = props;
+  const { workspaceSlug, projectId, outstanding, nextSignable, gracePeriodDays, onSigned } = props;
   const { t } = useTranslation();
   const [activeDocument, setActiveDocument] = useState<TInspectionMyDocument | null>(null);
 
   if (outstanding.length === 0) return null;
 
   const pendingReview = outstanding.filter((document) => document.signature?.review_status === "PENDING");
-  const unsigned = outstanding.filter((document) => !document.signature);
+  // Everything still owed behind the next one, so the banner can say how many
+  // steps remain instead of naming documents the member cannot act on yet.
+  const queued = outstanding.filter((document) => document.kind !== nextSignable?.kind && !document.is_signed);
 
   return (
     <>
       <div className="border-amber-500/30 bg-amber-500/10 flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-4 py-2.5">
         <AlertTriangle className="text-amber-600 size-4 shrink-0" />
         <div className="text-sm flex-1 text-primary">
-          {unsigned.length > 0 ? (
+          {nextSignable ? (
             <span>
-              {t("project_settings.inspection.banner.message", {
-                documents: unsigned.map((document) => t(INSPECTION_KIND_I18N[document.kind])).join(", "),
+              {t("project_settings.inspection.banner.next", {
+                document: t(INSPECTION_KIND_I18N[nextSignable.kind]),
                 days: gracePeriodDays,
               })}
+              {queued.length > 0 ? (
+                <span className="ml-1 text-secondary">
+                  {t("project_settings.inspection.banner.followed_by", { count: queued.length })}
+                </span>
+              ) : null}
             </span>
           ) : null}
           {/* A declaration awaiting review is signed but not yet discharged -
               saying "please sign" would be wrong and confusing. */}
-          {unsigned.length === 0 && pendingReview.length > 0 ? (
+          {!nextSignable && pendingReview.length > 0 ? (
             <span>{t("project_settings.inspection.banner.awaiting_review")}</span>
           ) : null}
         </div>
-        {unsigned.length > 0 ? (
-          <Button variant="primary" size="sm" onClick={() => setActiveDocument(unsigned[0])}>
+        {nextSignable ? (
+          <Button variant="primary" size="sm" onClick={() => setActiveDocument(nextSignable)}>
             {t("project_settings.inspection.banner.action")}
           </Button>
         ) : null}

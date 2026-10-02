@@ -38,6 +38,11 @@ export type TInspectionObligationsState = {
   outstanding: TInspectionMyDocument[];
   /** Outstanding documents whose grace period has already elapsed. */
   blocked: TInspectionMyDocument[];
+  /** The one document the member may sign right now, or `undefined`. Documents
+   * are signed in a fixed order (charter, impartiality, NDA) and the server
+   * refuses out-of-order attempts, so the UI offers exactly one at a time
+   * rather than letting somebody pick and hit a 409. */
+  nextSignable: TInspectionMyDocument | undefined;
   refresh: () => void;
 };
 
@@ -72,15 +77,18 @@ export function useInspectionObligations(
     { revalidateOnFocus: false }
   );
 
+  // `documents` arrives in signing order from the API.
   const documents = data?.documents ?? [];
   const outstanding = documents.filter((document) => !isInspectionDocumentSatisfied(document));
   const blocked = outstanding.filter((document) => Boolean(document.blocked_since));
+  const nextSignable = outstanding.find((document) => !document.is_signed && (document.blocked_by ?? []).length === 0);
 
   return {
     data,
     isLoading: shouldFetch && isLoading,
     outstanding,
     blocked,
+    nextSignable,
     refresh: () => void mutate(),
   };
 }

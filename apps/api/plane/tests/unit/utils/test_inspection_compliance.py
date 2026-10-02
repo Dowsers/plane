@@ -35,8 +35,11 @@ from plane.utils.inspection_compliance import (
     ERROR_CODE,
     EXEMPT_URL_NAMES,
     enforce_inspection_compliance,
+    next_signable_kind,
     outstanding_kinds,
     resolve_applicable_version,
+    signed_kinds,
+    unmet_prerequisites,
 )
 
 
@@ -552,3 +555,130 @@ class TestLockoutRegressions:
         assert InspectionObligation.objects.filter(project=project, member=member).count() == len(
             InspectionDocumentKind
         )
+
+
+@pytest.mark.unit
+class TestSigningSequence:
+    """Charter, then impartiality, then NDA - enforced, not merely suggested."""
+
+    @pytest.mark.django_db
+    def test_outstanding_is_returned_in_signing_order(self, enforcement_on):
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        for kind in InspectionDocumentKind.values:
+            _published_version(project, kind)
+
+        assert outstanding_kinds(project, member.id) == [
+            "ETHICS_CHARTER",
+            "IMPARTIALITY",
+            "CONFIDENTIALITY",
+        ]
+
+    @pytest.mark.django_db
+    def test_the_charter_is_signable_first_and_the_others_are_not(self):
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        for kind in InspectionDocumentKind.values:
+            _published_version(project, kind)
+
+        assert next_signable_kind(project, member.id) == "ETHICS_CHARTER"
+        assert unmet_prerequisites(project, member.id, "ETHICS_CHARTER") == []
+        assert unmet_prerequisites(project, member.id, "IMPARTIALITY") == ["ETHICS_CHARTER"]
+        assert unmet_prerequisites(project, member.id, "CONFIDENTIALITY") == [
+            "ETHICS_CHARTER",
+            "IMPARTIALITY",
+        ]
+
+    @pytest.mark.django_db
+    def test_signing_the_charter_unlocks_impartiality_only(self):
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        versions = {kind: _published_version(project, kind) for kind in InspectionDocumentKind.values}
+        InspectionSignatureFactory(
+            project=project,
+            member=member,
+            template_version=versions["ETHICS_CHARTER"],
+            kind="ETHICS_CHARTER",
+            review_status="NOT_REQUIRED",
+        )
+
+        assert next_signable_kind(project, member.id) == "IMPARTIALITY"
+        assert unmet_prerequisites(project, member.id, "CONFIDENTIALITY") == ["IMPARTIALITY"]
+
+    @pytest.mark.django_db
+    def test_a_pending_review_still_unlocks_the_next_document(self):
+        """The sequence advances on SIGNATURE, not on a manager's verdict -
+        otherwise one disclosed conflict freezes onboarding until somebody
+        reviews it. The obligation itself stays unmet; only progression moves."""
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        versions = {kind: _published_version(project, kind) for kind in InspectionDocumentKind.values}
+        InspectionSignatureFactory(
+            project=project,
+            member=member,
+            template_version=versions["ETHICS_CHARTER"],
+            kind="ETHICS_CHARTER",
+            review_status="NOT_REQUIRED",
+        )
+        InspectionSignatureFactory(
+            project=project,
+            member=member,
+            template_version=versions["IMPARTIALITY"],
+            kind="IMPARTIALITY",
+            review_status="PENDING",
+            declared_conflicts=True,
+        )
+
+        assert unmet_prerequisites(project, member.id, "CONFIDENTIALITY") == []
+        assert next_signable_kind(project, member.id) == "CONFIDENTIALITY"
+        # Still owed, because PENDING does not discharge it.
+        assert "IMPARTIALITY" in outstanding_kinds(project, member.id)
+
+    @pytest.mark.django_db
+    def test_an_unpublished_predecessor_is_not_a_prerequisite(self):
+        """Otherwise publishing a partial document set would wedge every
+        evaluator behind a document that does not exist yet."""
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        _published_version(project, InspectionDocumentKind.CONFIDENTIALITY)
+
+        assert unmet_prerequisites(project, member.id, "CONFIDENTIALITY") == []
+        assert next_signable_kind(project, member.id) == "CONFIDENTIALITY"
+
+    @pytest.mark.django_db
+    def test_signed_kinds_ignores_the_review_verdict(self):
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        version = _published_version(project, InspectionDocumentKind.IMPARTIALITY)
+        InspectionSignatureFactory(
+            project=project,
+            member=member,
+            template_version=version,
+            kind="IMPARTIALITY",
+            review_status="REJECTED",
+        )
+
+        assert signed_kinds(project, member.id) == {"IMPARTIALITY"}
+
+    @pytest.mark.django_db
+    def test_nothing_is_signable_once_everything_is_satisfied(self):
+        project = _inspection_project()
+        member = UserFactory()
+        ProjectMemberFactory(project=project, member=member, role=15)
+        for kind in InspectionDocumentKind.values:
+            version = _published_version(project, kind)
+            InspectionSignatureFactory(
+                project=project,
+                member=member,
+                template_version=version,
+                kind=kind,
+                review_status="NOT_REQUIRED",
+            )
+
+        assert next_signable_kind(project, member.id) is None
