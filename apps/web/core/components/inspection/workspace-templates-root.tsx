@@ -291,12 +291,38 @@ export const WorkspaceInspectionTemplatesRoot = observer(function WorkspaceInspe
                     />
                   </div>
 
+                  {/* The questionnaire lives in `questionnaire_schema`, separate
+                      from the declaration text above, and the editor cannot
+                      change it - it is seeded server-side from the issued form
+                      and frozen with each published version. Showing only a
+                      count left an admin unable to tell whether their form had
+                      actually been loaded, so the questions are listed read-only
+                      with their section, numbering and answer style. */}
                   {kind === "IMPARTIALITY" && latest?.questionnaire_schema?.length ? (
-                    <p className="text-xs text-tertiary">
-                      {t("workspace_settings.settings.inspection_documents.questionnaire_notice", {
-                        count: latest.questionnaire_schema.length,
-                      })}
-                    </p>
+                    <details className="rounded border border-subtle bg-surface-2 p-3" open>
+                      <summary className="text-sm cursor-pointer font-medium text-secondary">
+                        {t("workspace_settings.settings.inspection_documents.questionnaire_notice", {
+                          count: latest.questionnaire_schema.length,
+                        })}
+                      </summary>
+                      <ol className="mt-3 space-y-2">
+                        {latest.questionnaire_schema.map((question) => (
+                          <li key={question.key} className="text-xs text-secondary">
+                            <span className="mr-1 font-medium text-tertiary">{question.number ?? "•"}.</span>
+                            {/* Verbatim: this is the legal wording the evaluator
+                                will accept, never translated at render time. */}
+                            {question.label}
+                            <span className="ml-2 text-tertiary">
+                              (
+                              {question.answer_style === "TRUE_FALSE"
+                                ? `${t("project_settings.inspection.answer.true")} / ${t("project_settings.inspection.answer.false")}`
+                                : `${t("project_settings.inspection.answer.yes")} / ${t("project_settings.inspection.answer.no")}`}
+                              )
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
                   ) : null}
 
                   <div className="flex items-center justify-between gap-4">

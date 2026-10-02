@@ -2015,28 +2015,28 @@ export default {
         created: "Document created as a draft.",
         edit: "Edit",
         not_created: "Not created — no project requires this document yet.",
-        draft_only: "Draft v{{version}} — not published, so it requires nothing yet.",
-        draft_pending: "draft v{{version}} pending",
-        published_version: "Published version {{version}}",
+        draft_only: "Draft v{version} — not published, so it requires nothing yet.",
+        draft_pending: "draft v{version} pending",
+        published_version: "Published version {version}",
         immutability_notice:
           "A published version can never be modified — that is what makes a signature evidence. Editing writes to a draft; publish it to make it the version members must sign.",
         body_label: "Document text",
         body_placeholder: "Text the evaluator reads and accepts…",
         questionnaire_notice:
-          "This document carries the issued {{count}}-question impartiality questionnaire. Its questions are frozen with each version.",
+          "This document carries the issued {count}-question impartiality questionnaire. Its questions are frozen with each version.",
         requires_resignature: "Require re-signature",
         requires_resignature_description:
           "Publishing resets every member's grace period and asks them to sign again. Turn this off for a typo fix that should not invalidate existing signatures.",
         save_draft: "Save draft",
         save_as_new_version: "Save as a new draft version",
-        publish: "Publish v{{version}}",
+        publish: "Publish v{version}",
         published_title: "Version published",
         published_message: "This version is now the one members must sign.",
         published_with_resignature:
           "This version is now in force. Every member's grace period has been reset and they must sign again.",
         draft_saved: "Draft saved.",
         history: "Version history",
-        published_at: "published on {{date}}",
+        published_at: "published on {date}",
         draft: "draft",
       },
       security: {
@@ -2422,7 +2422,7 @@ export default {
         false: "False",
       },
       banner: {
-        message: "You must sign: {{documents}}. You have {{days}} days from the start of your obligation.",
+        message: "You must sign: {documents}. You have {days} days from the start of your obligation.",
         awaiting_review: "Your declaration has been recorded and is awaiting review by the project manager.",
         action: "Sign now",
       },
@@ -2430,7 +2430,7 @@ export default {
         title: "Signature required",
         this_project: "this project",
         description:
-          "Access to {{project}} is suspended until you have signed the documents required for this inspection engagement.",
+          "Access to {project} is suspended until you have signed the documents required for this inspection engagement.",
         to_sign: "Documents to sign",
         sign_now: "Sign",
         awaiting_review:
@@ -2438,12 +2438,12 @@ export default {
         refused: "Your declaration was refused. Contact the project manager.",
       },
       sign: {
-        version: "Version {{version}}",
+        version: "Version {version}",
         name_label: "Type your full name to sign",
         name_placeholder: "SURNAME Firstname",
         evidence_notice:
           "The date, your email address, your IP address and a checksum of the document are recorded with your signature.",
-        remaining: "{{count}} question(s) left to answer",
+        remaining: "{count} question(s) left to answer",
         submit: "Sign",
         success_title: "Document signed",
         success_message: "Your signature has been recorded.",
@@ -2477,7 +2477,7 @@ export default {
         pending_review: "To review",
         rejected: "Refused",
         accepted_after_disclosure: "Accepted after disclosure",
-        accepted_with_risk: "Accepted — risk: {{risk}}",
+        accepted_with_risk: "Accepted — risk: {risk}",
         no_documents:
           "No document has been published yet, so nobody owes a signature. Publish the workspace templates first.",
       },

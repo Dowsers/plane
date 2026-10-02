@@ -2062,28 +2062,28 @@ export default {
         created: "Document créé en brouillon.",
         edit: "Modifier",
         not_created: "Non créé — aucun projet n’exige encore ce document.",
-        draft_only: "Brouillon v{{version}} — non publié, il n’exige donc rien.",
-        draft_pending: "brouillon v{{version}} en attente",
-        published_version: "Version publiée {{version}}",
+        draft_only: "Brouillon v{version} — non publié, il n’exige donc rien.",
+        draft_pending: "brouillon v{version} en attente",
+        published_version: "Version publiée {version}",
         immutability_notice:
           "Une version publiée ne peut jamais être modifiée — c’est ce qui fait qu’une signature constitue une preuve. La modification écrit dans un brouillon ; publiez-le pour en faire la version à signer.",
         body_label: "Texte du document",
         body_placeholder: "Texte que l’évaluateur lit et accepte…",
         questionnaire_notice:
-          "Ce document porte le questionnaire d’impartialité émis ({{count}} questions). Ses questions sont figées avec chaque version.",
+          "Ce document porte le questionnaire d’impartialité émis ({count} questions). Ses questions sont figées avec chaque version.",
         requires_resignature: "Exiger une nouvelle signature",
         requires_resignature_description:
           "La publication réinitialise le délai de grâce de chaque membre et leur demande de signer à nouveau. Désactivez pour une correction de coquille qui ne doit pas invalider les signatures existantes.",
         save_draft: "Enregistrer le brouillon",
         save_as_new_version: "Enregistrer comme nouveau brouillon",
-        publish: "Publier la v{{version}}",
+        publish: "Publier la v{version}",
         published_title: "Version publiée",
         published_message: "Cette version est désormais celle que les membres doivent signer.",
         published_with_resignature:
           "Cette version est désormais en vigueur. Le délai de grâce de chaque membre a été réinitialisé et ils doivent signer à nouveau.",
         draft_saved: "Brouillon enregistré.",
         history: "Historique des versions",
-        published_at: "publiée le {{date}}",
+        published_at: "publiée le {date}",
         draft: "brouillon",
       },
       security: {
@@ -2535,7 +2535,7 @@ export default {
       },
       banner: {
         message:
-          "Vous devez signer : {{documents}}. Vous disposez de {{days}} jours à compter du début de votre obligation.",
+          "Vous devez signer : {documents}. Vous disposez de {days} jours à compter du début de votre obligation.",
         awaiting_review: "Votre déclaration est enregistrée et attend la revue du responsable du projet.",
         action: "Signer maintenant",
       },
@@ -2543,7 +2543,7 @@ export default {
         title: "Signature requise",
         this_project: "ce projet",
         description:
-          "L’accès à {{project}} est suspendu jusqu’à la signature des documents exigés par cette mission d’inspection.",
+          "L’accès à {project} est suspendu jusqu’à la signature des documents exigés par cette mission d’inspection.",
         to_sign: "Documents à signer",
         sign_now: "Signer",
         awaiting_review:
@@ -2551,12 +2551,12 @@ export default {
         refused: "Votre déclaration a été refusée. Contactez le responsable du projet.",
       },
       sign: {
-        version: "Version {{version}}",
+        version: "Version {version}",
         name_label: "Saisissez vos nom et prénom pour signer",
         name_placeholder: "NOM Prénom",
         evidence_notice:
           "La date, votre adresse email, votre adresse IP et une empreinte du document sont enregistrées avec votre signature.",
-        remaining: "{{count}} question(s) restant à renseigner",
+        remaining: "{count} question(s) restant à renseigner",
         submit: "Signer",
         success_title: "Document signé",
         success_message: "Votre signature a été enregistrée.",
@@ -2590,7 +2590,7 @@ export default {
         pending_review: "À revoir",
         rejected: "Refusé",
         accepted_after_disclosure: "Accepté après déclaration",
-        accepted_with_risk: "Accepté — risque : {{risk}}",
+        accepted_with_risk: "Accepté — risque : {risk}",
         no_documents:
           "Aucun document n’a encore été publié, personne ne doit donc de signature. Publiez d’abord les modèles du workspace.",
       },

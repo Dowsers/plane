@@ -73,11 +73,13 @@ const resolve = (tree: unknown, key: string): string | null => {
   return typeof node === "string" ? node : null;
 };
 
-/** A placeholder dropped in one locale renders a literal `{{days}}` to users of
- * that language only - the kind of thing nobody notices in review. */
+/** Interpolation placeholders are ICU MessageFormat, i.e. SINGLE braces
+ * (`{version}`) - see `packages/i18n/src/store` and pre-existing keys such as
+ * `workspace_settings.page_label`. A placeholder dropped in one locale renders
+ * literally to users of that language only. */
 const placeholders = (value: string | null): string[] =>
   // eslint-disable-next-line unicorn/no-array-sort
-  [...(value ?? "").matchAll(/\{\{(\w+)\}\}/g)].map((match) => match[1]).sort();
+  [...(value ?? "").matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
 
 const KEYS = collectKeys();
 
@@ -101,6 +103,19 @@ describe("inspection i18n keys", () => {
       (key) => resolve(enTranslations, key)?.trim() === "" || resolve(frTranslations, key)?.trim() === ""
     );
     expect(empty).toEqual([]);
+  });
+
+  it("uses ICU single-brace placeholders, never double", () => {
+    // The failure this catches, which shipped once: `{{version}}` makes the ICU
+    // formatter throw, `t()` swallows it and returns the KEY, and the UI renders
+    // `workspace_settings.settings.inspection_documents.publish` as a button
+    // label. Invisible to tsc, to oxlint, and - until this test - to the
+    // placeholder check above, which was written with the same wrong convention
+    // in both locales and so validated the mistake instead of catching it.
+    const offenders = KEYS.filter((key) =>
+      [resolve(enTranslations, key), resolve(frTranslations, key)].some((value) => /\{\{/.test(value ?? ""))
+    );
+    expect(offenders, `double-brace placeholders: ${offenders.join(", ")}`).toEqual([]);
   });
 
   it("en and fr agree on interpolation placeholders", () => {
