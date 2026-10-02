@@ -2376,6 +2376,10 @@ export default {
     },
     inspection: {
       label: "Inspection",
+      no_documents_title: "No document is published yet, so nobody owes a signature",
+      no_documents_help:
+        "This project is flagged as an inspection, but the impartiality declaration, the confidentiality agreement and the ethics charter must be created and PUBLISHED at workspace level before members are asked to sign anything.",
+      no_documents_action: "Manage the documents",
       description:
         "Mark this project as an inspection engagement. Its active members must then sign an impartiality declaration, a confidentiality agreement (NDA) and the mission ethics charter (ISO/IEC 17020 §4.1 and §4.2).",
       enable: "This project is an inspection",

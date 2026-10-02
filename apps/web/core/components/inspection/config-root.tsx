@@ -6,6 +6,8 @@
 
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
+import { AlertTriangle } from "lucide-react";
+import { Link } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TInspectionCompliance, TInspectionMode, TProjectInspectionConfig } from "@plane/types";
@@ -126,6 +128,28 @@ export const ProjectInspectionConfigRoot = observer(function ProjectInspectionCo
         <h3 className="text-lg font-medium text-primary">{t("project_settings.inspection.label")}</h3>
         <p className="text-sm text-tertiary">{t("project_settings.inspection.description")}</p>
       </div>
+
+      {/* Enabling the mode with nothing published is a dead end: no document is
+          owed, so no banner appears and members have nothing to sign. That is
+          correct behaviour (a project can be flagged before its documents
+          exist) but it used to be entirely silent - the only hint lived inside
+          the compliance table further down, which is easy to miss. Say it up
+          front, and link to the one place that fixes it. */}
+      {config?.is_inspection_enabled && compliance && compliance.required_kinds.length === 0 ? (
+        <div className="border-amber-500/40 bg-amber-500/10 flex flex-wrap items-start gap-3 rounded border p-4">
+          <AlertTriangle className="text-amber-600 mt-0.5 size-4 shrink-0" />
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium text-primary">{t("project_settings.inspection.no_documents_title")}</p>
+            <p className="text-xs text-secondary">{t("project_settings.inspection.no_documents_help")}</p>
+          </div>
+          <Link
+            to={`/${workspaceSlug}/settings/inspection-documents/`}
+            className="text-sm font-medium text-accent-primary hover:underline"
+          >
+            {t("project_settings.inspection.no_documents_action")}
+          </Link>
+        </div>
+      ) : null}
 
       <div className="space-y-4 rounded border border-subtle p-4">
         <div className="flex items-center justify-between gap-4">

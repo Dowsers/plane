@@ -2488,6 +2488,10 @@ export default {
     },
     inspection: {
       label: "Inspection",
+      no_documents_title: "Aucun document n’est encore publié, personne ne doit donc de signature",
+      no_documents_help:
+        "Ce projet est déclaré comme une inspection, mais la déclaration d’impartialité, l’engagement de confidentialité et la charte d’éthique doivent être créés et PUBLIÉS au niveau du workspace avant que les membres soient invités à signer.",
+      no_documents_action: "Gérer les documents",
       description:
         "Déclarez ce projet comme une mission d’inspection. Ses membres actifs devront alors signer une déclaration d’impartialité, un engagement de confidentialité (NDA) et la charte d’éthique de la mission (ISO/IEC 17020 §4.1 et §4.2).",
       enable: "Ce projet est une inspection",
